@@ -12,6 +12,7 @@ import static org.lwjgl.glfw.GLFW.*;
 public final class InputSystem implements RawInputListener,AutoCloseable {
     private final InputManager manager;
     private final Supplier<SettingsStore.Settings> settings;
+    private final GamepadProfile profile;
     private final Set<Integer> keys=new HashSet<>();
     private final Set<Integer> mouse=new HashSet<>();
     private final Set<Integer> suppressedKeys=new HashSet<>(),suppressedMouse=new HashSet<>();
@@ -28,7 +29,10 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     private Runnable disconnect=()->{};
     private boolean gameplay;
     public InputSystem(InputManager manager,Supplier<SettingsStore.Settings> settings) {
-        this.manager=manager; this.settings=settings; manager.addRawInputListener(this);
+        this(manager,settings,GamepadProfile.bundled());
+    }
+    public InputSystem(InputManager manager,Supplier<SettingsStore.Settings> settings,GamepadProfile profile) {
+        this.manager=manager; this.settings=settings; this.profile=profile; manager.addRawInputListener(this);
     }
     public void onKey(IntConsumer listener) { keyPressed=listener; }
     public void onUi(Consumer<String> listener) { uiAction=listener; }
@@ -44,19 +48,19 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
         if(activePad<0) for(int id=GLFW_JOYSTICK_1;id<=GLFW_JOYSTICK_LAST;id++) if(glfwJoystickIsGamepad(id)) { activePad=id; break; }
         if(activePad<0 || !glfwGetGamepadState(activePad,pad)) return;
         for(int i=0;i<suppressedPad.length;i++) if(!button(i)) suppressedPad[i]=false;
-        axisSteer=deadZone(pad.axes(GLFW_GAMEPAD_AXIS_LEFT_X),settings.get().deadZone);
-        axisThrottle=Math.clamp((pad.axes(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER)+1)/2,0,1);
-        axisBrake=Math.clamp((pad.axes(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER)+1)/2,0,1);
-        padHandbrake=availableButton(GLFW_GAMEPAD_BUTTON_X); padTurbo=availableButton(GLFW_GAMEPAD_BUTTON_B);
-        padMg=availableButton(GLFW_GAMEPAD_BUTTON_LEFT_BUMPER); padRocket=availableButton(GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER);
-        padRear=availableButton(GLFW_GAMEPAD_BUTTON_Y); padRecover=availableButton(GLFW_GAMEPAD_BUTTON_BACK);
-        if(edge(GLFW_GAMEPAD_BUTTON_A)) { if(gameplay) special=true; else uiAction.accept("activate"); }
-        if(edge(GLFW_GAMEPAD_BUTTON_DPAD_LEFT)) { if(gameplay) weaponDelta--; else uiAction.accept("left"); }
-        if(edge(GLFW_GAMEPAD_BUTTON_DPAD_RIGHT)) { if(gameplay) weaponDelta++; else uiAction.accept("right"); }
-        if(edge(GLFW_GAMEPAD_BUTTON_DPAD_UP)) uiAction.accept("up");
-        if(edge(GLFW_GAMEPAD_BUTTON_DPAD_DOWN)) uiAction.accept("down");
-        if(edge(GLFW_GAMEPAD_BUTTON_START)) uiAction.accept("pause");
-        if(edge(GLFW_GAMEPAD_BUTTON_B) && !gameplay) uiAction.accept("back");
+        axisSteer=deadZone(pad.axes(profile.steerAxis()),settings.get().deadZone);
+        axisThrottle=profile.trigger(pad.axes(profile.throttleAxis()));
+        axisBrake=profile.trigger(pad.axes(profile.brakeAxis()));
+        padHandbrake=availableButton(profile.handbrake()); padTurbo=availableButton(profile.turbo());
+        padMg=availableButton(profile.machineGun()); padRocket=availableButton(profile.rocket());
+        padRear=availableButton(profile.rearView()); padRecover=availableButton(profile.recover());
+        if(edge(profile.pulse())) { if(gameplay) special=true; else uiAction.accept("activate"); }
+        if(edge(profile.previousWeapon())) { if(gameplay) weaponDelta--; else uiAction.accept("left"); }
+        if(edge(profile.nextWeapon())) { if(gameplay) weaponDelta++; else uiAction.accept("right"); }
+        if(edge(profile.up())) uiAction.accept("up");
+        if(edge(profile.down())) uiAction.accept("down");
+        if(edge(profile.pause())) uiAction.accept("pause");
+        if(edge(profile.back()) && !gameplay) uiAction.accept("back");
         for(int i=0;i<priorPad.length;i++) priorPad[i]=button(i);
     }
     private boolean button(int id) { return pad.buttons(id)==GLFW_PRESS; }

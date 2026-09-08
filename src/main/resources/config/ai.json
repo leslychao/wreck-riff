@@ -23,5 +23,9 @@
   "recoveryAfterTicks":600,
   "machineGunRange":60,
   "machineGunAngleDegrees":8,
-  "powerAngleDegrees":5
+  "powerAngleDegrees":5,
+  "passDistance":22,
+  "passSideOffset":8,
+  "passForwardDistance":24,
+  "passHoldTicks":180
 }

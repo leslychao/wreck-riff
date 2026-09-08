@@ -85,7 +85,7 @@ public final class GameApplication extends SimpleApplication {
             matchRules=MatchRules.load(); vehicleRules=VehicleRules.load(); loop=new SimulationLoop(matchRules);
             initializeLogging();
             ui=new GameUi(assetManager,guiNode); ui.resize(cam.getWidth(),cam.getHeight());
-            input=new InputSystem(inputManager,store::settings); input.onKey(this::key); input.onUi(this::uiAction);
+            input=new InputSystem(inputManager,store::settings,GamepadProfile.load(store.directory())); input.onKey(this::key); input.onUi(this::uiAction);
             input.onDisconnect(()->pause("Controller disconnected. Reconnect or use the keyboard."));
             audio=new AudioDirector(assetManager,audioRenderer,listener,rootNode);
             chase=new ChaseCamera(cam,CameraRules.load());

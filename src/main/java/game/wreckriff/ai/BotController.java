@@ -25,7 +25,8 @@ public final class BotController {
                 progressWindowStart,aliveTicks,stationaryTicks,maximumStationaryTicks;
         float progress;
         List<Integer> path=List.of();
-        Vector3f destination,lastPosition,progressDirection=new Vector3f();
+        Vector3f destination,lastPosition,passingDestination,progressDirection=new Vector3f();
+        long passingUntil;
         String pickup;
         boolean healing,requiredMovement;
         Brain(long seed) { random=new Random(seed); }
@@ -128,7 +129,7 @@ public final class BotController {
             brain.state=State.ATTACK;
             Vector3f destination=target.position();
             boolean sameFloor=Math.abs(destination.y-position.y)<2.2f;
-            WorldQuery.Hit obstacle=world.sweep(position,destination,1.15f,self.id);
+            WorldQuery.Hit obstacle=world.sweep(position.add(0,1.2f,0),destination.add(0,1.2f,0),1.05f,self.id);
             if (sameFloor && (obstacle==null || obstacle.vehicleId()==target.id())
                     && !(hazardActive && graph.crossesHazard(position,destination))) {
                 brain.destination=destination.clone(); brain.path=List.of(); brain.goalNode=-1;
@@ -219,6 +220,16 @@ public final class BotController {
             return new VehicleCommand(0,.8f,-Math.signum(steer),false,false,false,false,false,0,false,false);
         }
         Vector3f destination=steeringTarget(brain,position,speed);
+        if (brain.passingDestination!=null && (session.tick>=brain.passingUntil
+                || horizontalDistance(position,brain.passingDestination)<4)) brain.passingDestination=null;
+        var closeOpponent=brain.observation.visible().stream().min(Comparator.comparingDouble(e->e.position().distanceSquared(position))).orElse(null);
+        if (brain.passingDestination==null && closeOpponent!=null
+                && closeOpponent.position().distance(position)<rules.passDistance()
+                && Math.abs(closeOpponent.position().y-position.y)<1.5f) {
+            brain.passingDestination=passingDestination(self.id,position,forward,world);
+            brain.passingUntil=session.tick+rules.passHoldTicks();
+        }
+        if (brain.passingDestination!=null) destination=brain.passingDestination;
         Vector3f direction=destination.subtract(position); direction.y=0;
         if (direction.lengthSquared()<.01f) direction=forward.clone();
         brain.progressDirection=direction.normalize();
@@ -244,12 +255,16 @@ public final class BotController {
             float leftClear=left==null?1:left.fraction(),rightClear=rightHit==null?1:rightHit.fraction();
             float avoid=Math.abs(rightClear-leftClear)>.04f ? Math.signum(rightClear-leftClear) : Math.signum(steer==0?1:steer);
             steer=Math.clamp(steer+avoid*.8f,-1,1);
-            desiredSpeed=Math.min(desiredSpeed,Math.max(0,clearance*10-1));
+            float minimumPassingSpeed=center!=null && center.vehicleId()>=0?4:0;
+            desiredSpeed=Math.min(desiredSpeed,Math.max(minimumPassingSpeed,clearance*10-1));
         }
         boolean brake=speed>desiredSpeed+2;
         float throttle=brake?0:Math.clamp((desiredSpeed-speed)*.30f+.25f,0,1);
         float braking=brake?Math.clamp((speed-desiredSpeed)*.25f,0,1):0;
-        if (desiredSpeed<.5f) { throttle=0; braking=1; }
+        if (desiredSpeed<.5f) {
+            float longitudinal=velocity.dot(forward);
+            throttle=longitudinal<-.5f?1:0; braking=longitudinal>.5f?1:0;
+        }
         boolean handbrake=Math.abs(error)>1.15f && speed>10 && world.grounded(self.id);
         boolean turbo=brain.state==State.SEEK_TARGET && Math.abs(error)<.12f && clearance>=1
                 && direction.length()>40 && self.turbo>30 && world.grounded(self.id);
@@ -302,6 +317,7 @@ public final class BotController {
             brain.recoveriesSeen=self.recoveries; brain.reverseAttempts=0; brain.stuckSince=-1;
             brain.reverseUntil=0; brain.progress=0; brain.progressWindowStart=session.tick;
             brain.destination=null; brain.path=List.of(); brain.state=State.SEEK_TARGET;
+            brain.passingDestination=null;
         }
         if (brain.lastPosition!=null) {
             Vector3f displacement=position.subtract(brain.lastPosition); displacement.y=0;
@@ -327,6 +343,26 @@ public final class BotController {
     }
     private boolean needsRecovery(Brain brain) {
         return brain.stuckSince>=0 && brain.reverseAttempts>=2 && session.tick-brain.stuckSince>rules.recoveryAfterTicks();
+    }
+    private Vector3f passingDestination(int id,Vector3f position,Vector3f forward,WorldQuery world) {
+        Vector3f heading=new Vector3f(forward.x,0,forward.z).normalizeLocal();
+        Vector3f right=new Vector3f(heading.z,0,-heading.x);
+        // Hold a clear drive-by corridor instead of braking nose-to-nose or continually
+        // chasing a nearby opponent's moving center. Both drivers initially pass right.
+        for (int side:new int[]{1,-1}) {
+            Vector3f candidate=position.add(heading.mult(rules.passForwardDistance())).addLocal(right.mult(side*rules.passSideOffset()));
+            var bounds=arena.bounds();
+            if (candidate.x<bounds.minX()+3 || candidate.x>bounds.maxX()-3
+                    || candidate.z<bounds.minZ()+3 || candidate.z>bounds.maxZ()-3) continue;
+            WorldQuery.Hit ground=world.ray(candidate.add(0,3,0),candidate.add(0,-4,0),id);
+            if (ground==null || ground.vehicleId()>=0 || ground.normal().y<.65f
+                    || Math.abs(ground.point().y-(position.y-.45f))>1.5f) continue;
+            WorldQuery.Hit obstacle=world.sweep(position.add(0,1.2f,0),candidate.add(0,1.2f,0),1.05f,id);
+            if (obstacle!=null && obstacle.normal().y<.65f) continue;
+            candidate.y=ground.point().y+.45f;
+            return candidate;
+        }
+        return null;
     }
     private boolean visibleActiveHazard(int vehicleId,WorldQuery world) {
         var hazard=arena.hazard();

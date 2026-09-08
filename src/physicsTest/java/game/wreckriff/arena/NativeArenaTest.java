@@ -64,6 +64,35 @@ class NativeArenaTest {
         driveToRepair("repair-deck",new Vector3f(60,.8f,-48),-45);
         driveToRepair("repair-garage",new Vector3f(-60,.8f,-48),0);
     }
+    @Test void nearbyOpponentsPassInsteadOfBrakingNoseToNose() {
+        MatchSession session=new MatchSession(1,360);
+        for (int id=2;id<5;id++) session.vehicle(id).hp=0;
+        try (PhysicsWorld world=arenaWorld()) {
+            world.addVehicle(0,new Vector3f(-18,.85f,45),new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y));
+            world.addVehicle(1,new Vector3f(18,.85f,45),new Quaternion().fromAngleAxis(-FastMath.HALF_PI,Vector3f.UNIT_Y));
+            settle(world);
+            var drivers=List.of(new VehicleController(world,session.vehicle(0),vehicleRules),new VehicleController(world,session.vehicle(1),vehicleRules));
+            BotController bots=new BotController(session,definition,AiRules.load());
+            boolean approached=false,passed=false;
+            for (int tick=0;tick<960;tick++) {
+                session.tick=tick;
+                var commands=bots.commands(world);
+                for (int id=0;id<2;id++) {
+                    var command=commands.get(id).withoutAttacks();
+                    var recovery=drivers.get(id).prepare(command,tick);
+                    assertFalse(recovery.recovered() || recovery.fatal(),"A nearby opponent must not force recovery");
+                    drivers.get(id).drive(command);
+                }
+                world.step();
+                float distance=world.position(0).distance(world.position(1));
+                approached|=distance<22;
+                passed|=approached && world.position(0).x>world.position(1).x && distance>12;
+                for (int id=0;id<2;id++) drivers.get(id).recordSafePose(tick);
+            }
+            assertTrue(approached,"Fixture must exercise close traffic");
+            assertTrue(passed,"Drivers must physically pass each other through a clear side corridor");
+        }
+    }
     private void driveToRepair(String pickupId,Vector3f start,float yaw) {
         var target=definition.pickups().stream().filter(p->p.id().equals(pickupId)).findFirst().orElseThrow();
         // The selected repair is the only enabled resource in this route fixture. The complete arena,

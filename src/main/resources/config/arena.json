@@ -113,7 +113,7 @@
     {"from":3,"to":30,"width":10},{"from":4,"to":30,"width":10},{"from":30,"to":31,"width":12},
     {"from":31,"to":32,"width":12},{"from":32,"to":33,"width":12},{"from":33,"to":34,"width":12},
     {"from":34,"to":35,"width":12},{"from":35,"to":36,"width":12},{"from":36,"to":8,"width":10},
-    {"from":36,"to":9,"width":10},{"from":33,"to":37,"width":12},{"from":33,"to":38,"width":12},
+    {"from":36,"to":9,"width":10},{"from":33,"to":37,"width":18},{"from":33,"to":38,"width":18},
     {"from":17,"to":39,"width":10},{"from":39,"to":25,"width":10}
   ]
 }

@@ -9,7 +9,8 @@ public record AiRules(int schemaVersion, int decisionTicks, int targetChangeTick
         float activeHazardPenalty, float minimumLookAhead, float maximumLookAhead,
         float cruiseSpeed, float attackDistance, float steeringGain, int stuckCheckTicks,
         float stuckMinimumProgress, int reverseTicks, int recoveryAfterTicks,
-        float machineGunRange, float machineGunAngleDegrees, float powerAngleDegrees) {
+        float machineGunRange, float machineGunAngleDegrees, float powerAngleDegrees,
+        float passDistance, float passSideOffset, float passForwardDistance, int passHoldTicks) {
     public AiRules {
         if (schemaVersion!=1 || decisionTicks!=12 || targetChangeTicks<decisionTicks || memoryTicks<=0
                 || sightRange<=0 || sightHalfAngleDegrees<=0 || sightHalfAngleDegrees>180
@@ -19,7 +20,8 @@ public record AiRules(int schemaVersion, int decisionTicks, int targetChangeTick
                 || minimumLookAhead<=0 || maximumLookAhead<minimumLookAhead || cruiseSpeed<=0
                 || attackDistance<=0 || steeringGain<=0 || stuckCheckTicks<=0 || stuckMinimumProgress<=0
                 || reverseTicks<=0 || recoveryAfterTicks<stuckCheckTicks*2 || machineGunRange<=0
-                || machineGunAngleDegrees<=0 || powerAngleDegrees<=0) throw new IllegalArgumentException("Invalid AI rules");
+                || machineGunAngleDegrees<=0 || powerAngleDegrees<=0 || passDistance<=0 || passSideOffset<=0
+                || passForwardDistance<=0 || passHoldTicks<=0) throw new IllegalArgumentException("Invalid AI rules");
     }
     public static AiRules load() { return Configs.load("ai",AiRules.class); }
 }
