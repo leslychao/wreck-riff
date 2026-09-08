@@ -1,0 +1,24 @@
+{
+  "musicAsset": "audio/dead-air-circuit.wav",
+  "musicGain": 0.56,
+  "engineGain": 0.45,
+  "weaponsGain": 0.92,
+  "threatsGain": 0.72,
+  "interfaceGain": 0.65,
+  "masterHeadroom": 0.60,
+  "sourceLimit": 32,
+  "referenceDistance": 8.0,
+  "maximumDistance": 120.0,
+  "enginePitchMin": 0.75,
+  "enginePitchMax": 1.6,
+  "engineSmoothingSeconds": 0.18,
+  "musicDuckGain": 0.7079458,
+  "musicDuckSeconds": 0.45,
+  "effects": [
+    "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "machine-gun",
+    "homing-launch", "power-launch", "pulse", "empty", "overheat", "metal-hit",
+    "explosion", "destroyed", "low-hp", "hazard-warning", "hazard-active",
+    "pickup-repair", "pickup-ammo", "pickup-turbo", "ui-nav", "ui-confirm",
+    "victory", "defeat", "draw"
+  ]
+}

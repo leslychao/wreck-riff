@@ -1,0 +1,63 @@
+{
+  "maximumProjectiles": 64,
+  "projectileRadius": 0.15,
+  "explosionSurfaceOffset": 0.03,
+  "ownerSplashMultiplier": 0.5,
+  "maximumCombinedDeltaSpeed": 6.0,
+  "killCreditSeconds": 5.0,
+  "emptyFeedbackSeconds": 0.4,
+  "machineGun": {
+    "damage": 3.0,
+    "shotsPerSecond": 10.0,
+    "range": 75.0,
+    "spreadDegrees": 1.0,
+    "heatPerSecond": 20.0,
+    "maximumHeat": 100.0,
+    "resumeHeat": 35.0,
+    "coolingPerSecond": 30.0,
+    "coolingDelaySeconds": 0.2
+  },
+  "homing": {
+    "directDamage": 32.0,
+    "splashDamage": 24.0,
+    "cooldownSeconds": 0.8,
+    "initialAmmo": 6,
+    "maximumAmmo": 12,
+    "speed": 40.0,
+    "ttlSeconds": 4.0,
+    "explosionRadius": 6.0,
+    "maximumDeltaSpeed": 3.0
+  },
+  "power": {
+    "directDamage": 50.0,
+    "splashDamage": 40.0,
+    "cooldownSeconds": 1.1,
+    "initialAmmo": 4,
+    "maximumAmmo": 8,
+    "speed": 70.0,
+    "ttlSeconds": 2.6,
+    "explosionRadius": 8.0,
+    "maximumDeltaSpeed": 3.0
+  },
+  "pulse": {
+    "damage": 20.0,
+    "radius": 10.0,
+    "cooldownSeconds": 14.0,
+    "initialDelaySeconds": 4.0,
+    "maximumDeltaSpeed": 4.0
+  },
+  "targeting": {
+    "acquisitionConeDegrees": 18.0,
+    "acquisitionRange": 70.0,
+    "acquisitionSeconds": 0.15,
+    "retentionConeDegrees": 35.0,
+    "occlusionGraceSeconds": 0.3,
+    "turnDegreesPerSecond": 80.0
+  },
+  "ram": {
+    "minimumClosingSpeed": 6.0,
+    "damagePerExcessSpeed": 2.0,
+    "maximumDamage": 25.0,
+    "cooldownSeconds": 0.6
+  }
+}

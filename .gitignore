@@ -1,0 +1,8 @@
+.gradle/
+.gradle-user/
+build/
+.idea/
+*.iml
+hs_err_pid*
+*.jfr
+*.hprof

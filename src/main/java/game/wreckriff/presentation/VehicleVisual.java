@@ -1,0 +1,226 @@
+package game.wreckriff.presentation;
+
+import com.jme3.asset.AssetManager;
+import com.jme3.material.Material;
+import com.jme3.math.*;
+import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.scene.*;
+import com.jme3.util.BufferUtils;
+import java.util.*;
+
+/** Authored Rivet coupe, built from local parameterized surfaces; +Z front, +X right. */
+public final class VehicleVisual {
+    private static final ColorRGBA[] PAINT = {
+        new ColorRGBA(.85f,.19f,.065f,1), new ColorRGBA(.62f,.54f,.84f,1),
+        new ColorRGBA(.92f,.65f,.11f,1), new ColorRGBA(.11f,.69f,.7f,1),
+        new ColorRGBA(.35f,.77f,.19f,1)
+    };
+    private static final int[][] DIGITS = {
+        {7,5,5,5,7}, {2,6,2,2,7}, {7,1,7,4,7}, {7,1,7,1,7}, {5,5,7,1,1}
+    };
+    private VehicleVisual() {}
+
+    public static Node create(AssetManager assets, int livery) {
+        if (livery<0 || livery>=5) throw new IllegalArgumentException("Rivet livery 0..4 required");
+        Node root=new Node("Rivet-"+livery);
+        Material paint=lit(assets,PAINT[livery],.3f), steel=lit(assets,new ColorRGBA(.37f,.39f,.4f,1),.7f);
+        Material dark=lit(assets,new ColorRGBA(.055f,.065f,.072f,1),.15f);
+        Material glass=lit(assets,new ColorRGBA(.12f,.24f,.29f,1),.95f);
+        Material markings=lit(assets,new ColorRGBA(.88f,.84f,.64f,1),.08f);
+        Material lamps=unlit(assets,new ColorRGBA(1,.77f,.33f,1));
+        Material tail=unlit(assets,new ColorRGBA(.95f,.09f,.025f,1));
+        Builder body=new Builder(), metal=new Builder(), black=new Builder(), windows=new Builder(), ink=new Builder();
+        Builder frontLights=new Builder(), rearLights=new Builder();
+        // The long swept bonnet, short raked cab and kicked rear distinguish this from a box chassis.
+        body.loft(new float[][] {
+            {-2.3f,.79f,-.19f,.19f}, {-1.85f,1.02f,-.21f,.33f},
+            {-.9f,1.03f,-.21f,.38f}, {.5f,1.00f,-.21f,.39f},
+            {1.65f,.96f,-.19f,.26f}, {2.3f,.79f,-.13f,.14f}
+        });
+        body.loft(new float[][] {
+            {-1.36f,.78f,.31f,.42f}, {-.91f,.67f,.33f,.99f},
+            {-.2f,.64f,.33f,1.01f}, {.47f,.77f,.33f,.43f}
+        });
+        // Windshield and rear glass follow the raked roof, with deliberately thick pillars.
+        windows.quad(v(-.70f,.456f,.43f),v(.70f,.456f,.43f),v(.59f,1.018f,-.17f),v(-.59f,1.018f,-.17f));
+        windows.quad(v(.72f,.464f,-1.31f),v(-.72f,.464f,-1.31f),v(-.62f,.956f,-.935f),v(.62f,.956f,-.935f));
+        for (int side:new int[]{-1,1}) {
+            float x=side;
+            if(side>0) windows.quad(v(x*.786f,.44f,-1.23f),v(x*.687f,.94f,-.88f),
+                    v(x*.66f,.94f,-.24f),v(x*.77f,.455f,.35f));
+            else windows.quad(v(x*.77f,.455f,.35f),v(x*.66f,.94f,-.24f),
+                    v(x*.687f,.94f,-.88f),v(x*.786f,.44f,-1.23f));
+            // Door sill, wear plates and broad angular wheel arches.
+            black.box(x*1.012f,-.03f,-.15f,.038f,.14f,.87f);
+            metal.box(x*1.055f,-.09f,-.1f,.035f,.045f,1.93f);
+            for (float z:new float[]{-1.4f,1.4f}) {
+                body.box(x*1.045f,.22f,z,.16f,.11f,.58f);
+                metal.box(x*1.075f,.345f,z,.15f,.022f,.5f);
+            }
+            metal.box(x*.95f,.37f,-.13f,.10f,.025f,.16f); // door handle
+            metal.box(x*.83f,.50f,.32f,.16f,.055f,.09f); // bracket mirror
+            // Front weapon brackets are exposed and mechanically distinct from lamps.
+            metal.box(x*.53f,.37f,1.45f,.16f,.07f,.43f);
+            black.box(x*.53f,.47f,1.65f,.095f,.095f,.43f);
+            metal.cylinderZ(x*.53f,.47f,2.09f,.063f,.17f,10);
+            black.cylinderZ(x*.53f,.47f,2.27f,.041f,.013f,10);
+            frontLights.box(x*.61f,.16f,2.261f,.145f,.058f,.012f);
+            rearLights.box(x*.6f,.19f,-2.25f,.15f,.042f,.023f);
+            // Twin low exhausts, rear-facing, for the turbo effect anchors.
+            metal.cylinderZ(x*.72f,-.11f,-2.33f,.09f,.14f,10);
+            black.cylinderZ(x*.72f,-.11f,-2.48f,.067f,.008f,10);
+            Node exhaust=new Node("exhaust-"+(side<0?"left":"right"));
+            exhaust.setLocalTranslation(x*.72f,-.11f,-2.49f); root.attachChild(exhaust);
+            // Raster number painted on both doors: no external/system font.
+            numberSide(ink,side,livery);
+        }
+        metal.box(0,-.055f,2.32f,.81f,.072f,.075f);
+        metal.box(0,-.055f,-2.32f,.81f,.075f,.075f);
+        black.box(0,.065f,2.305f,.27f,.055f,.015f);
+        for (int i=-3;i<=3;i++) metal.box(i*.071f,.065f,2.324f,.01f,.05f,.008f);
+        // Rear amplifier pack: two speakers in a braced cabinet, cooling fins and a carrying rail.
+        black.box(0,.52f,-1.79f,.55f,.22f,.27f);
+        metal.box(0,.76f,-1.80f,.58f,.025f,.29f);
+        for (float x:new float[]{-.27f,.27f}) {
+            metal.cylinderZ(x,.53f,-2.075f,.16f,.014f,14);
+            black.cylinderZ(x,.53f,-2.096f,.12f,.016f,14);
+            metal.cylinderZ(x,.53f,-2.115f,.043f,.008f,10);
+        }
+        for (int i=-3;i<=3;i++) metal.box(i*.115f,.535f,-1.508f,.019f,.145f,.015f);
+        // Fastener heads, bonnet vent slats and scratches use the shared metal batch.
+        for (float x:new float[]{-.81f,.81f}) for (float z:new float[]{-.72f,.65f,1.20f})
+            metal.box(x,.405f-(z>0?z*.065f:0),z,.028f,.014f,.028f);
+        for (int i=0;i<5;i++) black.box(0,.392f-i*.008f,.61f+i*.12f,.25f,.012f,.027f);
+        pattern(ink,livery);
+        // Own bitmap race number also appears on the roof, making identity visible from chase camera.
+        for (int row=0;row<5;row++) for (int col=0;col<3;col++) if ((DIGITS[livery][row]&(1<<(2-col)))!=0)
+            ink.box((col-1)*.105f,1.024f,-.44f+(2-row)*.094f,.042f,.007f,.038f);
+        body.attach(root,"paint",paint); metal.attach(root,"steel",steel); black.attach(root,"rubber-trim",dark);
+        windows.attach(root,"glass",glass); ink.attach(root,"livery-markings",markings);
+        frontLights.attach(root,"headlights",lamps); rearLights.attach(root,"taillights",tail);
+        for (int wheel=0;wheel<4;wheel++) {
+            Node node=wheel(wheel,steel,dark);
+            node.setLocalTranslation(wheel%2==0?-1.06f:1.06f,-.20f,wheel<2?1.4f:-1.4f);
+            root.attachChild(node);
+        }
+        root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
+        root.setUserData("livery",livery); root.setUserData("assetOrigin","original-java-procedural");
+        return root;
+    }
+
+    private static Node wheel(int id,Material metal,Material tyre) {
+        Node node=new Node("wheel-"+id);
+        Builder rubber=new Builder(),steel=new Builder();
+        rubber.cylinderX(0,0,0,.38f,.29f,16);
+        for (float x:new float[]{-.153f,.153f}) {
+            steel.cylinderX(x,0,0,.228f,.016f,12);
+            rubber.cylinderX(x*1.07f,0,0,.17f,.01f,12);
+            steel.cylinderX(x*1.15f,0,0,.071f,.024f,10);
+            for (int spoke=0;spoke<5;spoke++) {
+                double a=spoke*Math.PI*2/5;
+                // Faceted spokes rotate with the wheel; both outside faces are fully modeled.
+                steel.box(x*1.12f,(float)Math.cos(a)*.11f,(float)Math.sin(a)*.11f,.009f,.027f,.027f);
+            }
+        }
+        // Sixteen shallow tread bars, low triangle count and silhouette, no texture dependency.
+        for (int i=0;i<16;i++) {
+            double a=i*Math.PI*2/16, b=a+.075;
+            rubber.quad(v(-.12f,(float)Math.cos(a)*.388f,(float)Math.sin(a)*.388f),
+                    v(.12f,(float)Math.cos(a)*.388f,(float)Math.sin(a)*.388f),
+                    v(.12f,(float)Math.cos(b)*.388f,(float)Math.sin(b)*.388f),
+                    v(-.12f,(float)Math.cos(b)*.388f,(float)Math.sin(b)*.388f));
+        }
+        rubber.attach(node,"tyre",tyre); steel.attach(node,"hub",metal);
+        return node;
+    }
+    private static void numberSide(Builder ink,int side,int digit) {
+        for (int row=0;row<5;row++) for(int col=0;col<3;col++) if ((DIGITS[digit][row]&(1<<(2-col)))!=0)
+            ink.box(side*1.043f,.28f-row*.059f,-.35f+(col-1)*.07f,.008f,.024f,.027f);
+    }
+    private static void pattern(Builder ink,int livery) {
+        // Hood patterns remain visibly distinct under colour-vision deficiencies.
+        switch(livery) {
+            case 0 -> { for(float x:new float[]{-.37f,.37f}) ink.hoodStrip(x,.095f,.61f,2.13f); }
+            case 1 -> { for(int i=0;i<5;i++) ink.hoodStrip(-.65f+i*.29f,.06f,1.40f+(i%2)*.15f,2.10f); }
+            case 2 -> {
+                for(int i=0;i<5;i++) ink.hoodStrip(-.57f+i*.27f,.08f,.92f+i*.12f,1.17f+i*.12f);
+                ink.hoodStrip(0,.48f,1.99f,2.10f);
+            }
+            case 3 -> { for(int i=0;i<4;i++) ink.hoodStrip(0,.19f+i*.12f,.94f+i*.28f,1.04f+i*.28f); }
+            case 4 -> {
+                for(int row=0;row<4;row++) for(int col=0;col<4;col++) if((row+col)%2==0)
+                    ink.hoodStrip(-.48f+col*.32f,.145f,1.2f+row*.21f,1.38f+row*.21f);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+    private static Material lit(AssetManager assets,ColorRGBA color,float shine) {
+        Material material=new Material(assets,"Common/MatDefs/Light/Lighting.j3md");
+        material.setBoolean("UseMaterialColors",true); material.setColor("Diffuse",color);
+        material.setColor("Ambient",color.mult(.72f)); material.setColor("Specular",new ColorRGBA(shine,shine,shine,1));
+        material.setFloat("Shininess",12+shine*42); return material;
+    }
+    private static Material unlit(AssetManager assets,ColorRGBA color) {
+        Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");
+        material.setColor("Color",color); material.setColor("GlowColor",color.mult(.5f)); return material;
+    }
+    private static Vector3f v(float x,float y,float z) { return new Vector3f(x,y,z); }
+
+    private static final class Builder {
+        final List<Float> points=new ArrayList<>(),normals=new ArrayList<>();
+        void triangle(Vector3f a,Vector3f b,Vector3f c) {
+            Vector3f n=b.subtract(a).cross(c.subtract(a)).normalizeLocal();
+            for(Vector3f p:List.of(a,b,c)) { Collections.addAll(points,p.x,p.y,p.z); Collections.addAll(normals,n.x,n.y,n.z); }
+        }
+        void quad(Vector3f a,Vector3f b,Vector3f c,Vector3f d) { triangle(a,b,c);triangle(a,c,d); }
+        void box(float x,float y,float z,float hx,float hy,float hz) {
+            Vector3f a=v(x-hx,y-hy,z-hz),b=v(x+hx,y-hy,z-hz),c=v(x+hx,y+hy,z-hz),d=v(x-hx,y+hy,z-hz);
+            Vector3f e=v(x-hx,y-hy,z+hz),f=v(x+hx,y-hy,z+hz),g=v(x+hx,y+hy,z+hz),h=v(x-hx,y+hy,z+hz);
+            quad(a,d,c,b);quad(e,f,g,h);quad(a,e,h,d);quad(b,c,g,f);quad(d,h,g,c);quad(a,b,f,e);
+        }
+        void loft(float[][] rings) {
+            for(int i=0;i<rings.length-1;i++) {
+                Vector3f[] a=ring(rings[i]),b=ring(rings[i+1]);
+                for(int face=0;face<4;face++) quad(a[face],a[(face+1)%4],b[(face+1)%4],b[face]);
+            }
+            Vector3f[] start=ring(rings[0]),end=ring(rings[rings.length-1]);
+            quad(start[3],start[2],start[1],start[0]);quad(end[0],end[1],end[2],end[3]);
+        }
+        Vector3f[] ring(float[] r) { return new Vector3f[]{v(-r[1],r[2],r[0]),v(r[1],r[2],r[0]),v(r[1],r[3],r[0]),v(-r[1],r[3],r[0])}; }
+        void cylinderZ(float x,float y,float z,float radius,float length,int count) {
+            cylinder(x,y,z,radius,length,count,false);
+        }
+        void cylinderX(float x,float y,float z,float radius,float length,int count) {
+            cylinder(x,y,z,radius,length,count,true);
+        }
+        void cylinder(float x,float y,float z,float radius,float length,int count,boolean alongX) {
+            for(int i=0;i<count;i++) {
+                double a=i*Math.PI*2/count,b=(i+1)*Math.PI*2/count;
+                Vector3f p=radial(x,y,z,radius,-length*.5f,a,alongX),q=radial(x,y,z,radius,-length*.5f,b,alongX);
+                Vector3f r=radial(x,y,z,radius,length*.5f,b,alongX),s=radial(x,y,z,radius,length*.5f,a,alongX);
+                quad(p,q,r,s);
+                triangle(radial(x,y,z,0,-length*.5f,0,alongX),q,p);
+                triangle(radial(x,y,z,0,length*.5f,0,alongX),s,r);
+            }
+        }
+        Vector3f radial(float x,float y,float z,float radius,float axis,double angle,boolean alongX) {
+            float a=(float)Math.cos(angle)*radius,b=(float)Math.sin(angle)*radius;
+            return alongX?v(x+axis,y+a,z+b):v(x+a,y+b,z+axis);
+        }
+        void hoodStrip(float x,float halfWidth,float near,float far) {
+            // Follow the bonnet crease instead of a chord that would cut through the paint.
+            if(near<1.65f && far>1.65f) { hoodStrip(x,halfWidth,near,1.65f);hoodStrip(x,halfWidth,1.65f,far);return; }
+            float y1=hoodY(near),y2=hoodY(far);
+            quad(v(x-halfWidth,y1,near),v(x-halfWidth,y2,far),v(x+halfWidth,y2,far),v(x+halfWidth,y1,near));
+        }
+        float hoodY(float z) { return z<1.65f?.39f-(z-.5f)*(.13f/1.15f)+.012f:.26f-(z-1.65f)*(.12f/.65f)+.012f; }
+        void attach(Node parent,String name,Material material) {
+            if(points.isEmpty())return;
+            float[] p=new float[points.size()],n=new float[normals.size()];
+            for(int i=0;i<p.length;i++){p[i]=points.get(i);n[i]=normals.get(i);}
+            Mesh mesh=new Mesh(); mesh.setBuffer(VertexBuffer.Type.Position,3,BufferUtils.createFloatBuffer(p));
+            mesh.setBuffer(VertexBuffer.Type.Normal,3,BufferUtils.createFloatBuffer(n)); mesh.updateBound(); mesh.setStatic();
+            Geometry geometry=new Geometry(name,mesh);geometry.setMaterial(material);parent.attachChild(geometry);
+        }
+    }
+}

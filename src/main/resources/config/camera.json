@@ -1,0 +1,5 @@
+{
+  "distance": 7.5, "height": 3.5, "lookHeight": 1, "lookAhead": 4,
+  "fov": 65, "turboFov": 72, "positionResponse": 10, "rotationResponse": 12,
+  "sweepRadius": 0.25, "wallMargin": 0.2, "shakeAngle": 1.2, "shakeDistance": 0.08
+}

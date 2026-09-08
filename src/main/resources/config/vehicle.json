@@ -1,0 +1,12 @@
+{
+  "mass": 1100, "gravity": 18, "width": 2.1, "length": 4.6, "height": 1.25,
+  "wheelRadius": 0.38, "wheelBase": 2.8, "suspensionRestLength": 0.28,
+  "suspensionStiffness": 55, "suspensionCompression": 4.45, "suspensionDamping": 4.9,
+  "maxSuspensionForce": 14000, "frictionSlip": 3.0, "handbrakeFriction": 0.65,
+  "rollInfluence": 0.15, "engineForce": 8500, "brakeForce": 40,
+  "maxSpeed": 28, "turboSpeed": 40, "reverseSpeed": 11,
+  "lowSpeedSteering": 32, "highSpeedSteering": 15, "steeringResponse": 12,
+  "handbrakeTorque": 11000, "stabilizingTorque": 9000, "gripReturnSeconds": 0.25,
+  "turboDrain": 40, "turboRegen": 15, "turboRegenDelay": 1,
+  "recoveryCost": 15, "recoveryHold": 1, "recoveryCooldown": 5, "recoveryProtection": 0.35
+}

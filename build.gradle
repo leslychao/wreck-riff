@@ -1,0 +1,126 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'game.wreckriff'
+version = '0.1.0'
+
+repositories { mavenCentral() }
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.MICROSOFT
+    }
+}
+
+ext.jmeVersion = '3.8.1-stable'
+dependencies {
+    implementation "org.jmonkeyengine:jme3-core:$jmeVersion"
+    implementation "org.jmonkeyengine:jme3-desktop:$jmeVersion"
+    implementation "org.jmonkeyengine:jme3-lwjgl3:$jmeVersion"
+    implementation 'com.github.stephengold:Minie:9.0.3'
+    implementation 'com.google.code.gson:gson:2.13.1'
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'org.jmonkeyengine') {
+            if (details.requested.name in ['jme3-bullet', 'jme3-bullet-native', 'jme3-bullet-native-android', 'jme3-jbullet']) {
+                throw new GradleException("Incompatible with Minie: ${details.requested}")
+            }
+            details.useVersion(jmeVersion)
+        }
+    }
+}
+dependencyLocking { lockAllConfigurations() }
+
+sourceSets {
+    tools { java.srcDir 'src/tools/java' }
+    physicsTest {
+        java.srcDir 'src/physicsTest/java'
+        resources.srcDir 'src/physicsTest/resources'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    physicsTestImplementation.extendsFrom testImplementation, implementation
+    physicsTestRuntimeOnly.extendsFrom testRuntimeOnly, runtimeOnly
+}
+
+application { mainClass = 'game.wreckriff.Main' }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    testLogging { events 'failed', 'skipped'; exceptionFormat 'full' }
+}
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('generateAudio', JavaExec) {
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.GenerateAudio'
+    args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    inputs.files(sourceSets.tools.allSource)
+    outputs.dir(layout.buildDirectory.dir('generated-resources/audio'))
+}
+tasks.register('generateFont', JavaExec) {
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.GenerateFont'
+    args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    inputs.files(sourceSets.tools.allSource)
+    outputs.dir(layout.buildDirectory.dir('generated-resources/fonts'))
+}
+tasks.register('generateBuildInfo') {
+    def output = layout.buildDirectory.file('generated-resources/build-info.properties')
+    outputs.file(output)
+    outputs.upToDateWhen { false }
+    doLast {
+        def git = providers.exec { commandLine 'git', 'rev-parse', '--verify', 'HEAD'; ignoreExitValue = true }
+        def commit = git.result.get().exitValue == 0 ? git.standardOutput.asText.get().trim() : 'uncommitted'
+        output.get().asFile.parentFile.mkdirs()
+        output.get().asFile.text = "version=${project.version}\ncommit=${commit}\n"
+    }
+}
+sourceSets.main.resources.srcDir layout.buildDirectory.dir('generated-resources')
+tasks.named('processResources') { dependsOn tasks.named('generateAudio'),tasks.named('generateFont'),tasks.named('generateBuildInfo') }
+
+tasks.register('physicsTest', Test) {
+    description = 'Real Minie/Bullet integration tests without a graphics context'
+    testClassesDirs = sourceSets.physicsTest.output.classesDirs
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    shouldRunAfter tasks.named('test')
+    maxParallelForks = 1
+}
+tasks.register('verifyAssets', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'game.wreckriff.diagnostics.VerifyAssets'
+}
+tasks.register('smokeTest', JavaExec) {
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = application.mainClass
+    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=45'
+}
+tasks.register('packageWindows', Exec) {
+    dependsOn tasks.named('installDist'), tasks.named('verifyAssets')
+    doFirst {
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            throw new GradleException('packageWindows requires Windows and a Windows JDK 21')
+        }
+    }
+    commandLine 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+        'tools/package-windows.ps1', '-Version', project.version.toString(),
+        '-JdkHome', javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile.absolutePath
+}
+tasks.named('check') { dependsOn tasks.named('physicsTest'), tasks.named('verifyAssets') }

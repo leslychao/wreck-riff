@@ -1,0 +1,28 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+com.github.stephengold:Heart:9.2.0=compileClasspath,runtimeClasspath
+com.github.stephengold:Libbulletjme-Linux64:22.0.3=runtimeClasspath
+com.github.stephengold:Libbulletjme-Linux_ARM32hf:22.0.3=runtimeClasspath
+com.github.stephengold:Libbulletjme-Linux_ARM64:22.0.3=runtimeClasspath
+com.github.stephengold:Libbulletjme-MacOSX64:22.0.3=runtimeClasspath
+com.github.stephengold:Libbulletjme-MacOSX_ARM64:22.0.3=runtimeClasspath
+com.github.stephengold:Libbulletjme-Windows64:22.0.3=runtimeClasspath
+com.github.stephengold:Minie:9.0.3=compileClasspath,runtimeClasspath
+com.google.code.gson:gson:2.13.1=compileClasspath,runtimeClasspath
+com.google.errorprone:error_prone_annotations:2.38.0=compileClasspath,runtimeClasspath
+com.simsilica:sim-math:1.6.0=compileClasspath,runtimeClasspath
+org.jmonkeyengine:jme3-core:3.8.1-stable=compileClasspath,runtimeClasspath
+org.jmonkeyengine:jme3-desktop:3.8.1-stable=compileClasspath,runtimeClasspath
+org.jmonkeyengine:jme3-lwjgl3:3.8.1-stable=compileClasspath,runtimeClasspath
+org.jmonkeyengine:jme3-terrain:3.8.1-stable=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl-glfw:3.3.6=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl-jawt:3.3.6=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl-jemalloc:3.3.6=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl-openal:3.3.6=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl-opencl:3.3.6=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl-opengl:3.3.6=compileClasspath,runtimeClasspath
+org.lwjgl:lwjgl:3.3.6=compileClasspath,runtimeClasspath
+org.lwjglx:lwjgl3-awt:0.2.3=compileClasspath,runtimeClasspath
+org.slf4j:slf4j-api:1.7.32=runtimeClasspath
+empty=annotationProcessor

@@ -1,0 +1,5 @@
+{
+  "durationSeconds": 360, "countdownSeconds": 3,
+  "maxFrameSeconds": 0.1, "maxSteps": 12, "radarRange": 65,
+  "maxLogFiles": 5, "logFileBytes": 2097152
+}
