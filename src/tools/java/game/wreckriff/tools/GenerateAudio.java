@@ -6,7 +6,7 @@ import java.nio.file.*;
 import java.security.*;
 import java.util.*;
 
-/** Local licensed music preparation and original deterministic sound-effect synthesis. No build-time network. */
+/** Local licensed recordings and original deterministic ancillary sound-effect synthesis. No build-time network. */
 public final class GenerateAudio {
     public static final int RATE = 48_000;
     public static final long SEED = 0x5249464657415645L;
@@ -19,15 +19,17 @@ public final class GenerateAudio {
         Path output=Path.of(args[0]).resolve("audio"),sources=Path.of(args[1]);
         Files.createDirectories(output);
         // Remove superseded outputs when upgrading an existing build directory.
-        Files.deleteIfExists(output.resolve("dead-air-circuit.wav"));
-        Files.deleteIfExists(output.resolve("overheat.wav"));
+        // Generated directory belongs to this task; replacing its WAV set removes
+        // superseded cues/variants without a parallel legacy route.
+        try (var prior = Files.list(output)) {
+            for (Path file : prior.filter(p -> p.getFileName().toString().endsWith(".wav")).toList()) Files.delete(file);
+        }
         METRICS.clear();METRICS.add("asset,frames,channels,sample_rate,bits,peak,rms,sha256");
         prepareMusic(output,sources);
-        for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","machine-gun",
-                "homing-launch","power-launch","pulse","empty","metal-hit","explosion","destroyed",
+        prepareRecordedEffects(output,sources.resolve("recorded"));
+        for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
                 "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-ammo","pickup-turbo",
-                "ui-nav","ui-confirm","victory","defeat","draw","mine-place","mine-detonate",
-                "napalm-launch","napalm-fire","freeze","stun","shield"))effect(output,id);
+                "ui-nav","ui-confirm","victory","defeat","draw","mine-place"))effect(output,id);
         Files.write(output.resolve("audio-metrics.csv"),METRICS,StandardCharsets.UTF_8);
         Files.writeString(output.resolve("score.txt"), """
                 WRECK RIFF / METALMANIA
@@ -39,11 +41,12 @@ public final class GenerateAudio {
                 Loop edit: source 0..179.3s; final 100ms equal-power crossfade into source 0..0.1s;
                 output starts at source 0.1s, yielding 179.2s (112 bars at 150 BPM), no ending fade gap.
                 DC removal and linear peak normalization to 0.84; no synthesized replacement music.
-                Original mono sound effects: deterministic analytical synthesis seed 0x5249464657415645.
+                Combat effects: recorded CC0 firearms/fireworks; source/hash/prebaked layer evidence in sfx-provenance.json.
+                Ancillary engine/UI sound effects: original deterministic synthesis seed 0x5249464657415645.
                 Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
                 Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
                 """,StandardCharsets.UTF_8);
-        System.out.println("Prepared licensed guitar track and 30 original effects in "+output);
+        System.out.println("Prepared licensed guitar track, recorded combat variants and original ancillary effects in "+output);
     }
 
     private static void prepareMusic(Path output,Path sources)throws Exception {
@@ -92,6 +95,24 @@ public final class GenerateAudio {
                 hash(Files.readAllBytes(output.resolve("metalmania.wav"))),frames),StandardCharsets.UTF_8);
     }
 
+    private static void prepareRecordedEffects(Path output,Path source)throws Exception {
+        List<String> manifest=Files.readAllLines(source.resolve("audio-metrics.csv"),StandardCharsets.UTF_8);
+        if(manifest.isEmpty() || !manifest.getFirst().equals(METRICS.getFirst()))
+            throw new IOException("Invalid recorded effect metrics header");
+        Set<String> names=new HashSet<>();
+        for(String row:manifest.subList(1,manifest.size())) {
+            String[] columns=row.split(",",-1);
+            if(columns.length!=8 || !columns[0].matches("[a-z][a-z0-9-]*\\.wav") || !names.add(columns[0]))
+                throw new IOException("Invalid/duplicate recorded effect row");
+            Path prepared=source.resolve("processed").resolve(columns[0]);
+            if(!hash(Files.readAllBytes(prepared)).equals(columns[7]))throw new IOException("Recorded effect hash mismatch: "+prepared);
+            Files.copy(prepared,output.resolve(columns[0]),StandardCopyOption.REPLACE_EXISTING);
+            METRICS.add(row);
+        }
+        Files.copy(source.resolve("sfx-provenance.json"),output.resolve("sfx-provenance.json"),StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(source.resolve("sources.json"),output.resolve("sfx-sources.json"),StandardCopyOption.REPLACE_EXISTING);
+    }
+
     private static double sample(byte[] data,int frame,int channel) {
         int offset=frame*4+channel*2;
         return (short)((data[offset]&255)|(data[offset+1]<<8))/32768.0;
@@ -101,24 +122,22 @@ public final class GenerateAudio {
     }
 
     private static void effect(Path output, String id) throws Exception {
-        boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active", "napalm-fire").contains(id);
+        boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active").contains(id);
         double seconds = switch (id) {
-            case "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active", "napalm-fire" -> 2;
-            case "destroyed", "victory", "defeat", "draw" -> 2.4;
-            case "explosion", "pulse", "hazard-warning" -> 1.1;
-            case "homing-launch", "power-launch", "low-hp" -> .65;
-            case "machine-gun", "empty", "ui-nav" -> .11;
-            case "mine-detonate", "shield" -> 1.2;
-            case "freeze", "stun" -> .8;
+            case "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active" -> 2;
+            case "victory", "defeat", "draw" -> 2.4;
+            case "hazard-warning" -> 1.1;
+            case "low-hp" -> .65;
+            case "empty", "ui-nav" -> .11;
             default -> .38;
         };
         Random random = new Random(SEED ^ id.hashCode());
         float[] pcm = new float[(int) (seconds * RATE)];
-        double low = 0, phase = 0;
+        double low = 0;
         for (int i = 0; i < pcm.length; i++) {
             double t = i / (double) RATE, n = random.nextDouble() * 2 - 1;
             low += .045 * (n - low);
-            double decay = Math.exp(-t * (id.equals("destroyed") ? 2.7 : id.equals("explosion") ? 5 : 11));
+            double decay = Math.exp(-t * 11);
             double sound = switch (id) {
                 case "engine-idle", "engine-drive" -> {
                     double hz = id.equals("engine-idle") ? 42 : 89;
@@ -130,34 +149,8 @@ public final class GenerateAudio {
                 case "tyre-slip" -> (n - low) * .38 + Math.sin(TAU * 1037 * t + 4 * Math.sin(TAU * 57 * t)) * .18;
                 case "hazard-active" -> Math.tanh(Math.sin(TAU * 50 * t) * 3) * .36
                         + n * Math.pow(Math.max(0, Math.sin(TAU * 13 * t)), 14) * .6;
-                case "napalm-fire" -> low * 2.8 * (.7 + .2 * Math.sin(TAU * 3 * t))
-                        + n * Math.pow(Math.max(0, Math.sin(TAU * 19 * t)), 24) * .35;
                 case "mine-place" -> (Math.sin(TAU * 267 * t) * .8 + n * .55) * Math.exp(-t * 24)
                         + (t > .16 ? Math.sin(TAU * 1300 * (t - .16)) * Math.exp(-(t - .16) * 35) * .22 : 0);
-                case "mine-detonate" -> (low * 3.1 + Math.sin(TAU * 37 * t) * .7 + n * Math.exp(-t * 18) * .5)
-                        * Math.exp(-t * 5.5);
-                case "napalm-launch" -> (low * 2.9 + Math.sin(TAU * (130 * t - 85 * t * t)) * .5)
-                        * Math.exp(-t * 7) + (n - low) * Math.exp(-t * 65) * .4;
-                case "freeze" -> (Math.sin(TAU * (1300 * t - 460 * t * t))
-                        + .35 * Math.sin(TAU * 2309 * t) + .25 * (n - low)) * Math.exp(-t * 6);
-                case "stun" -> (Math.sin(TAU * 91 * t) * .6 + n * .5)
-                        * Math.exp(-t * 7) * (.6 + .4 * Math.cos(TAU * 31 * t));
-                case "shield" -> (Math.sin(TAU * (210 * t + 115 * t * t))
-                        + .4 * Math.sin(TAU * 631 * t)) * Math.exp(-t * 4);
-                case "machine-gun" -> (n * .8 + Math.sin(TAU * (130 * t + 3 * (1 - Math.exp(-t * 90))))) * decay;
-                case "homing-launch", "power-launch" -> {
-                    boolean power = id.equals("power-launch");
-                    phase += TAU * ((power ? 210 : 580) * Math.exp(-t * 5) + 48) / RATE;
-                    yield (Math.sin(phase) * .7 + low * 2.4 + n * Math.exp(-t * 45) * .35)
-                            * Math.exp(-t * (power ? 6 : 8));
-                }
-                case "pulse" -> Math.sin(TAU * (75 * t + 120 * t * t)) * Math.exp(-t * 4)
-                        * (.6 + .3 * Math.sin(TAU * 18 * t)) + low * 1.3 * Math.exp(-t * 7);
-                case "explosion", "destroyed" -> (low * 3 + n * Math.exp(-t * 10) * .45
-                        + Math.sin(TAU * 42 * t) * .55) * decay
-                        + (id.equals("destroyed") && t > .19 ? Math.sin(TAU * 317 * t) * Math.exp(-(t - .19) * 6) * .2 : 0);
-                case "metal-hit" -> (Math.sin(TAU * 521 * t) + .42 * Math.sin(TAU * 1379 * t)
-                        + n * Math.exp(-t * 70)) * decay;
                 case "empty" -> Math.sin(TAU * 179 * t) * decay + n * Math.exp(-t * 120) * .6;
                 case "low-hp" -> Math.sin(TAU * 350 * t) * ((t < .11 || t > .25 && t < .37) ? .6 : 0);
                 case "hazard-warning" -> Math.sin(TAU * (480 * t + 40 * t * t))

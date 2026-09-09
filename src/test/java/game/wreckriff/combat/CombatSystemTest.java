@@ -42,12 +42,11 @@ class CombatSystemTest {
         assertEquals(0, count(combat.drainEvents(), GameEvent.Type.SHOT));
     }
 
-    @Test void T02_limitRejectsAtomicallyButAllowsHitscanAndPulse() {
+    @Test void T02_limitRejectsAtomicallyButAllowsHitscan() {
         configure(json -> json.addProperty("maximumProjectiles", 1));
         step(rocket());
         session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks = 0;
-        session.vehicle(0).pulseCooldown = 0;
-        var attack = new VehicleCommand(0, 0, 0, false, false, true, true, true, 0, false, false,AbilityId.NONE);
+        var attack = new VehicleCommand(0, 0, 0, false, false, true, true, null, 0, false, false,AbilityId.NONE);
         combat.drainEvents();
         step(attack);
         assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
@@ -55,7 +54,6 @@ class CombatSystemTest {
         assertEquals(1, combat.projectiles().size());
         List<GameEvent> events = combat.drainEvents();
         assertTrue(events.stream().anyMatch(e -> e.type() == GameEvent.Type.SHOT && e.kind().equals("machine-gun")));
-        assertEquals(1, count(events, GameEvent.Type.PULSE));
     }
 
     @Test void continuousMachineGunRetainsItsCadenceForThirtySeconds() {
@@ -68,7 +66,7 @@ class CombatSystemTest {
         int cooldown = session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks;
         combat.drainEvents();
         step(switchWeapon());
-        step(new VehicleCommand(0,0,0,false,false,false,false,false,-1,false,false,AbilityId.NONE));
+        step(new VehicleCommand(0,0,0,false,false,false,false,null,-1,false,false,AbilityId.NONE));
         assertEquals(WeaponType.HOMING, session.vehicle(0).selectedWeapon);
         assertEquals(cooldown - 2, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
         assertEquals(0, count(combat.drainEvents(), GameEvent.Type.SHOT));
@@ -98,13 +96,11 @@ class CombatSystemTest {
         assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
     }
 
-    @Test void T05_edgesConsumedAcrossPhysicsStepsDoNotRepeatPulseOrSwitch() {
-        session.vehicle(0).pulseCooldown = 0;
-        VehicleCommand command = new VehicleCommand(0, 0, 0, false, false, false, false, true, 1, false, false,AbilityId.NONE);
+    @Test void T05_edgesConsumedAcrossPhysicsStepsDoNotRepeatSwitch() {
+        VehicleCommand command = new VehicleCommand(0, 0, 0, false, false, false, false, null, 1, false, false,AbilityId.NONE);
         step(command);
         for (int i = 0; i < 11; i++) step(command.withoutEdges());
         assertEquals(WeaponType.POWER, session.vehicle(0).selectedWeapon);
-        assertEquals(1, count(combat.drainEvents(), GameEvent.Type.PULSE));
     }
 
     @Test void T07_directTargetReceivesOnlyDirectDamage() {
@@ -116,30 +112,25 @@ class CombatSystemTest {
         assertTrue(combat.projectiles().isEmpty());
     }
 
-    @Test void T08_ownerTakesHalfSplashAndPulseNeverHitsOwner() {
+    @Test void T08_ownerTakesHalfSplash() {
         world.positions[0].set(0, 0, 0);
         world.nextSweep = new WorldQuery.Hit(-1, new Vector3f(0, 0, 3), Vector3f.ZERO, 1);
         step(rocket());
         assertEquals(192, session.vehicle(0).hp, 0.0001f); // Hull radius 1: d=2, 24*(1-2/6)*0.5.
-        session.vehicle(0).pulseCooldown = 0;
-        float hp = session.vehicle(0).hp;
-        step(pulse());
-        assertEquals(hp, session.vehicle(0).hp);
     }
 
-    @Test void explosionAndPulseRequireVisibilityToAtLeastOneHullSample() {
+    @Test void explosionRequiresVisibilityToAtLeastOneHullSample() {
         world.positions[1].set(0, 0, 4);
         world.hidden.add(1);
         world.nextSweep = new WorldQuery.Hit(-1, new Vector3f(0, 0, 3), Vector3f.ZERO, 1);
         step(rocket());
-        session.vehicle(0).pulseCooldown = 0;
-        step(pulse());
         assertEquals(200, session.vehicle(1).hp);
         world.hidden.clear();
         world.onlyLastSampleVisible = true;
-        session.vehicle(0).pulseCooldown = 0;
-        step(pulse());
-        assertEquals(110, session.vehicle(1).hp);
+        session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks=0;
+        world.nextSweep = new WorldQuery.Hit(-1, new Vector3f(0,0,3), Vector3f.ZERO, 1);
+        step(rocket());
+        assertEquals(176, session.vehicle(1).hp);
     }
 
     @Test void T09_duplicateDamageCannotDuplicateDamageOrDeath() {
@@ -335,17 +326,6 @@ class CombatSystemTest {
         assertEquals(-1, combat.lockTarget(0));
     }
 
-    @Test void pulseIncludesHullAtRadiusAndRejectsJustBeyondIt() {
-        world.positions[1].set(13, 0, 0); // Fake hull radius 1: nearest hull distance is exactly 12.
-        world.positions[2].set(-13.001f, 0, 0);
-        world.positions[3].set(0, 0, 12.999f);
-        session.vehicle(0).pulseCooldown = 0;
-        step(pulse());
-        assertEquals(110, session.vehicle(1).hp);
-        assertEquals(200, session.vehicle(2).hp);
-        assertEquals(110, session.vehicle(3).hp);
-    }
-
     @Test void homingHasLimitedAngularSpeedAndNeverReacquiresLostTarget() {
         world.positions[1].set(0, 0.55f, 50);
         for (int i = 0; i < 18; i++) step(VehicleCommand.NONE);
@@ -374,20 +354,6 @@ class CombatSystemTest {
         session.vehicle(1).hp = 0;
         step(VehicleCommand.NONE);
         assertEquals(-1, combat.projectiles().getFirst().targetId());
-    }
-
-    @Test void impulsesAreHorizontalAndHaveCommonPerTickLimit() {
-        session.vehicle(1).hp=session.vehicle(1).maximumHp; // Four 90-damage Pulses must leave a living hull to observe the push.
-        world.positions[1].set(0, 0, 5);
-        for (int id : List.of(0, 2, 3, 4)) {
-            world.positions[id].set(0, 0, 0);
-            session.vehicle(id).pulseCooldown = 0;
-        }
-        combat.beginTick(Map.of(0, pulse(), 2, pulse(), 3, pulse(), 4, pulse()), world);
-        combat.advanceProjectiles(world);
-        combat.resolveDamage(world);
-        assertTrue(world.impulses.get(1).length() / world.mass(1) <= 6.0001f);
-        assertEquals(0, world.impulses.get(1).y);
     }
 
     @Test void T16_weaponSpreadIsRepeatableAndIndependentOfUnrelatedSoundRandomness() {
@@ -458,10 +424,9 @@ class CombatSystemTest {
         return events.stream().filter(e -> e.type() == type).count();
     }
 
-    private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, false, 0, false, false,AbilityId.NONE); }
-    private static VehicleCommand machineGun() { return new VehicleCommand(0, 0, 0, false, false, true, false, false, 0, false, false,AbilityId.NONE); }
-    private static VehicleCommand pulse() { return new VehicleCommand(0, 0, 0, false, false, false, false, true, 0, false, false,AbilityId.NONE); }
-    private static VehicleCommand switchWeapon() { return new VehicleCommand(0, 0, 0, false, false, false, false, false, 1, false, false,AbilityId.NONE); }
+    private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, null, 0, false, false,AbilityId.NONE); }
+    private static VehicleCommand machineGun() { return new VehicleCommand(0, 0, 0, false, false, true, false, null, 0, false, false,AbilityId.NONE); }
+    private static VehicleCommand switchWeapon() { return new VehicleCommand(0, 0, 0, false, false, false, false, null, 1, false, false,AbilityId.NONE); }
 
     private static final class FakeWorld implements WorldQuery {
         final Vector3f[] positions = {new Vector3f(), new Vector3f(100, 0, 100), new Vector3f(120, 0, 100), new Vector3f(140, 0, 100), new Vector3f(160, 0, 100)};
@@ -491,6 +456,7 @@ class CombatSystemTest {
             return !hidden.contains(id) && (!onlyLastSampleVisible || to.z < positions[id].z);
         }
         @Override public float distanceToHull(int id, Vector3f point) { return Math.max(0, positions[id].distance(point) - 1); }
-        @Override public void impulse(int id, Vector3f value) { impulses.merge(id, value.clone(), Vector3f::add); }
+        public void impulse(int id,Vector3f linear,Vector3f torque,float angularCap) { impulses.merge(id,linear.clone(),Vector3f::add); }
+        public Vector3f closestHullPoint(int id,Vector3f from) { return position(id); }
     }
 }

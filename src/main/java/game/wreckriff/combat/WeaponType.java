@@ -1,6 +1,6 @@
 package game.wreckriff.combat;
 
-/** The complete selectable arsenal; the machine gun and Pulse have dedicated inputs. */
+/** The complete selectable arsenal; the machine gun has its own input. */
 public enum WeaponType {
     HOMING("homing"), POWER("power"), MINE("mine"), NAPALM("napalm");
     private final String id;

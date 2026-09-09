@@ -22,12 +22,12 @@ class SimulationLoopTest {
         assertTrue(loop.droppedSimulationTime()>=0.9);
     }
     @Test void oneShotEdgesDoNotSurviveConsumptionButHeldControlsDo() {
-        var command=new VehicleCommand(1,0,1,true,true,true,true,true,1,true,true,AbilityId.FREEZE);
+        var command=new VehicleCommand(1,0,1,true,true,true,true,game.wreckriff.combat.WeaponType.POWER,1,true,true,AbilityId.FREEZE);
         var next=command.withoutEdges();
-        assertFalse(next.special()); assertEquals(0,next.weaponDelta());
+        assertNull(next.directWeapon()); assertEquals(0,next.weaponDelta());
         assertEquals(AbilityId.NONE,next.ability());
         assertTrue(next.machineGun()); assertTrue(next.recover());
-        assertThrows(IllegalArgumentException.class,()->new VehicleCommand(Float.NaN,0,0,false,false,false,false,false,0,false,false,AbilityId.NONE));
+        assertThrows(IllegalArgumentException.class,()->new VehicleCommand(Float.NaN,0,0,false,false,false,false,null,0,false,false,AbilityId.NONE));
     }
     @Test void lastTickVictoryAndSimultaneousDestructionHaveDefinedPriority() {
         MatchSession session=new MatchSession(42,1); session.tick=119;

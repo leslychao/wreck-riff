@@ -45,6 +45,11 @@ if ($assetReport.status -ne 'TECHNICAL_PASS') { throw 'verifyAssets must pass be
 $mainJarName = "wreck-riff-$Version.jar"
 if (-not (Test-Path -LiteralPath (Join-Path $inputLib $mainJarName))) { throw "Run installDist first: missing $mainJarName" }
 
+$existingLauncher=Join-Path $buildRoot 'distributions/WreckRiff/WreckRiff.exe'
+if(@(Get-Process -Name WreckRiff -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $existingLauncher }).Count -gt 0) {
+    throw 'Close the running build/distributions/WreckRiff game before packaging; the existing app-image has been preserved.'
+}
+
 $staging = Assert-BuildChild (Join-Path $buildRoot 'package-windows-staging')
 if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
 $inputStage = Join-Path $staging 'input'
@@ -122,9 +127,9 @@ Java is included. Do not run the executable from inside the ZIP viewer.
 Your settings, statistics, logs, and captures are saved under LOCALAPPDATA/WreckRiff.
 
 Default controls: WASD drive, Space handbrake, Shift turbo, LMB machine gun,
-RMB selected weapon, Q/E switch weapon, F Feedback Pulse, R recovery, Esc pause.
-Hold Left Ctrl, then press W for Freeze, A for Stun, or D for Shield.
-Gamepad: hold R3, then D-pad up/left/right for Freeze/Stun/Shield.
+RMB selected weapon, 1/2/3/4 select Homing/Power/Mine/Napalm, Q/E cycle,
+F Shield, Z Freeze, hold R recovery, V rear view, Esc pause.
+Gamepad: A Shield, D-pad up Freeze, D-pad left/right cycle weapons.
 The Controls screen is authoritative for current/rebound controls.
 
 This local MVP is not digitally signed. Windows may display a warning for an

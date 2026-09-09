@@ -115,7 +115,7 @@ public final class VerifyAssets {
                 if (bytes.length == 0) throw new IOException("Empty generator " + path);
                 assets.add(asset(path, "procedural-source", bytes, "Original project source recipe", "SOURCE_PRESENT"));
             }
-            for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt")) {
+            for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateAudio-v0.2.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt")) {
                 assets.add(asset(path, "historical-source", Files.readAllBytes(Path.of(path)),
                         "Superseded original recipe retained for provenance only; excluded from compilation and runtime", "SOURCE_PRESENT"));
             }
@@ -160,6 +160,11 @@ public final class VerifyAssets {
                 permission = "CC-BY-4.0; source track Metalmania; local loop edit and normalization identified in audio/music-provenance.json";
                 license = "licenses/assets/CC-BY-4.0.txt";
                 attribution = "CREDIT_TITLE_AUTHOR_SOURCE_LICENSE_AND_MODIFICATIONS";
+            } else if (Set.of("recorded-sound-effect", "sfx-provenance").contains(asset.category)) {
+                author = "Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney; rubberduck; processing by Wreck Riff tooling";
+                permission = "CC0-1.0; recording sources and transformations in audio/sfx-sources.json and audio/sfx-provenance.json";
+                license = "licenses/assets/CC0-1.0.txt";
+                attribution = "NOT_REQUIRED_BY_CC0; SOURCE_RETAINED";
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 author = "The Roboto Project Authors; atlas rasterization by Wreck Riff tooling";
                 permission = "OFL-1.1; Roboto Condensed v3.016 derived bitmap font";
@@ -210,11 +215,13 @@ public final class VerifyAssets {
 
     private static void verifyAudio(List<Asset> assets) throws Exception {
         AudioConfig config = Configs.gson().fromJson(new String(resource("config/audio.json"), StandardCharsets.UTF_8), AudioConfig.class);
-        if (!config.musicAsset().equals("audio/metalmania.wav") || config.effects().contains("overheat"))
-            throw new IOException("Superseded music/overheat must not remain configured");
-        if (VerifyAssets.class.getClassLoader().getResource("audio/dead-air-circuit.wav") != null
-                || VerifyAssets.class.getClassLoader().getResource("audio/overheat.wav") != null)
-            throw new IOException("Superseded runtime audio is still packaged");
+        if (!config.musicAsset().equals("audio/metalmania.wav")) throw new IOException("Unexpected music cue");
+        for(String retired:List.of("dead-air-circuit","overheat","pulse","stun","freeze","shield",
+                "machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch","mine-detonate","napalm-launch")) {
+            if(config.effects().contains(retired) || VerifyAssets.class.getClassLoader().getResource("audio/"+retired+".wav")!=null)
+                throw new IOException("Superseded runtime audio is still packaged: "+retired);
+        }
+        Map<String,String> recorded = verifyRecordedEffects(config,assets);
         byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
         JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
         JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -260,15 +267,75 @@ public final class VerifyAssets {
                     || !metrics.sha256.equals(provenance.get("sha256").getAsString()))) {
                 throw new IOException("Music must match registered 112-bar loop and hash");
             }
-            assets.add(new Asset(path, channels == 2 ? "licensed-music" : "sound-effect", metrics.bytes, metrics.sha256,
+            assets.add(new Asset(path, channels == 2 ? "licensed-music" : recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
                     channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
-                            : "GenerateAudio.java; fixed seed; original sound-effect synthesis; no external samples",
-                    channels == 2 ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
+                            : recorded.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"),
+                    channels == 2 || recorded.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
         assets.add(asset("audio/score.txt", "score", resource("audio/score.txt"), "GenerateAudio.java", "SOURCE_PRESENT"));
         assets.add(asset("audio/music-provenance.json", "music-provenance", provenanceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
         assets.add(asset("audio/music-source.json", "music-provenance", sourceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
+    }
+
+    private static Map<String,String> verifyRecordedEffects(AudioConfig config,List<Asset> assets)throws Exception {
+        byte[] sourcesBytes=resource("audio/sfx-sources.json"),provenanceBytes=resource("audio/sfx-provenance.json");
+        JsonObject sources=JsonParser.parseString(new String(sourcesBytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        JsonObject provenance=JsonParser.parseString(new String(provenanceBytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(sources.get("schemaVersion").getAsInt()!=1 || provenance.get("schemaVersion").getAsInt()!=1
+                || !hash(sourcesBytes).equals(provenance.get("sourceEvidenceSha256").getAsString()))
+            throw new IOException("Unsupported recording provenance schema");
+        Map<String,String> origins=new HashMap<>();
+        Map<String,String> archives=Map.of(
+                "https://opengameart.org/sites/default/files/Prepared%20SFX%20Library.7z","cc1ab5a99a0a365105c7c5dd783f4b0b1fe90938114d3ceec53856bfe005f7d6",
+                "https://opengameart.org/sites/default/files/25-CC0-bang-sfx.zip","c0c9ecc11e2dc0d190f0cced755569858234b8528286bc83becb6314c663407f");
+        Set<String> pages=Set.of("https://opengameart.org/content/the-free-firearm-sound-library",
+                "https://opengameart.org/content/25-cc0-bang-firework-sfx");
+        for(JsonElement element:sources.getAsJsonArray("sources")) {
+            JsonObject item=element.getAsJsonObject();
+            String id=item.get("id").getAsString(),origin=item.get("sourceUrl").getAsString();
+            if(origins.put(id,origin)!=null || !pages.contains(origin)
+                    || !"CC0-1.0".equals(item.get("license").getAsString())
+                    || !"licenses/assets/CC0-1.0.txt".equals(item.get("licensePath").getAsString())
+                    || !Objects.equals(archives.get(item.get("archiveUrl").getAsString()),item.get("archiveSha256").getAsString()))
+                throw new IOException("Unapproved/duplicate recording source: "+id);
+            for(String kind:List.of("source","decoded")) {
+                String path=item.get(kind+"Path").getAsString();
+                String directory=kind.equals("source")?"original":"decoded";
+                if(path.contains("..") || !path.startsWith("src/tools/assets/audio/recorded/"+directory+"/")
+                        || !hash(Files.readAllBytes(Path.of(path))).equals(item.get(kind+"Sha256").getAsString()))
+                    throw new IOException("Recording source checksum/path mismatch: "+path);
+            }
+        }
+        Map<String,String> recorded=new HashMap<>();
+        for(JsonElement element:provenance.getAsJsonArray("assets")) {
+            JsonObject item=element.getAsJsonObject();
+            String path=item.get("path").getAsString(),prepared=item.get("preparedPath").getAsString();
+            Set<String> inputOrigins=new TreeSet<>();
+            for(JsonElement input:item.getAsJsonArray("inputs")) {
+                String origin=origins.get(input.getAsString());
+                if(origin==null)throw new IOException("Missing recorded layer source");
+                inputOrigins.add(origin);
+            }
+            if(inputOrigins.isEmpty() || !path.matches("audio/[a-z][a-z0-9-]*\\.wav")
+                    || !config.effects().contains(path.substring(6,path.length()-4)) || recorded.containsKey(path)
+                    || !prepared.equals("src/tools/assets/audio/recorded/processed/"+path.substring(6))
+                    || !"CC0-1.0".equals(item.get("license").getAsString())
+                    || item.get("transformation").getAsString().isBlank()
+                    || !hash(resource(path)).equals(item.get("sha256").getAsString())
+                    || !hash(Files.readAllBytes(Path.of(prepared))).equals(item.get("sha256").getAsString()))
+                throw new IOException("Recorded effect source/output/transform mismatch: "+path);
+            recorded.put(path,String.join("; ",inputOrigins)+"; "+item.get("transformation").getAsString());
+        }
+        for(String cue:List.of("machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch",
+                "power-explosion","mine-detonate","napalm-launch","napalm-explosion")) {
+            List<String> bank=config.cueBanks().get(cue);
+            if(bank==null || bank.size()<3 || bank.stream().anyMatch(take->!recorded.containsKey("audio/"+take+".wav")))
+                throw new IOException("Three recorded variations required: "+cue);
+        }
+        assets.add(asset("audio/sfx-sources.json","sfx-provenance",sourcesBytes,"CC0 recorded source inventory","VERIFIED"));
+        assets.add(asset("audio/sfx-provenance.json","sfx-provenance",provenanceBytes,"prepare_recorded_sfx.py; offline layered cue recipes","VERIFIED"));
+        return recorded;
     }
 
     public static WaveMetrics inspectWave(URL url) throws Exception {

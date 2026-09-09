@@ -18,8 +18,9 @@ public interface WorldQuery {
     Hit sweep(Vector3f from, Vector3f to, float radius, int ignoredVehicle);
     boolean visible(Vector3f from, Vector3f to, int targetVehicle);
     float distanceToHull(int vehicleId, Vector3f point);
-    /** World-space impulse in kilogram metres per second (N*s). */
-    void impulse(int vehicleId, Vector3f impulse);
+    /** Aggregated world-space linear and torque impulse; only the native owner applies angular limits. */
+    void impulse(int vehicleId,Vector3f linearImpulse,Vector3f torqueImpulse,float maximumAngularDeltaSpeed);
+    Vector3f closestHullPoint(int vehicleId,Vector3f from);
     /** Static-only downward support query; vehicles cannot become mine or fire support. */
     default Support support(Vector3f from,float depth) {
         Hit hit=ray(from,from.add(0,-depth,0),-1);
@@ -30,6 +31,9 @@ public interface WorldQuery {
     default Vector3f forward(int id) { return rotation(id).mult(Vector3f.UNIT_Z); }
     default Vector3f weaponBase(int id) { return position(id).add(rotation(id).mult(new Vector3f(0,0.55f,1.6f))); }
     default Vector3f muzzle(int id) { return position(id).add(rotation(id).mult(new Vector3f(0,0.55f,2.5f))); }
+    default Vector3f machineGunMuzzle(int id,int barrel) {
+        return position(id).add(rotation(id).mult(new Vector3f(barrel==0?-.53f:.53f,.47f,2.28f)));
+    }
     default java.util.List<Vector3f> hullVisibilityPoints(int id) {
         return java.util.List.of(position(id), position(id).add(rotation(id).mult(new Vector3f(0,0.4f,1.6f))),
                 position(id).add(rotation(id).mult(new Vector3f(0,0.4f,-1.6f))));

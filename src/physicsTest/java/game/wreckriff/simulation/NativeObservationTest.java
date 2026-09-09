@@ -19,8 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class NativeObservationTest {
     private record Sample(Vector3f position, Quaternion rotation, Vector3f velocity) {}
     private record Run(List<VehicleCommand> commands, List<Sample> samples) {}
-    private static final VehicleCommand GAS = new VehicleCommand(1, 0, 0, false, false, false, false, false, 0, false, false,AbilityId.NONE);
-    private static final VehicleCommand TURN_AND_BRAKE = new VehicleCommand(0, 1, 0.7f, false, false, false, false, false, 0, false, false,AbilityId.NONE);
+    private static final VehicleCommand GAS = new VehicleCommand(1, 0, 0, false, false, false, false, null, 0, false, false,AbilityId.NONE);
+    private static final VehicleCommand TURN_AND_BRAKE = new VehicleCommand(0, 1, 0.7f, false, false, false, false, null, 0, false, false,AbilityId.NONE);
 
     @Test void repeatedWheelObservationsCannotAlterARampAndTurnTrajectory() {
         Run reference = drive(null, false);

@@ -1,6 +1,5 @@
 package game.wreckriff.presentation;
 
-import com.jme3.asset.DesktopAssetManager;
 import com.jme3.math.*;
 import com.jme3.scene.*;
 import game.wreckriff.arena.*;
@@ -44,7 +43,7 @@ class ArenaPresentationTest {
         final ArenaPresentation visual;
         Fixture() {
             for(int i=1;i<5;i++)session.vehicle(i).hp=0;
-            visual=ArenaPresentation.attach(new DesktopAssetManager(true),root,session,definition,new ArenaSystems(session,definition));
+            visual=ArenaPresentation.attach(PresentationTestAssets.shared(),root,session,definition,new ArenaSystems(session,definition));
         }
         Node feedback(){return(Node)root.getChild("arena-feedback");}
         Geometry arcs(){return(Geometry)feedback().getChild("hazard-active-arcs");}

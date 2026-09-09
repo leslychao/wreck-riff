@@ -5,29 +5,30 @@ import java.util.Objects;
 
 /** All weapon balance numbers are supplied by the strictly validated bundled combat.json. */
 public record CombatRules(int maximumProjectiles, float projectileRadius, float explosionSurfaceOffset,
-        float ownerSplashMultiplier, float maximumCombinedDeltaSpeed, float killCreditSeconds,
+        float ownerSplashMultiplier, BlastLimits blastLimits, float killCreditSeconds,
         float emptyFeedbackSeconds, MachineGun machineGun, Rocket homing, Rocket power,
-        Pulse pulse, Targeting targeting, Ram ram, Mine mine, Napalm napalm, Control control,Health health) {
+        Targeting targeting, Ram ram, Mine mine, Napalm napalm, Control control,Health health) {
     public CombatRules {
         if (maximumProjectiles < 1 || maximumProjectiles > 64) throw new IllegalArgumentException("maximumProjectiles must be 1..64");
         positive("projectileRadius", projectileRadius);
         positive("explosionSurfaceOffset", explosionSurfaceOffset);
         range("ownerSplashMultiplier", ownerSplashMultiplier, 0, 1);
-        positive("maximumCombinedDeltaSpeed", maximumCombinedDeltaSpeed);
+        Objects.requireNonNull(blastLimits,"blastLimits");
         positive("killCreditSeconds", killCreditSeconds);
         positive("emptyFeedbackSeconds", emptyFeedbackSeconds);
         Objects.requireNonNull(machineGun, "machineGun");
         Objects.requireNonNull(homing, "homing");
         Objects.requireNonNull(power, "power");
-        Objects.requireNonNull(pulse, "pulse");
         Objects.requireNonNull(targeting, "targeting");
         Objects.requireNonNull(ram, "ram");
         Objects.requireNonNull(mine,"mine"); Objects.requireNonNull(napalm,"napalm"); Objects.requireNonNull(control,"control");
         Objects.requireNonNull(health,"health");
-        if (homing.maximumDeltaSpeed > maximumCombinedDeltaSpeed || power.maximumDeltaSpeed > maximumCombinedDeltaSpeed
-                || pulse.maximumDeltaSpeed > maximumCombinedDeltaSpeed) {
-            throw new IllegalArgumentException("Individual impulses must not exceed the combined speed limit");
-        }
+    }
+    public record BlastLimits(float horizontalDeltaSpeed,float upwardDeltaSpeed,float angularDeltaSpeed) {
+        public BlastLimits { positive("blast.horizontalLimit",horizontalDeltaSpeed);positive("blast.upwardLimit",upwardDeltaSpeed);positive("blast.angularLimit",angularDeltaSpeed); }
+    }
+    public record Blast(float horizontalDeltaSpeed,float upwardDeltaSpeed) {
+        public Blast { positive("blast.horizontal",horizontalDeltaSpeed);positive("blast.upward",upwardDeltaSpeed); }
     }
     public record Health(float playerMaximumHp,float botMaximumHp,float repairFraction) {
         public Health {
@@ -48,8 +49,9 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
 
     public record Mine(int maximumActive,int initialAmmo,int maximumAmmo,float cooldownSeconds,
             float placementDistance,float supportDepth,float armSeconds,float triggerRadius,
-            float explosionRadius,float damage,float lifetimeSeconds) {
+            float explosionRadius,float damage,float lifetimeSeconds,Blast blast) {
         public Mine {
+            Objects.requireNonNull(blast,"mine.blast");
             if(maximumActive<1||maximumActive>10)throw new IllegalArgumentException("Mine cap must be 1..10");
             ammo(initialAmmo,maximumAmmo); positive("mine.cooldown",cooldownSeconds);
             positive("mine.placement",placementDistance);positive("mine.support",supportDepth);
@@ -60,8 +62,9 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
     }
     public record Napalm(int maximumZones,int initialAmmo,int maximumAmmo,float cooldownSeconds,
             float speed,float upwardSpeed,float gravity,float ttlSeconds,float impactDamage,
-            float radius,float durationSeconds,float damagePerSecond,float intervalSeconds,float supportDepth) {
+            float radius,float durationSeconds,float damagePerSecond,float intervalSeconds,float supportDepth,Blast blast) {
         public Napalm {
+            Objects.requireNonNull(blast,"napalm.blast");
             if(maximumZones<1||maximumZones>6)throw new IllegalArgumentException("Fire-zone cap must be 1..6");
             ammo(initialAmmo,maximumAmmo);positive("napalm.cooldown",cooldownSeconds);
             positive("napalm.speed",speed);positive("napalm.upwardSpeed",upwardSpeed);positive("napalm.gravity",gravity);
@@ -72,13 +75,12 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
         }
     }
     public record Control(float freezeSeconds,float freezeCooldownSeconds,float freezeSpeed,float freezeTtlSeconds,
-            float freezeRadius,float stunSeconds,float stunCooldownSeconds,float stunRange,float stunHalfAngleDegrees,
+            float freezeRadius,
             float shieldSeconds,float shieldCooldownSeconds,float shieldDamageMultiplier,float immunitySeconds) {
         public Control {
             positive("freeze.duration",freezeSeconds);positive("freeze.cooldown",freezeCooldownSeconds);
             positive("freeze.speed",freezeSpeed);positive("freeze.ttl",freezeTtlSeconds);positive("freeze.radius",freezeRadius);
-            positive("stun.duration",stunSeconds);positive("stun.cooldown",stunCooldownSeconds);positive("stun.range",stunRange);
-            range("stun.halfAngle",stunHalfAngleDegrees,1,90);positive("shield.duration",shieldSeconds);
+            positive("shield.duration",shieldSeconds);
             positive("shield.cooldown",shieldCooldownSeconds);range("shield.multiplier",shieldDamageMultiplier,0,1);
             positive("control.immunity",immunitySeconds);
         }
@@ -89,7 +91,7 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
 
     public record Rocket(float directDamage, float splashDamage, float cooldownSeconds,
             int initialAmmo, int maximumAmmo, float speed, float ttlSeconds,
-            float explosionRadius, float maximumDeltaSpeed) {
+            float explosionRadius, Blast blast) {
         public Rocket {
             positive("rocket.directDamage", directDamage);
             positive("rocket.splashDamage", splashDamage);
@@ -98,18 +100,7 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
             positive("rocket.speed", speed);
             positive("rocket.ttlSeconds", ttlSeconds);
             positive("rocket.explosionRadius", explosionRadius);
-            positive("rocket.maximumDeltaSpeed", maximumDeltaSpeed);
-        }
-    }
-
-    public record Pulse(float damage, float radius, float cooldownSeconds,
-            float initialDelaySeconds, float maximumDeltaSpeed) {
-        public Pulse {
-            positive("pulse.damage", damage);
-            positive("pulse.radius", radius);
-            positive("pulse.cooldownSeconds", cooldownSeconds);
-            CombatRules.range("pulse.initialDelaySeconds", initialDelaySeconds, 0, cooldownSeconds);
-            positive("pulse.maximumDeltaSpeed", maximumDeltaSpeed);
+            Objects.requireNonNull(blast,"rocket.blast");
         }
     }
 

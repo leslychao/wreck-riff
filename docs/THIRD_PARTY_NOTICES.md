@@ -83,8 +83,33 @@ source-code license. Include the copyright and OFL notice with every copy, do no
 sell the font alone, and respect any reserved font names for modified versions.
 No system-font or online font service is used.
 
-Original procedural vehicle/arena geometry, shader code and sound effects remain
-project-authored. Superseded score and 5x7 glyph recipes are preserved only as
+## Recorded combat effects in 0.3
+
+The Free Firearm Sound Library: **Ben Jaszczak, Brian Nelson, Kevin Heras and
+Matthew Nanney**, [source and CC0 declaration](https://opengameart.org/content/the-free-firearm-sound-library).
+Approved prepared archive: https://opengameart.org/sites/default/files/Prepared%20SFX%20Library.7z
+SHA-256: `cc1ab5a99a0a365105c7c5dd783f4b0b1fe90938114d3ceec53856bfe005f7d6`.
+Selected single-shot recordings: AK-47/C_28P.wav, AR-15/D_32P.wav and
+Carl Gustav M45/G_31P.wav. These contain recorded firearms, not recorded metal plates.
+
+25 CC0 bang / firework SFX: **rubberduck**,
+[source and CC0 declaration](https://opengameart.org/content/25-cc0-bang-firework-sfx).
+Archive: https://opengameart.org/sites/default/files/25-CC0-bang-sfx.zip
+SHA-256: `c0c9ecc11e2dc0d190f0cced755569858234b8528286bc83becb6314c663407f`.
+
+Both sources use CC0 1.0; retained text `licenses/assets/CC0-1.0.txt`. CC0 does not
+require attribution. We retain creator names and origin voluntarily, without implying
+endorsement. Selected original bytes and decoded mono PCM are retained in
+`src/tools/assets/audio/recorded`. The game packages only processed effects and
+`audio/sfx-sources.json` / `audio/sfx-provenance.json`, with per-file source/output
+hashes and explicit edits: trimming, downmix/resampling, filters, speed changes,
+pre-baked transient/body/debris layers, compression, DC removal and normalization.
+Layering is performed locally by `src/tools/prepare_recorded_sfx.py`; no decoder,
+asset download or account is required at build/runtime. Designed ice/metal/shield
+sounds are recording derivatives, not claims about what object was originally recorded.
+
+Original procedural vehicle/arena geometry, shader code and ancillary sound effects
+remain project-authored. Recorded combat effects are identified separately above. Superseded score and 5x7 glyph recipes are preserved only as
 historical source in `docs/asset-history`, excluded from compilation and runtime.
 The generated registry distinguishes licensed recordings/textures/fonts from these
 original recipes. Technical evidence does not grant artistic or legal approval;

@@ -45,38 +45,6 @@ class NativeCombatTest {
         }
     }
 
-    @Test void P08_pulseHitsVisibleCarDespiteItsSourceColliderAndAppliesRealImpulse() {
-        try (PhysicsWorld world = world()) {
-            session.vehicle(0).pulseCooldown = 0;
-            step(world, pulse());
-            assertEquals(200, session.vehicle(0).hp);
-            assertEquals(110, session.vehicle(1).hp);
-            assertTrue(world.velocity(1).z > 0, "Pulse must apply an outward native impulse");
-            assertTrue(world.velocity(1).z <= 4.0001f);
-            assertTrue(world.velocity(1).y < 0.1f, "Pulse must not launch the vehicle upwards");
-        }
-    }
-
-    @Test void P08_closedWallBlocksPulseEvenAtShortDistance() {
-        try (PhysicsWorld world = world()) {
-            world.addStatic(new BoxCollisionShape(new Vector3f(5, 4, 0.15f)), new Vector3f(0, 4, 3.5f), new Quaternion());
-            session.vehicle(0).pulseCooldown = 0;
-            step(world, pulse());
-            assertEquals(200, session.vehicle(1).hp);
-            assertEquals(0, world.velocity(1).z, 0.0001f);
-        }
-    }
-
-    @Test void P08_floorBlocksPulseBetweenArenaLevels() {
-        try (PhysicsWorld world = world()) {
-            world.teleport(1, new Vector3f(0, 4, 0), new Quaternion());
-            world.addStatic(new BoxCollisionShape(new Vector3f(6, 0.2f, 6)), new Vector3f(0, 3, 0), new Quaternion());
-            session.vehicle(0).pulseCooldown = 0;
-            step(world, pulse());
-            assertEquals(200, session.vehicle(1).hp);
-        }
-    }
-
     @Test void directRocketHitsARealCompoundHullOnlyOnce() {
         try (PhysicsWorld world = world()) {
             step(world, rocket());
@@ -170,6 +138,5 @@ class NativeCombatTest {
         session.finishTick();
     }
 
-    private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, false, 0, false, false,AbilityId.NONE); }
-    private static VehicleCommand pulse() { return new VehicleCommand(0, 0, 0, false, false, false, false, true, 0, false, false,AbilityId.NONE); }
+    private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, null, 0, false, false,AbilityId.NONE); }
 }

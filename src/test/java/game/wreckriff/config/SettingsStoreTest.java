@@ -11,21 +11,39 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SettingsStoreTest {
     @TempDir Path directory;
-    @Test void v1MigrationPreservesVideoAudioAndAnExplicitBindingThatUsesNewModifierKey() throws Exception {
+    @Test void v1MigrationPreservesVideoAudioAndAnExplicitBindingThatConflictsWithNewFreezeKey() throws Exception {
         String original="""
                 {"schemaVersion":1,"width":1600,"height":900,"fullscreen":false,"music":0.35,
-                 "keys":{"Throttle":29}}
+                 "keys":{"Throttle":44}}
                 """;
         Path file=directory.resolve("settings.json");Files.writeString(file,original);
         SettingsStore store=new SettingsStore(directory);
-        assertFalse(store.firstRun());assertEquals(2,store.settings().schemaVersion);
+        assertFalse(store.firstRun());assertEquals(3,store.settings().schemaVersion);
         assertEquals(1600,store.settings().width);assertEquals(900,store.settings().height);
         assertFalse(store.settings().fullscreen);assertEquals(.35f,store.settings().music);
-        assertEquals(KeyInput.KEY_LCONTROL,store.settings().keys.get("Throttle"));
-        assertEquals(0,store.settings().keys.get("Ability modifier"));assertTrue(store.bindingWarning().contains("Ability modifier"));
+        assertEquals(KeyInput.KEY_Z,store.settings().keys.get("Throttle"));
+        assertEquals(0,store.settings().keys.get("Freeze"));assertTrue(store.bindingWarning().contains("Freeze"));
         assertEquals(original,Files.readString(directory.resolve("settings.json.v1.bak")));
         var reloaded=new SettingsStore(directory);assertEquals(store.settings().keys,reloaded.settings().keys);
         assertEquals(4,reloaded.settings().samples);
+    }
+    @Test void v2MigrationTransfersFormerSpecialAndPreservesDisabledKeysAndConflicts() throws Exception {
+        String original="""
+                {"schemaVersion":2,"width":1920,"height":1080,"samples":8,"sfx":0.42,
+                 "keys":{"Feedback Pulse":20,"Ability modifier":29,"Recover":2,"Rear view":0}}
+                """;
+        Files.writeString(directory.resolve("settings.json"),original);
+        SettingsStore store=new SettingsStore(directory);
+        assertEquals(KeyInput.KEY_T,store.settings().keys.get("Shield"));
+        assertEquals(KeyInput.KEY_1,store.settings().keys.get("Recover"));
+        assertEquals(0,store.settings().keys.get("Select Homing"));
+        assertEquals(0,store.settings().keys.get("Rear view"));
+        assertTrue(store.bindingWarning().contains("Select Homing"));
+        assertFalse(store.settings().keys.containsKey("Feedback Pulse"));
+        assertFalse(store.settings().keys.containsKey("Ability modifier"));
+        assertEquals(8,store.settings().samples);assertEquals(.42f,store.settings().sfx);
+        assertEquals(original,Files.readString(directory.resolve("settings.json.v2.bak")));
+        assertEquals(store.settings().keys,new SettingsStore(directory).settings().keys);
     }
     @Test void firstRunIsDifferentFromKnownOrDamagedUserSettings() throws Exception {
         assertTrue(new SettingsStore(directory).firstRun());

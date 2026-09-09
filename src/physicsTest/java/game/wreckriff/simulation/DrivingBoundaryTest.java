@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DrivingBoundaryTest {
-    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,false,0,false,false,AbilityId.NONE);
-    private static final VehicleCommand DRIFT=new VehicleCommand(0,0,1,true,false,false,false,false,0,false,false,AbilityId.NONE);
-    private static final VehicleCommand RECOVER=new VehicleCommand(0,0,0,false,false,false,false,false,0,false,true,AbilityId.NONE);
+    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
+    private static final VehicleCommand DRIFT=new VehicleCommand(0,0,1,true,false,false,false,null,0,false,false,AbilityId.NONE);
+    private static final VehicleCommand RECOVER=new VehicleCommand(0,0,0,false,false,false,false,null,0,false,true,AbilityId.NONE);
     private PhysicsWorld world() {
         PhysicsWorld world=new PhysicsWorld(VehicleRules.load());
         world.addStatic(new BoxCollisionShape(new Vector3f(200,0.5f,200)),new Vector3f(0,-0.5f,0),new Quaternion());
@@ -56,7 +56,7 @@ class DrivingBoundaryTest {
     @Test void turboConsumesOnlyOnGroundAndWaitsBeforeRegenerating() {
         try(PhysicsWorld world=world()) {
             var state=new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class));var driver=new VehicleController(world,state,VehicleRules.load());
-            VehicleCommand turbo=new VehicleCommand(1,0,0,false,true,false,false,false,0,false,false,AbilityId.NONE);
+            VehicleCommand turbo=new VehicleCommand(1,0,0,false,true,false,false,null,0,false,false,AbilityId.NONE);
             driver.drive(turbo);world.step();assertTrue(state.turbo<100);
             float after=state.turbo;world.teleport(0,new Vector3f(0,20,0),new Quaternion());
             for(int i=0;i<60;i++){driver.drive(turbo);world.step();}

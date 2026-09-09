@@ -8,6 +8,14 @@ public record AudioConfig(String musicAsset, float musicGain, float engineGain, 
         float referenceDistance, float maximumDistance, float enginePitchMin, float enginePitchMax,
         float engineSmoothingSeconds, float musicDuckGain, float musicDuckSeconds, List<String> effects) {
     public static AudioConfig load() { return Configs.load("audio", AudioConfig.class); }
+    /** Numeric suffixes are recorded takes of one cue, selected without immediate repetition. */
+    public Map<String,List<String>> cueBanks() {
+        Map<String,List<String>> banks = new LinkedHashMap<>();
+        for (String effect : effects) banks.computeIfAbsent(effect.replaceFirst("-[1-9][0-9]*$", ""),
+                ignored -> new ArrayList<>()).add(effect);
+        banks.replaceAll((key, values) -> List.copyOf(values));
+        return Collections.unmodifiableMap(banks);
+    }
     public AudioConfig {
         if (musicAsset == null || !musicAsset.startsWith("audio/") || !musicAsset.endsWith(".wav")
                 || musicAsset.contains("..")) throw new IllegalArgumentException("Invalid music asset path");

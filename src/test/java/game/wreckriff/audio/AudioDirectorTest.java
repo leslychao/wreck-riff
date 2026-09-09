@@ -22,8 +22,10 @@ class AudioDirectorTest {
                 director.update(session,world(new Vector3f(0,0,12)),1f/60);
                 int original=director.voiceCount();
                 assertTrue(original>1);
-                director.pause(); assertEquals(AudioSource.Status.Paused,music.getStatus());
+                director.pause(); assertTrue(director.isPaused());
+                assertEquals(AudioSource.Status.Playing,music.getStatus(),"Device pause preserves source state and stream position");
                 director.ui(true);
+                assertEquals(original,director.voiceCount(),"Paused UI must not enqueue clicks for later playback");
                 director.resume();
                 assertSame(music,find(scene,"music-metalmania"));
                 assertEquals(AudioSource.Status.Playing,music.getStatus());
@@ -81,6 +83,19 @@ class AudioDirectorTest {
             assertEquals(AudioSource.Status.Stopped,find(scene,"music-metalmania").getStatus());
         }
     }
+    @Test void resultsTailPrunesFinishedSourcesWithoutRecreatingMatchAudio() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();director.stopMatch();
+            director.accept(List.of(event(GameEvent.Type.MATCH_FINISHED,1,0,-1,"victory",0)));
+            AudioNode stinger=find(scene,"sound-victory");assertNotNull(stinger);
+            director.updateTail(.1f);assertSame(stinger,find(scene,"sound-victory"));
+            stinger.setStatus(AudioSource.Status.Stopped);
+            director.updateTail(.1f);assertEquals(0,director.voiceCount());assertNull(find(scene,"sound-victory"));
+            assertEquals(1,((Node)scene.getChild("match-audio")).getQuantity());
+            assertEquals(AudioSource.Status.Stopped,find(scene,"music-metalmania").getStatus());
+        }
+    }
     @Test void fireZoneAudioHasOneTrackedLoopPerZoneAndStopsOnItsExpiry() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
@@ -118,11 +133,78 @@ class AudioDirectorTest {
                     event(GameEvent.Type.MINE_PLACED,2,0,0,"mine",0),
                     event(GameEvent.Type.EXPLOSION,3,1,0,"mine",70),
                     event(GameEvent.Type.FREEZE,4,1,0,"freeze",2),
-                    event(GameEvent.Type.STUN,5,2,0,"stun",1),
-                    event(GameEvent.Type.SHIELD,6,0,0,"shield",2.5f)));
-            for(String name:List.of("napalm-launch","mine-place","mine-detonate","freeze","stun","shield"))
+                    event(GameEvent.Type.CONTROL_ENDED,5,1,0,"freeze",0),
+                    event(GameEvent.Type.SHIELD,6,0,0,"shield",2.5f),
+                    event(GameEvent.Type.SHIELD_HIT,7,0,1,"homing",35),
+                    event(GameEvent.Type.SHIELD_ENDED,8,0,0,"shield",0)));
+            for(String name:List.of("napalm-launch","mine-place","mine-detonate","freeze-hit","freeze-end","shield-on","shield-hit","shield-end"))
                 assertNotNull(find(scene,"sound-"+name),name);
             assertNull(find(scene,"sound-machine-gun"),"New shots must not fall through to the old default cue");
+        }
+    }
+    @Test void recordedTakesNeverRepeatImmediatelyAndUseAtLeastThreeActualBuffers() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();
+            for(String cue:List.of("machine-gun","metal-hit","explosion")) {
+                Set<AudioData> heard=Collections.newSetFromMap(new IdentityHashMap<>());
+                AudioData prior=null;
+                for(int i=0;i<6;i++) {
+                    GameEvent.Type type=cue.equals("machine-gun")?GameEvent.Type.SHOT
+                            :cue.equals("metal-hit")?GameEvent.Type.IMPACT:GameEvent.Type.EXPLOSION;
+                    director.accept(List.of(event(type,100+i,1,0,cue.equals("explosion")?"homing":"machine-gun",35)));
+                    AudioData sample=find(scene,"sound-"+cue).getAudioData();
+                    if(prior!=null)assertNotSame(prior,sample,cue+" repeated its previous take");
+                    heard.add(sample);prior=sample;
+                }
+                assertEquals(3,heard.size(),cue);
+            }
+        }
+    }
+    @Test void sharedEventIdsKeepDifferentTypesAndSubjectsButDuplicateDeliveryIsIgnored() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();
+            MatchSession session=new MatchSession(42,180);
+            director.update(session,world(Vector3f.ZERO),.01f);
+            int baseline=director.voiceCount();
+            Vector3f muzzle=new Vector3f(3,2,4),contact=new Vector3f(8,2,9);
+            List<GameEvent> events=List.of(new GameEvent(GameEvent.Type.SHOT,71,0,0,contact,"machine-gun",6,muzzle,Vector3f.ZERO),
+                    new GameEvent(GameEvent.Type.IMPACT,71,1,0,contact,"machine-gun",6,muzzle,Vector3f.UNIT_Y),
+                    event(GameEvent.Type.SHIELD_HIT,71,1,0,"machine-gun",6),
+                    event(GameEvent.Type.SHIELD_HIT,71,2,0,"machine-gun",6));
+            director.accept(events);
+            assertEquals(baseline+3,director.voiceCount());
+            assertEquals(1,director.pendingImpactCount());
+            director.update(session,world(Vector3f.ZERO),.05f);
+            assertEquals(baseline+4,director.voiceCount());
+            assertEquals(muzzle,find(scene,"sound-machine-gun").getLocalTranslation());
+            assertEquals(contact,find(scene,"sound-metal-hit").getLocalTranslation());
+            director.accept(events);assertEquals(baseline+4,director.voiceCount());
+            director.startMatch();director.update(session,world(Vector3f.ZERO),.01f);director.accept(events);
+            director.update(session,world(Vector3f.ZERO),.05f);
+            assertEquals(baseline+4,director.voiceCount(),"Retry clears event dedupe state");
+        }
+    }
+    @Test void bulletContactDelayIsSharedBoundedPausedAndClearedByDeathOrRetry() {
+        Node scene=new Node();MatchSession session=new MatchSession(42,180);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();director.update(session,world(Vector3f.ZERO),.01f);
+            GameEvent hit=new GameEvent(GameEvent.Type.IMPACT,901,1,0,new Vector3f(18,0,0),"machine-gun",6,Vector3f.ZERO,Vector3f.UNIT_Y);
+            assertEquals(.1f,hit.cosmeticImpactDelaySeconds(),1e-6);
+            director.accept(List.of(hit));assertNull(find(scene,"sound-metal-hit"));
+            director.pause();director.update(session,world(Vector3f.ZERO),.1f);
+            assertEquals(1,director.pendingImpactCount());assertNull(find(scene,"sound-metal-hit"));
+            director.resume();director.update(session,world(Vector3f.ZERO),.05f);
+            assertNull(find(scene,"sound-metal-hit"));director.update(session,world(Vector3f.ZERO),.051f);
+            assertNotNull(find(scene,"sound-metal-hit"));assertEquals(0,director.pendingImpactCount());
+            List<GameEvent> flood=new ArrayList<>();
+            for(int i=0;i<160;i++)flood.add(new GameEvent(GameEvent.Type.SHIELD_HIT,1000+i,1,0,new Vector3f(18,0,0),"machine-gun",6));
+            director.accept(flood);assertEquals(128,director.pendingImpactCount());
+            director.accept(List.of(event(GameEvent.Type.DESTROYED,2000,1,0,"destroyed",1)));
+            assertEquals(0,director.pendingImpactCount());
+            director.accept(List.of(new GameEvent(GameEvent.Type.IMPACT,3000,-1,0,new Vector3f(18,0,0),"machine-gun",6)));
+            assertEquals(1,director.pendingImpactCount());director.startMatch();assertEquals(0,director.pendingImpactCount());
         }
     }
     private static GameEvent event(GameEvent.Type type,long id,int subject,int source,String kind,float value) {
@@ -158,7 +240,8 @@ class AudioDirectorTest {
             public Hit sweep(Vector3f a,Vector3f b,float r,int id){return null;}
             public boolean visible(Vector3f a,Vector3f b,int id){return true;}
             public float distanceToHull(int id,Vector3f p){return 0;}
-            public void impulse(int id,Vector3f impulse){}
+            public void impulse(int id,Vector3f linear,Vector3f angular,float cap){}
+            public Vector3f closestHullPoint(int id,Vector3f from){return position(id);}
         };
     }
 }

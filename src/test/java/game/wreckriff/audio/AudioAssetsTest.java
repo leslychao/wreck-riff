@@ -10,7 +10,7 @@ class AudioAssetsTest {
     @Test void a01AllRequiredEffectsAreDistinctMonoPcmWithoutClipping() throws Exception {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
-        assertTrue(config.effects().size()==30);
+        assertEquals(54,config.effects().size());
         for(String effect:config.effects()) {
             try(InputStream input=asset("audio/"+effect+".wav")) {
                 PcmWave.Header header=PcmWave.header(input);
@@ -78,6 +78,22 @@ class AudioAssetsTest {
             String evidence=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
             assertTrue(evidence.contains("Kevin MacLeod"));assertTrue(evidence.contains("CC-BY-4.0"));
             assertTrue(evidence.contains("sourceSha256"));assertTrue(evidence.contains("NEEDS_CREATIVE_REVIEW"));
+        }
+    }
+    @Test void repeatedCombatCuesHaveThreeDistinctRecordedTakesAndRetiredCuesAreAbsent() throws Exception {
+        AudioConfig config=AudioConfig.load();
+        for(String cue:List.of("machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch",
+                "power-explosion","mine-detonate","napalm-launch","napalm-explosion")) {
+            assertEquals(3,config.cueBanks().get(cue).size(),cue);
+        }
+        for(String retired:List.of("pulse","stun","freeze","shield","machine-gun","metal-hit","explosion")) {
+            assertFalse(config.effects().contains(retired));
+            assertNull(getClass().getResource("/audio/"+retired+".wav"));
+        }
+        try(InputStream input=asset("audio/sfx-provenance.json")) {
+            String evidence=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue(evidence.contains("CC0-1.0") && evidence.contains("sourceEvidenceSha256"));
+            assertTrue(evidence.contains("freeze-hit.wav") && evidence.contains("shield-end.wav"));
         }
     }
     private static InputStream asset(String path) { return Objects.requireNonNull(AudioAssetsTest.class.getResourceAsStream("/"+path),path); }

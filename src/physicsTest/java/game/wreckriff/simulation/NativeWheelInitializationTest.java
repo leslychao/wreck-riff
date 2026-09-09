@@ -25,8 +25,8 @@ class NativeWheelInitializationTest {
     private record Sample(Vector3f position, Quaternion rotation, Vector3f velocity) {}
     private record Drive(List<Sample> samples, boolean injected) {}
     // Driver-left preserves this fixture's original world-space reverse approach to the ramp.
-    private static final VehicleCommand REVERSE_TURN = new VehicleCommand(0, 1, -1, false, false, false, false, false, 0, false, false,AbilityId.NONE);
-    private static final VehicleCommand REVERSE_STRAIGHT = new VehicleCommand(0, 1, 0, false, false, false, false, false, 0, false, false,AbilityId.NONE);
+    private static final VehicleCommand REVERSE_TURN = new VehicleCommand(0, 1, -1, false, false, false, false, null, 0, false, false,AbilityId.NONE);
+    private static final VehicleCommand REVERSE_STRAIGHT = new VehicleCommand(0, 1, 0, false, false, false, false, null, 0, false, false,AbilityId.NONE);
 
     @Test void repeatedInclineStartsKeepRawWheelAnglesFinite() {
         VehicleRules rules = VehicleRules.load();

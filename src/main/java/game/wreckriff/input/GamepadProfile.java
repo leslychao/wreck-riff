@@ -6,21 +6,23 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
-import java.util.Set;
+import java.util.*;
 
 /** GLFW's standard Xbox-compatible logical mapping; per-device verification remains explicit. */
 public record GamepadProfile(int schemaVersion,int steerAxis,int throttleAxis,int brakeAxis,
         float triggerMinimum,float triggerMaximum,int handbrake,int turbo,int machineGun,int rocket,
-        int pulse,int previousWeapon,int nextWeapon,int rearView,int recover,int pause,int up,int down,int back,
-        int abilityModifier) {
+        int shield,int previousWeapon,int nextWeapon,int rearView,int recover,int pause,int up,int down,int back,
+        int freeze,int activate) {
     public GamepadProfile {
-        if(schemaVersion!=2 || !Float.isFinite(triggerMinimum) || !Float.isFinite(triggerMaximum)
+        if(schemaVersion!=3 || !Float.isFinite(triggerMinimum) || !Float.isFinite(triggerMaximum)
                 || triggerMinimum>=triggerMaximum) throw new IllegalArgumentException("Invalid gamepad profile");
         for(int axis:new int[]{steerAxis,throttleAxis,brakeAxis}) if(axis<0||axis>5) throw new IllegalArgumentException("Invalid gamepad axis");
-        for(int button:new int[]{handbrake,turbo,machineGun,rocket,pulse,previousWeapon,nextWeapon,rearView,recover,pause,up,down,back}) if(button<0||button>14) throw new IllegalArgumentException("Invalid gamepad button");
-        if(abilityModifier < -1 || abilityModifier>14) throw new IllegalArgumentException("Invalid ability modifier");
-        for(int button:new int[]{handbrake,turbo,machineGun,rocket,pulse,previousWeapon,nextWeapon,rearView,recover,pause,up,down,back})
-            if(button==abilityModifier) abilityModifier=-1;
+        for(int button:new int[]{handbrake,turbo,machineGun,rocket,previousWeapon,nextWeapon,rearView,recover,pause,up,down,back,activate}) if(button<0||button>14) throw new IllegalArgumentException("Invalid gamepad button");
+        if(shield < -1 || shield>14 || freeze < -1 || freeze>14) throw new IllegalArgumentException("Invalid ability button");
+        Set<Integer> occupied=new HashSet<>();
+        for(int button:new int[]{handbrake,turbo,machineGun,rocket,previousWeapon,nextWeapon,rearView,recover,pause}) occupied.add(button);
+        if(shield>=0&&!occupied.add(shield)) shield=-1;
+        if(freeze>=0&&!occupied.add(freeze)) freeze=-1;
     }
     public static GamepadProfile load(Path directory) {
         GamepadProfile bundled=Configs.load("gamepad",GamepadProfile.class);
@@ -33,17 +35,27 @@ public record GamepadProfile(int schemaVersion,int steerAxis,int throttleAxis,in
         try {
             JsonObject tree;
             try(Reader reader=Files.newBufferedReader(file,StandardCharsets.UTF_8)) { tree=JsonParser.parseReader(reader).getAsJsonObject(); }
-            boolean migrate=tree.has("schemaVersion") && tree.get("schemaVersion").getAsInt()==1;
+            int version=tree.has("schemaVersion")?tree.get("schemaVersion").getAsInt():-1;
+            boolean migrate=version==1||version==2;
             if(migrate) {
-                tree.addProperty("schemaVersion",2);
-                if(tree.has("abilityModifier")) throw new IllegalArgumentException("Unexpected v1 abilityModifier");
-                tree.addProperty("abilityModifier",10);
+                // Validate the original shape before removing fields; migration must not hide typos.
+                Set<String> originalFields=new HashSet<>(List.of("schemaVersion","steerAxis","throttleAxis","brakeAxis",
+                        "triggerMinimum","triggerMaximum","handbrake","turbo","machineGun","rocket","pulse",
+                        "previousWeapon","nextWeapon","rearView","recover","pause","up","down","back"));
+                if(version==2) originalFields.add("abilityModifier");
+                if(!tree.keySet().equals(originalFields)) throw new IllegalArgumentException("Invalid legacy gamepad fields");
+                var formerSpecial=tree.remove("pulse");
+                tree.remove("abilityModifier");
+                tree.addProperty("schemaVersion",3);
+                tree.add("shield",formerSpecial);
+                tree.add("activate",formerSpecial.deepCopy());
+                tree.add("freeze",tree.get("up").deepCopy());
             }
             Configs.validate(tree,GamepadProfile.class,"gamepad");
             GamepadProfile loaded=Configs.gson().fromJson(tree,GamepadProfile.class);
             if(migrate) {
                 try {
-                    Path backup=file.resolveSibling("gamepad.json.v1.bak"),temporary=file.resolveSibling("gamepad.json.tmp");
+                    Path backup=file.resolveSibling("gamepad.json.v"+version+".bak"),temporary=file.resolveSibling("gamepad.json.tmp");
                     if(!Files.exists(backup)) Files.copy(file,backup);
                     Files.writeString(temporary,Configs.gson().toJson(loaded),StandardCharsets.UTF_8);
                     try { Files.move(temporary,file,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING); }
@@ -54,7 +66,11 @@ public record GamepadProfile(int schemaVersion,int steerAxis,int throttleAxis,in
         } catch(IOException|RuntimeException e) { System.err.println("Invalid gamepad.json; preserved original, using bundled defaults: "+e.getMessage()); return bundled; }
     }
     public static GamepadProfile bundled() { return Configs.load("gamepad",GamepadProfile.class); }
-    public String warning() { return abilityModifier<0?"Ability modifier unbound: choose a free button in gamepad.json.":""; }
+    public String warning() {
+        List<String> unbound=new ArrayList<>();
+        if(shield<0) unbound.add("Shield");if(freeze<0) unbound.add("Freeze");
+        return unbound.isEmpty()?"":"Unbound gamepad actions: "+String.join(", ",unbound)+". Set a free button in gamepad.json.";
+    }
     public float trigger(float value) {
         return (float)Math.clamp(((double)value-triggerMinimum)/((double)triggerMaximum-triggerMinimum),0d,1d);
     }

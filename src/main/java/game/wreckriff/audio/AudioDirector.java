@@ -11,14 +11,18 @@ import java.util.*;
 /** One render-thread audio owner. Never creates a device, never uses untracked playInstance voices. */
 public final class AudioDirector implements AutoCloseable {
     private enum Group { ENGINE, WEAPON, THREAT, UI }
+    private record EventKey(GameEvent.Type type,long id,int subject) {}
+    private record DelayedImpact(GameEvent event,double due) {}
     private static final class Voice {
         final AudioNode node;
         final Group group;
         final int priority;
         final String loopKey;
+        final String sample;
         float gain;
-        Voice(AudioNode node, Group group, int priority, String loopKey, float gain) {
+        Voice(AudioNode node, Group group, int priority, String loopKey, float gain,String sample) {
             this.node=node; this.group=group; this.priority=priority; this.loopKey=loopKey; this.gain=gain;
+            this.sample=sample;
         }
     }
     private final AudioRenderer renderer;
@@ -26,20 +30,26 @@ public final class AudioDirector implements AutoCloseable {
     private final AudioConfig config;
     private final Node audioRoot = new Node("match-audio");
     private final Map<String,AudioData> buffers = new LinkedHashMap<>();
+    private final Map<String,List<String>> cueBanks;
+    private final Map<String,Integer> nextTake = new HashMap<>();
+    private final Set<EventKey> acceptedEvents = new LinkedHashSet<>();
+    private final Deque<DelayedImpact> delayedImpacts=new ArrayDeque<>();
     private final List<Voice> voices = new ArrayList<>();
     private final Map<String,Voice> loops = new HashMap<>();
     private final float[] priorSpeed = new float[5], priorTurbo = new float[5], enginePitch = new float[5];
     private AudioNode music;
+    private AudioCapture capture;
+    private double impactClock;
     private boolean closed, paused, matchActive, warningWasActive;
     private float master = 1, musicVolume = 1, sfxVolume = 1, duck, lowHpClock;
     private UUID sessionId;
-    private WorldQuery currentWorld;
 
     public AudioDirector(AssetManager assets, AudioRenderer renderer, Listener listener, Node parent) {
         this(assets, renderer, listener, parent, AudioConfig.load());
     }
     AudioDirector(AssetManager assets, AudioRenderer renderer, Listener listener, Node parent, AudioConfig config) {
         this.renderer=renderer; this.listener=listener; this.config=config;
+        cueBanks=config.cueBanks();
         Arrays.fill(enginePitch, 1);
         Arrays.fill(priorTurbo, 100);
         parent.attachChild(audioRoot);
@@ -72,9 +82,11 @@ public final class AudioDirector implements AutoCloseable {
     public void stopMatch() {
         if (renderer != null) {
             for (Voice voice : List.copyOf(voices)) remove(voice);
-            if (music != null) renderer.stopSource(music);
+            if (music != null) { if(capture!=null)capture.stop(music);renderer.stopSource(music); }
+            if (paused) renderer.resumeAll();
         }
-        sessionId=null; currentWorld=null; matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;
+        sessionId=null; matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;
+        nextTake.clear(); acceptedEvents.clear(); delayedImpacts.clear();impactClock=0;
         Arrays.fill(priorSpeed, 0); Arrays.fill(priorTurbo, 100); Arrays.fill(enginePitch, 1);
     }
 
@@ -86,8 +98,13 @@ public final class AudioDirector implements AutoCloseable {
         if (!sessionId.equals(session.sessionId)) {
             startMatch(); sessionId=session.sessionId;
         }
-        currentWorld=world;
         dt=Math.max(0, Math.min(dt, .1f));
+        impactClock+=dt;
+        for(Iterator<DelayedImpact> pending=delayedImpacts.iterator();pending.hasNext();) {
+            DelayedImpact impact=pending.next();int subject=impact.event.subjectId();
+            if(subject>=0&&!session.vehicles.get(subject).alive()) {pending.remove();continue;}
+            if(impact.due<=impactClock) {playImpact(impact.event);pending.remove();}
+        }
         duck=Math.max(0, duck-dt);
         lowHpClock=Math.max(0, lowHpClock-dt);
         for (VehicleState vehicle : session.vehicles) {
@@ -140,38 +157,42 @@ public final class AudioDirector implements AutoCloseable {
         for (GameEvent event : events) {
             // Results are UI feedback after the composition root has stopped the match loops.
             if(!matchActive && event.type()!=GameEvent.Type.MATCH_FINISHED)continue;
+            if(!acceptedEvents.add(new EventKey(event.type(),event.eventId(),event.subjectId())))continue;
+            if(acceptedEvents.size()>2048)acceptedEvents.remove(acceptedEvents.iterator().next());
             boolean player=event.sourceId()==0;
             String kind=event.kind()==null?"":event.kind().toLowerCase(Locale.ROOT);
             switch (event.type()) {
                 case SHOT -> {
                     String id=kind.contains("power")?"power-launch":kind.contains("homing")?"homing-launch"
-                            :kind.contains("napalm")?"napalm-launch":kind.contains("freeze")?"freeze"
-                            :kind.contains("stun")?"stun":"machine-gun";
+                            :kind.contains("napalm")?"napalm-launch":kind.contains("freeze")?"freeze-launch":"machine-gun";
                     float gain=id.equals("machine-gun")?.32f:1;
-                    Vector3f sourcePosition=id.equals("machine-gun") && currentWorld!=null
-                            ? currentWorld.muzzle(event.sourceId()) : event.position();
-                    shot(id,Group.WEAPON,player?96:58,sourcePosition,gain,1);
+                    shot(id,Group.WEAPON,player?96:58,event.origin(),gain,1);
                 }
+                case IMPACT -> { if(kind.equals("machine-gun"))contact(event); }
                 case EXPLOSION -> {
-                    shot(kind.contains("mine")?"mine-detonate":"explosion",Group.WEAPON,player?93:74,event.position(),.93f,1);
+                    String cue=kind.contains("mine")?"mine-detonate":kind.contains("power")?"power-explosion"
+                            :kind.contains("napalm")?"napalm-explosion":"explosion";
+                    shot(cue,Group.WEAPON,player?93:74,event.position(),.93f,1);
                     if (event.value()>=35 || kind.contains("power")) duck=config.musicDuckSeconds();
                 }
-                case DAMAGE -> { if (event.value()>=1) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
+                case DAMAGE -> { if (event.value()>=1 && !kind.equals("machine-gun")) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
                         event.position(),clamp(event.value()/25f,.1f,.7f),1); }
                 case DESTROYED -> {
+                    delayedImpacts.removeIf(impact->impact.event.subjectId()==event.subjectId());
                     shot("destroyed",Group.WEAPON,94,event.position(),1,1);
                     duck=config.musicDuckSeconds();
                 }
-                case PULSE -> shot("pulse",Group.WEAPON,player?98:80,event.position(),1,1);
                 case EMPTY -> { if (player || event.subjectId()==0) shot("empty",Group.UI,98,null,.62f,1); }
                 case MINE_PLACED -> shot("mine-place",Group.WEAPON,player?94:52,event.position(),.8f,1);
                 case FIRE_STARTED -> loop("fire-"+event.eventId(),"napalm-fire",Group.WEAPON,64,
                         event.position(),Vector3f.ZERO,.55f,1);
                 case FIRE_ENDED -> stopLoop("fire-"+event.eventId());
-                case FREEZE -> shot("freeze",Group.THREAT,event.subjectId()==0?100:80,event.position(),.8f,.85f);
-                case STUN -> shot("stun",Group.THREAT,event.subjectId()==0?100:80,event.position(),.9f,1);
-                case SHIELD -> shot("shield",Group.THREAT,player?100:80,event.position(),.8f,1);
-                case CONTROL_ENDED -> { /* Expiry is conveyed by HUD/VFX; no repeated alert. */ }
+                case FREEZE -> shot("freeze-hit",Group.THREAT,event.subjectId()==0?100:80,event.position(),.8f,1);
+                case SHIELD -> shot("shield-on",Group.THREAT,player?100:80,event.position(),.8f,1);
+                case SHIELD_HIT -> contact(event);
+                case SHIELD_ENDED -> shot("shield-end",Group.THREAT,event.subjectId()==0?95:70,event.position(),.7f,1);
+                case CONTROL_ENDED -> { if(kind.equals("freeze"))shot("freeze-end",Group.THREAT,
+                        event.subjectId()==0?95:70,event.position(),.7f,1); }
                 case PICKUP -> {
                     String id=kind.contains("repair")?"pickup-repair":kind.contains("turbo")?"pickup-turbo":"pickup-ammo";
                     shot(id,Group.UI,event.subjectId()==0?95:40,event.subjectId()==0?null:event.position(),.85f,1);
@@ -186,22 +207,28 @@ public final class AudioDirector implements AutoCloseable {
     }
 
     public void ui(boolean confirm) {
-        if (!closed && renderer!=null) { prune(); shot(confirm?"ui-confirm":"ui-nav",Group.UI,110,null,.55f,1); applyVolumes(); }
+        if (!closed && !paused && renderer!=null) { prune(); shot(confirm?"ui-confirm":"ui-nav",Group.UI,110,null,.55f,1); applyVolumes(); }
+    }
+    /** Results keep their finishing sounds only; no vehicle or arena loops are recreated. */
+    public void updateTail(float dt) {
+        if(closed||renderer==null)return;
+        prune();
+        if(paused)return;
+        duck=Math.max(0,duck-clamp(dt,0,.1f));
+        applyVolumes();
     }
     public void pause() {
         if (closed || paused) return;
+        // jME 3.8.1 pauseSource can mark a just-finished OpenAL one-shot Paused
+        // while the device still reports Stopped. Freeze the device atomically;
+        // source states and queued stream buffers stay intact for exact resumption.
+        if (renderer!=null) renderer.pauseAll();
         paused=true;
-        if (renderer==null) return;
-        if (music!=null && music.getStatus()==AudioSource.Status.Playing) renderer.pauseSource(music);
-        for (Voice voice:voices) if (voice.group!=Group.UI && voice.node.getStatus()==AudioSource.Status.Playing)
-            renderer.pauseSource(voice.node);
     }
     public void resume() {
         if (closed || !paused) return;
+        if (renderer!=null) renderer.resumeAll();
         paused=false;
-        if (renderer==null) return;
-        if (music!=null && music.getStatus()==AudioSource.Status.Paused) renderer.playSource(music);
-        for (Voice voice:voices) if (voice.node.getStatus()==AudioSource.Status.Paused) renderer.playSource(voice.node);
     }
     public void setVolumes(float master, float music, float sfx) {
         this.master=clamp(master,0,1); musicVolume=clamp(music,0,1); sfxVolume=clamp(sfx,0,1);
@@ -213,6 +240,26 @@ public final class AudioDirector implements AutoCloseable {
     }
     public float musicPlaybackSeconds() { return music==null?0:music.getPlaybackTime(); }
     public boolean isPaused() { return paused; }
+    /** Caller owns capture.close(); attaching or detaching never creates an audio renderer. */
+    public void setCapture(AudioCapture next) {
+        if(capture!=null)capture.stopAll();
+        capture=next;
+        if(capture!=null)captureVoices();
+    }
+    int pendingImpactCount() {return delayedImpacts.size();}
+
+    private void contact(GameEvent event) {
+        float delay=event.cosmeticImpactDelaySeconds();
+        if(delay<=0) {playImpact(event);return;}
+        // At most 128 cosmetic contacts; no native source is reserved while a tracer travels.
+        if(delayedImpacts.size()>=128)delayedImpacts.removeFirst();
+        delayedImpacts.addLast(new DelayedImpact(event,impactClock+delay));
+    }
+    private void playImpact(GameEvent event) {
+        if(event.type()==GameEvent.Type.SHIELD_HIT)
+            shot("shield-hit",Group.THREAT,event.subjectId()==0?100:80,event.position(),.8f,1);
+        else shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:48,event.position(),event.subjectId()<0?.32f:.65f,1);
+    }
 
     private void loop(String key, String asset, Group group, int priority, Vector3f position, Vector3f velocity,
             float gain, float pitch) {
@@ -230,8 +277,8 @@ public final class AudioDirector implements AutoCloseable {
         allocate(asset,group,priority,null,position,gain,pitch);
     }
     private Voice allocate(String asset, Group group, int priority, String loopKey, Vector3f position, float gain, float pitch) {
-        AudioData data=buffers.get(asset);
-        if (data==null) throw new IllegalArgumentException("Required effect missing: "+asset);
+        List<String> takes=cueBanks.get(asset);
+        if (takes==null) throw new IllegalArgumentException("Required cue missing: "+asset);
         if (position!=null && listener!=null && listener.getLocation().distance(position)>config.maximumDistance()) return null;
         int budget=config.sourceLimit()-1; // Music owns its reserved source, including while paused.
         if (voices.size()>=budget) {
@@ -239,12 +286,15 @@ public final class AudioDirector implements AutoCloseable {
             if (weakest.priority>=priority) return null;
             remove(weakest);
         }
-        AudioNode node=new AudioNode(data,new AudioKey("audio/"+asset+".wav",false));
+        int take=nextTake.getOrDefault(asset,0);
+        String sample=takes.get(take);
+        nextTake.put(asset,(take+1)%takes.size());
+        AudioNode node=new AudioNode(buffers.get(sample),new AudioKey("audio/"+sample+".wav",false));
         node.setName("sound-"+asset); node.setLooping(loopKey!=null); node.setPositional(position!=null);
         node.setRefDistance(config.referenceDistance()); node.setMaxDistance(config.maximumDistance());
         node.setPitch(pitch);
         if (position!=null) node.setLocalTranslation(position);
-        Voice voice=new Voice(node,group,priority,loopKey,gain);
+        Voice voice=new Voice(node,group,priority,loopKey,gain,"audio/"+sample+".wav");
         node.setVolume(0);
         // Initialize a detached subtree before attaching to the dirty application graph.
         // Its initial world position is already valid when OpenAL starts the source; jME owns
@@ -266,6 +316,19 @@ public final class AudioDirector implements AutoCloseable {
         float headroom=total>1?1/total:1;
         if(music!=null) music.setVolume(musicGain*headroom);
         for(Voice voice:voices) voice.node.setVolume(gain(voice)*headroom);
+        if(capture!=null)captureVoices();
+    }
+    private void captureVoices() {
+        if(listener==null||paused)return;
+        Vector3f position=listener.getLocation(),right=listener.getRotation().mult(Vector3f.UNIT_X);
+        if(music!=null&&music.getStatus()==AudioSource.Status.Playing)
+            capture.observe(music,config.musicAsset(),true,false,music.getVolume(),music.getPitch(),Vector3f.ZERO,
+                    position,right,config.referenceDistance(),config.maximumDistance(),music.getPlaybackTime());
+        for(Voice voice:voices)if(voice.node.getStatus()==AudioSource.Status.Playing) {
+            AudioNode node=voice.node;
+            capture.observe(node,voice.sample,node.isLooping(),node.isPositional(),node.getVolume(),node.getPitch(),
+                    node.getLocalTranslation(),position,right,node.getRefDistance(),node.getMaxDistance(),node.getPlaybackTime());
+        }
     }
     private float gain(Voice voice) {
         float group=switch(voice.group) {
@@ -279,6 +342,7 @@ public final class AudioDirector implements AutoCloseable {
     }
     private void stopLoop(String key) { Voice voice=loops.get(key); if (voice!=null) remove(voice); }
     private void remove(Voice voice) {
+        if(capture!=null)capture.stop(voice.node);
         renderer.stopSource(voice.node); voice.node.removeFromParent(); voices.remove(voice);
         if (voice.loopKey!=null) loops.remove(voice.loopKey);
     }

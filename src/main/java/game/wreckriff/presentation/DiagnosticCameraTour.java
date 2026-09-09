@@ -20,10 +20,12 @@ public final class DiagnosticCameraTour {
         rampEye=new Vector3f(ramp.minX()-12,ramp.startY()+8,ramp.minZ()-15);
         rampAim=new Vector3f((ramp.minX()+ramp.maxX())*.5f,ramp.startY()+(ramp.endY()-ramp.startY())*.6f,ramp.maxZ()-4);
     }
-    /** Call after ordinary chase camera updates during automation's first 22 seconds; capture non-null labels. */
+    /** Call after chase updates during automation warmup; each due shot is captured once, including after a frame gap. */
     public String apply(Camera camera,WorldQuery world,double seconds) {
-        if(seconds<8||seconds>=22||camera.getWidth()<=0||camera.getHeight()<=0)return null;
-        Shot shot=seconds<10?Shot.CHASE:seconds<14?Shot.GARAGE:seconds<18?Shot.RAMP:Shot.CAR;
+        if(camera.getWidth()<=0||camera.getHeight()<=0)return null;
+        Shot shot=null;
+        for(Shot candidate:Shot.values())if(!captured.contains(candidate)&&seconds>=scheduledTime(candidate)) {shot=candidate;break;}
+        if(shot==null)return null;
         switch(shot) {
             case CHASE -> { }
             case GARAGE -> frame(camera,garageEye,garageAim,64);
@@ -41,9 +43,9 @@ public final class DiagnosticCameraTour {
                 frame(camera,eye,aim,48);
             }
         }
-        double captureAt=switch(shot){case CHASE->8;case GARAGE->12;case RAMP->16;case CAR->20;};
-        return seconds>=captureAt&&captured.add(shot)?shot.name().toLowerCase(java.util.Locale.ROOT):null;
+        captured.add(shot);return shot.name().toLowerCase(java.util.Locale.ROOT);
     }
+    private static double scheduledTime(Shot shot) {return switch(shot){case CHASE->8;case GARAGE->12;case RAMP->16;case CAR->20;};}
     private static void frame(Camera camera,Vector3f eye,Vector3f aim,float fov) {
         camera.setFrustumPerspective(fov,camera.getWidth()/(float)camera.getHeight(),.1f,500);
         camera.setLocation(eye);camera.lookAt(aim,Vector3f.UNIT_Y);

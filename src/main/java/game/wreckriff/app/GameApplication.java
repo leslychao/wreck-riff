@@ -2,6 +2,7 @@ package game.wreckriff.app;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ScreenshotAppState;
+import com.jme3.app.state.VideoRecorderAppState;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.material.Material;
@@ -11,11 +12,13 @@ import game.wreckriff.Main;
 import game.wreckriff.ai.*;
 import game.wreckriff.arena.*;
 import game.wreckriff.audio.AudioDirector;
+import game.wreckriff.audio.AudioCapture;
 import game.wreckriff.combat.*;
 import game.wreckriff.config.*;
 import game.wreckriff.diagnostics.SessionReport;
 import game.wreckriff.diagnostics.DiagnosticEvidence;
 import game.wreckriff.diagnostics.DiagnosticCompletion;
+import game.wreckriff.diagnostics.CombatShowcase;
 import game.wreckriff.input.*;
 import game.wreckriff.presentation.*;
 import game.wreckriff.simulation.*;
@@ -54,6 +57,10 @@ public final class GameApplication extends SimpleApplication {
     private CombatVisuals combatVisuals;
     private ChaseCamera chase;
     private DiagnosticCameraTour visualTour;
+    private CombatShowcase showcase;
+    private VideoRecorderAppState videoRecorder;
+    private AudioCapture audioCapture;
+    private BitmapText showcaseText;
     private final List<String> diagnosticCaptures=new ArrayList<>();
     private SessionReport report;
     private ScreenshotAppState screenshots;
@@ -83,10 +90,19 @@ public final class GameApplication extends SimpleApplication {
     private long loadingStarted;
     private int diagnosticRetries,diagnosticResults,baselineBodies,baselineListeners;
     private long pauseTick;
+    private float pauseMusicSeconds;
     private boolean pauseChecked,diagnosticEnding,initialized;
 
     public GameApplication(Main.Options options,SettingsStore store) { this.options=options; this.store=store; }
     @Override public void simpleInitApp() {
+        if(options.automated()) {
+            long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+            if(window==0) throw new IllegalStateException("Benchmark requires a real GLFW window");
+            // Automated fullscreen measurement must remain drawable when the operator uses another app.
+            // Explicit minimize still pauses/fails the run; restore is performed only once at startup.
+            org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_AUTO_ICONIFY,org.lwjgl.glfw.GLFW.GLFW_FALSE);
+            org.lwjgl.glfw.GLFW.glfwRestoreWindow(window);
+        }
         flyCam.setEnabled(false); setDisplayFps(false); setDisplayStatView(false);
         inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         viewPort.setBackgroundColor(new ColorRGBA(0.033f,0.045f,0.065f,1));
@@ -96,11 +112,16 @@ public final class GameApplication extends SimpleApplication {
             matchRules=MatchRules.load(); vehicleRules=VehicleRules.load(); loop=new SimulationLoop(matchRules);
             initializeLogging();
             if(options.automated()) {
-                diagnostic=new DiagnosticEvidence(options.benchmarkSeconds()>0,options.benchmarkSeconds()>0?options.benchmarkSeconds():options.smokeSeconds());
+                diagnostic=new DiagnosticEvidence(options.benchmarkSeconds()>0,options.showcase()?CombatShowcase.SECONDS:options.benchmarkSeconds()>0?options.benchmarkSeconds():options.smokeSeconds());
+                if(options.showcase())diagnostic.put("mode","showcase");
                 diagnostic.put("gpu",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_RENDERER));
                 diagnostic.put("graphicsVersionDriver",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_VERSION));
                 diagnostic.put("width",cam.getWidth());diagnostic.put("height",cam.getHeight());
                 diagnostic.put("vsync",store.settings().vsync);diagnostic.put("audioEnabled",audioRenderer!=null);
+                long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+                diagnostic.put("windowVisible",org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_VISIBLE)!=0);
+                diagnostic.put("autoIconify",org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_AUTO_ICONIFY)!=0);
+                diagnostic.put("msaaSamples",org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL13.GL_SAMPLES));
                 diagnostic.write(store.directory(),"RUNNING");
             }
             ui=new GameUi(assetManager,guiNode); ui.resize(cam.getWidth(),cam.getHeight());
@@ -150,7 +171,7 @@ public final class GameApplication extends SimpleApplication {
                 session=new MatchSession(seed,matchRules.durationSeconds()); report=new SessionReport();
                 world=new PhysicsWorld(vehicleRules);
                 arena=ArenaDefinition.load(); content=new ArenaFactory(assetManager).build(arena);
-                if(options.automated()) visualTour=new DiagnosticCameraTour(arena);
+                if(options.automated()&&!options.showcase()) visualTour=new DiagnosticCameraTour(arena);
                 matchNode.attachChild(content.visual());
                 for(var body:content.bodies()) world.addStatic(body.shape(),body.position(),body.rotation());
                 List<ArenaDefinition.Spawn> spawns=new ArrayList<>(content.spawns()); Collections.shuffle(spawns,new Random(seed));
@@ -187,6 +208,15 @@ public final class GameApplication extends SimpleApplication {
                     diagnostic.put("startWithoutCountdown",true);
                     diagnostic.put("latestLoadSeconds",(System.nanoTime()-loadingStarted)/1_000_000_000.0);
                 }
+                if(options.showcase()) {
+                    showcase=new CombatShowcase(session,world,combat);
+                    MatchSession recordedSession=session;
+                    audioCapture=new AudioCapture(store.directory(),recordedSession::seconds,CombatShowcase.SECONDS);
+                    audio.setCapture(audioCapture);
+                    videoRecorder=new VideoRecorderAppState(store.directory().resolve("showcase.avi").toFile(),.85f,30);
+                    stateManager.attach(videoRecorder);
+                    showcaseText=ui.text("",90,1020,28,GameUi.PAPER);
+                }
             } catch(Exception e) { fail(e); }
             return null;
         });
@@ -214,9 +244,14 @@ public final class GameApplication extends SimpleApplication {
                 cam.setLocation(new Vector3f(-6,4.5f,10)); cam.lookAt(new Vector3f(0.5f,0.7f,0),Vector3f.UNIT_Y);
             }
             if(noticeTime>0) { noticeTime-=dt; if(noticeTime<=0&&noticeText!=null) noticeText.setText(""); }
-            if(visualTour!=null&&world!=null&&drawable&&elapsed<22) {
+            if(visualTour!=null&&world!=null&&drawable&&elapsed<30) {
                 String shot=visualTour.apply(cam,world,elapsed);
                 if(shot!=null) capture(shot);
+            }
+            if(showcase!=null&&world!=null&&drawable) {
+                String shot=showcase.frame(cam);
+                if(showcaseText!=null)showcaseText.setText(showcase.label());
+                if(shot!=null)capture(shot);
             }
             if(options.automated()) advanceDiagnostic(drawable);
         } catch(Exception e) { fail(e); }
@@ -225,13 +260,13 @@ public final class GameApplication extends SimpleApplication {
         if(session.outcome!=MatchSession.Outcome.NONE || flow.screen()!=Screen.RUNNING) return;
         VehicleCommand player=input.consume(); rearView=player.rearView();
         int recoveries=session.vehicle(0).recoveries;
-        List<GameEvent> events=runtime.tick(player,options.aiPlayer()||options.automated());
+        List<GameEvent> events=showcase==null?runtime.tick(player,options.aiPlayer()||options.automated()):runtime.tick(showcase.commands(),false);
+        if(showcase!=null)showcase.accept(events);
         report.tick(session,events,bots);
         if(session.vehicle(0).recoveries>recoveries) chase.reset();
         for(GameEvent event:events) {
             if(event.type()==GameEvent.Type.DESTROYED) {
                 wreckTimers.put(event.subjectId(),3f);
-                Spatial[] deadWheels=wheels.get(event.subjectId()); if(deadWheels!=null) for(Spatial wheel:deadWheels) if(wheel!=null) wheel.removeFromParent();
             }
             if(event.type()==GameEvent.Type.DAMAGE && event.subjectId()==0) chase.impact(Math.min(0.7f,event.value()/60));
         }
@@ -245,18 +280,24 @@ public final class GameApplication extends SimpleApplication {
     }
     private void renderMatch(float dt) {
         boolean advancing=flow.screen()==Screen.RUNNING;
+        boolean results=flow.screen()==Screen.RESULTS;
         float alpha=advancing?loop.alpha():1;
         for(var state:session.vehicles) {
             Node model=vehicleModels.get(state.id);
+            VehicleVisual.updateDamage(model,showcase==null?state.hp/state.maximumHp:showcase.displayHpFraction(state));
+            VehicleVisual.updateEffects(model,!results&&state.alive()&&state.frozenTicks>0,!results&&state.alive()&&state.shieldTicks>0);
             if(state.alive() && world.containsVehicle(state.id)) {
                 var pose=world.interpolatedPose(state.id,alpha); model.setLocalTranslation(pose.position()); model.setLocalRotation(pose.rotation());
                 for(int i=0;i<4;i++) if(wheels.get(state.id)[i]!=null) {
                     var wheel=world.interpolatedWheel(state.id,i,alpha); wheels.get(state.id)[i].setLocalTranslation(wheel.position()); wheels.get(state.id)[i].setLocalRotation(wheel.rotation());
                 }
-            } else if(advancing&&wreckTimers.containsKey(state.id)) {
+            } else if((advancing||results)&&wreckTimers.containsKey(state.id)) {
                 float remaining=wreckTimers.compute(state.id,(id,value)->value-dt);
-                if(remaining<=0) { model.removeFromParent(); wreckTimers.remove(state.id); }
-                else model.setLocalScale(Math.min(1,remaining));
+                if(remaining<=0) {
+                    model.removeFromParent();
+                    for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
+                    wreckTimers.remove(state.id);
+                }
             }
         }
         if(advancing) {
@@ -265,6 +306,9 @@ public final class GameApplication extends SimpleApplication {
             audio.hazard(hazard==ArenaSystems.HazardPhase.WARNING,hazard==ArenaSystems.HazardPhase.ACTIVE,
                     new Vector3f((arena.hazard().minX()+arena.hazard().maxX())/2,0.2f,(arena.hazard().minZ()+arena.hazard().maxZ())/2));
             audio.update(session,world,dt);
+        } else if(results) {
+            combatVisuals.update(List.of(),List.of(),List.of(),null,dt);
+            audio.updateTail(dt);
         }
         for(var pickup:arena.pickups()) {
             Spatial visual=content.visual().getChild("pickup-"+pickup.id());
@@ -296,7 +340,7 @@ public final class GameApplication extends SimpleApplication {
     private void redraw() {
         int selection=renderedScreen==flow.screen()?ui.selection():0;
         renderedScreen=flow.screen();
-        ui.clear(); hpText=weaponText=timerText=debugText=abilitiesText=statusText=null; radarMarkers.clear();weaponHud.clear();
+        ui.clear(); hpText=weaponText=timerText=debugText=abilitiesText=statusText=showcaseText=null; radarMarkers.clear();weaponHud.clear();
         switch(flow.screen()) {
             case MENU -> {
                 ui.title("WRECK RIFF","DEAD AIR. LOUD ENGINES. LAST CAR STANDING.");
@@ -307,7 +351,7 @@ public final class GameApplication extends SimpleApplication {
                 ui.button("CREDITS & LICENSES",140,406,640,()->flow.open(Screen.CREDITS));
                 ui.button("QUIT",140,328,640,this::stop);
                 ui.text("ONE ARENA / FIVE MACHINES / NO SECOND CHANCES",144,245,18,GameUi.ACCENT);
-                ui.text("0.2.0  |  Local single-player  |  "+store.stats().completedMatches+" completed matches",144,196,18,GameUi.PAPER);
+                ui.text("0.3.0  |  Local single-player  |  "+store.stats().completedMatches+" completed matches",144,196,18,GameUi.PAPER);
             }
             case LOADING -> { ui.title("TUNING IN","Loading Dead Air Yard..."); }
             case RUNNING -> createHud();
@@ -329,7 +373,7 @@ public final class GameApplication extends SimpleApplication {
             case CONTROLS -> drawControls();
             case CREDITS -> {
                 ui.title("WRECK RIFF","Original single-player vehicle combat MVP");
-                ui.text("RIVET / DEAD AIR YARD\nOriginal vehicle, arena and sound effects.\n\nMETALMANIA — Kevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttps://creativecommons.org/licenses/by/4.0/\nAudio converted and edited for game playback.\n\nTextures: Poly Haven / CC0\nFont: Roboto Condensed / SIL OFL 1.1\n\nJava 21 / jMonkeyEngine / Minie / LWJGL / Gson\nFull sources and notices ship in the licenses directory.",145,790,23,GameUi.PAPER);
+                ui.text("RIVET / DEAD AIR YARD\nOriginal vehicle and arena.\n\nMETALMANIA — Kevin MacLeod (incompetech.com)\nCreative Commons: By Attribution 4.0\nAudio converted and edited for game playback.\n\nCombat SFX: Free Firearm Sound Library / CC0\n25 bang/firework SFX — rubberduck / CC0\nTextures: Poly Haven / CC0\nFont: Roboto Condensed / SIL OFL 1.1\n\nJava 21 / jMonkeyEngine / Minie / LWJGL / Gson\nFull sources and notices ship in the licenses directory.",145,790,23,GameUi.PAPER);
                 ui.button("BACK",140,260,640,flow::back);
             }
             case CONFIRM -> {
@@ -349,6 +393,7 @@ public final class GameApplication extends SimpleApplication {
         ui.select(selection);
     }
     private void createHud() {
+        if(showcase!=null)showcaseText=ui.text("",90,1020,28,GameUi.PAPER);
         ui.rect("hp-panel",45,40,470,180,GameUi.INK,0);
         hpText=ui.text("",70,193,33,GameUi.PAPER);
         ui.rect("hp-track",70,121,420,17,new ColorRGBA(0.2f,0.18f,0.16f,0.9f),1);
@@ -376,7 +421,10 @@ public final class GameApplication extends SimpleApplication {
         ui.rect("radar-center",1748,923,5,5,GameUi.PAPER,2);
         for(int id=1;id<5;id++) radarMarkers.put(id,ui.text("",0,0,18,GameUi.ACCENT));
         debugText=ui.text("",58,1015,18,GameUi.PAPER);
-        if(showHelp) ui.text("W/S drive / brake / reverse    A/D steer    SPACE handbrake\nSHIFT turbo    LMB machine gun    RMB selected weapon    Q/E weapon\nF Pulse    CTRL + W Freeze / A Stun / D Shield    V rear view\nHold R recover    ESC pause    F3 diagnostics    F12 screenshot",510,370,23,GameUi.PAPER);
+        if(showHelp) ui.text(bindingName("Throttle")+" / "+bindingName("Brake / reverse")+" drive / brake / reverse    "+bindingName("Steer left")+" / "+bindingName("Steer right")+" steer\n"+
+                bindingName("Handbrake")+" handbrake    "+bindingName("Turbo")+" turbo    LMB machine gun    RMB selected weapon\n"+
+                bindingName("Freeze")+" Freeze    "+bindingName("Shield")+" Shield    "+bindingName("Rear view")+" rear view\n"+
+                "Hold "+bindingName("Recover")+" recover    ESC pause    F3 diagnostics    F12 screenshot",510,370,23,GameUi.PAPER);
     }
     private void updateHud() {
         if(hpText==null || session==null) return;
@@ -387,15 +435,14 @@ public final class GameApplication extends SimpleApplication {
         for(var entry:weaponHud.entrySet()) {
             var slot=player.weapon(entry.getKey()); var card=entry.getValue(); boolean selected=player.selectedWeapon==entry.getKey();
             card.title().setColor(selected?GameUi.ACCENT:GameUi.PAPER);
+            card.title().setText(entry.getKey().name()+" ["+bindingName(InputSystem.weaponBinding(entry.getKey()))+"]");
             card.plate().getMaterial().setColor("Color",selected?new ColorRGBA(.27f,.17f,.075f,.97f):new ColorRGBA(.12f,.14f,.16f,1));
             card.ammo().setText(slot.ammo+" / "+slot.maximumAmmo+(slot.cooldownTicks>0?"  "+cooldown(slot.cooldownTicks):""));
         }
-        weaponText.setText("PULSE ["+bindingName("Feedback Pulse")+"]  "+cooldown(player.pulseCooldown)+"    |    "+(lock>=0?"LOCK: "+session.vehicle(lock).name:"LMB: MACHINE GUN"));
-        String modifier=bindingName("Ability modifier");
-        abilitiesText.setText("FREEZE ["+modifier+"+"+bindingName("Throttle")+"]  "+cooldown(player.abilityCooldown(AbilityId.FREEZE))+
-                "\nSTUN ["+modifier+"+"+bindingName("Steer left")+"]  "+cooldown(player.abilityCooldown(AbilityId.STUN))+
-                "\nSHIELD ["+modifier+"+"+bindingName("Steer right")+"]  "+cooldown(player.abilityCooldown(AbilityId.SHIELD)));
-        statusText.setText(player.shieldTicks>0?"SHIELD  "+cooldown(player.shieldTicks):player.stunnedTicks>0?"STUNNED  "+cooldown(player.stunnedTicks):
+        weaponText.setText("LMB: MACHINE GUN    |    "+(lock>=0?"LOCK: "+session.vehicle(lock).name:bindingName("Previous weapon")+" / "+bindingName("Next weapon")+": CYCLE"));
+        abilitiesText.setText("FREEZE ["+bindingName("Freeze")+"]  "+cooldown(player.abilityCooldown(AbilityId.FREEZE))+
+                "\nSHIELD ["+bindingName("Shield")+"]  "+cooldown(player.abilityCooldown(AbilityId.SHIELD)));
+        statusText.setText(player.shieldTicks>0?"SHIELD  "+cooldown(player.shieldTicks):
                 player.frozenTicks>0?"FROZEN  "+cooldown(player.frozenTicks)+"  /  SHIELD TO BREAK FREE":player.controlImmunityTicks>0?"CONTROL IMMUNITY  "+cooldown(player.controlImmunityTicks):"");
         int remaining=Math.max(0,matchRules.durationSeconds()-(int)session.seconds());
         timerText.setText(String.format(Locale.ROOT,"%02d:%02d   /   %d RIVALS",remaining/60,remaining%60,session.vehicles.stream().filter(v->v.id!=0&&v.alive()).count()));
@@ -449,9 +496,9 @@ public final class GameApplication extends SimpleApplication {
         }
         ui.button("NEXT PAGE",140,155,340,()->{ controlsPage=(controlsPage+1)%Math.max(1,(keys.size()+7)/8);redraw();ui.select(0); });
         ui.button("BACK",500,155,350,()->{rebinding=null;flow.back();});
-        ui.text("MOUSE\nLMB  Machine gun    RMB  Selected weapon\n\nKEYBOARD ABILITIES\nHold "+bindingName("Ability modifier")+" then press:\n"+
-                bindingName("Throttle")+"  Freeze    "+bindingName("Steer left")+"  Stun    "+bindingName("Steer right")+"  Shield\n\n"+
-                "XBOX-COMPATIBLE GAMEPAD\nRT / LT  Throttle / brake / reverse\nLeft stick  Steer\nX  Handbrake    B  Turbo\nLB  Machine gun    RB  Selected weapon\nD-pad left/right  Weapon    A  Pulse\nR3 + D-pad up/left/right  Freeze/Stun/Shield\nY  Rear view    View  Recovery    Menu  Pause\n\n"+
+        ui.text("MOUSE\nLMB  Machine gun    RMB  Selected weapon\n\nKEYBOARD ABILITIES\n"+
+                bindingName("Freeze")+"  Freeze    "+bindingName("Shield")+"  Shield\nPress once to activate; no modifier needed.\n\n"+
+                "DEFAULT GAMEPAD\nRT / LT  Throttle / brake / reverse\nLeft stick  Steer\nX  Handbrake    B  Turbo\nLB  Machine gun    RB  Selected weapon\nD-pad left/right  Weapon    A  Shield\nD-pad up  Freeze\nY  Rear view    View  Recovery    Menu  Pause\n\n"+
                 input.diagnostics()+"\n"+wrap(store.bindingWarning(),57),1010,930,24,GameUi.PAPER);
     }
     private void nextResolution() {
@@ -522,7 +569,7 @@ public final class GameApplication extends SimpleApplication {
     }
     private void capture(String label) {
         if(screenshots!=null) {
-            String prefix="WreckRiff-0.2.0-"+label+"-"+System.currentTimeMillis()+"-";
+            String prefix="WreckRiff-0.3.0-"+label+"-"+System.currentTimeMillis()+"-";
             screenshots.setFileName(prefix);screenshots.takeScreenshot();
             if(diagnostic!=null) {diagnosticCaptures.add(prefix);diagnostic.put("capturePrefixes",List.copyOf(diagnosticCaptures));}
         }
@@ -534,11 +581,12 @@ public final class GameApplication extends SimpleApplication {
         catch(IOException e) {Logger.getLogger(getClass().getName()).warning("Cannot write report: "+e.getMessage());}
     }
     private void cleanupMatch() {
+        if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
         if(audio!=null)audio.stopMatch(); if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
         else if(world!=null){world.close();world=null;}
         matchNode.detachAllChildren();vehicleModels.clear();wheels.clear();drivers.clear();wreckTimers.clear();
-        session=null;arenaSystems=null;bots=null;content=null;navNode=null;visualTour=null;
+        session=null;arenaSystems=null;bots=null;content=null;navNode=null;visualTour=null;showcase=null;showcaseText=null;
     }
     private void fail(Exception exception) {
         Logger.getLogger(getClass().getName()).log(Level.SEVERE,"Game failure",exception);
@@ -555,6 +603,7 @@ public final class GameApplication extends SimpleApplication {
     }
     @Override public void destroy() {
         try {
+            if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
             writeReport();cleanupMatch();if(audio!=null)audio.close();if(input!=null)input.close();
             super.destroy();
             diagnosticCompletion.shutdownCompleted();
@@ -580,12 +629,21 @@ public final class GameApplication extends SimpleApplication {
         } else super.handleError(message,failure);
     }
     public boolean awaitDiagnostic() throws InterruptedException {
-        int timeout=options.benchmarkSeconds()>0?options.benchmarkSeconds()+90:options.smokeSeconds()+60;
+        int timeout=options.showcase()?240:options.benchmarkSeconds()>0?options.benchmarkSeconds()+90:options.smokeSeconds()+60;
         if(!terminated.await(timeout,java.util.concurrent.TimeUnit.SECONDS)) {System.err.println("Diagnostic shutdown timed out");diagnosticCompletion.shutdownFailed();stop();return false;}
         return diagnosticCompletion.passed();
     }
     private void advanceDiagnostic(boolean drawable) {
         if(diagnosticEnding)return;
+        if(options.showcase()) {
+            if(flow.screen()==Screen.PAUSED&&drawable)flow.resume();
+            if(showcase!=null&&showcase.complete()) {
+                diagnostic.put("showcase",showcase.evidence());
+                if(!showcase.demonstrated())diagnostic.error("Showcase did not produce every required combat event");
+                finishDiagnostic(showcase.demonstrated()&&audioRenderer!=null&&undrawableSeconds==0);
+            }
+            return;
+        }
         boolean benchmark=options.benchmarkSeconds()>0;
         if(benchmark&&elapsed>=30+options.benchmarkSeconds()) {
             diagnostic.put("warmupSeconds",30);diagnostic.put("renderTargetMet",diagnostic.frames.withinTarget());
@@ -599,12 +657,16 @@ public final class GameApplication extends SimpleApplication {
             if(diagnosticPausedAt>0&&elapsed-diagnosticPausedAt<0.25)return;
             if(diagnosticPausedAt>0) {
                 if(session.tick!=pauseTick)throw new IllegalStateException("Simulation advanced while paused");
+                float musicAdvance=audio.musicPlaybackSeconds()-pauseMusicSeconds;
+                if(audioRenderer!=null&&Math.abs(musicAdvance)>.03f)throw new IllegalStateException("Music advanced while paused: "+musicAdvance);
+                diagnostic.put("pausedMusicAdvanceSeconds",musicAdvance);
                 diagnostic.put("pauseTickPreserved",true);diagnosticPausedAt=0;
             }
             flow.resume();
         }
         if(!benchmark&&!pauseChecked&&flow.screen()==Screen.RUNNING&&session.tick>=120) {
-            pauseChecked=true;pauseTick=session.tick;diagnosticPausedAt=elapsed;pause("Diagnostic focus/pause check");return;
+            pauseChecked=true;pauseTick=session.tick;diagnosticPausedAt=elapsed;pause("Diagnostic focus/pause check");
+            pauseMusicSeconds=audio.musicPlaybackSeconds();return;
         }
         if(benchmark) {
             if(flow.screen()==Screen.RESULTS) {writeReport();diagnosticRetries++;startMatch();}
@@ -622,11 +684,21 @@ public final class GameApplication extends SimpleApplication {
         }
     }
     private void finishDiagnostic(boolean success) {
+        if(!finishAudioCapture())success=false;
         if(!diagnosticCompletion.requestStop(success))return;
         diagnosticEnding=true;
         if(diagnostic!=null)diagnostic.put("inputDevices",input==null?"initialization failed":input.diagnostics());
         writeDiagnostic(success?"CHECKS_PASSED_AWAITING_SHUTDOWN":"CHECKS_FAILED_AWAITING_SHUTDOWN");
         stop();
+    }
+    private boolean finishAudioCapture() {
+        if(audioCapture==null)return true;
+        AudioCapture capture=audioCapture;audioCapture=null;
+        try {audio.setCapture(null);capture.close();return true;}
+        catch(IOException|RuntimeException failure) {
+            if(diagnostic!=null)diagnostic.error("Showcase audio capture failed: "+failure);
+            Logger.getLogger(getClass().getName()).log(Level.WARNING,"Showcase audio capture failed",failure);return false;
+        }
     }
     private void writeDiagnostic(String status) {
         if(diagnostic!=null) {

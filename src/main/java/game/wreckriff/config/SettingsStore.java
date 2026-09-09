@@ -11,7 +11,7 @@ import java.util.*;
 
 public final class SettingsStore {
     public static final class Settings {
-        public int schemaVersion=2, width=1280,height=720, samples=4;
+        public int schemaVersion=3, width=1280,height=720, samples=4;
         public boolean fullscreen=false,vsync=true;
         public float master=0.8f,music=0.8f,sfx=0.9f,shake=0.6f,sensitivity=1,deadZone=0.15f;
         public Map<String,Integer> keys=defaultKeys();
@@ -25,7 +25,7 @@ public final class SettingsStore {
     private final Path directory;
     private boolean settingsWritable=true,statsWritable=true;
     private final boolean firstRun;
-    private boolean migrateSettings;
+    private int migratedFromVersion;
     private final Set<UUID> recorded=new HashSet<>();
     private String warning="";
     private Settings settings;
@@ -39,9 +39,9 @@ public final class SettingsStore {
         settings=load("settings.json",Settings.class,new Settings());
         stats=load("stats.json",Stats.class,new Stats());
         normalize(settings);
-        if(migrateSettings && settingsWritable) {
+        if(migratedFromVersion>0 && settingsWritable) {
             try {
-                Path original=directory.resolve("settings.json"), backup=directory.resolve("settings.json.v1.bak");
+                Path original=directory.resolve("settings.json"), backup=directory.resolve("settings.json.v"+migratedFromVersion+".bak");
                 if(!Files.exists(backup)) Files.copy(original,backup);
                 write("settings.json",settings);
             } catch(IOException|SecurityException e) { warn("Settings migration stays in memory; original file preserved."); }
@@ -67,20 +67,23 @@ public final class SettingsStore {
         try(Reader reader=Files.newBufferedReader(path,StandardCharsets.UTF_8)) {
             JsonObject tree=JsonParser.parseReader(reader).getAsJsonObject();
             int version=tree.has("schemaVersion")?tree.get("schemaVersion").getAsInt():-1;
-            boolean supported=name.equals("settings.json")?(version==1||version==2):version==1;
+            boolean supported=name.equals("settings.json")?(version>=1&&version<=3):version==1;
             if (!supported) {
                 if (name.equals("settings.json")) settingsWritable=false; else statsWritable=false;
                 warn("Unsupported "+name+" version; original file preserved."); return fallback;
             }
-            if(name.equals("settings.json") && version==1) {
-                // Keep explicit v1 video preferences and bindings; only add new defaults.
-                tree.addProperty("schemaVersion",2);
+            if(name.equals("settings.json") && version<3) {
+                tree.addProperty("schemaVersion",3);
                 if(tree.has("keys")&&tree.get("keys").isJsonObject()) {
+                    JsonObject keys=tree.getAsJsonObject("keys");
                     // v1 did not define zero as an unbound action; it was an invalid key.
-                    tree.getAsJsonObject("keys").entrySet().removeIf(e->e.getValue().isJsonPrimitive()
+                    if(version==1) keys.entrySet().removeIf(e->e.getValue().isJsonPrimitive()
                             && e.getValue().getAsJsonPrimitive().isNumber()&&e.getValue().getAsInt()==0);
+                    JsonElement formerSpecial=keys.remove("Feedback Pulse");
+                    keys.remove("Ability modifier");
+                    if(formerSpecial!=null) keys.add("Shield",formerSpecial);
                 }
-                migrateSettings=true;
+                migratedFromVersion=version;
             }
             T loaded=Configs.gson().fromJson(tree,type);
             if(loaded instanceof Settings user) normalize(user);
@@ -126,7 +129,7 @@ public final class SettingsStore {
         } catch(IOException | SecurityException e) { warn("Could not save "+name+"; this session continues in memory."); }
     }
     private static void normalize(Settings value) {
-        value.schemaVersion=2;
+        value.schemaVersion=3;
         if(value.width<640 || value.width>7680 || value.height<480 || value.height>4320) { value.width=1280; value.height=720; value.fullscreen=false; }
         if(value.samples!=0&&value.samples!=2&&value.samples!=4&&value.samples!=8) value.samples=4;
         value.master=unit(value.master,0.8f); value.music=unit(value.music,0.8f); value.sfx=unit(value.sfx,0.9f); value.shake=unit(value.shake,0.6f);
@@ -155,8 +158,10 @@ public final class SettingsStore {
         keys.put("Steer left",KeyInput.KEY_A); keys.put("Steer right",KeyInput.KEY_D);
         keys.put("Handbrake",KeyInput.KEY_SPACE); keys.put("Turbo",KeyInput.KEY_LSHIFT);
         keys.put("Previous weapon",KeyInput.KEY_Q); keys.put("Next weapon",KeyInput.KEY_E);
-        keys.put("Feedback Pulse",KeyInput.KEY_F); keys.put("Rear view",KeyInput.KEY_V); keys.put("Recover",KeyInput.KEY_R);
-        keys.put("Ability modifier",KeyInput.KEY_LCONTROL);
+        keys.put("Shield",KeyInput.KEY_F); keys.put("Freeze",KeyInput.KEY_Z);
+        keys.put("Select Homing",KeyInput.KEY_1); keys.put("Select Power",KeyInput.KEY_2);
+        keys.put("Select Mine",KeyInput.KEY_3); keys.put("Select Napalm",KeyInput.KEY_4);
+        keys.put("Rear view",KeyInput.KEY_V); keys.put("Recover",KeyInput.KEY_R);
         return keys;
     }
 }

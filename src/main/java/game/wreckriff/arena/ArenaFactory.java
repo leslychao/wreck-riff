@@ -217,6 +217,10 @@ public final class ArenaFactory {
         }
     }
     private void addBackdrop(Node root,Node buildings) {
+        // The inaccessible exterior still needs a ground plane: factory foundations must not float above sky.
+        Geometry ground=new Geometry("industrial-surrounding-ground",SurfaceMesh.box(230,.15f,230,6));
+        ground.setLocalTranslation(0,-.22f,0);ground.setMaterial(material("asphalt"));
+        ground.setShadowMode(RenderQueue.ShadowMode.Receive);root.attachChild(ground);
         for(int index=0;index<12;index++) {
             float angle=index*FastMath.TWO_PI/12,range=120+(index%3)*17;
             float x=FastMath.cos(angle)*range,z=FastMath.sin(angle)*range,height=12+(index*11)%23;
@@ -231,7 +235,8 @@ public final class ArenaFactory {
                 for(int ring=0;ring<4;ring++)cylinder(buildings,"stack-band",new Vector3f(x+8,height+3+ring*6,z),1.86f,.4f,"steel");
             } else if(index%3==1) {
                 cylinder(buildings,"silo",new Vector3f(x-8,height+5,z),4,10,"steel");
-                Geometry dome=new Geometry("silo-dome",new Sphere(12,24,4));dome.setLocalTranslation(x-8,height+10,z);
+                Mesh domeMesh=new Sphere(12,24,4);com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(domeMesh);
+                Geometry dome=new Geometry("silo-dome",domeMesh);dome.setLocalTranslation(x-8,height+10,z);
                 dome.setLocalScale(1,.32f,1);dome.setMaterial(material("steel"));buildings.attachChild(dome);
             }
         }
@@ -252,7 +257,7 @@ public final class ArenaFactory {
         float[] colors=new float[sphere.getVertexCount()*4];
         for(int vertex=0;vertex<sphere.getVertexCount();vertex++) {
             float height=Math.clamp(positions.get(vertex*3+1)/350,0,1);
-            ColorRGBA color=new ColorRGBA(.29f,.25f,.20f,1).interpolateLocal(new ColorRGBA(.025f,.065f,.13f,1),(float)Math.sqrt(height));
+            ColorRGBA color=new ColorRGBA(.23f,.20f,.18f,1).interpolateLocal(new ColorRGBA(.008f,.025f,.085f,1),(float)Math.pow(height,.22));
             colors[vertex*4]=color.r;colors[vertex*4+1]=color.g;colors[vertex*4+2]=color.b;colors[vertex*4+3]=1;
         }
         sphere.setBuffer(VertexBuffer.Type.Color,4,BufferUtils.createFloatBuffer(colors));

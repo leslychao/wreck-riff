@@ -29,7 +29,10 @@ function Quote-WindowsArgument([string]$Argument) {
 
 function Read-Log([string]$LiteralPath) {
     if (-not (Test-Path -LiteralPath $LiteralPath -PathType Leaf)) { return '' }
-    return [IO.File]::ReadAllText($LiteralPath, $utf8)
+    # PowerShell still owns a writer while redirecting the child process output.
+    $stream=[IO.FileStream]::new($LiteralPath,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]'ReadWrite,Delete')
+    $reader=[IO.StreamReader]::new($stream,$utf8)
+    try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
 }
 
 $imageRoot = Assert-BuildChild (Join-Path $buildRoot 'distributions/WreckRiff')
@@ -63,7 +66,7 @@ function Read-OwnedEvidence {
     if ($file.LastWriteTimeUtc -lt $started) { throw 'Diagnostic evidence predates this launch.' }
     # The application rewrites its report during shutdown. A concurrent partial
     # write is retried while the owned process is alive, then checked strictly.
-    $data = [IO.File]::ReadAllText($path, $utf8) | ConvertFrom-Json
+    $data = (Read-Log $path) | ConvertFrom-Json
     if ($data.mode -ne 'graphics-smoke' -or $data.requestedSeconds -ne 30 -or $data.pid -le 0) { throw 'Diagnostic report does not describe this requested run.' }
     return [pscustomobject]@{ Path = $path; Data = $data }
 }

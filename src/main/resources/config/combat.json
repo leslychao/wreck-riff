@@ -3,7 +3,6 @@
   "projectileRadius": 0.15,
   "explosionSurfaceOffset": 0.03,
   "ownerSplashMultiplier": 0.5,
-  "maximumCombinedDeltaSpeed": 6.0,
   "killCreditSeconds": 5.0,
   "emptyFeedbackSeconds": 0.4,
   "machineGun": {
@@ -21,7 +20,10 @@
     "speed": 40.0,
     "ttlSeconds": 4.0,
     "explosionRadius": 6.0,
-    "maximumDeltaSpeed": 3.0
+    "blast": {
+      "horizontalDeltaSpeed": 4,
+      "upwardDeltaSpeed": 1
+    }
   },
   "power": {
     "directDamage": 50.0,
@@ -32,14 +34,10 @@
     "speed": 70.0,
     "ttlSeconds": 2.6,
     "explosionRadius": 8.0,
-    "maximumDeltaSpeed": 3.0
-  },
-  "pulse": {
-    "damage": 90,
-    "radius": 12,
-    "cooldownSeconds": 12,
-    "initialDelaySeconds": 0,
-    "maximumDeltaSpeed": 4.0
+    "blast": {
+      "horizontalDeltaSpeed": 6,
+      "upwardDeltaSpeed": 2
+    }
   },
   "targeting": {
     "acquisitionConeDegrees": 18.0,
@@ -66,7 +64,11 @@
     "triggerRadius": 3,
     "explosionRadius": 6,
     "damage": 70,
-    "lifetimeSeconds": 25
+    "lifetimeSeconds": 25,
+    "blast": {
+      "horizontalDeltaSpeed": 4,
+      "upwardDeltaSpeed": 5
+    }
   },
   "napalm": {
     "maximumZones": 6,
@@ -82,7 +84,11 @@
     "durationSeconds": 4,
     "damagePerSecond": 30,
     "intervalSeconds": 0.25,
-    "supportDepth": 4
+    "supportDepth": 4,
+    "blast": {
+      "horizontalDeltaSpeed": 2,
+      "upwardDeltaSpeed": 0.5
+    }
   },
   "control": {
     "freezeSeconds": 2,
@@ -90,10 +96,6 @@
     "freezeSpeed": 50,
     "freezeTtlSeconds": 1.2,
     "freezeRadius": 0.3,
-    "stunSeconds": 1,
-    "stunCooldownSeconds": 12,
-    "stunRange": 16,
-    "stunHalfAngleDegrees": 35,
     "shieldSeconds": 2.5,
     "shieldCooldownSeconds": 16,
     "shieldDamageMultiplier": 0.3,
@@ -103,5 +105,10 @@
     "playerMaximumHp": 800,
     "botMaximumHp": 400,
     "repairFraction": 0.25
+  },
+  "blastLimits": {
+    "horizontalDeltaSpeed": 9,
+    "upwardDeltaSpeed": 6,
+    "angularDeltaSpeed": 2
   }
 }

@@ -17,34 +17,37 @@ class ControlAndArsenalTest {
         combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);session.finishTick();
     }
     private void tick(VehicleCommand command) {tick(Map.of(0,command));}
-    private VehicleCommand ability(AbilityId id) {return new VehicleCommand(0,0,0,false,false,false,false,false,0,false,false,id);}
-    private VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,false,0,false,false,AbilityId.NONE);}
+    private VehicleCommand ability(AbilityId id) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,id);}
+    private VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,null,0,false,false,AbilityId.NONE);}
     @Test void fullHealthAndIndependentArsenalStartAtApprovedValues() {
         assertEquals(800,session.vehicle(0).maximumHp);assertEquals(800,session.vehicle(0).hp);
         for(int i=1;i<5;i++)assertEquals(400,session.vehicle(i).hp);
-        assertEquals(0,session.vehicle(0).pulseCooldown);
         for(AbilityId ability:AbilityId.values())assertEquals(0,session.vehicle(0).abilityCooldown(ability));
         assertEquals(3,session.vehicle(0).weapon(WeaponType.MINE).ammo);
         assertEquals(6,session.vehicle(0).weapon(WeaponType.NAPALM).maximumAmmo);
         WeaponType type=WeaponType.HOMING;for(int i=0;i<4;i++)type=type.cycle(1);assertEquals(WeaponType.HOMING,type);
     }
-    @Test void shieldWinsOverSameTickStunDamageAndCleansesExistingFreeze() {
+    @Test void shieldWinsOverSameTickDamageAndCleansesExistingFreeze() {
         world.positions[1].set(0,1,8);world.rotations[1]=new Quaternion().fromAngleAxis(FastMath.PI,Vector3f.UNIT_Y);
         session.vehicle(0).frozenTicks=120;world.frozen.add(0);
         combat.queueDamage(0,1,100,"power",10000);combat.queueDamage(0,-1,15,"recovery",10001);
-        tick(Map.of(0,ability(AbilityId.SHIELD),1,ability(AbilityId.STUN)));
+        tick(ability(AbilityId.SHIELD));
         assertEquals(755,session.vehicle(0).hp,.0001f);assertFalse(session.vehicle(0).controlled());
         assertFalse(world.frozen.contains(0));assertEquals(360,session.vehicle(0).controlImmunityTicks);
         assertEquals(300,session.vehicle(0).shieldTicks);assertEquals(1920,session.vehicle(0).abilityCooldown(AbilityId.SHIELD));
     }
-    @Test void simultaneousStunBeatsFreezeAndDeathRejectsBoth() {
-        world.positions[1].set(0,1,8);world.positions[2].set(0,1,1);
-        world.nextSweep=new WorldQuery.Hit(1,world.positions[1],new Vector3f(0,0,-1),.5f);
-        tick(Map.of(0,ability(AbilityId.FREEZE),2,ability(AbilityId.STUN)));
-        assertEquals(120,session.vehicle(1).stunnedTicks);assertEquals(0,session.vehicle(1).frozenTicks);
-        world.positions[3].set(0,1,9);combat.queueDamage(3,0,1000,"power",10002);
-        session.vehicle(0).abilityCooldown(AbilityId.STUN,0);tick(ability(AbilityId.STUN));
-        assertFalse(session.vehicle(3).alive());assertFalse(session.vehicle(3).controlled());
+    @Test void pendingLethalDamageRejectsFreezeAndDoesNotEmitAcceptedControl() {
+        world.positions[1].set(0,1,8);world.nextSweep=new WorldQuery.Hit(1,world.positions[1],Vector3f.UNIT_Y,.5f);
+        combat.queueDamage(1,0,1000,"power",10002);tick(ability(AbilityId.FREEZE));
+        assertFalse(session.vehicle(1).alive());assertFalse(session.vehicle(1).controlled());
+        assertTrue(combat.drainEvents().stream().noneMatch(e->e.type()==GameEvent.Type.FREEZE));
+    }
+    @Test void freezeAllowsWeaponsAndShieldCleansesIt() {
+        session.vehicle(0).frozenTicks=120;world.frozen.add(0);
+        tick(fire());assertEquals(5,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+        tick(ability(AbilityId.SHIELD));assertFalse(session.vehicle(0).controlled());assertEquals(300,session.vehicle(0).shieldTicks);
+        var ended=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.CONTROL_ENDED).toList();
+        assertEquals(1,ended.size());assertEquals("freeze",ended.getFirst().kind());
     }
     @Test void freezeDoesNotRefreshAndPostControlImmunityExpiresAtExactBoundary() {
         world.positions[1].set(0,1,8);world.nextSweep=new WorldQuery.Hit(1,world.positions[1],Vector3f.UNIT_Y,.5f);
@@ -60,7 +63,7 @@ class ControlAndArsenalTest {
         var json=Configs.gson().toJsonTree(rules).getAsJsonObject();json.addProperty("maximumProjectiles",1);
         combat=new CombatSystem(session,Configs.gson().fromJson(json,CombatRules.class));
         tick(fire());tick(ability(AbilityId.FREEZE));assertEquals(0,session.vehicle(0).abilityCooldown(AbilityId.FREEZE));
-        world.positions[1].set(0,1,8);world.hidden.add(1);tick(ability(AbilityId.STUN));assertFalse(session.vehicle(1).controlled());
+        assertFalse(session.vehicle(1).controlled());
     }
     @Test void mineArmsThenTriggersEnemyOnlyAndOwnerCapIsAtomic() {
         session.vehicle(0).selectedWeapon=WeaponType.MINE;tick(fire());assertEquals(1,combat.mines().size());
@@ -103,16 +106,6 @@ class ControlAndArsenalTest {
         assertEquals(0,combat.reservedFireZones());assertTrue(combat.fireZones().isEmpty());
         assertEquals(2,session.vehicle(0).weapon(WeaponType.NAPALM).ammo);
         assertEquals(1,combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("napalm")).count());
-    }
-    @Test void freezeAllowsWeaponsButStunSuppressesAttacksAndBothAllowShield() {
-        session.vehicle(0).frozenTicks=120;
-        tick(fire());assertEquals(5,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
-        session.vehicle(0).frozenTicks=0;session.vehicle(0).stunnedTicks=120;
-        session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks=0;
-        tick(new VehicleCommand(0,0,0,false,false,true,true,true,1,false,false,AbilityId.FREEZE));
-        assertEquals(5,session.vehicle(0).weapon(WeaponType.HOMING).ammo);assertEquals(WeaponType.HOMING,session.vehicle(0).selectedWeapon);
-        assertEquals(0,session.vehicle(0).abilityCooldown(AbilityId.FREEZE));assertEquals(0,session.vehicle(0).pulseCooldown);
-        tick(ability(AbilityId.SHIELD));assertFalse(session.vehicle(0).controlled());assertEquals(300,session.vehicle(0).shieldTicks);
     }
     @Test void fireDoesNotStackAndCannotReachAnotherSurfaceOrHiddenHull() {
         session.vehicle(0).selectedWeapon=WeaponType.NAPALM;
@@ -167,7 +160,8 @@ class ControlAndArsenalTest {
         public Hit sweep(Vector3f from,Vector3f to,float radius,int ignored){Hit hit=nextSweep;nextSweep=null;return hit;}
         public boolean visible(Vector3f from,Vector3f to,int id){return !hidden.contains(id);}
         public float distanceToHull(int id,Vector3f point){return Math.max(0,positions[id].distance(point)-1);}
-        public void impulse(int id,Vector3f value){}
+        public void impulse(int id,Vector3f linear,Vector3f torque,float angularCap) {}
+        public Vector3f closestHullPoint(int id,Vector3f from) { return position(id); }
         public void immobilize(int id,boolean active){if(active)frozen.add(id);else frozen.remove(id);}
         public Support support(Vector3f from,float depth){
             if(!supported)return null;

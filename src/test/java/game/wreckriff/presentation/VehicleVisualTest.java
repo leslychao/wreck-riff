@@ -1,6 +1,5 @@
 package game.wreckriff.presentation;
 
-import com.jme3.asset.DesktopAssetManager;
 import com.jme3.scene.*;
 import org.junit.jupiter.api.Test;
 import java.nio.FloatBuffer;
@@ -9,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class VehicleVisualTest {
     @Test void allFiveRivetsHaveCompleteSilhouettesIndependentWheelsAndStayWithinBudget() {
-        var assets=new DesktopAssetManager(true);
+        var assets=PresentationTestAssets.shared();
         for(int livery=0;livery<5;livery++) {
             Node car=VehicleVisual.create(assets,livery);
             for(int i=0;i<4;i++) assertInstanceOf(Node.class,car.getChild("wheel-"+i));
@@ -18,7 +17,7 @@ class VehicleVisualTest {
             assertNotNull(car.getChild("exhaust-left")); assertNotNull(car.getChild("exhaust-right"));
             int[] triangles={0},draws={0};
             car.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
-                Mesh mesh=geometry.getMesh();triangles[0]+=mesh.getTriangleCount();draws[0]++;
+                Mesh mesh=geometry.getMesh();if(visible(geometry)){triangles[0]+=mesh.getTriangleCount();draws[0]++;}
                 FloatBuffer positions=(FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
                 for(int i=0;i<positions.limit();i++) assertTrue(Float.isFinite(positions.get(i)));
                 if(geometry.getMaterial().getMaterialDef().getName().equals("Phong Lighting"))
@@ -38,5 +37,9 @@ class VehicleVisualTest {
             assertTrue(draws[0]<=16,"Batch decorative primitives by material: "+draws[0]);
             assertEquals("original-java-procedural",car.getUserData("assetOrigin"));
         }
+    }
+    private static boolean visible(Spatial spatial) {
+        for(Spatial current=spatial;current!=null;current=current.getParent())if(current.getLocalCullHint()==Spatial.CullHint.Always)return false;
+        return true;
     }
 }

@@ -82,7 +82,7 @@ public final class BotController {
             VehicleCommand command=drive(vehicle,brain,world);
             AbilityId ability=chooseAbility(vehicle,brain,world);
             result.put(vehicle.id,new VehicleCommand(command.throttle(),command.brakeReverse(),command.steer(),command.handbrake(),
-                    command.turbo(),command.machineGun(),command.selectedWeapon(),command.special(),command.weaponDelta(),
+                    command.turbo(),command.machineGun(),command.selectedWeapon(),command.directWeapon(),command.weaponDelta(),
                     command.rearView(),command.recover(),ability));
         }
         cached=Collections.unmodifiableMap(result); return cached;
@@ -98,12 +98,11 @@ public final class BotController {
             WorldQuery.Hit blocked=world.ray(position.add(0,.6f,0),projectile.position(),self.id);
             if(blocked==null||blocked.fraction()>=.99f)return AbilityId.SHIELD;
         }
-        if(self.stunnedTicks>0||self.protectionTicks>0)return AbilityId.NONE;
+        if(self.protectionTicks>0)return AbilityId.NONE;
         for(var target:brain.observation.visible()) {
             Vector3f offset=target.position().subtract(position);
             if(!lineOfSight(world,position.add(0,.6f,0),target.position(),self.id,target.id()))continue;
             float distance=offset.length(),angle=angleDegrees(forward,offset);
-            if(distance<=14&&angle<=30&&self.abilityCooldown(AbilityId.STUN)==0)return AbilityId.STUN;
             if(distance>=18&&distance<=50&&angle<=5&&self.abilityCooldown(AbilityId.FREEZE)==0)return AbilityId.FREEZE;
         }
         return AbilityId.NONE;
@@ -303,7 +302,7 @@ public final class BotController {
             brain.state=State.RECOVER; brain.requiredMovement=false;
             float longitudinal=velocity.dot(forward);
             return new VehicleCommand(longitudinal<-.5f?1:0,longitudinal>.5f?1:0,0,false,false,
-                    false,false,false,0,false,true,AbilityId.NONE);
+                    false,false,null,0,false,true,AbilityId.NONE);
         }
         if (session.tick<brain.reverseUntil) {
             brain.state=State.RECOVER; brain.requiredMovement=false;
@@ -317,9 +316,9 @@ public final class BotController {
             if (support<4) {
                 // The timed attempt keeps its duration, but must brake before an edge.
                 return new VehicleCommand(velocity.dot(forward)<-.5f?1:0,0,reverseSteer,
-                        false,false,false,false,false,0,false,false,AbilityId.NONE);
+                        false,false,false,false,null,0,false,false,AbilityId.NONE);
             }
-            return new VehicleCommand(0,.8f,reverseSteer,false,false,false,false,false,0,false,false,AbilityId.NONE);
+            return new VehicleCommand(0,.8f,reverseSteer,false,false,false,false,null,0,false,false,AbilityId.NONE);
         }
         Vector3f destination=steeringTarget(brain,position,speed);
         if(brain.passingDestination!=null && horizontalDistance(position,brain.passingDestination)<4) {
@@ -393,8 +392,8 @@ public final class BotController {
         boolean turbo=brain.state==State.SEEK_TARGET && Math.abs(error)<.12f && clearance>=1
                 && direction.length()>40 && self.turbo>30 && world.grounded(self.id);
         var target=brain.observation.visible(brain.target);
-        boolean machineGun=false,rocket=false,pulse=false;
-        int weaponDelta=0;
+        boolean machineGun=false,rocket=false;
+        WeaponType directWeapon=null;
         if (target!=null && session.tick>=brain.reactionUntil && self.protectionTicks==0) {
             Vector3f toTarget=target.position().subtract(world.muzzle(self.id));
             float distance=toTarget.length(),angle=angleDegrees(forward,toTarget);
@@ -415,13 +414,11 @@ public final class BotController {
                 if(behind.length()<=16&&angleDegrees(forward,behind)>=120&&self.weapon(WeaponType.MINE).ammo>0
                         &&pursuer.velocity().dot(behind.negate())>0) {selected=WeaponType.MINE;rocket=true;break;}
             }
-            if(selected!=self.selectedWeapon)weaponDelta=Math.floorMod(selected.ordinal()-self.selectedWeapon.ordinal(),WeaponType.values().length)<=2?1:-1;
-            rocket&=self.selectedWeapon.cycle(weaponDelta)==selected;
-            pulse=visible && distance<=10 && self.pulseCooldown==0;
+            if(selected!=self.selectedWeapon)directWeapon=selected;
         } else brain.lockTicks=0;
         // Braking forever in front of a blocker is still a failed request to follow a route.
         brain.requiredMovement=horizontalDistance(position,brain.destination)>2;
-        return new VehicleCommand(throttle,braking,steer,handbrake,turbo,machineGun,rocket,pulse,weaponDelta,false,false,AbilityId.NONE);
+        return new VehicleCommand(throttle,braking,steer,handbrake,turbo,machineGun,rocket,directWeapon,0,false,false,AbilityId.NONE);
     }
     private VehicleCommand backTowardRoute(VehicleState self,Brain brain,WorldQuery world,Vector3f position,
             Vector3f forward,Vector3f velocity,Vector3f direction,float error) {
@@ -461,7 +458,7 @@ public final class BotController {
         float throttle=rearSpeed>desired+1?Math.clamp((rearSpeed-desired)*.3f,0,1):0;
         float reverse=throttle>0?0:Math.clamp((desired-rearSpeed)*.35f+.25f,0,1);
         brain.requiredMovement=true;
-        return new VehicleCommand(throttle,reverse,steer,false,false,false,false,false,0,false,false,AbilityId.NONE);
+        return new VehicleCommand(throttle,reverse,steer,false,false,false,false,null,0,false,false,AbilityId.NONE);
     }
     private boolean beginLocalTrafficEscape(Brain brain,int id,Vector3f position,Vector3f forward,
             Vector3f contact,WorldQuery world) {

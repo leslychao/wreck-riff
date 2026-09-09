@@ -43,7 +43,7 @@ class NativePauseTest {
             player.turbo = 40;
             session.tick = hazard.offTicks() + hazard.warningTicks();
             for (int tick = 0; tick < hazard.damageIntervalTicks() - 1; tick++) {
-                var command = tick == 0 ? new VehicleCommand(0, 0, 0, false, false, false, true, false, 0, false, false,AbilityId.NONE) : VehicleCommand.NONE;
+                var command = tick == 0 ? new VehicleCommand(0, 0, 0, false, false, false, true, null, 0, false, false,AbilityId.NONE) : VehicleCommand.NONE;
                 runtime.tick(command, false);
             }
             assertEquals(170, player.hp, "Hazard has not reached its first full damage interval");
@@ -51,7 +51,6 @@ class NativePauseTest {
             assertEquals(ArenaSystems.HazardPhase.ACTIVE, runtime.arenaSystems().hazardPhase());
             player.machineGunCooldown = 31;
             player.weapon(WeaponType.POWER).cooldownTicks = 41;
-            player.pulseCooldown = 51;
             player.shieldTicks = 72;
             player.turboQuietTicks = CombatRules.ticks(vehicleRules.turboRegenDelay()) - 1;
             player.recoveryCooldown = 21;
@@ -74,7 +73,6 @@ class NativePauseTest {
             assertEquals(170 - hazard.damage()*.3f, player.hp, 0.001f, "The preserved hazard interval completes once after Resume");
             assertEquals(30, player.machineGunCooldown);
             assertEquals(40, player.weapon(WeaponType.POWER).cooldownTicks);
-            assertEquals(50, player.pulseCooldown);
             assertEquals(20, player.recoveryCooldown);
             assertEquals(71,player.shieldTicks, "Shield duration resumes on the first real tick");
             assertTrue(player.turbo > beforeTurbo, "Turbo regeneration resumes on the first real tick");

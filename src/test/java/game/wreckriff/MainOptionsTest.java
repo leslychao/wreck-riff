@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MainOptionsTest {
     @Test void everyDiagnosticSwitchRequiresExplicitDevMode() {
-        for(String flag:new String[]{"--seed=42","--no-audio","--ai-player","--smoke-seconds=45","--benchmark-seconds=60","--config-dir=."}) {
+        for(String flag:new String[]{"--seed=42","--no-audio","--ai-player","--smoke-seconds=45","--benchmark-seconds=60","--config-dir=.","--showcase"}) {
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{flag}),flag);
             assertTrue(Main.Options.parse(new String[]{flag,"--dev"}).dev());
         }
@@ -20,6 +20,8 @@ class MainOptionsTest {
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--benchmark-seconds="+value}),value);
     }
     @Test void smokeAndBenchmarkCannotCompeteForOneDiagnosticRun() {
+        assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--showcase","--smoke-seconds=30"}));
+        assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--showcase","--benchmark-seconds=30"}));
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--smoke-seconds=30","--benchmark-seconds=60"}));
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--benchmark-seconds=60","--smoke-seconds=30"}));
     }
@@ -28,6 +30,7 @@ class MainOptionsTest {
         assertFalse(Main.Options.parse(new String[]{"--dev","--seed=42","--ai-player","--no-audio","--config-dir=."}).automated());
         assertTrue(Main.Options.parse(new String[]{"--dev","--smoke-seconds=1"}).automated());
         assertTrue(Main.Options.parse(new String[]{"--dev","--benchmark-seconds=1"}).automated());
+        assertTrue(Main.Options.parse(new String[]{"--dev","--showcase"}).automated());
     }
     @Test void seedLimitsAndSmokeBoundariesAreParsedWithoutLosingPrecision() {
         assertEquals(Long.MIN_VALUE,Main.Options.parse(new String[]{"--dev","--seed="+Long.MIN_VALUE}).seed());

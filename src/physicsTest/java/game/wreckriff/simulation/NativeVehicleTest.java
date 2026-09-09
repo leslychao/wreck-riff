@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeVehicleTest {
-    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,false,0,false,false,AbilityId.NONE);
-    private static final VehicleCommand BRAKE=new VehicleCommand(0,1,0,false,false,false,false,false,0,false,false,AbilityId.NONE);
+    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
+    private static final VehicleCommand BRAKE=new VehicleCommand(0,1,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
     private PhysicsWorld world() {
         PhysicsWorld world=new PhysicsWorld(VehicleRules.load());
         world.addStatic(new BoxCollisionShape(new Vector3f(300,0.5f,300)),new Vector3f(0,-0.5f,0),new Quaternion());
@@ -49,7 +49,7 @@ class NativeVehicleTest {
         try(PhysicsWorld world=world()) {
             VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)),VehicleRules.load());
             for(int i=0;i<120;i++) { controller.drive(GAS); world.step(); }
-            VehicleCommand turn=new VehicleCommand(1,0,0.7f,false,false,false,false,false,0,false,false,AbilityId.NONE);
+            VehicleCommand turn=new VehicleCommand(1,0,0.7f,false,false,false,false,null,0,false,false,AbilityId.NONE);
             for(int i=0;i<120;i++) { controller.drive(turn); world.step(); }
             System.out.printf("P02 steer result position=%s forward=%s%n",world.position(0),world.forward(0));
             assertTrue(world.position(0).x < -1,"Positive steering must turn toward driver-right (-X for +Z heading)");
@@ -65,7 +65,7 @@ class NativeVehicleTest {
                 VehicleCommand straight=direction>0?GAS:BRAKE;
                 for(int i=0;i<120;i++){controller.drive(straight);world.step();}
                 Vector3f right=rotation.mult(Vector3f.UNIT_Z).cross(Vector3f.UNIT_Y).normalizeLocal();
-                VehicleCommand turn=new VehicleCommand(direction>0?1:0,direction<0?1:0,.7f,false,false,false,false,false,0,false,false,AbilityId.NONE);
+                VehicleCommand turn=new VehicleCommand(direction>0?1:0,direction<0?1:0,.7f,false,false,false,false,null,0,false,false,AbilityId.NONE);
                 for(int i=0;i<90;i++){controller.drive(turn);world.step();}
                 assertTrue(world.forward(0).dot(right)*direction>.12f,"Heading "+yaw+" drive "+direction+" forward "+world.forward(0)+" right "+right);
             }

@@ -216,8 +216,11 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         for (PhysicsSweepTestResult result:space.sweepTest(shape,new Transform(from),new Transform(to))) {
             int id=identities.getOrDefault(result.getCollisionObject(),-1);
             if (onlyStatics ? id>=0 : id!=onlyVehicle) continue;
-            if (nearest==null || result.getHitFraction()<nearest.fraction()) nearest=new Hit(id,
-                    from.clone().interpolateLocal(to,result.getHitFraction()),result.getHitNormalLocal(null),result.getHitFraction());
+            if (nearest==null || result.getHitFraction()<nearest.fraction()) {
+                Vector3f normal=result.getHitNormalLocal(null).normalizeLocal();
+                Vector3f point=from.clone().interpolateLocal(to,result.getHitFraction()).subtractLocal(normal.mult(radius));
+                nearest=new Hit(id,point,normal,result.getHitFraction());
+            }
         }
         return nearest;
     }
@@ -240,7 +243,8 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
                 Hit hit=nativeSweep(rel0,rel1,radius,id,false);
                 if (hit!=null) {
                     float fraction=t0+hit.fraction()/parts;
-                    if (nearest==null || fraction<nearest.fraction()) nearest=new Hit(id,from.clone().interpolateLocal(to,fraction),hit.normal(),fraction);
+                    if (nearest==null || fraction<nearest.fraction()) nearest=new Hit(id,
+                            from.clone().interpolateLocal(to,fraction).subtractLocal(hit.normal().mult(radius)),hit.normal(),fraction);
                 }
             }
         }
@@ -264,7 +268,24 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         Vector3f delta=point.subtract(center);
         return new Vector3f(Math.max(0,Math.abs(delta.x)-extent.x),Math.max(0,Math.abs(delta.y)-extent.y),Math.max(0,Math.abs(delta.z)-extent.z)).length();
     }
-    @Override public void impulse(int id,Vector3f impulse) { if (vehicle(id)!=null) vehicle(id).applyCentralImpulse(impulse); }
+    @Override public void impulse(int id,Vector3f linearImpulse,Vector3f torqueImpulse,float maximumAngularDeltaSpeed) {
+        PhysicsVehicle body=vehicles.get(id);if(body==null)return;
+        Vector3f torque=torqueImpulse.clone();
+        float angularChange=body.getInverseInertiaWorld(null).mult(torque).length();
+        if(angularChange>maximumAngularDeltaSpeed)torque.multLocal(maximumAngularDeltaSpeed/angularChange);
+        body.applyCentralImpulse(linearImpulse);
+        body.applyTorqueImpulse(torque);
+    }
+    @Override public Vector3f closestHullPoint(int id,Vector3f from) {
+        Vector3f local=rotation(id).inverse().mult(from.subtract(position(id)));
+        Vector3f lower=boxClosest(local,new Vector3f(0,.2f,0),new Vector3f(rules.width()/2,.3f,rules.length()/2));
+        Vector3f upper=boxClosest(local,new Vector3f(0,.65f,-.25f),new Vector3f(.83f,.32f,.85f));
+        return position(id).add(rotation(id).mult(local.distanceSquared(lower)<=local.distanceSquared(upper)?lower:upper));
+    }
+    private static Vector3f boxClosest(Vector3f point,Vector3f center,Vector3f extent) {
+        return new Vector3f(Math.clamp(point.x,center.x-extent.x,center.x+extent.x),
+                Math.clamp(point.y,center.y-extent.y,center.y+extent.y),Math.clamp(point.z,center.z-extent.z,center.z+extent.z));
+    }
     public boolean freePose(int id,Vector3f position,Quaternion rotation) {
         PhysicsGhostObject probe=recoveryProbe;
         probe.setPhysicsLocation(position); probe.setPhysicsRotation(rotation);

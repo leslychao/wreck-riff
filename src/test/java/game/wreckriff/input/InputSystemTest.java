@@ -4,6 +4,7 @@ import com.jme3.input.*;
 import com.jme3.input.event.*;
 import game.wreckriff.config.SettingsStore;
 import game.wreckriff.combat.AbilityId;
+import game.wreckriff.combat.WeaponType;
 import org.lwjgl.glfw.GLFWGamepadState;
 import static org.lwjgl.glfw.GLFW.*;
 import org.junit.jupiter.api.Test;
@@ -11,48 +12,58 @@ import java.lang.reflect.Proxy;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InputSystemTest {
-    @Test void modifierNeedsFreshDirectionAndDoesNotStealDriving() {
+    @Test void unknownKeyCannotActivateDisabledAbilitiesWeaponSelectionOrCycle() {
+        var settings=new SettingsStore.Settings();
+        for(String action:java.util.List.of("Freeze","Shield","Select Homing","Select Power","Select Mine","Select Napalm","Next weapon"))settings.keys.put(action,0);
+        settings.keys.remove("Previous weapon");
+        try(InputSystem input=input(settings)) {
+            input.setGameplay(true);input.onKeyEvent(key(0,true));
+            VehicleCommand command=input.consume();
+            assertEquals(AbilityId.NONE,command.ability());assertNull(command.directWeapon());assertEquals(0,command.weaponDelta());
+            input.onKeyEvent(key(KeyInput.KEY_W,true));assertEquals(1,input.consume().throttle());
+        }
+    }
+    @Test void abilityKeysNeedFreshPressAndDoNotStealDriving() {
         try(InputSystem input=input()) {
             input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_W,true));
-            input.onKeyEvent(key(KeyInput.KEY_LCONTROL,true));
-            assertEquals(AbilityId.NONE,input.consume().ability(),"Pressing modifier after throttle is not a combo");
-            input.onKeyEvent(key(KeyInput.KEY_W,false));input.onKeyEvent(key(KeyInput.KEY_W,true));
+            input.onKeyEvent(key(KeyInput.KEY_Z,true));
             VehicleCommand first=input.consume();
             assertEquals(AbilityId.FREEZE,first.ability());assertEquals(1,first.throttle());
             assertEquals(AbilityId.NONE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_A,true));input.onKeyEvent(key(KeyInput.KEY_D,true));
+            input.onKeyEvent(key(KeyInput.KEY_Z,true));assertEquals(AbilityId.NONE,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_Z,false));input.onKeyEvent(key(KeyInput.KEY_Z,true));
+            input.onKeyEvent(key(KeyInput.KEY_F,true));
             assertEquals(AbilityId.SHIELD,input.consume().ability(),"Same-tick defensive action has priority");
         }
     }
-    @Test void combosFollowReboundMovementKeysAndCannotSurvivePause() {
-        var settings=new SettingsStore.Settings();settings.keys.put("Throttle",KeyInput.KEY_UP);
+    @Test void abilitiesFollowTheirOwnBindingsAndCannotSurvivePause() {
+        var settings=new SettingsStore.Settings();settings.keys.put("Freeze",KeyInput.KEY_C);
         try(InputSystem input=input(settings)) {
-            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_LCONTROL,true));
-            input.onKeyEvent(key(KeyInput.KEY_UP,true));assertEquals(AbilityId.FREEZE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_UP,false));input.onKeyEvent(key(KeyInput.KEY_UP,true));
+            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_Z,true));
+            assertEquals(AbilityId.NONE,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_C,true));assertEquals(AbilityId.FREEZE,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_C,false));input.onKeyEvent(key(KeyInput.KEY_C,true));
             input.clear();input.setGameplay(false);input.setGameplay(true);
             assertEquals(AbilityId.NONE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_D,true));assertEquals(AbilityId.NONE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_LCONTROL,false));input.onKeyEvent(key(KeyInput.KEY_LCONTROL,true));
-            input.onKeyEvent(key(KeyInput.KEY_D,false));input.onKeyEvent(key(KeyInput.KEY_D,true));
-            assertEquals(AbilityId.SHIELD,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_C,true));assertEquals(AbilityId.NONE,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_C,false));input.onKeyEvent(key(KeyInput.KEY_C,true));
+            assertEquals(AbilityId.FREEZE,input.consume().ability());
         }
     }
-    @Test void gamepadModifierConsumesDpadForAbilitiesAndPreservesStick() {
+    @Test void gamepadDirectAbilitiesPreserveStickAndWeaponCycle() {
         try(InputSystem input=input()) {
             input.setGameplay(true);
             GLFWGamepadState snapshot=GLFWGamepadState.create();
             snapshot.axes(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER,-1);snapshot.axes(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER,-1);
             snapshot.axes(GLFW_GAMEPAD_AXIS_LEFT_X,.575f);
-            snapshot.buttons(GLFW_GAMEPAD_BUTTON_RIGHT_THUMB,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
+            snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_UP,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
             snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_LEFT,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
-            VehicleCommand command=input.consume();assertEquals(AbilityId.STUN,command.ability());
-            assertEquals(0,command.weaponDelta());assertEquals(.5f,command.steer(),.00001f);
+            VehicleCommand command=input.consume();assertEquals(AbilityId.FREEZE,command.ability());
+            assertEquals(-1,command.weaponDelta());assertEquals(.5f,command.steer(),.00001f);
             input.acceptGamepadState(snapshot);assertEquals(AbilityId.NONE,input.consume().ability());
-            snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_RIGHT,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
+            snapshot.buttons(GLFW_GAMEPAD_BUTTON_A,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
             assertEquals(AbilityId.SHIELD,input.consume().ability());
             input.clear();input.acceptGamepadState(snapshot);assertEquals(AbilityId.NONE,input.consume().ability());
-            snapshot.buttons(GLFW_GAMEPAD_BUTTON_RIGHT_THUMB,(byte)GLFW_RELEASE);
             snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_LEFT,(byte)GLFW_RELEASE);input.acceptGamepadState(snapshot);
             snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_LEFT,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
             assertEquals(-1,input.consume().weaponDelta());
@@ -61,7 +72,7 @@ class InputSystemTest {
     @Test void ordinaryDirectionsNeverActivateAbilities() {
         try(InputSystem input=input()) {
             input.setGameplay(true);
-            for(int code:new int[]{KeyInput.KEY_W,KeyInput.KEY_A,KeyInput.KEY_D})input.onKeyEvent(key(code,true));
+            for(int code:new int[]{KeyInput.KEY_LCONTROL,KeyInput.KEY_W,KeyInput.KEY_A,KeyInput.KEY_D,KeyInput.KEY_X})input.onKeyEvent(key(code,true));
             assertEquals(AbilityId.NONE,input.consume().ability());
         }
     }
@@ -71,8 +82,8 @@ class InputSystemTest {
             input.onMouseButtonEvent(mouse(0,true)); input.onMouseButtonEvent(mouse(1,true));
             input.onKeyEvent(key(KeyInput.KEY_F,true));
             VehicleCommand command=input.consume();
-            assertTrue(command.machineGun()); assertTrue(command.selectedWeapon()); assertTrue(command.special());
-            assertFalse(input.consume().special(),"A pulse edge is consumed exactly once");
+            assertTrue(command.machineGun()); assertTrue(command.selectedWeapon()); assertEquals(AbilityId.SHIELD,command.ability());
+            assertEquals(AbilityId.NONE,input.consume().ability(),"A defensive edge is consumed exactly once");
         }
     }
     @Test void attacksHeldAcrossResumeStaySuppressedIndividuallyUntilReleased() {
@@ -83,13 +94,13 @@ class InputSystemTest {
             input.onMouseButtonEvent(mouse(0,true)); input.onKeyEvent(key(KeyInput.KEY_F,true));
             input.onMouseButtonEvent(mouse(1,true));
             VehicleCommand command=input.consume();
-            assertFalse(command.machineGun());assertFalse(command.special());assertTrue(command.selectedWeapon());
+            assertFalse(command.machineGun());assertEquals(AbilityId.NONE,command.ability());assertTrue(command.selectedWeapon());
             input.onKeyEvent(key(KeyInput.KEY_W,false));
             assertFalse(input.consume().machineGun(),"Unrelated key release must not re-arm old mouse hold");
             input.onMouseButtonEvent(mouse(0,false)); input.onKeyEvent(key(KeyInput.KEY_F,false));
             input.onMouseButtonEvent(mouse(0,true)); input.onKeyEvent(key(KeyInput.KEY_F,true));
-            VehicleCommand fresh=input.consume();assertTrue(fresh.machineGun());assertTrue(fresh.special());
-            assertFalse(input.consume().special());
+            VehicleCommand fresh=input.consume();assertTrue(fresh.machineGun());assertEquals(AbilityId.SHIELD,fresh.ability());
+            assertEquals(AbilityId.NONE,input.consume().ability());
         }
     }
     @Test void mouseClickThatActivatesResumeCannotBecomeMachineGunFire() {
@@ -112,6 +123,29 @@ class InputSystemTest {
         assertEquals(0,InputSystem.deadZone(.149f,.15f));assertEquals(0,InputSystem.deadZone(-.15f,.15f));
         assertEquals(1,InputSystem.deadZone(1,.15f),.00001f);assertEquals(-1,InputSystem.deadZone(-1,.15f),.00001f);
         assertEquals(.5f,InputSystem.deadZone(.575f,.15f),.00001f);assertEquals(0,InputSystem.deadZone(Float.NaN,.15f));
+    }
+    @Test void directSelectionSurvivesFramesAndIsClearedTogetherWithOtherEdges() {
+        try(InputSystem input=input()) {
+            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_4,true));input.onKeyEvent(key(KeyInput.KEY_E,true));
+            input.onMouseButtonEvent(mouse(1,true));
+            input.beginInput();input.endInput();
+            var command=input.consume();assertEquals(WeaponType.NAPALM,command.directWeapon());
+            assertEquals(1,command.weaponDelta());assertTrue(command.selectedWeapon());
+            assertNull(command.withoutEdges().directWeapon());assertNull(command.withoutAttacks().directWeapon());
+            assertNull(input.consume().directWeapon());
+            input.onKeyEvent(key(KeyInput.KEY_1,true));input.clear();assertNull(input.consume().directWeapon());
+        }
+    }
+    @Test void menuGamepadActivationDoesNotLeakIntoShieldOrFreeze() {
+        try(InputSystem input=input()) {
+            var actions=new java.util.ArrayList<String>();input.onUi(actions::add);
+            GLFWGamepadState snapshot=GLFWGamepadState.create();
+            snapshot.buttons(GLFW_GAMEPAD_BUTTON_A,(byte)GLFW_PRESS);
+            snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_UP,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
+            assertEquals(java.util.List.of("activate","up"),actions);assertEquals(AbilityId.NONE,input.consume().ability());
+            input.clear();input.setGameplay(true);input.acceptGamepadState(snapshot);
+            assertEquals(AbilityId.NONE,input.consume().ability());
+        }
     }
     private static InputSystem input() {
         return input(new SettingsStore.Settings());

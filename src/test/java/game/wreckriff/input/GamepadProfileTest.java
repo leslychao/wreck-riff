@@ -12,21 +12,31 @@ import static org.junit.jupiter.api.Assertions.*;
 class GamepadProfileTest {
     @TempDir Path directory;
 
-    @Test void v1ProfileMigratesWithCalibrationAndBackupAndDisablesAConflictingModifier() throws Exception {
-        JsonObject old=defaults();old.addProperty("schemaVersion",1);old.remove("abilityModifier");
-        old.addProperty("rocket",10);old.addProperty("triggerMinimum",0);old.addProperty("triggerMaximum",1);
+    @Test void v1ProfileMigratesWithCalibrationAndBackupAndDisablesConflictingFreeze() throws Exception {
+        JsonObject old=legacy(1);
+        old.addProperty("rocket",11);old.addProperty("triggerMinimum",0);old.addProperty("triggerMaximum",1);
         String original=Configs.gson().toJson(old);Files.writeString(directory.resolve("gamepad.json"),original);
         GamepadProfile profile=GamepadProfile.load(directory);
-        assertEquals(2,profile.schemaVersion());assertEquals(10,profile.rocket());assertEquals(-1,profile.abilityModifier());
-        assertEquals(.5f,profile.trigger(.5f));assertTrue(profile.warning().contains("unbound"));
+        assertEquals(3,profile.schemaVersion());assertEquals(11,profile.rocket());assertEquals(-1,profile.freeze());
+        assertEquals(.5f,profile.trigger(.5f));assertTrue(profile.warning().contains("Freeze"));
         assertEquals(original,Files.readString(directory.resolve("gamepad.json.v1.bak")));
         assertEquals(profile,GamepadProfile.load(directory));
     }
 
-    @Test void defaultV1MappingGainsR3ModifierWithoutChangingOtherActions() throws Exception {
-        JsonObject old=defaults();old.addProperty("schemaVersion",1);old.remove("abilityModifier");
+    @Test void defaultV1MappingMigratesWithoutChangingDrivingOrMenu() throws Exception {
+        JsonObject old=legacy(1);
         Files.writeString(directory.resolve("gamepad.json"),Configs.gson().toJson(old));
         assertEquals(GamepadProfile.bundled(),GamepadProfile.load(directory));
+    }
+    @Test void v2TransfersCustomSpecialToShieldAndMenuAndPreservesOriginal() throws Exception {
+        JsonObject old=legacy(2);old.addProperty("pulse",8);old.addProperty("up",9);
+        String original=Configs.gson().toJson(old);Files.writeString(directory.resolve("gamepad.json"),original);
+        var result=GamepadProfile.load(directory);
+        assertEquals(8,result.shield());assertEquals(8,result.activate());assertEquals(9,result.freeze());
+        assertEquals(original,Files.readString(directory.resolve("gamepad.json.v2.bak")));
+        String current=Files.readString(directory.resolve("gamepad.json"));
+        assertFalse(current.contains("pulse"));assertFalse(current.contains("abilityModifier"));
+        assertEquals(result,GamepadProfile.load(directory));
     }
 
     @Test void firstLoadCreatesAnEditableUtf8ProfileAndLaterLoadsPreserveIt() throws Exception {
@@ -42,14 +52,14 @@ class GamepadProfileTest {
     @Test void editedAxesButtonsAndTriggerCalibrationSurviveReloadWithoutRewriting() throws Exception {
         JsonObject json=defaults();
         json.addProperty("steerAxis",2);json.addProperty("throttleAxis",3);json.addProperty("brakeAxis",1);
-        json.addProperty("machineGun",0);json.addProperty("rocket",3);json.addProperty("pulse",5);
+        json.addProperty("machineGun",0);json.addProperty("rocket",3);json.addProperty("shield",5);
         json.addProperty("triggerMinimum",0);json.addProperty("triggerMaximum",1);
         Path file=directory.resolve("gamepad.json");
         String original="\r\n  "+Configs.gson().toJson(json)+"\r\n";
         Files.writeString(file,original,StandardCharsets.UTF_8);
         GamepadProfile profile=GamepadProfile.load(directory);
         assertEquals(2,profile.steerAxis());assertEquals(3,profile.throttleAxis());assertEquals(1,profile.brakeAxis());
-        assertEquals(0,profile.machineGun());assertEquals(3,profile.rocket());assertEquals(5,profile.pulse());
+        assertEquals(0,profile.machineGun());assertEquals(3,profile.rocket());assertEquals(5,profile.shield());
         assertEquals(0,profile.trigger(-1));assertEquals(0,profile.trigger(0));
         assertEquals(.5f,profile.trigger(.5f));assertEquals(1,profile.trigger(1));assertEquals(1,profile.trigger(2));
         assertEquals(profile,GamepadProfile.load(directory));assertEquals(original,Files.readString(file));
@@ -112,9 +122,15 @@ class GamepadProfileTest {
     }
 
     private JsonObject defaults() { return Configs.gson().toJsonTree(GamepadProfile.bundled()).getAsJsonObject(); }
+    private JsonObject legacy(int version) {
+        JsonObject old=defaults();old.addProperty("schemaVersion",version);
+        old.add("pulse",old.remove("shield"));old.remove("freeze");old.remove("activate");
+        if(version==2)old.addProperty("abilityModifier",10);
+        return old;
+    }
 
     private GamepadProfile withTriggerRange(float minimum,float maximum) {
-        return new GamepadProfile(2,0,5,4,minimum,maximum,2,1,4,5,0,14,12,3,6,7,11,13,1,10);
+        return new GamepadProfile(3,0,5,4,minimum,maximum,2,1,4,5,0,14,12,3,6,7,11,13,1,11,0);
     }
 
     private void assertRejectedWithoutMutation(String original) throws Exception {

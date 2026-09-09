@@ -18,11 +18,14 @@ class CombatRulesTest {
         assertEquals(12, rules.machineGun().cooldownTicks());
         assertEquals(96, CombatRules.ticks(rules.homing().cooldownSeconds()));
         assertEquals(132, CombatRules.ticks(rules.power().cooldownSeconds()));
-        assertEquals(1440, CombatRules.ticks(rules.pulse().cooldownSeconds()));
-        assertEquals(0, CombatRules.ticks(rules.pulse().initialDelaySeconds()));
         assertEquals(18, CombatRules.ticks(rules.targeting().acquisitionSeconds()));
         assertEquals(36, CombatRules.ticks(rules.targeting().occlusionGraceSeconds()));
         assertEquals(72, CombatRules.ticks(rules.ram().cooldownSeconds()));
+        assertEquals(new CombatRules.Blast(4,1),rules.homing().blast());
+        assertEquals(new CombatRules.Blast(6,2),rules.power().blast());
+        assertEquals(new CombatRules.Blast(4,5),rules.mine().blast());
+        assertEquals(new CombatRules.Blast(2,.5f),rules.napalm().blast());
+        assertEquals(new CombatRules.BlastLimits(9,6,2),rules.blastLimits());
     }
 
     @Test void T01_unknownOrMissingNestedFieldsAreRejected() {

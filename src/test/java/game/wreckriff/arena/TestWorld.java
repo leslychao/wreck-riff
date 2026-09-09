@@ -33,5 +33,6 @@ public final class TestWorld implements WorldQuery {
     }
     public boolean visible(Vector3f from,Vector3f to,int target) { return !wall && !hidden.contains(target); }
     public float distanceToHull(int id,Vector3f point) { return Math.max(0,positions[id].distance(point)-1); }
-    public void impulse(int id,Vector3f impulse) { velocities[id].addLocal(impulse); }
+    public void impulse(int id,Vector3f linear,Vector3f torque,float angularCap) { velocities[id].addLocal(linear.divide(mass(id))); }
+    public Vector3f closestHullPoint(int id,Vector3f from) { return position(id); }
 }

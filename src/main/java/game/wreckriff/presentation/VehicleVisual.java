@@ -26,7 +26,7 @@ public final class VehicleVisual {
         SurfaceMaterials surfaces=new SurfaceMaterials(assets);
         Material paint=surfaces.paint(PAINT[livery]), steel=surfaces.material("steel");
         Material dark=surfaces.rubber();
-        Material glass=SurfaceMaterials.lit(assets,new ColorRGBA(.035f,.09f,.13f,1),64,.8f);
+        Material glass=SurfaceMaterials.lit(assets,new ColorRGBA(.018f,.055f,.085f,1),110,.24f);
         Material markings=SurfaceMaterials.lit(assets,new ColorRGBA(.88f,.84f,.72f,1),15,.08f);
         Material lamps=unlit(assets,new ColorRGBA(1,.77f,.33f,1));
         Material tail=unlit(assets,new ColorRGBA(.95f,.09f,.025f,1));
@@ -63,7 +63,7 @@ public final class VehicleVisual {
             // Front weapon brackets are exposed and mechanically distinct from lamps.
             metal.box(x*.53f,.37f,1.45f,.16f,.07f,.43f);
             black.box(x*.53f,.47f,1.65f,.095f,.095f,.43f);
-            metal.cylinderZ(x*.53f,.47f,2.09f,.063f,.17f,10);
+            metal.cylinderZ(x*.53f,.47f,2.105f,.063f,.34f,10);
             black.cylinderZ(x*.53f,.47f,2.27f,.041f,.013f,10);
             frontLights.box(x*.61f,.16f,2.261f,.145f,.058f,.012f);
             rearLights.box(x*.6f,.19f,-2.25f,.15f,.042f,.023f);
@@ -102,8 +102,11 @@ public final class VehicleVisual {
         addNumbers(root,assets,livery);
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         root.setUserData("livery",livery); root.setUserData("assetOrigin","original-java-procedural");
-        return root;
+        VehicleDamageVisual.install(assets,root);return root;
     }
+
+    public static void updateDamage(Node vehicle,float hpFraction) {vehicle.getControl(VehicleDamageVisual.class).damage(hpFraction);}
+    public static void updateEffects(Node vehicle,boolean frozen,boolean shielded) {vehicle.getControl(VehicleDamageVisual.class).effects(frozen,shielded);}
 
     private static Node wheel(int id,Material metal,Material tyre) {
         Node node=new Node("wheel-"+id);

@@ -14,9 +14,9 @@ public final class VehicleState {
     private final EnumMap<WeaponType,WeaponSlot> weapons=new EnumMap<>(WeaponType.class);
     private final EnumMap<AbilityId,Integer> abilityCooldowns=new EnumMap<>(AbilityId.class);
     public float turbo = 100;
-    public int machineGunCooldown, pulseCooldown;
+    public int machineGunCooldown;
     public int turboQuietTicks, recoveryCooldown, protectionTicks;
-    public int frozenTicks,stunnedTicks,shieldTicks,controlImmunityTicks;
+    public int frozenTicks,shieldTicks,controlImmunityTicks;
     public WeaponType selectedWeapon=WeaponType.HOMING;
     public float damageDealt;
     public int eliminations, recoveries;
@@ -43,6 +43,6 @@ public final class VehicleState {
     public int abilityCooldown(AbilityId ability) { return abilityCooldowns.getOrDefault(ability,0); }
     public void abilityCooldown(AbilityId ability,int ticks) { abilityCooldowns.put(ability,Math.max(0,ticks)); }
     public void advanceAbilityCooldowns() { abilityCooldowns.replaceAll((ability,ticks)->Math.max(0,ticks-1)); }
-    public boolean controlled() { return frozenTicks>0 || stunnedTicks>0; }
+    public boolean controlled() { return frozenTicks>0; }
     public boolean alive() { return hp > 0; }
 }

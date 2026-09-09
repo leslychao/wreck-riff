@@ -23,13 +23,13 @@ class NativeControlTest {
             world.immobilize(0,true);world.immobilize(0,true);
             assertEquals(1,world.immobilizerCount());assertEquals(1,world.space().countJoints());
             for(int tick=0;tick<240;tick++) {
-                if(tick%12==0)world.impulse(0,new Vector3f(6600,0,3300));
+                if(tick%12==0)world.impulse(0,new Vector3f(6600,0,3300),Vector3f.ZERO,2);
                 world.step();
                 assertTrue(horizontalDistance(start,world.position(0))<.15f,"Native constraint must pin XZ, tick "+tick+" pose "+world.position(0));
                 assertTrue(Math.abs(orientation.dot(world.rotation(0)))>.995f,"Rotation remains locked");
             }
             world.immobilize(0,false);assertEquals(0,world.space().countJoints());
-            world.impulse(0,new Vector3f(6600,0,0));
+            world.impulse(0,new Vector3f(6600,0,0),Vector3f.ZERO,2);
             for(int i=0;i<60;i++)world.step();
             assertTrue(world.position(0).x-start.x>1,"Fresh impulse must move released body");
         }

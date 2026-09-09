@@ -31,16 +31,24 @@ public final class MatchRuntime implements AutoCloseable {
         bots.observeProjectiles(combat::projectiles);
     }
     public List<GameEvent> tick(VehicleCommand player,boolean aiPlayer) {
-        if (closed) throw new IllegalStateException("Match runtime is closed");
         Objects.requireNonNull(player);
+        return tick(aiPlayer?Map.of():Map.of(0,player),true);
+    }
+    /** Deterministic demonstrations use the same physics/combat pipeline with explicit driver commands. */
+    public List<GameEvent> tick(Map<Integer,VehicleCommand> overrides,boolean runAi) {
+        if (closed) throw new IllegalStateException("Match runtime is closed");
+        Objects.requireNonNull(overrides);
         if (session.outcome!=MatchSession.Outcome.NONE) return List.of();
-        Map<Integer,VehicleCommand> commands=new HashMap<>(bots.commands(world));
-        if (!aiPlayer) commands.put(0,player);
+        Map<Integer,VehicleCommand> commands=runAi?new HashMap<>(bots.commands(world)):new HashMap<>();
+        for(var entry:overrides.entrySet()) {
+            if(entry.getKey()==null||entry.getKey()<0||entry.getKey()>=session.vehicles.size())throw new IllegalArgumentException("Unknown driver override");
+            commands.put(entry.getKey(),Objects.requireNonNull(entry.getValue()));
+        }
         for (var state:session.vehicles) {
             if (!state.alive()) continue;
             VehicleCommand command=commands.getOrDefault(state.id,VehicleCommand.NONE);
             var recovery=drivers.get(state.id).prepare(command,session.tick);
-            if(recovery.recovered()||recovery.fatal())combat.endControl(state,world);
+            if(recovery.recovered()||recovery.fatal())combat.cancelControl(state,world);
             if (recovery.recovered() || recovery.fatal()) combat.queueDamage(state.id,-1,recovery.cost(),recovery.cause(),
                     Long.MIN_VALUE/2+session.tick*16+state.id);
             if (state.protectionTicks>0 || recovery.fatal()) commands.put(state.id,command.withoutAttacks());
@@ -49,9 +57,8 @@ public final class MatchRuntime implements AutoCloseable {
         for(var state:session.vehicles) {
             if(!state.controlled())continue;
             VehicleCommand command=commands.getOrDefault(state.id,VehicleCommand.NONE);
-            boolean stunned=state.stunnedTicks>0;
-            commands.put(state.id,new VehicleCommand(0,0,0,false,false,!stunned&&command.machineGun(),
-                    !stunned&&command.selectedWeapon(),!stunned&&command.special(),stunned?0:command.weaponDelta(),
+            commands.put(state.id,new VehicleCommand(0,0,0,false,false,command.machineGun(),
+                    command.selectedWeapon(),command.directWeapon(),command.weaponDelta(),
                     command.rearView(),false,command.ability()));
         }
         for (var state:session.vehicles) if (state.alive()) drivers.get(state.id).drive(commands.getOrDefault(state.id,VehicleCommand.NONE));

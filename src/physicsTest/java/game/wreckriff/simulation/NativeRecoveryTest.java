@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeRecoveryTest {
-    private static final VehicleCommand RECOVER = new VehicleCommand(0, 0, 0, false, false, false, false, false, 0, false, true,AbilityId.NONE);
+    private static final VehicleCommand RECOVER = new VehicleCommand(0, 0, 0, false, false, false, false, null, 0, false, true,AbilityId.NONE);
 
     @Test void recoveryRejectsNewerTwoWheelEdgePoseAndUsesFullySupportedHistory() {
         VehicleRules rules = VehicleRules.load();

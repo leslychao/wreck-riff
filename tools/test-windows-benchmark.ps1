@@ -28,14 +28,15 @@ $evidence=Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
 $memory=Get-Content -LiteralPath (Join-Path $runRoot 'memory.json') -Raw | ConvertFrom-Json
 Copy-Item -LiteralPath $reportPath -Destination (Join-Path $runRoot 'diagnostic-result.json')
 $passed=$launcher.ExitCode -eq 0 -and $evidence.status -eq 'PASS' -and $evidence.width -eq 1920 -and $evidence.height -eq 1080 `
-    -and !$evidence.vsync -and $evidence.audioEnabled -and $evidence.warmupSeconds -eq 30 -and $evidence.renderTargetMet `
+    -and !$evidence.vsync -and $evidence.audioEnabled -and $evidence.windowVisible -and !$evidence.autoIconify `
+    -and $evidence.msaaSamples -ge 4 -and $evidence.warmupSeconds -eq 30 -and $evidence.renderTargetMet `
     -and $memory.within1_5GiB -and $memory.processExited
 $result=[ordered]@{
     schemaVersion=1;status=$(if($passed){'PASS'}else{'FAIL'});requestedSeconds=$Seconds
     sourceSha256=$evidence.sourceSha256;diagnosticPath=$reportPath;runRoot=$runRoot
     launcherExitCode=$launcher.ExitCode;gamePid=$initial.pid
     activeCombatFrames=$evidence.activeCombatFrames;peakWorkingSetBytes=$memory.peakWorkingSetBytes
-    within1_5GiB=$memory.within1_5GiB;fullTenMinutes=($Seconds -eq 600)
+    within1_5GiB=$memory.within1_5GiB;fullTenMinutes=($Seconds -eq 600 -and $evidence.elapsedSeconds -ge 630)
 }
 [IO.File]::WriteAllText((Join-Path $projectRoot 'build/reports/windows-benchmark.json'),($result|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
 if(!$passed) {throw "Benchmark failed; see $runRoot"}

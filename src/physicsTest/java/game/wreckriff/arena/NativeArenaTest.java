@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Native wheel/mesh interaction and real command-driven route acceptance. */
 class NativeArenaTest {
-    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,false,0,false,false,AbilityId.NONE);
+    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
     private final ArenaDefinition definition=ArenaDefinition.load();
     private final VehicleRules vehicleRules=VehicleRules.load();
 
