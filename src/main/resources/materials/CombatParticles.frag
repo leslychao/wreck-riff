@@ -5,6 +5,7 @@ varying vec2 effectUv;
 varying float effectShape;
 
 void main() {
+    if (effectShape > 0.5 && effectShape < 1.5) { gl_FragColor=vec4(effectColor.rgb,effectUv.x < 0.0 ? 1.0 : effectColor.a);return; }
     float coverage = 1.0;
     if (effectShape > 0.5) {
         // Original analytic sprite mask: no external bitmap or hard rectangular silhouette.

@@ -83,15 +83,26 @@ class AudioDirectorTest {
             assertEquals(AudioSource.Status.Stopped,find(scene,"music-metalmania").getStatus());
         }
     }
-    @Test void resultsTailPrunesFinishedSourcesWithoutRecreatingMatchAudio() {
+    @Test void finalDeathAndResultPlayExactlyOnceThenTailPrunesWithoutRecreatingMatchAudio() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             director.startMatch();director.stopMatch();
-            director.accept(List.of(event(GameEvent.Type.MATCH_FINISHED,1,0,-1,"victory",0)));
+            List<GameEvent> finalEvents=List.of(event(GameEvent.Type.DESTROYED,1,1,0,"destroyed",1),
+                    event(GameEvent.Type.MATCH_FINISHED,1,0,-1,"victory",0),
+                    event(GameEvent.Type.SHOT,2,0,0,"machine-gun",6),
+                    event(GameEvent.Type.FIRE_STARTED,3,0,0,"napalm",5));
+            director.accept(finalEvents);
             AudioNode stinger=find(scene,"sound-victory");assertNotNull(stinger);
+            AudioNode destruction=find(scene,"sound-destroyed");assertNotNull(destruction);
+            assertEquals(2,director.voiceCount());
+            director.accept(finalEvents);assertEquals(2,director.voiceCount(),"Repeated final batch cannot replay either cue");
+            director.hazard(true,true,Vector3f.ZERO);
             director.updateTail(.1f);assertSame(stinger,find(scene,"sound-victory"));
-            stinger.setStatus(AudioSource.Status.Stopped);
+            assertSame(destruction,find(scene,"sound-destroyed"));assertEquals(2,director.voiceCount());
+            stinger.setStatus(AudioSource.Status.Stopped);destruction.setStatus(AudioSource.Status.Stopped);
             director.updateTail(.1f);assertEquals(0,director.voiceCount());assertNull(find(scene,"sound-victory"));
+            assertNull(find(scene,"sound-destroyed"));
+            director.accept(finalEvents);assertEquals(0,director.voiceCount(),"Finished tail events remain deduplicated");
             assertEquals(1,((Node)scene.getChild("match-audio")).getQuantity());
             assertEquals(AudioSource.Status.Stopped,find(scene,"music-metalmania").getStatus());
         }

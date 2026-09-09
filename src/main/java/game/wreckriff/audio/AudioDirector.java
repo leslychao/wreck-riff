@@ -155,8 +155,8 @@ public final class AudioDirector implements AutoCloseable {
         if (closed || renderer == null || paused) return;
         prune();
         for (GameEvent event : events) {
-            // Results are UI feedback after the composition root has stopped the match loops.
-            if(!matchActive && event.type()!=GameEvent.Type.MATCH_FINISHED)continue;
+            // The composition root stops match loops before delivering the final death and result.
+            if(!matchActive && event.type()!=GameEvent.Type.MATCH_FINISHED && event.type()!=GameEvent.Type.DESTROYED)continue;
             if(!acceptedEvents.add(new EventKey(event.type(),event.eventId(),event.subjectId())))continue;
             if(acceptedEvents.size()>2048)acceptedEvents.remove(acceptedEvents.iterator().next());
             boolean player=event.sourceId()==0;

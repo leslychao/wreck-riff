@@ -76,6 +76,7 @@ public final class CombatVisuals implements AutoCloseable {
     private float flameClock;
     private List<ProjectileState> projectiles=List.of();
     private boolean closed;
+    private int debugFrames;private boolean debugPrint;
 
     public CombatVisuals(AssetManager assets,Node scene,WorldQuery world) {
         this.world=Objects.requireNonNull(world);
@@ -90,6 +91,14 @@ public final class CombatVisuals implements AutoCloseable {
                 // A transparent mesh is sorted as one object by jME, so order its sprites here.
                 // This uses the actual render camera, including rear view, without owning a camera.
                 if(!closed)renderParticles(view.getCamera());
+                if(debugPrint) {
+                    Geometry g=particleBatch.geometry;
+                    System.out.println("FX_RENDER cam="+view.getCamera().getLocation()+" bound="+g.getWorldBound()+" parent="+g.getParent().getWorldBound()+" transform="+g.getWorldTransform()+" vertices="+g.getMesh().getVertexCount());
+                    for(Particle p:particles)if(p.smoke) {System.out.println("FX_SMOKE position="+p.position+" screen="+view.getCamera().getScreenCoordinates(p.position)+" age="+p.age+" rgba="+p.color);break;}
+                    for(var type:List.of(VertexBuffer.Type.Position,VertexBuffer.Type.TexCoord,VertexBuffer.Type.TexCoord2,VertexBuffer.Type.Color)) {
+                        var b=g.getMesh().getBuffer(type);System.out.println("FX_BUFFER "+type+" id="+b.getId()+" pos="+b.getData().position()+" limit="+b.getData().limit());
+                    }
+                }
             }
         });
         scene.attachChild(root);
@@ -227,6 +236,8 @@ public final class CombatVisuals implements AutoCloseable {
             previousTurbo[id]=vehicle.turbo;
         }
         render();
+        debugPrint=Boolean.getBoolean("wreck.fxDebug")&&session!=null&&session.tick>=720&&session.tick<960&&++debugFrames%15==0;
+        if(debugPrint)System.out.println("FX_UPDATE tick="+session.tick+" hp="+session.vehicle(1).hp+" particles="+particles.size()+" cull="+particleBatch.geometry.getCullHint()+" modelbound="+particleBatch.geometry.getModelBound());
     }
 
     private void impact(GameEvent event) {
