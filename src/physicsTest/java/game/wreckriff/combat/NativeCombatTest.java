@@ -80,6 +80,19 @@ class NativeCombatTest {
         }
     }
 
+    @Test void moderateNativeCollisionEmitsOneAudibleContactWithoutDamage() {
+        try(PhysicsWorld world=world()) {
+            world.teleport(0,new Vector3f(0,1,0),new Quaternion());
+            world.teleport(1,new Vector3f(0,1,4.55f),new Quaternion());
+            world.vehicle(0).setLinearVelocity(new Vector3f(0,0,1.5f));
+            world.vehicle(1).setLinearVelocity(new Vector3f(0,0,-1.5f));
+            step(world,VehicleCommand.NONE);
+            var events=combat.drainEvents();
+            assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.RAM).count());
+            assertEquals(0,events.stream().filter(e->e.type()==GameEvent.Type.DAMAGE).count());
+            assertEquals(200,session.vehicle(0).hp);assertEquals(200,session.vehicle(1).hp);
+        }
+    }
     @Test void P09_multipleNativeContactPointsDamageEachPairOncePerCooldown() {
         try (PhysicsWorld world = world()) {
             Set<Vector3f> nativeContactPoints = new HashSet<>();

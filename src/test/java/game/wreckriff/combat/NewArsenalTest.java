@@ -106,7 +106,8 @@ class NewArsenalTest {
             tick(VehicleCommand.NONE);
         }
         assertEquals(4,centers.size());assertEquals(3,centers.get(0).x,.01f);assertEquals(6,centers.get(1).x,.01f);
-        assertEquals(centers.get(1),centers.get(2));assertEquals(centers.get(2),centers.get(3));
+        assertTrue(centers.get(1).distance(centers.get(2))<.0001f,"No correction after target death, within float precision");
+        assertTrue(centers.get(2).distance(centers.get(3))<.0001f,"The following charge retains the frozen centre");
     }
     @Test void salvoReservesFiveSlotsAtomicallyAndFreesCancelledCarrierReservations() {
         for(var vehicle:session.vehicles)vehicle.initializeWeapon(WeaponType.HOMING,12,12);

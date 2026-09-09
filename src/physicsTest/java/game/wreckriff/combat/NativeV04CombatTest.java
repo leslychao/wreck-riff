@@ -93,18 +93,22 @@ class NativeV04CombatTest {
     @Test void ricochetRemainderOnlyUsesTheRemainingPartOfTheMovingTargetsNativeStep() {
         try(var world=new PhysicsWorld(VehicleRules.load())) {
             world.addVehicle(0,new Vector3f(0,10,-2.5f),new Quaternion());
-            world.addVehicle(1,new Vector3f(1.26f,10,2.82f),new Quaternion());
+            world.addVehicle(1,new Vector3f(-2,10,2.82f),new Quaternion());
             for(int id=2;id<5;id++)world.addVehicle(id,new Vector3f(40+id*5,10,40),new Quaternion());
             for(int id=0;id<5;id++) {world.vehicle(id).setGravity(Vector3f.ZERO);world.vehicle(id).setDamping(0,0);world.vehicle(id).setMaxSuspensionForce(0);}
-            world.addStatic(new BoxCollisionShape(new Vector3f(.05f,3,.025f)),new Vector3f(0,10,.6875f),new Quaternion());
-            world.vehicle(1).setLinearVelocity(new Vector3f(24,0,0));
+            // A thin ledge above the lower hull catches the ball without touching the
+            // crossing car. Exaggerated lateral speed makes the time-domain mismatch
+            // unambiguous: the car crosses before the bounce and is clear afterwards.
+            world.addStatic(new BoxCollisionShape(new Vector3f(.05f,.025f,.025f)),new Vector3f(0,10.57f,.6875f),new Quaternion());
+            world.vehicle(1).setLinearVelocity(new Vector3f(480,0,0));
             MatchSession session=new MatchSession(1,360);CombatSystem combat=new CombatSystem(session,session.combatRules);
             combat.beginTick(Map.of(0,fire(WeaponType.CANNON)),world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);
             var events=combat.drainEvents();
             assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("cannon-ricochet")).count());
             assertTrue(events.stream().noneMatch(e->e.type()==GameEvent.Type.IMPACT&&e.subjectId()==1),"The late segment must not re-hit the target's old position");
             assertEquals(1,combat.projectiles().size());assertEquals(1,combat.projectiles().getFirst().ricochets());
-            Vector3f from=new Vector3f(0,10.55f,.4075f),to=new Vector3f(0,10.55f,.375f);
+            var bounce=events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("cannon-ricochet")).findFirst().orElseThrow();
+            Vector3f from=bounce.position().add(bounce.normal().mult(.255f)),to=combat.projectiles().getFirst().position();
             WorldQuery.Hit whole=world.sweep(from,to,.25f,0,0,1),remaining=world.sweep(from,to,.25f,0,.9f,1);
             assertNotNull(whole,"The fixture must expose the old full-step false hit");assertEquals(1,whole.vehicleId());assertNull(remaining);
         }

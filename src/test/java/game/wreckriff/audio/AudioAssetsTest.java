@@ -10,12 +10,15 @@ class AudioAssetsTest {
     @Test void a01AllRequiredEffectsAreDistinctMonoPcmWithoutClipping() throws Exception {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
+        Map<String,Integer> resultFrames=Map.of("victory",172_800,"defeat",124_800,"draw",96_000);
         assertEquals(75,config.effects().size());
         for(String effect:config.effects()) {
             try(InputStream input=asset("audio/"+effect+".wav")) {
                 PcmWave.Header header=PcmWave.header(input);
                 assertEquals(1,header.channels(),effect); assertEquals(16,header.bits()); assertEquals(48000,header.rate());
-                assertTrue(header.seconds()>=.1f && header.seconds()<=3,effect);
+                if(resultFrames.containsKey(effect))
+                    assertEquals(resultFrames.get(effect)/48_000.0,header.seconds(),1.0/48_000,effect+" result duration");
+                else assertTrue(header.seconds()>=.1f && header.seconds()<=3,effect);
                 byte[] pcm=input.readNBytes((int)header.dataBytes());
                 assertEquals(header.dataBytes(),pcm.length,effect);
                 assertTrue(hashes.add(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(pcm))),effect);
