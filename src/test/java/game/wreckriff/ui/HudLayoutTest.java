@@ -32,6 +32,7 @@ class HudLayoutTest {
         HudLayout full=HudLayout.compute(1920,1080,1);
         assertEquals(6,full.weaponColumns());
         assertTrue(full.panels().stream().mapToDouble(UiBounds::area).sum()<1920*1080*.1);
+        assertTrue(full.panels().stream().mapToDouble(UiBounds::area).sum()+full.notification().area()<1920*1080*.1);
         assertTrue(full.weapons().height()<=120);
         assertTrue(full.health().height()<=120);
         assertEquals(6,full.weaponSlots().size());

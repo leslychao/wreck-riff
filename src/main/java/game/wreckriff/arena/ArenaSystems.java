@@ -2,8 +2,10 @@ package game.wreckriff.arena;
 import game.wreckriff.combat.WeaponType;
 import game.wreckriff.config.ProgressStore;
 import game.wreckriff.config.VehicleProfile;
+import game.wreckriff.combat.CombatSystem;
 
 import com.jme3.math.Vector3f;
+import com.jme3.math.Quaternion;
 import game.wreckriff.simulation.*;
 import game.wreckriff.vehicle.VehicleController;
 import java.util.*;
@@ -18,6 +20,20 @@ public final class ArenaSystems {
     private final MatchSession session;
     private final ArenaDefinition definition;
     private final ArenaLaunches launches;
+    private final ArenaHazardSchedule schedule;
+    private final Map<String,ArenaDefinition.Destructible> objectsByGeometry=new LinkedHashMap<>();
+    private final Map<String,ArenaDefinition.BoxPart> boxesById=new HashMap<>();
+    private final Set<String> removedGeometry=new HashSet<>();
+    public record MechanismView(String id,String hazardId,ArenaDefinition.HazardType type,Vector3f halfExtents,Vector3f position,Quaternion rotation) {
+        public MechanismView {halfExtents=halfExtents.clone();position=position.clone();rotation=rotation.clone();}
+        @Override public Vector3f halfExtents(){return halfExtents.clone();}
+        @Override public Vector3f position(){return position.clone();}
+        @Override public Quaternion rotation(){return rotation.clone();}
+    }
+    private final Map<String,MechanismView> mechanisms=new LinkedHashMap<>();
+    private final Map<String,Map<Integer,Long>> mechanicalReadyAt=new HashMap<>();
+    private final Set<String> raisedBarriers=new HashSet<>();
+    private final Map<String,HazardPhase> announcedPhases=new HashMap<>();
     private final Map<String,Long> returnsAt=new HashMap<>();
     private final Map<String,ProgressStore.ObjectState> objects=new LinkedHashMap<>();
     private long hazardTicks;
@@ -30,6 +46,9 @@ public final class ArenaSystems {
     public ArenaSystems(MatchSession session,ArenaDefinition definition) {
         this.session=session; this.definition=definition;
         launches=new ArenaLaunches(session,definition);
+        schedule=new ArenaHazardSchedule(session,definition);
+        definition.boxes().forEach(box->boxesById.put(box.id(),box));
+        definition.destructibles().forEach(object->objectsByGeometry.put(object.geometryId(),object));
         definition.destructibles().forEach(object->objects.put(object.id(),new ProgressStore.ObjectState(object.maximumHp(),false,false)));
     }
     public ArenaLaunches launches() { return launches; }
@@ -54,21 +73,26 @@ public final class ArenaSystems {
     public float directHitMultiplier(int targetId,Vector3f localPoint) {
         if(targetId!=session.bossParticipantId||!bossVulnerable()||localPoint==null)return 1;
         var hull=bossProfile.hullBoxes().getFirst();
-        boolean height=localPoint.y>=hull.y()-hull.halfHeight()&&localPoint.y<=hull.y()+hull.halfHeight();
-        boolean panel=bossProfile.id().equals("boss_prefect")?
-                Math.abs(localPoint.x)>=hull.halfWidth()-.3f&&Math.abs(localPoint.x)<=hull.halfWidth()+.08f
-                        &&Math.abs(localPoint.z)<=bossProfile.length()*.22f:
-                Math.abs(localPoint.x)<=hull.halfWidth()*.8f&&localPoint.z<=-hull.halfLength()+.3f
+        float scaleY=bossProfile.height()/1.07f;
+        boolean prefect=bossProfile.id().equals("boss_prefect");
+        boolean height=Math.abs(localPoint.y-(prefect?.25f:.26f)*scaleY)<=(prefect?.11f:.10f)*scaleY;
+        boolean panel=prefect?
+                localPoint.x>=hull.halfWidth()-.08f&&localPoint.x<=hull.halfWidth()+.08f
+                        &&Math.abs(localPoint.z-bossProfile.length()*.19f)<=bossProfile.length()*.09f:
+                Math.abs(localPoint.x)<=hull.halfWidth()*.30f&&localPoint.z<=-hull.halfLength()+.08f
                         &&localPoint.z>=-hull.halfLength()-.08f;
         return height&&panel?1.25f:1;
     }
-    public void beforePhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.beforePhysics(world,drivers); }
+    public void beforePhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) {
+        advanceSchedule(world);syncObjects(world);syncMechanisms(world);launches.beforePhysics(world,drivers);
+    }
     public void afterPhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.afterPhysics(world,drivers); }
     public HazardPhase hazardPhase() {
         return definition.hazards().stream().map(h->hazardPhase(h.id())).max(Comparator.naturalOrder()).orElse(HazardPhase.OFF);
     }
     public HazardPhase hazardPhase(String id) {
-        return phaseAt(hazardClock(),definition.hazards(),id);
+        if(session.mode==MatchSession.Mode.LEGACY)return phaseAt(hazardClock(),definition.hazards(),id);
+        return switch(schedule.state(id).phase) {case WARNING->HazardPhase.WARNING;case ACTIVE->HazardPhase.ACTIVE;default->HazardPhase.OFF;};
     }
     private long hazardClock() {return session.mode==MatchSession.Mode.LEGACY?session.tick:hazardTicks;}
     public static HazardPhase phaseAt(long tick,List<ArenaDefinition.Hazard> hazards,String id) {
@@ -88,6 +112,10 @@ public final class ArenaSystems {
         return definition.hazards().stream().filter(h->hazardPhase(h.id())==HazardPhase.ACTIVE).toList();
     }
     public float warningProgress(String id) {
+        if(session.mode!=MatchSession.Mode.LEGACY) {
+            var state=schedule.state(id);
+            return state.phase==ProgressStore.HazardPhase.WARNING?1-state.remaining/(float)schedule.timing(id).warning():state.phase==ProgressStore.HazardPhase.ACTIVE?1:0;
+        }
         long period=definition.hazards().stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum();
         long phase=period==0?0:hazardClock()%period;
         for(var hazard:definition.hazards()) {
@@ -99,9 +127,23 @@ public final class ArenaSystems {
     public void updateHazard(WorldQuery world,DamageSink sink) {
         if (lastHazardTick==session.tick || session.outcome!=MatchSession.Outcome.NONE) return;
         lastHazardTick=session.tick;
+        advanceSchedule(world);
         int hazardIndex=0;
         for(var hazard:definition.hazards()) {
         int sequence=hazardIndex++;
+        if(session.mode!=MatchSession.Mode.LEGACY&&hazard.type()!=ArenaDefinition.HazardType.ELECTRIC&&hazard.type()!=ArenaDefinition.HazardType.FIRE) {
+            if(world instanceof PhysicsWorld physics&&hazardPhase(hazard.id())==HazardPhase.ACTIVE) {
+                var ready=mechanicalReadyAt.computeIfAbsent(hazard.id(),key->new HashMap<>());
+                for(var contact:physics.arenaContacts()) {
+                    var mechanism=mechanisms.get(contact.objectId());
+                    if(mechanism==null||!mechanism.hazardId().equals(hazard.id()))continue;
+                    int id=contact.vehicleId();if(!session.vehicle(id).alive()||session.tick<ready.getOrDefault(id,Long.MIN_VALUE))continue;
+                    ready.put(id,session.tick+hazard.damageIntervalTicks());
+                    if(session.vehicle(id).protectionTicks==0)sink.damage(id,hazard.damage(),"hazard",Long.MIN_VALUE+session.tick*16+id+(long)sequence*(1L<<48));
+                }
+            }
+            continue;
+        }
         Map<Integer,Integer> exposure=hazardExposure.computeIfAbsent(hazard.id(),key->new HashMap<>());
         for (VehicleState vehicle:session.vehicles) {
             if (!vehicle.alive() || hazardPhase(hazard.id())!=HazardPhase.ACTIVE || !hazard.contains(world.position(vehicle.id))) {
@@ -122,7 +164,8 @@ public final class ArenaSystems {
     public ProgressStore.ArenaState snapshot() {
         Map<String,ProgressStore.PickupState> pickups=new LinkedHashMap<>();
         definition.pickups().forEach(p->pickups.put(p.id(),new ProgressStore.PickupState(Math.max(0,returnsAt.getOrDefault(p.id(),0L)-session.tick))));
-        return new ProgressStore.ArenaState(pickups,objects,hazardSnapshot(hazardClock()),0,session.seed);
+        return new ProgressStore.ArenaState(pickups,objects,session.mode==MatchSession.Mode.LEGACY?hazardSnapshot(hazardClock()):schedule.snapshot(),
+                session.mode==MatchSession.Mode.LEGACY?0:schedule.cooldown(),session.mode==MatchSession.Mode.LEGACY?session.seed:schedule.cursor());
     }
     private Map<String,ProgressStore.HazardState> hazardSnapshot(long clock) {
         Map<String,ProgressStore.HazardState> result=new LinkedHashMap<>();
@@ -138,6 +181,12 @@ public final class ArenaSystems {
         return result;
     }
     public void restore(ProgressStore.ArenaState state,PhysicsWorld world,NavGraph graph) {
+        if(session.mode!=MatchSession.Mode.LEGACY) {
+            schedule.restore(state);
+            returnsAt.clear();state.pickups().forEach((id,p)->returnsAt.put(id,Math.addExact(session.tick,p.respawnTicks())));
+            objects.clear();objects.putAll(state.objects());hazardExposure.clear();removedGeometry.clear();
+            restoreGeometry(state,world,graph,definition);syncMechanisms(world);schedule.snapshot().keySet().forEach(id->announcedPhases.put(id,hazardPhase(id)));return;
+        }
         long restored=0;
         if(!definition.hazards().isEmpty()) {
             var first=definition.hazards().getFirst();var stored=Objects.requireNonNull(state.hazards().get(first.id()));
@@ -159,12 +208,162 @@ public final class ArenaSystems {
     public static void restoreGeometry(ProgressStore.ArenaState state,PhysicsWorld world,NavGraph graph,ArenaDefinition definition) {
         for(var object:definition.destructibles()) {
             var saved=Objects.requireNonNull(state.objects().get(object.id()));
-            if(saved.destroyed()||saved.open()) {
+            if(saved.open()||(saved.destroyed()&&object.effect()!=ArenaDefinition.ObjectEffect.STATUE)) {
                 world.removeStatic(object.geometryId());
                 if(definition.edges().stream().anyMatch(edge->edge.type()==ArenaDefinition.Transition.OPENABLE&&object.id().equals(edge.objectId())))
                     graph.setOpen(object.id(),true);
             }
         }
+        for(var barrier:definition.barriers()) {
+            var saved=state.hazards().get(barrier.id());
+            if(saved==null||saved.phase()!=ProgressStore.HazardPhase.ACTIVE)world.removeStatic(barrier.geometryId());
+            else if(!world.containsArenaBody(barrier.geometryId())) {
+                var box=definition.boxes().stream().filter(b->b.id().equals(barrier.geometryId())).findFirst().orElseThrow();
+                world.addMovingBox(barrier.geometryId(),box.size().vector().mult(.5f),box.center().vector(),new Quaternion());
+            }
+            if(definition.edges().stream().anyMatch(edge->edge.type()==ArenaDefinition.Transition.OPENABLE&&barrier.id().equals(edge.objectId())))
+                graph.setOpen(barrier.id(),saved==null||saved.phase()!=ProgressStore.HazardPhase.ACTIVE);
+        }
+        for(var hazard:definition.hazards()) {
+            var saved=state.hazards().get(hazard.id());if(saved==null)continue;
+            var mechanism=mechanismView(hazard,saved.phase(),saved.remainingTicks());
+            if(mechanism!=null&&!world.containsArenaBody(mechanism.id()))
+                world.addMovingBox(mechanism.id(),mechanism.halfExtents(),mechanism.position(),mechanism.rotation());
+        }
+    }
+    private void advanceSchedule(WorldQuery world) {
+        if(session.mode==MatchSession.Mode.LEGACY)return;
+        schedule.advance(id->{var barrier=definition.barriers().stream().filter(b->b.id().equals(id)).findFirst().orElseThrow();return volumeClear(boxesById.get(barrier.geometryId()),world);});
+        for(String id:schedule.drainCompleted()) {
+            var object=definition.destructibles().stream().filter(o->o.id().equals(id)).findFirst();
+            if(object.isPresent()&&object.get().effect()==ArenaDefinition.ObjectEffect.STATUE)objects.put(id,new ProgressStore.ObjectState(0,true,true));
+        }
+        schedule.drainActions().forEach(this::completeBossAction);
+        announceHazards();
+    }
+    private void announceHazards() {
+        int index=0;
+        for(var entry:schedule.snapshot().entrySet()) {
+            String id=entry.getKey();HazardPhase phase=hazardPhase(id),previous=announcedPhases.getOrDefault(id,HazardPhase.OFF);
+            announcedPhases.put(id,phase);index++;if(phase==previous)continue;
+            GameEvent.Type type=phase==HazardPhase.WARNING?GameEvent.Type.ARENA_HAZARD_WARNING:
+                    phase==HazardPhase.ACTIVE?GameEvent.Type.ARENA_HAZARD_ACTIVE:previous==HazardPhase.WARNING?GameEvent.Type.ARENA_HAZARD_CANCELLED:null;
+            if(type==null)continue;
+            Vector3f position=definition.hazards().stream().filter(h->h.id().equals(id)).findFirst().map(h->h.center().vector()).orElseGet(()->{
+                var barrier=definition.barriers().stream().filter(b->b.id().equals(id)).findFirst();
+                String geometry=barrier.isPresent()?barrier.get().geometryId():definition.destructibles().stream().filter(o->o.id().equals(id)).findFirst().orElseThrow().geometryId();
+                return boxesById.get(geometry).center().vector();
+            });
+            String kind=definition.hazards().stream().filter(h->h.id().equals(id)).findFirst().map(h->h.type().name().toLowerCase(Locale.ROOT))
+                    .orElseGet(()->definition.barriers().stream().anyMatch(b->b.id().equals(id))?"barrier":"statue");
+            events.add(new GameEvent(type,Long.MIN_VALUE/4+session.tick*64+index,-1,schedule.state(id).completion==null?-1:session.bossParticipantId,
+                    position,kind,entry.getValue().remainingTicks()*MatchSession.DT).forObject(id));
+        }
+    }
+    private boolean volumeClear(ArenaDefinition.BoxPart box,WorldQuery world) {
+        Vector3f center=box.center().vector(),extent=box.size().vector().mult(.5f);
+        for(var vehicle:session.vehicles)if(vehicle.alive()) {
+            var bounds=world.profile(vehicle.id).fullBounds();var rotation=world.rotation(vehicle.id);var position=world.position(vehicle.id);
+            Vector3f min=new Vector3f(Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY,Float.POSITIVE_INFINITY),max=min.negate();
+            for(float x:new float[]{bounds.minX(),bounds.maxX()})for(float y:new float[]{bounds.minY(),bounds.maxY()})for(float z:new float[]{bounds.minZ(),bounds.maxZ()}) {
+                Vector3f point=position.add(rotation.mult(new Vector3f(x,y,z)));min.minLocal(point);max.maxLocal(point);
+            }
+            if(min.x<center.x+extent.x+.15f&&max.x>center.x-extent.x-.15f&&min.y<center.y+extent.y+.15f&&max.y>center.y-extent.y-.15f
+                    &&min.z<center.z+extent.z+.15f&&max.z>center.z-extent.z-.15f)return false;
+        }
+        return true;
+    }
+    public boolean requestHazard(String id,BossAction completion) {return schedule.request(id,completion);}
+    public ProgressStore.ObjectState objectState(String id) {return Objects.requireNonNull(objects.get(id),"Unknown arena object: "+id);}
+    public List<CombatSystem.ArenaTarget> damageTargets() {
+        List<CombatSystem.ArenaTarget> result=new ArrayList<>();
+        for(var object:definition.destructibles())if(!objects.get(object.id()).destroyed()) {
+            var box=boxesById.get(object.geometryId());var center=box.center().vector();var extent=box.size().vector().mult(.5f);
+            result.add(new CombatSystem.ArenaTarget(object.geometryId(),center.subtract(extent),center.add(extent)));
+        }
+        return List.copyOf(result);
+    }
+    public void damageObject(String geometryId,int sourceId,float amount,String cause,long eventId) {
+        if(!Float.isFinite(amount)||amount<0)throw new IllegalArgumentException("Invalid object damage");
+        var object=objectsByGeometry.get(geometryId);if(object==null||session.outcome!=MatchSession.Outcome.NONE)return;
+        var state=objects.get(object.id());if(state.destroyed()||amount==0)return;
+        float hp=Math.max(0,state.hp()-amount);boolean destroyed=hp==0;
+        objects.put(object.id(),new ProgressStore.ObjectState(hp,destroyed,destroyed&&object.effect()!=ArenaDefinition.ObjectEffect.STATUE));
+        if(destroyed) {
+            if(object.effect()==ArenaDefinition.ObjectEffect.SHIELD)schedule.cancelPreparedAndActive(object.blockTicks());
+            if(object.effect()==ArenaDefinition.ObjectEffect.STATUE)schedule.statue(object.id());
+            events.add(new GameEvent(GameEvent.Type.ARENA_OBJECT_DESTROYED,eventId,-1,sourceId,boxesById.get(geometryId).center().vector(),cause,amount).forObject(object.id()));
+        }
+    }
+    /** Called after combat object resolution and before environment damage, always outside a native step. */
+    public void synchronizeGeometry(PhysicsWorld world,NavGraph graph) {
+        syncObjects(world);syncMechanisms(world);if(session.mode!=MatchSession.Mode.LEGACY)announceHazards();
+        for(var object:definition.destructibles())if(objects.get(object.id()).open()&&definition.edges().stream().anyMatch(e->e.type()==ArenaDefinition.Transition.OPENABLE&&object.id().equals(e.objectId())))graph.setOpen(object.id(),true);
+        for(var barrier:definition.barriers())if(definition.edges().stream().anyMatch(e->e.type()==ArenaDefinition.Transition.OPENABLE&&barrier.id().equals(e.objectId())))
+            graph.setOpen(barrier.id(),hazardPhase(barrier.id())!=HazardPhase.ACTIVE);
+    }
+    private void syncObjects(PhysicsWorld world) {
+        for(var object:definition.destructibles())if(objects.get(object.id()).open()&&removedGeometry.add(object.geometryId()))world.removeStatic(object.geometryId());
+    }
+    public List<MechanismView> mechanisms() {return List.copyOf(mechanisms.values());}
+    public HazardPhase barrierPhase(String id) {return hazardPhase(id);}
+    private static MechanismView mechanismView(ArenaDefinition.Hazard hazard,ProgressStore.HazardPhase phase,long remaining) {
+        boolean active=phase==ProgressStore.HazardPhase.ACTIVE,warning=phase==ProgressStore.HazardPhase.WARNING;
+        float elapsed=active?(hazard.activeTicks()-remaining)*MatchSession.DT:0;
+        float cx=(hazard.minX()+hazard.maxX())/2,cz=(hazard.minZ()+hazard.maxZ())/2,road=hazard.minY()+.1f;
+        Vector3f half,position;Quaternion rotation=new Quaternion();
+        switch(hazard.type()) {
+            case CRANE -> {
+                if(!active&&!warning)return null;
+                half=new Vector3f(4,1.5f,4);position=new Vector3f(cx,road+1.5f+10.5f*(1-Math.clamp(elapsed/.25f,0,1)),cz);
+            }
+            case CAROUSEL -> {
+                half=new Vector3f((hazard.maxX()-hazard.minX())/2-1,.65f,.65f);position=new Vector3f(cx,road+1.2f,cz);
+                rotation.fromAngleAxis(elapsed*(float)Math.PI,Vector3f.UNIT_Y);
+            }
+            case TRAFFIC -> {
+                if(!active&&!warning)return null;
+                half=new Vector3f(2.3f,1.1f,1.1f);boolean alongX=hazard.maxX()-hazard.minX()>=hazard.maxZ()-hazard.minZ();
+                float distance=Math.min(64,(alongX?hazard.maxX()-hazard.minX():hazard.maxZ()-hazard.minZ())-8);
+                position=new Vector3f(cx+(alongX?-distance/2+elapsed*16:0),road+1.1f,cz+(alongX?0:-distance/2+elapsed*16));
+                if(!alongX)rotation.fromAngleAxis((float)Math.PI/2,Vector3f.UNIT_Y);
+            }
+            default -> {return null;}
+        }
+        return new MechanismView("mechanism-"+hazard.id(),hazard.id(),hazard.type(),half,position,rotation);
+    }
+    private void syncMechanisms(PhysicsWorld world) {
+        if(session.mode==MatchSession.Mode.LEGACY)return;
+        Map<String,MechanismView> desired=new LinkedHashMap<>();
+        for(var hazard:definition.hazards()) {
+            var state=schedule.state(hazard.id());var view=mechanismView(hazard,state.phase,state.remaining);if(view==null)continue;
+            if(hazard.type()==ArenaDefinition.HazardType.TRAFFIC&&!world.containsArenaBody(view.id())) {
+                boolean alongX=hazard.maxX()-hazard.minX()>=hazard.maxZ()-hazard.minZ();var position=view.position();
+                var envelope=new ArenaDefinition.BoxPart("traffic-spawn",new ArenaDefinition.Vec3(position.x,position.y,position.z),
+                        new ArenaDefinition.Vec3(alongX?4.6f:2.2f,2.2f,alongX?2.2f:4.6f),"",true);
+                if(!volumeClear(envelope,world)) {schedule.cancel(hazard.id());continue;}
+            }
+            desired.put(view.id(),view);
+        }
+        for(String id:List.copyOf(mechanisms.keySet()))if(!desired.containsKey(id))world.removeArenaBody(id);
+        for(var entry:desired.entrySet()) {
+            var value=entry.getValue();
+            if(world.containsArenaBody(entry.getKey()))world.moveArenaBody(value.id(),value.position(),value.rotation());
+            else world.addMovingBox(value.id(),value.halfExtents(),value.position(),value.rotation());
+        }
+        mechanisms.clear();mechanisms.putAll(desired);
+        for(var barrier:definition.barriers()) {
+            boolean active=hazardPhase(barrier.id())==HazardPhase.ACTIVE;
+            if(active&&raisedBarriers.add(barrier.id())) {
+                var box=boxesById.get(barrier.geometryId());
+                if(!world.containsArenaBody(barrier.geometryId()))world.addMovingBox(barrier.geometryId(),box.size().vector().mult(.5f),box.center().vector(),new Quaternion());
+            } else if(!active&&raisedBarriers.remove(barrier.id()))world.removeArenaBody(barrier.geometryId());
+        }
+    }
+    public void stop(PhysicsWorld world) {
+        for(String id:mechanisms.keySet())world.removeArenaBody(id);mechanisms.clear();
+        for(var barrier:definition.barriers())world.removeArenaBody(barrier.geometryId());raisedBarriers.clear();
+        schedule.cancelPreparedAndActive(0);hazardExposure.clear();mechanicalReadyAt.clear();
     }
     public void collectPickups(WorldQuery world) {
         if (lastPickupTick==session.tick || session.outcome!=MatchSession.Outcome.NONE) return;

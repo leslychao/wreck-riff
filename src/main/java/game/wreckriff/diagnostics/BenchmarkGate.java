@@ -15,7 +15,7 @@ public final class BenchmarkGate {
     }
     public static Verdict evaluate(double warmedActiveSeconds,FrameMetrics measured,double droppedSeconds,Environment environment) {
         var failures=new ArrayList<String>();
-        if(warmedActiveSeconds<WARMUP_ACTIVE_SECONDS)failures.add("Less than 30 actual active combat seconds warmed up");
+        if(!Double.isFinite(warmedActiveSeconds)||warmedActiveSeconds<WARMUP_ACTIVE_SECONDS)failures.add("Less than 30 actual active combat seconds warmed up");
         if(measured.seconds()<MINIMUM_MEASURED_ACTIVE_SECONDS)failures.add("Less than 600 measured active combat seconds");
         if(environment.width!=1920||environment.height!=1080)failures.add("Framebuffer must be 1920x1080");
         if(environment.msaaSamples!=4)failures.add("MSAA must be exactly 4 samples");
@@ -25,7 +25,7 @@ public final class BenchmarkGate {
         if(environment.detailedProfiling)failures.add("Detailed profiling must be off for the final benchmark");
         boolean eligible=failures.isEmpty();
         if(!measured.withinTarget())failures.add("Active frame thresholds exceeded or no samples (p95 16.7ms, p99 25ms, no frames over 100ms)");
-        if(!Double.isFinite(droppedSeconds)||droppedSeconds>0)failures.add("Simulation time was dropped");
+        if(!Double.isFinite(droppedSeconds)||droppedSeconds!=0)failures.add("Simulation time was dropped or its measurement is invalid");
         if(environment.peakWorkingSetBytes<=0)failures.add("Process working-set memory evidence is unavailable");
         else if(environment.peakWorkingSetBytes>MAXIMUM_PROCESS_MEMORY_BYTES)failures.add("Process working set exceeds 1.5 GiB");
         return new Verdict(eligible,failures.isEmpty(),failures);

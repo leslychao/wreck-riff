@@ -71,7 +71,7 @@ $jpackageArgs = @(
     '--input', $inputStage, '--dest', $imageStage, '--main-jar', $mainJarName,
     '--main-class', 'game.wreckriff.Main',
     '--java-options', '-Xms128m', '--java-options', '-Xmx768m',
-    '--add-modules', 'java.base,java.desktop,java.logging,java.management,jdk.unsupported,jdk.crypto.ec',
+    '--add-modules', 'java.base,java.desktop,java.logging,java.management,jdk.unsupported,jdk.crypto.ec,jdk.jfr',
     '--jlink-options', '--strip-debug --no-man-pages --no-header-files'
 )
 & $jpackage @jpackageArgs

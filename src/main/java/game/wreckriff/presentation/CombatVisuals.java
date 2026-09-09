@@ -106,7 +106,7 @@ public final class CombatVisuals implements AutoCloseable {
         particleBatch.geometry.getMaterial().setFloat("FlashIntensity",flashIntensity);
         rocketBatch=new Batch(root,"rocket-models",assets,PROJECTILE_LIMIT*450+10*500,false,false);
         fragmentBatch=new Batch(root,"impact-fragments",assets,SHARD_LIMIT*12+FLARE_LIMIT*16*3,true,false);
-        fieldBatch=new Batch(root,"ground-fire",assets,20000,true,false);
+        fieldBatch=new Batch(root,"ground-fire",assets,20000,true,true);
         particleBatch.geometry.addControl(new AbstractControl() {
             @Override protected void controlUpdate(float dt) { }
             @Override protected void controlRender(RenderManager manager,ViewPort view) {
@@ -240,8 +240,9 @@ public final class CombatVisuals implements AutoCloseable {
             for(var fire:fires) {
                 var points=fire.surfacePoints();
                 for(int i=0;i<Math.min(12,points.size());i++) {
-                    Vector3f at=points.get(visualRandom.nextInt(points.size())).add(fire.normal().mult(.1f));
-                    emit(at,fire.normal().mult(1.5f+visualRandom.nextFloat()*1.5f),i%3==0?AMBER:HOT,.30f,.18f,-.15f,0);
+                    Vector3f at=surfacePoint(points.get(visualRandom.nextInt(points.size())),fire.normal(),
+                            (visualRandom.nextFloat()-.5f)*.6f,(visualRandom.nextFloat()-.5f)*.6f,.1f);
+                    emit(at,fire.normal().mult(1.2f+visualRandom.nextFloat()),BLAST_FLAME,.38f,.22f,-.1f,0);
                     if(i%4==0)emit(at.add(0,.4f,0),new Vector3f(.15f,.65f,0),SMOKE,.6f,.20f,.25f,0);
                 }
             }
@@ -576,68 +577,60 @@ public final class CombatVisuals implements AutoCloseable {
     }
     private void renderFields() {
         fieldBatch.begin();
-        // Warning geometry reserves its vertices before lower-priority scorch and cosmetic fields.
-        renderWarnings();
-        renderFireBoundaries();
+        // Reserve every warning first, but draw it last so transparent soot cannot dim it.
+        fieldBatch.reserveVertices(warnings.size()*(48*6+12));
         for(var fire:fires) {
-            Quaternion pose=surfaceRotation(fire.normal());
-            for(Vector3f support:fire.surfacePoints()) {
-                Vector3f centre=support.add(fire.normal().mult(.028f));
-                for(int segment=0;segment<8;segment++) {
-                    float a=segment*FastMath.TWO_PI/8,b=(segment+1)*FastMath.TWO_PI/8;
-                    fieldBatch.triangle(centre,local(centre,pose,FastMath.cos(a)*.56f,0,FastMath.sin(a)*.56f),
-                            local(centre,pose,FastMath.cos(b)*.56f,0,FastMath.sin(b)*.56f),new ColorRGBA(.14f,.055f,.017f,1),.58f);
+            // The grid clips geometry, but only exposed edges/corners feather out. Shared
+            // cells use continuous world-space soot so the support lattice is never drawn.
+            Set<Long> cells=new HashSet<>();Vector3f origin=fire.position();
+            for(Vector3f point:fire.surfacePoints())cells.add(gridCell(Math.round(point.x-origin.x),Math.round(point.z-origin.z)));
+            for(Vector3f point:fire.surfacePoints()) {
+                int x=Math.round(point.x-origin.x),z=Math.round(point.z-origin.z),edges=0;
+                for(int neighbour=0;neighbour<8;neighbour++) {
+                    int dx=switch(neighbour){case 0,4,6->1;case 1,5,7->-1;default->0;};
+                    int dz=switch(neighbour){case 2,4,5->1;case 3,6,7->-1;default->0;};
+                    if(!cells.contains(gridCell(x+dx,z+dz)))edges|=1<<neighbour;
                 }
+                renderGroundPatch(point,fire.normal(),.5f,.028f,edges,.48f);
             }
         }
         for(CosmeticFire fire:cosmeticFires) {
+            // Ballistic impacts can hit walls as well as driveable support surfaces.
             Quaternion pose=surfaceRotation(fire.normal);Vector3f centre=fire.position.add(fire.normal.mult(.035f));
-            for(int segment=0;segment<12;segment++) {
-                float a=segment*FastMath.TWO_PI/12,b=(segment+1)*FastMath.TWO_PI/12;
-                fieldBatch.triangle(centre,local(centre,pose,FastMath.cos(a)*.82f,0,FastMath.sin(a)*.82f),
-                        local(centre,pose,FastMath.cos(b)*.82f,0,FastMath.sin(b)*.82f),new ColorRGBA(.18f,.058f,.012f,1),.6f*(1-fire.age/2));
-            }
+            fieldBatch.maskedQuad(local(centre,pose,-.82f,0,-.82f),local(centre,pose,.82f,0,-.82f),
+                    local(centre,pose,.82f,0,.82f),local(centre,pose,-.82f,0,.82f),
+                    new ColorRGBA(.085f,.060f,.038f,1),.40f*(1-fire.age/2),5,255);
         }
+        fieldBatch.releaseReservedVertices();
+        renderWarnings();
         fieldBatch.end();
     }
-    private void renderFireBoundaries() {
-        // Follow the authoritative connected one-metre support grid. A decorative circle would
-        // falsely bridge walls, pits or the edge of a roof clipped out by the combat owner.
-        for(var fire:fires) {
-            Set<Long> cells=new HashSet<>();Vector3f origin=fire.position(),normal=fire.normal();
-            for(Vector3f point:fire.surfacePoints())cells.add(gridCell(Math.round(point.x-origin.x),Math.round(point.z-origin.z)));
-            for(Vector3f point:fire.surfacePoints()) {
-                int x=Math.round(point.x-origin.x),z=Math.round(point.z-origin.z);
-                for(int edge=0;edge<4;edge++) {
-                    int dx=edge==0?1:edge==1?-1:0,dz=edge==2?1:edge==3?-1:0;
-                    if(cells.contains(gridCell(x+dx,z+dz)))continue;
-                    Vector3f outward=new Vector3f(dx,-(normal.x*dx+normal.z*dz)/Math.max(.6f,normal.y),dz);
-                    Vector3f tangent=new Vector3f(-dz,(normal.x*dz-normal.z*dx)/Math.max(.6f,normal.y),dx).multLocal(.5f);
-                    Vector3f centre=point.add(outward.mult(.60f)).addLocal(normal.mult(.045f)),width=outward.mult(.045f);
-                    fieldBatch.quad(centre.subtract(tangent).subtractLocal(width),centre.add(tangent).subtractLocal(width),
-                            centre.add(tangent).addLocal(width),centre.subtract(tangent).addLocal(width),AMBER,.62f);
-                }
-            }
-        }
+    private void renderGroundPatch(Vector3f point,Vector3f normal,float halfWidth,float lift,int edges,float alpha) {
+        fieldBatch.maskedQuad(surfacePoint(point,normal,-halfWidth,-halfWidth,lift),surfacePoint(point,normal,halfWidth,-halfWidth,lift),
+                surfacePoint(point,normal,halfWidth,halfWidth,lift),surfacePoint(point,normal,-halfWidth,halfWidth,lift),
+                new ColorRGBA(.085f,.060f,.038f,1),alpha,5,edges);
+    }
+    private static Vector3f surfacePoint(Vector3f point,Vector3f normal,float x,float z,float lift) {
+        return point.add(x,-(normal.x*x+normal.z*z)/Math.max(.6f,normal.y),z).addLocal(normal.mult(lift));
     }
     private static long gridCell(int x,int z) {return ((long)x<<32)|(z&0xffffffffL);}
     private void renderWarnings() {
         for(var warning:warnings) {
             Vector3f normal=warning.normal(),centre=warning.point().add(normal.mult(.045f));float radius=warning.radius();
             Quaternion pose=surfaceRotation(normal);
-            float pulse=.56f+.25f*FastMath.sin(warning.remainingTicks()*FastMath.TWO_PI/36);
-            for(int segment=0;segment<32;segment++) {
-                float a=segment*FastMath.TWO_PI/32,b=(segment+1)*FastMath.TWO_PI/32;
-                fieldBatch.quad(local(centre,pose,FastMath.cos(a)*radius,0,FastMath.sin(a)*radius),
+            float pulse=.55f+.10f*FastMath.sin(warning.remainingTicks()*FastMath.TWO_PI/36);
+            for(int segment=0;segment<48;segment++) {
+                float a=segment*FastMath.TWO_PI/48,b=(segment+1)*FastMath.TWO_PI/48;
+                fieldBatch.maskedQuad(local(centre,pose,FastMath.cos(a)*radius,0,FastMath.sin(a)*radius),
                         local(centre,pose,FastMath.cos(b)*radius,0,FastMath.sin(b)*radius),
-                        local(centre,pose,FastMath.cos(b)*(radius-.11f),0,FastMath.sin(b)*(radius-.11f)),
-                        local(centre,pose,FastMath.cos(a)*(radius-.11f),0,FastMath.sin(a)*(radius-.11f)),HOT,pulse);
+                        local(centre,pose,FastMath.cos(b)*(radius-.075f),0,FastMath.sin(b)*(radius-.075f)),
+                        local(centre,pose,FastMath.cos(a)*(radius-.075f),0,FastMath.sin(a)*(radius-.075f)),AMBER,pulse,6,0);
             }
             for(int axis=0;axis<2;axis++) {
-                Vector3f length=axis==0?new Vector3f(.6f,0,0):new Vector3f(0,0,.6f),width=axis==0?new Vector3f(0,0,.05f):new Vector3f(.05f,0,0);
+                Vector3f length=axis==0?new Vector3f(.23f,0,0):new Vector3f(0,0,.23f),width=axis==0?new Vector3f(0,0,.025f):new Vector3f(.025f,0,0);
                 pose.multLocal(length);pose.multLocal(width);
-                fieldBatch.quad(centre.subtract(length).subtractLocal(width),centre.add(length).subtractLocal(width),
-                        centre.add(length).addLocal(width),centre.subtract(length).addLocal(width),AMBER,pulse);
+                fieldBatch.maskedQuad(centre.subtract(length).subtractLocal(width),centre.add(length).subtractLocal(width),
+                        centre.add(length).addLocal(width),centre.subtract(length).addLocal(width),AMBER,pulse,6,0);
             }
         }
     }
@@ -684,6 +677,8 @@ public final class CombatVisuals implements AutoCloseable {
             geometry.setMaterial(material);geometry.setCullHint(Spatial.CullHint.Always);root.attachChild(geometry);
         }
         void begin(){positions.clear();colors.clear();if(softSprites){textureCoordinates.clear();spriteData.clear();spriteVariation.clear();}}
+        void reserveVertices(int count){positions.limit(positions.capacity()-Math.min(count,positions.capacity()/3)*3);}
+        void releaseReservedVertices(){positions.limit(positions.capacity());}
         void vertex(float x,float y,float z,ColorRGBA color,float alpha) {
             vertex(x,y,z,color,alpha,0,0,0,0);
         }
@@ -701,6 +696,16 @@ public final class CombatVisuals implements AutoCloseable {
         void triangle(Vector3f a,Vector3f b,Vector3f c,ColorRGBA color,float alpha) {
             if(positions.remaining()<9)return;
             for(Vector3f p:List.of(a,b,c))vertex(p.x,p.y,p.z,color,alpha);
+        }
+        void maskedQuad(Vector3f a,Vector3f b,Vector3f c,Vector3f d,ColorRGBA color,float alpha,float shape,float mask) {
+            if(positions.remaining()<18)return;
+            Vector3f[] points={a,b,c,a,c,d};
+            for(int i=0;i<points.length;i++) {
+                Vector3f p=points[i];
+                // Zero sprite radius leaves these vertices fixed to the support plane.
+                vertex(p.x,p.y,p.z,color,alpha,SPRITE_UV[i*2],SPRITE_UV[i*2+1],0,shape);
+                spriteVariation.put(spriteVariation.position()-2,mask);
+            }
         }
         void quad(Vector3f a,Vector3f b,Vector3f c,Vector3f d,ColorRGBA color,float alpha) {
             if(positions.remaining()<18)return;

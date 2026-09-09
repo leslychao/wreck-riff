@@ -1,6 +1,7 @@
 package game.wreckriff.simulation;
 
 import com.jme3.bullet.PhysicsSpace;
+import com.jme3.bullet.PhysicsTickListener;
 import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
@@ -76,6 +77,18 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<VehicleProfile,List<BoxCollisionShape>> dashShapes=new IdentityHashMap<>();
     private final Map<VehicleProfile,PhysicsGhostObject> recoveryProbes=new IdentityHashMap<>();
     private final PhysicsCollisionListener contactListener=this::contact;
+    private final PhysicsTickListener arenaMotionListener=new PhysicsTickListener() {
+        @Override public void prePhysicsTick(PhysicsSpace ignored,float timeStep) {
+            // Libbulletjme 22.0.3 pose setters each overwrite interpolation
+            // state. Bullet's saveKinematicState then replaces velocity before
+            // this callback; install the complete authored motion for its solver.
+            for(MovingBody moving:movingArenaBodies.values()) {
+                moving.body.setLinearVelocity(moving.linear);
+                moving.body.setAngularVelocity(moving.angular);
+            }
+        }
+        @Override public void physicsTick(PhysicsSpace ignored,float timeStep) {}
+    };
     private boolean closed;
 
     public PhysicsWorld(VehicleRules rules) {
@@ -87,6 +100,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.useDeterministicDispatch(true);
         space.addCollisionListener(contactListener);
         space.addOngoingCollisionListener(contactListener);
+        space.addTickListener(arenaMotionListener);
     }
     public PhysicsSpace space() { return space; }
     /** Bind road metadata once; all support observations still come from native wheel contacts. */
@@ -127,7 +141,10 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public PhysicsRigidBody addMovingBox(String objectId,Vector3f halfExtents,Vector3f position,Quaternion rotation) {
         if(!Vector3f.isValidVector(halfExtents)||halfExtents.x<=0||halfExtents.y<=0||halfExtents.z<=0)
             throw new IllegalArgumentException("Positive finite moving-box extents required");
-        PhysicsRigidBody body=new PhysicsRigidBody(new BoxCollisionShape(halfExtents),1);
+        // A prescribed mechanism needs zero inverse mass in Bullet's contact
+        // solver. Kinematic flags alone leave a dynamic body's inverse mass
+        // intact, so a mass=1 obstacle yields almost completely to a car.
+        PhysicsRigidBody body=new PhysicsRigidBody(new BoxCollisionShape(halfExtents),0);
         body.setKinematic(true);body.setEnableSleep(false);
         registerArenaBody(objectId,body,position,rotation);
         movingArenaBodies.put(staticIds.get(objectId),new MovingBody(body));
@@ -145,6 +162,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public boolean removeArenaBody(String objectId) {return removeStatic(objectId);}
     public List<ArenaContact> arenaContacts() {return List.copyOf(arenaContacts.values());}
     public String staticObjectId(int surfaceId) { return staticNames.get(surfaceId); }
+    public boolean containsArenaBody(String objectId) {return staticIds.containsKey(objectId);}
     private String staticObjectName(PhysicsCollisionObject object) {
         Integer id=staticIdentities.get(object);return id==null?null:staticNames.get(id);
     }
@@ -270,11 +288,11 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             Vector3f axis=new Vector3f();float angle=delta.toAngleAxis(axis);
             if(angle>FastMath.PI)angle-=FastMath.TWO_PI;
             moving.angular=axis.mult(angle/MatchSession.DT);
-            moving.body.setLinearVelocity(moving.linear);moving.body.setAngularVelocity(moving.angular);
             moving.previousPosition=position;moving.previousRotation=rotation;
         }
     }
     private void limitArenaPushes() {
+        if(movingContactImpulses.isEmpty())return;
         Map<Integer,Vector3f> impulses=new HashMap<>();
         for(MovingImpulse contact:movingContactImpulses.values())
             impulses.computeIfAbsent(contact.vehicle(),id->new Vector3f()).addLocal(contact.impulse());
@@ -282,16 +300,19 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             PhysicsVehicle body=vehicle(entry.getKey());if(body==null)continue;
             Vector3f delta=entry.getValue().divide(body.getMass()).setY(0);
             float impulseSpeed=delta.length();if(impulseSpeed<=8)continue;
-            Vector3f direction=delta.divide(impulseSpeed);
             // preStepVelocity already includes weapons/player impulses. Removing
             // only this mechanism's manifold response also retains any ordinary
             // car/wall collision resolved in the same native step.
             Vector3f baseline=preStepVelocity.get(entry.getKey()).clone();
             Vector3f unrelated=body.getLinearVelocity().subtract(baseline).subtractLocal(delta);
             baseline.addLocal(unrelated).setY(0);
-            float braking=Math.max(0,-baseline.dot(direction));
-            float excess=impulseSpeed-braking-8;
-            if(excess>0)body.applyCentralImpulse(direction.mult(-excess*body.getMass()));
+            Vector3f braking=new Vector3f();float speed=baseline.length();
+            if(speed>.0001f) {
+                Vector3f incoming=baseline.divide(speed);
+                braking=incoming.mult(Math.clamp(delta.dot(incoming),-speed,0));
+            }
+            Vector3f push=delta.subtract(braking);float gained=push.length();
+            if(gained>8)body.applyCentralImpulse(push.mult((8/gained-1)*body.getMass()));
         }
     }
     private void synchronizeWheels(int id,PhysicsVehicle body) {
@@ -774,6 +795,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         for(int id:List.copyOf(immobilizers.keySet()))immobilize(id,false);
         space.removeCollisionListener(contactListener);
         space.removeOngoingCollisionListener(contactListener);
+        space.removeTickListener(arenaMotionListener);
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
         for (PhysicsRigidBody body:statics.values()) space.removeCollisionObject(body);
         vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelSupports.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();

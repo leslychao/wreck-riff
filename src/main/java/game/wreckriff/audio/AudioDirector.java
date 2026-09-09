@@ -38,6 +38,8 @@ public final class AudioDirector implements AutoCloseable {
     private final Deque<DelayedImpact> delayedImpacts=new ArrayDeque<>();
     private final List<Voice> voices = new ArrayList<>();
     private final Map<String,Voice> loops = new HashMap<>();
+    /** References to already-budgeted one shots, keyed by the authoritative arena object. */
+    private final Map<String,Voice> hazardWarnings=new HashMap<>();
     private static final class Motion { float priorSpeed,priorTurbo=100,enginePitch=1; }
     private final Map<Integer,Motion> motion=new HashMap<>();
     private AudioNode music,bossTrack;
@@ -287,6 +289,17 @@ public final class AudioDirector implements AutoCloseable {
                 // One authored timed cue, never a render-tick beep clock. Critical
                 // hazard sources (82/100) outrank it; engines remain below it.
                 case BOMB_PLACED -> shot("special-bomb-warning",Group.THREAT,81,event.position(),.8f,1);
+                case ARENA_HAZARD_WARNING, ARENA_HAZARD_ACTIVE -> {
+                    String cue=arenaHazardCue(kind);
+                    if(cue==null||event.objectId()==null||!Float.isFinite(event.value())||event.value()<=0)break;
+                    stopHazardWarning(event.objectId());
+                    boolean warning=event.type()==GameEvent.Type.ARENA_HAZARD_WARNING;
+                    Voice voice=allocate(cue+(warning?"-warning":"-active"),Group.THREAT,warning?105:103,
+                            null,event.position(),warning?.92f:.88f,1);
+                    if(warning&&voice!=null)hazardWarnings.put(event.objectId(),voice);
+                    if(voice!=null)duck=config.musicDuckSeconds();
+                }
+                case ARENA_HAZARD_CANCELLED -> stopHazardWarning(event.objectId());
                 case FIRE_STARTED -> loop("fire-"+event.eventId(),"napalm-fire",Group.WEAPON,64,
                         event.position(),Vector3f.ZERO,.55f,1);
                 case FIRE_ENDED -> stopLoop("fire-"+event.eventId());
@@ -468,10 +481,20 @@ public final class AudioDirector implements AutoCloseable {
         for (Voice voice:List.copyOf(voices)) if (voice.node.getStatus()==AudioSource.Status.Stopped) remove(voice);
     }
     private void stopLoop(String key) { Voice voice=loops.get(key); if (voice!=null) remove(voice); }
+    private static String arenaHazardCue(String kind) {
+        return switch(kind) {
+            case "crane","traffic","carousel","electric","fire","barrier","statue" -> "hazard-"+kind;
+            default -> null;
+        };
+    }
+    private void stopHazardWarning(String objectId) {
+        Voice warning=hazardWarnings.remove(objectId);if(warning!=null)remove(warning);
+    }
     private void remove(Voice voice) {
         if(capture!=null)capture.stop(voice.node);
         renderer.stopSource(voice.node); voice.node.removeFromParent(); voices.remove(voice);
         if (voice.loopKey!=null) loops.remove(voice.loopKey);
+        hazardWarnings.values().removeIf(warning->warning==voice);
     }
     @Override public void close() {
         if (closed) return;

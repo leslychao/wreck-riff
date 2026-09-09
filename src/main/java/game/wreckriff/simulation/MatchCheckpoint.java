@@ -45,7 +45,10 @@ public final class MatchCheckpoint {
                     &&n.surfaceId().equals(checkpoint.safePose().surfaceId())))throw new IllegalArgumentException("Unknown checkpoint road anchor");
         sameKeys(checkpoint.arena().pickups(),arena.pickups().stream().map(ArenaDefinition.Pickup::id).collect(Collectors.toSet()),"pickup");
         sameKeys(checkpoint.arena().objects(),arena.destructibles().stream().map(ArenaDefinition.Destructible::id).collect(Collectors.toSet()),"object");
-        sameKeys(checkpoint.arena().hazards(),arena.hazards().stream().map(ArenaDefinition.Hazard::id).collect(Collectors.toSet()),"hazard");
+        Set<String> eventIds=arena.hazards().stream().map(ArenaDefinition.Hazard::id).collect(Collectors.toSet());
+        arena.barriers().forEach(b->eventIds.add(b.id()));
+        arena.destructibles().stream().filter(o->o.effect()==ArenaDefinition.ObjectEffect.STATUE).forEach(o->eventIds.add(o.id()));
+        sameKeys(checkpoint.arena().hazards(),eventIds,"hazard");
         if(!arena.bounds().contains(new com.jme3.math.Vector3f((float)checkpoint.safePose().x(),(float)checkpoint.safePose().y(),(float)checkpoint.safePose().z())))
             throw new IllegalArgumentException("Checkpoint pose outside arena");
         for(var object:arena.destructibles())if(checkpoint.arena().objects().get(object.id()).hp()>object.maximumHp())

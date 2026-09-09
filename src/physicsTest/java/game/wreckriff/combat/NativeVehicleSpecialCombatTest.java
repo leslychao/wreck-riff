@@ -119,6 +119,99 @@ class NativeVehicleSpecialCombatTest {
         }
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"rivet","spark"})
+    void ordinaryTruckRoofGunsHitAlignedCarsOnLevelRoadWithoutActivatingSpecial(String targetProfile) {
+        try(var fight=new Fight("grinder",targetProfile)) {
+            fight.place(0,0,0,0);fight.place(1,0,15,0);fight.settle();
+            float roofHeight=fight.world.muzzle(0).y;
+            float targetTop=fight.world.position(1).y+fight.world.profile(1).hullBounds().maxY();
+            assertTrue(roofHeight>targetTop+.8f,"Fixture must exercise the real roof-versus-small-hull height difference");
+            var stationaryFire=new VehicleCommand(0,0,0,false,false,true,true,WeaponType.POWER,0,false,false,AbilityId.NONE);
+            for(int tick=0;tick<60;tick++)fight.tick(Map.of(0,stationaryFire));
+            for(int tick=0;tick<=ticks(COMBAT.power().ttlSeconds())&&!fight.combat.projectiles().isEmpty();tick++)fight.tick();
+            long mgShots=fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("machine-gun")).count();
+            long powerShots=fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("power")).count();
+            System.out.printf(Locale.ROOT,
+                    "NATIVE_TRUCK_NORMAL_FIRE target=%s roofY=%.3f targetTopY=%.3f mgShots=%d powerShots=%d mgDamage=%.3f powerDamage=%.3f victimHpLoss=%.3f%n",
+                    targetProfile,roofHeight,targetTop,mgShots,powerShots,fight.damage("machine-gun",1),fight.damage("power",1),
+                    fight.target().maximumHp-fight.target().hp);
+            assertEquals(5,mgShots);assertEquals(1,powerShots);
+            assertEquals(COMBAT.power().initialAmmo()-1,fight.player().weapon(WeaponType.POWER).ammo);
+            assertFalse(fight.player().specialActive());assertEquals(0,fight.player().abilityCooldown(AbilityId.SPECIAL));
+            assertEquals(0,fight.world.grabCount());assertEquals(-1,fight.target().grabbedBy);
+            assertTrue(fight.damage("machine-gun",1)>0,targetProfile+" aligned roof MG must hit during normal driving");
+            assertTrue(fight.damage("power",1)>=COMBAT.power().directDamage(),targetProfile+" normal Power must hit the visible aligned hull");
+        }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"rivet","spark"})
+    void fullGrinderMachineGunPowerComboUsesRealHitsAmmoSelfSplashAndBoundedDamage(String targetProfile) {
+        try(var fight=new Fight("grinder",targetProfile)) {
+            fight.prepareCapture();fight.capture();
+            assertEquals(0,fight.player().machineGunCooldown);
+            assertEquals(0,fight.player().weapon(WeaponType.POWER).cooldownTicks);
+            int nativeHeldTicks=1,fireTicks=ticks(SpecialRules.GRINDER_CONTACT)-1;
+            for(int tick=0;tick<fireTicks;tick++) {
+                if(fight.target().grabbedBy==0) {
+                    nativeHeldTicks++;
+                    assertTrue(fight.world.grabIntact(0,1),targetProfile+" still-held native constraint at tick "+tick);
+                }
+                fight.tick(Map.of(0,fire(true,true)));
+            }
+            // Observe the real flight/explosion tails of those already-fired rockets.
+            // No extra shots, resource resets, synthetic damage or suppressed blasts.
+            for(int tick=0;tick<=ticks(COMBAT.power().ttlSeconds())&&!fight.combat.projectiles().isEmpty();tick++)fight.tick();
+            long powerShots=fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("power")).count();
+            long machineGunShots=fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("machine-gun")).count();
+            int expectedPower=1+(fireTicks-1)/ticks(COMBAT.power().cooldownSeconds());
+            int expectedMachineGun=1+(fireTicks-1)/COMBAT.machineGun().cooldownTicks();
+            assertEquals(3,expectedPower,"Current shared 0.7s Power cooldown permits three shots in this window");
+            assertEquals(expectedPower,powerShots);assertEquals(expectedMachineGun,machineGunShots);
+            assertEquals(COMBAT.power().initialAmmo()-expectedPower,fight.player().weapon(WeaponType.POWER).ammo);
+            assertTrue(fight.combat.projectiles().isEmpty(),"Every projectile from the measured volley must resolve");
+            float grinder=fight.damage("grinder",1),machineGun=fight.damage("machine-gun",1),power=fight.damage("power",1);
+            float ram=fight.damage("ram",1),selfPower=fight.damage("power",0),selfRam=fight.damage("ram",0);
+            long powerHits=fight.events.stream().filter(e->e.type()==GameEvent.Type.IMPACT&&e.subjectId()==1&&e.sourceId()==0&&e.kind().equals("power")).count();
+            long machineGunHits=fight.events.stream().filter(e->e.type()==GameEvent.Type.IMPACT&&e.subjectId()==1&&e.sourceId()==0&&e.kind().equals("machine-gun")).count();
+            float ceiling=SpecialRules.GRINDER_DAMAGE_CAP+expectedMachineGun*COMBAT.machineGun().damage()
+                    +expectedPower*Math.max(COMBAT.power().directDamage(),COMBAT.power().splashDamage());
+            System.out.printf(Locale.ROOT,
+                    "NATIVE_COMBO target=%s heldTicks=%d grinder=%.3f mg=%.3f power=%.3f ram=%.3f victimHpLoss=%.3f selfPower=%.3f selfRam=%.3f mgShots=%d mgHits=%d powerShots=%d powerHits=%d nonRamCeiling=%.3f%n",
+                    targetProfile,nativeHeldTicks,grinder,machineGun,power,ram,fight.target().maximumHp-fight.target().hp,
+                    selfPower,selfRam,machineGunShots,machineGunHits,powerShots,powerHits,ceiling);
+            assertTrue(grinder>0&&grinder<=SpecialRules.GRINDER_DAMAGE_CAP+.02f,targetProfile+" grinder damage cap");
+            if(nativeHeldTicks==ticks(SpecialRules.GRINDER_CONTACT))assertEquals(120,grinder,.02f,"Unbroken full hold deals exactly120");
+            assertTrue(machineGunHits>0&&machineGun>0,targetProfile+" roof MG must hit real hull");
+            assertTrue(powerHits>0&&power>=COMBAT.power().directDamage(),targetProfile+" Power must hit real hull");
+            assertEquals(315,ceiling,.001f,"Current shared weapon tuning changes the original two-Power estimate");
+            assertTrue(grinder+machineGun+power<=ceiling+.02f,targetProfile+" non-ram combo cap");
+            assertEquals(grinder+machineGun+power+ram,fight.target().maximumHp-fight.target().hp,.06f,
+                    "Actual victim HP loss must equal all emitted damage, with ram accounted separately");
+            assertTrue(selfPower>0&&selfPower<=expectedPower*COMBAT.power().splashDamage()*COMBAT.ownerSplashMultiplier()+.02f,
+                    targetProfile+" point-blank volley must retain real bounded owner splash");
+            assertEquals(selfPower+selfRam,fight.player().maximumHp-fight.player().hp,.06f);
+            assertFalse(fight.player().specialActive());assertEquals(-1,fight.target().grabbedBy);assertEquals(0,fight.world.grabCount());
+        }
+    }
+
+    @Test void thirdParticipantFreezeHitsTruckAndImmediatelyReleasesItsCapturedVictim() {
+        try(var fight=new Fight("grinder","rivet","rivet")) {
+            fight.prepareCapture();fight.place(2,0,-12,0);fight.settle();fight.capture();
+            fight.tick(Map.of(0,GAS,2,ability(AbilityId.FREEZE)));
+            for(int tick=0;tick<80&&fight.player().frozenTicks==0;tick++)fight.tick(Map.of(0,GAS));
+            assertTrue(fight.events.stream().anyMatch(e->e.type()==GameEvent.Type.IMPACT&&e.sourceId()==2
+                    &&e.subjectId()==0&&e.kind().equals("freeze")),"Third car's real bolt must reach the truck hull");
+            assertTrue(fight.player().frozenTicks>0);assertEquals(1,fight.world.immobilizerCount());
+            assertEquals(0,fight.world.grabCount());assertFalse(fight.player().specialActive());
+            assertEquals(-1,fight.target().grabbedBy);assertEquals(360,fight.target().controlImmunityTicks);
+            assertEquals(0,fight.target().frozenTicks,"Only the struck truck freezes");
+            float delivered=fight.damage("grinder",1);assertTrue(delivered>0&&delivered<120);
+            fight.idle(15);assertEquals(delivered,fight.damage("grinder",1));assertEquals(0,fight.world.grabCount());
+        }
+    }
+
     @Test void realFreezeBoltCannotStackOnCaptureAndFrozenHullCannotBeCaptured() {
         for(boolean freezeFirst:List.of(false,true))try(var fight=new Fight("grinder","rivet","rivet")) {
             fight.prepareCapture();

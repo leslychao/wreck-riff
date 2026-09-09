@@ -128,10 +128,10 @@ class CombatVisualsTest {
             Node root=(Node)scene.getChild("combat-visuals");
             Geometry fields=(Geometry)root.getChild("ground-fire");
             var positions=(java.nio.FloatBuffer)fields.getMesh().getBuffer(VertexBuffer.Type.Position).getData();
-            assertEquals(84,fields.getMesh().getVertexCount(),"Six boundary edges plus two scorch cells");
+            assertEquals(12,fields.getMesh().getVertexCount(),"Only supported ground patches; no grid outline");
             for(int i=0;i<positions.limit();i+=3) {
-                assertEquals(i<36*3?6.045f:6.028f,positions.get(i+1),.0001f,"Outline and scorch stay on the supported floor");
-                assertTrue(positions.get(i)>=1.35f && positions.get(i)<=3.65f,"No whole-radius disc through unsupported walls or edges");
+                assertEquals(6.028f,positions.get(i+1),.0001f,"Scorch stays on the supported floor");
+                assertTrue(positions.get(i)>=1.5f && positions.get(i)<=3.5f,"No whole-radius disc through unsupported walls or edges");
             }
             assertTrue(((Geometry)root.getChild("rocket-models")).getMesh().getVertexCount()>0,"Persistent mine is visible");
             visuals.update(List.of(),List.of(),List.of(),List.of(),session,.016f);
@@ -290,7 +290,7 @@ class CombatVisualsTest {
         Node scene=new Node();var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,new Vector3f(4,6,8),Vector3f.UNIT_Y,6,60);
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
             visuals.update(List.of(),List.of(),List.of(),List.of(warning),null,.02f);
-            Mesh fields=batch(scene,"ground-fire").getMesh();assertEquals(32*6+12,fields.getVertexCount());
+            Mesh fields=batch(scene,"ground-fire").getMesh();assertEquals(48*6+12,fields.getVertexCount());
             var points=fields.getFloatBuffer(VertexBuffer.Type.Position);
             for(int i=0;i<points.limit();i+=3){assertEquals(6.045f,points.get(i+1),.0001f);assertTrue(new Vector3f(points.get(i)-4,0,points.get(i+2)-8).length()<=6.001f);}
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);assertEquals(0,fields.getVertexCount());
@@ -301,20 +301,57 @@ class CombatVisualsTest {
         var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,contact,normal,6,60);
         List<Vector3f> support=new ArrayList<>();for(int i=0;i<81;i++)support.add(new Vector3f(50+i%9,0,50+i/9));
         List<game.wreckriff.combat.CombatSystem.FireZoneView> fires=new ArrayList<>();
-        for(int i=0;i<12;i++)fires.add(new game.wreckriff.combat.CombatSystem.FireZoneView(i,1,new Vector3f(50,0,50),Vector3f.UNIT_Y,5,240,support));
+        for(int i=0;i<48;i++)fires.add(new game.wreckriff.combat.CombatSystem.FireZoneView(i,1,new Vector3f(50,0,50),Vector3f.UNIT_Y,5,240,support));
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
             visuals.update(List.of(),List.of(),fires,List.of(warning),null,0);
             Mesh fields=batch(scene,"ground-fire").getMesh();assertTrue(fields.getVertexCount()<=20000);assertEquals(0,fields.getVertexCount()%3);
             assertTrue(fields.getVertexCount()>19000,"Regression fills the existing field buffer with lower-priority geometry");
             var points=fields.getFloatBuffer(VertexBuffer.Type.Position);
             float lowest=Float.POSITIVE_INFINITY,highest=Float.NEGATIVE_INFINITY;
-            for(int vertex=0;vertex<32*6+12;vertex++) {
+            for(int vertex=fields.getVertexCount()-(48*6+12);vertex<fields.getVertexCount();vertex++) {
                 Vector3f point=point(points,vertex);Vector3f offset=point.subtract(contact);
                 assertEquals(.045f,offset.dot(normal),.00001f,"Every warning ring/cross vertex lies above the actual support plane");
-                assertTrue(offset.length()<=6.001f,"All warning vertices survive before the saturated fire entries");
+                assertTrue(offset.length()<=6.001f,"All warning vertices survive and draw after the saturated fire entries");
                 lowest=Math.min(lowest,point.y);highest=Math.max(highest,point.y);
             }
             assertTrue(highest-lowest>3,"The warning tilts with the ramp instead of staying horizontal");
+        }
+    }
+    @Test void allProjectileSlotsCanWarnTogetherWithoutScorchObscuringTheirRadii() {
+        Node scene=new Node();
+        List<game.wreckriff.combat.CombatSystem.BallisticWarningView> warnings=new ArrayList<>();
+        for(int i=0;i<64;i++)warnings.add(new game.wreckriff.combat.CombatSystem.BallisticWarningView(i,1,new Vector3f(i*15,0,0),Vector3f.UNIT_Y,6,60));
+        var fire=new game.wreckriff.combat.CombatSystem.FireZoneView(1,0,Vector3f.ZERO,Vector3f.UNIT_Y,5,120,List.of(Vector3f.ZERO));
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.setFlashIntensity(0);visuals.update(List.of(),List.of(),List.of(fire),warnings,null,0);
+            Mesh mesh=batch(scene,"ground-fire").getMesh();
+            assertTrue(mesh.getVertexCount()<=20000);
+            var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);
+            var shape=mesh.getFloatBuffer(VertexBuffer.Type.TexCoord2);
+            assertEquals(5,shape.get(1),"Scorch renders before transparent warning lines");
+            boolean[] outerRadius=new boolean[64],thinInnerRadius=new boolean[64];
+            for(int vertex=6;vertex<mesh.getVertexCount();vertex++) {
+                assertEquals(6,shape.get(vertex*2+1),"Warnings occupy the final draw range");
+                Vector3f point=point(positions,vertex);int index=Math.round(point.x/15);
+                Vector3f offset=point.subtract(warnings.get(index).point());offset.y=0;
+                float radius=offset.length();
+                outerRadius[index]|=Math.abs(radius-6)<.0001f;
+                thinInnerRadius[index]|=Math.abs(radius-5.925f)<.0001f;
+            }
+            for(int index=0;index<64;index++)assertTrue(outerRadius[index]&&thinInnerRadius[index],"Every declared impact keeps its full, thin warning radius");
+        }
+    }
+    @Test void ballisticScorchFollowsWallAndSteepImpactPlanes() {
+        for(Vector3f normal:List.of(Vector3f.UNIT_X,new Vector3f(.3f,.2f,1).normalizeLocal())) {
+            Node scene=new Node();Vector3f contact=new Vector3f(4,6,8);
+            try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+                visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,1,-1,0,contact,"ballistic",34,Vector3f.ZERO,normal)));
+                visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+                Mesh mesh=batch(scene,"ground-fire").getMesh();assertEquals(6,mesh.getVertexCount());
+                var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);
+                for(int vertex=0;vertex<mesh.getVertexCount();vertex++)
+                    assertEquals(.035f,point(positions,vertex).subtract(contact).dot(normal),.00001f,"Cosmetic scorch stays on the actual impact plane");
+            }
         }
     }
     @Test void ballisticCosmeticFireHasSixteenPatchLimitFreezesAndExpiresWithoutChangingHp() {
@@ -443,19 +480,31 @@ class CombatVisualsTest {
             assertEquals(0,visuals.effectCount());
         }
     }
-    @Test void fireOutlineFollowsClippedSupportCellsAndStaysVisibleAtMinimumFlash() {
-        Node scene=new Node();Vector3f a=new Vector3f(4,6,8),b=a.add(1,0,0);
-        var fire=new game.wreckriff.combat.CombatSystem.FireZoneView(1,0,a,Vector3f.UNIT_Y,5,120,List.of(a,b));
+    @Test void softFireFollowsClippedRampCellsAndStaysStableAtMinimumFlash() {
+        Node scene=new Node();Vector3f a=new Vector3f(4,6,8),normal=new Vector3f(-.4f,1,.25f).normalizeLocal();
+        Vector3f b=a.add(1,.4f,0),separate=a.add(4,1.6f,0);
+        var fire=new game.wreckriff.combat.CombatSystem.FireZoneView(1,0,a,normal,5,120,List.of(a,b,separate));
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
             visuals.setFlashIntensity(0);visuals.update(List.of(),List.of(),List.of(fire),List.of(),null,0);
             Mesh mesh=batch(scene,"ground-fire").getMesh();var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);var colors=mesh.getFloatBuffer(VertexBuffer.Type.Color);
-            assertEquals(6*6+2*8*3,mesh.getVertexCount(),"Six outer cell edges reserve space before two scorch patches; shared seam is omitted");
-            for(int vertex=0;vertex<36;vertex++) {
-                Vector3f point=point(positions,vertex);
-                assertEquals(6.045f,point.y,.0001f);
-                assertTrue(point.x>=3.35f&&point.x<=5.65f&&point.z>=7.35f&&point.z<=8.65f,"Outline cannot bridge absent support cells");
-                assertEquals(.62f,colors.get(vertex*4+3),.0001f);
+            assertEquals(18,mesh.getVertexCount(),"Three supported patches without decorative boundary geometry");
+            var shape=mesh.getFloatBuffer(VertexBuffer.Type.TexCoord2);
+            var masks=mesh.getFloatBuffer(VertexBuffer.Type.TexCoord3);
+            for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
+                Vector3f offset=point(positions,vertex).subtract(a);
+                assertEquals(.028f,offset.dot(normal),.00001f);
+                float x=offset.x-normal.x*.028f;
+                assertTrue(x<=1.501f||x>=3.499f,"No geometry bridges unsupported cells");
+                assertEquals(0,shape.get(vertex*2),"Ground geometry never billboards with the camera");
+                assertEquals(5,shape.get(vertex*2+1),"Soft ground mask replaces opaque polygon fans");
+                assertTrue(colors.get(vertex*4+3)>.25f,"Persistent fire is independent of flash reduction");
             }
+            assertEquals(0,((int)masks.get(0))&1,"Shared +X edge does not feather to a visible seam");
+            assertEquals(0,((int)masks.get(12))&2,"Shared -X edge does not feather to a visible seam");
+            assertEquals(255,masks.get(24),"Isolated support fades on all edges and corners");
+            float[] before=floats(mesh,VertexBuffer.Type.TexCoord3);
+            visuals.update(List.of(),List.of(),List.of(fire),List.of(),null,0);
+            assertArrayEquals(before,floats(mesh,VertexBuffer.Type.TexCoord3),"Paused frames keep stable ground patterns");
         }
     }
     private static float[] floats(Mesh mesh,VertexBuffer.Type type) {

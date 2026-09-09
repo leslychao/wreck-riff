@@ -11,6 +11,7 @@ varying vec4 effectColor;
 varying vec2 effectUv;
 varying float effectShape;
 varying vec2 effectVariation;
+varying vec3 effectGroundPosition;
 
 void main() {
     vec4 viewPosition = g_WorldViewMatrix * vec4(inPosition, 1.0);
@@ -21,4 +22,5 @@ void main() {
     effectUv = inTexCoord * 2.0 - 1.0;
     effectShape = inTexCoord2.y;
     effectVariation = inTexCoord3;
+    effectGroundPosition = inPosition;
 }

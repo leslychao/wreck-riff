@@ -47,6 +47,31 @@ class CampaignNavigationTest {
         assertTrue(bots.route(0).isEmpty(),"Flight must not replan using apex height");
     }
 
+    @Test void confirmedDeckContactLetsALongBossPassTheFinalNodeOfItsConnectedRamp() {
+        var source=arenas.definition("construction_17");var graph=new NavGraph(source);
+        var pickups=new ArrayList<>(source.pickups().stream().filter(p->p.type()!=ArenaDefinition.PickupType.REPAIR).toList());
+        pickups.add(new ArenaDefinition.Pickup("upper-repair",ArenaDefinition.PickupType.REPAIR,
+                new ArenaDefinition.Vec3(132,8,116),3600));
+        var arena=source.withPickups(pickups);var session=new MatchSession(73,arena,MatchSession.Mode.BOSS_DUEL,combat);
+        var boss=session.registerBoss(arena.bosses().getFirst());session.phase=MatchSession.Phase.BOSS_COMBAT;
+        session.vehicle(0).hp=0;boss.hp=boss.maximumHp*.1f;
+        var world=new RoadWorld(arena);world.profiles.put(boss.id,VehicleProfile.boss(boss.profileId,vehicleRules));
+        float offset=world.profile(boss.id).roadOffset();world.positions.put(boss.id,graph.position(27).add(0,offset,0));
+        world.contexts.put(boss.id,new RoadContext("floor-east",0,1,RoadContext.Motion.ROAD,"","",0));
+        var bots=new BotController(session,arena,graph,AiRules.load());bots.commands(world);
+        for(int node=28;node<=31;node++) {
+            session.tick++;world.positions.put(boss.id,graph.position(node).add(0,offset,0));
+            world.contexts.put(boss.id,new RoadContext("upper-ramp",0,1,RoadContext.Motion.RAMP,"upper-ramp","",0));
+            bots.commands(world);
+        }
+        assertEquals(32,bots.navigation(boss.id).transition().to());
+        session.tick++;world.positions.put(boss.id,new Vector3f(132,8+offset,104.75f));
+        world.contexts.put(boss.id,new RoadContext("parking-deck",1,1,RoadContext.Motion.ROAD,"","",1));
+        var command=bots.commands(world).get(boss.id);
+        assertEquals(33,bots.navigation(boss.id).transition().to(),"Continue onto the wheel-confirmed deck instead of steering back to node 32");
+        assertTrue(command.throttle()>0);assertFalse(command.recover());
+    }
+
     @Test void healingBotsReserveDifferentReachablePickupsForThreeSeconds() {
         var source=arenas.definition("construction_17");var pickups=new ArrayList<>(source.pickups().stream()
                 .filter(p->p.type()!=ArenaDefinition.PickupType.REPAIR).toList());

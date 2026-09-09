@@ -10,7 +10,7 @@ final class ArenaHazardSchedule {
     record Timing(int warning,int active,int rest,String sector,boolean barrier,boolean statue) {}
     static final class State {
         ProgressStore.HazardPhase phase=ProgressStore.HazardPhase.READY;
-        long remaining,cycle;
+        long remaining,cycle,beganTick=Long.MIN_VALUE;
         ArenaSystems.BossAction completion;
     }
     private final ArenaDefinition arena;
@@ -54,8 +54,9 @@ final class ArenaHazardSchedule {
         begin(id,completion);cooldown=Math.max(cooldown,value.rest());return true;
     }
     private void begin(String id,ArenaSystems.BossAction completion) {
-        var state=state(id);state.phase=ProgressStore.HazardPhase.WARNING;state.remaining=timing(id).warning();state.cycle++;state.completion=completion;
+        var state=state(id);state.phase=ProgressStore.HazardPhase.WARNING;state.remaining=timing(id).warning();state.cycle++;state.completion=completion;state.beganTick=session.tick;
     }
+    void cancel(String id) {var state=state(id);state.phase=ProgressStore.HazardPhase.COOLDOWN;state.remaining=timing(id).rest();state.completion=null;}
     void statue(String id) {cancelPreparedAndActive(0);begin(id,null);}
     void cancelPreparedAndActive(long ticks) {
         cooldown=Math.max(cooldown,ticks);
@@ -71,11 +72,13 @@ final class ArenaHazardSchedule {
         lastTick=session.tick;cooldown=Math.max(0,cooldown-1);
         for(var entry:states.entrySet()) {
             String id=entry.getKey();var state=entry.getValue();var value=timing(id);
+            if(state.phase==ProgressStore.HazardPhase.WARNING&&state.beganTick==session.tick)continue;
             if(state.remaining>0)state.remaining--;
             if(state.remaining!=0)continue;
             switch(state.phase) {
                 case WARNING -> {
-                    if(value.barrier()&&!barrierClear.test(id)) {state.phase=ProgressStore.HazardPhase.COOLDOWN;state.remaining=value.rest();state.completion=null;}
+                    if(value.statue()) {completed.add(id);state.phase=ProgressStore.HazardPhase.DISABLED;}
+                    else if(value.barrier()&&!barrierClear.test(id)) {state.phase=ProgressStore.HazardPhase.COOLDOWN;state.remaining=value.rest();state.completion=null;}
                     else {state.phase=ProgressStore.HazardPhase.ACTIVE;state.remaining=value.active();}
                 }
                 case ACTIVE -> {
@@ -109,8 +112,21 @@ final class ArenaHazardSchedule {
             if(value.remainingTicks()>limit||value.cooldownTicks()!=0||(value.phase()==ProgressStore.HazardPhase.DISABLED&&!timing.statue()))
                 throw new IllegalArgumentException("Invalid saved arena event duration: "+entry.getKey());
         }
-        saved.hazards().forEach((id,value)->{var state=state(id);state.phase=value.phase();state.remaining=value.remainingTicks();state.cycle=value.cycle();state.completion=null;});
-        if(pendingDamage()>budget())throw new IllegalArgumentException("Saved arena hazard budget exceeded");
+        var pending=saved.hazards().entrySet().stream().filter(e->e.getValue().phase()==ProgressStore.HazardPhase.WARNING||e.getValue().phase()==ProgressStore.HazardPhase.ACTIVE).toList();
+        if(pending.stream().filter(e->!timing(e.getKey()).barrier()).count()>budget()
+                ||pending.stream().filter(e->timing(e.getKey()).barrier()).count()>1)throw new IllegalArgumentException("Saved arena hazard budget exceeded");
+        Set<String> sectors=new HashSet<>();
+        for(var entry:pending)if(!sectors.add(timing(entry.getKey()).sector()))throw new IllegalArgumentException("Saved arena sectors overlap");
+        for(int first=0;first<pending.size();first++)for(int second=first+1;second<pending.size();second++) {
+            String firstId=pending.get(first).getKey(),secondId=pending.get(second).getKey();
+            var a=arena.hazards().stream().filter(h->h.id().equals(firstId)).findFirst();
+            var b=arena.hazards().stream().filter(h->h.id().equals(secondId)).findFirst();
+            if(a.isPresent()&&b.isPresent()&&a.get().minX()<b.get().maxX()&&a.get().maxX()>b.get().minX()
+                    &&a.get().minZ()<b.get().maxZ()&&a.get().maxZ()>b.get().minZ())throw new IllegalArgumentException("Saved arena zones overlap");
+        }
+        long maximumRest=timing.values().stream().mapToLong(Timing::rest).max().orElse(0);
+        if(saved.eventCooldownTicks()>Math.max(1440,maximumRest))throw new IllegalArgumentException("Invalid saved arena cooldown");
+        saved.hazards().forEach((id,value)->{var state=state(id);state.phase=value.phase();state.remaining=value.remainingTicks();state.cycle=value.cycle();state.completion=null;state.beganTick=Long.MIN_VALUE;});
         cooldown=saved.eventCooldownTicks();cursor=saved.randomState();lastTick=Long.MIN_VALUE;
     }
 }

@@ -136,8 +136,14 @@ public final class BotController {
             }
             VehicleCommand command=drive(vehicle,brain,world);
             AbilityId ability=chooseAbility(vehicle,brain,world);
+            // Save explosive ammunition until the receiver has its target: launching it on
+            // approach pushes that target away and makes the truck evade its own salvo.
+            boolean preparingGrab=vehicle.profileId.equals("grinder")&&(ability==AbilityId.SPECIAL
+                    ||vehicle.specialPhase==VehicleState.SpecialPhase.GRINDER_WINDUP
+                    ||vehicle.specialPhase==VehicleState.SpecialPhase.GRINDER_SEARCH);
             result.put(vehicle.id,new VehicleCommand(command.throttle(),command.brakeReverse(),command.steer(),command.handbrake(),
-                    command.turbo(),command.machineGun(),command.selectedWeapon(),command.directWeapon(),command.weaponDelta(),
+                    command.turbo(),command.machineGun(),command.selectedWeapon()&&!preparingGrab,
+                    preparingGrab?null:command.directWeapon(),command.weaponDelta(),
                     command.rearView(),command.recover(),ability));
         }
         cached=Collections.unmodifiableMap(result); return cached;
@@ -612,6 +618,13 @@ public final class BotController {
     private VehicleCommand drive(VehicleState self,Brain brain,WorldQuery world) {
         Vector3f position=world.position(self.id),velocity=world.velocity(self.id),forward=world.forward(self.id);
         float speed=velocity.length();
+        boolean grinderApproach=self.profileId.equals("grinder")&&!self.controlled()
+                &&(self.specialPhase==VehicleState.SpecialPhase.GRINDER_WINDUP||self.specialPhase==VehicleState.SpecialPhase.GRINDER_SEARCH);
+        var meleeTarget=brain.observation.visible(self.grinding()?self.specialTargetId:brain.target);
+        int contactGoal=(grinderApproach||self.grinding())&&brain.state!=State.EVADE_HAZARD&&meleeTarget!=null
+                &&world.grounded(self.id)&&sameObservedLevel(self.id,meleeTarget.id(),position,meleeTarget.position(),world)
+                &&horizontalDistance(position,meleeTarget.position())<22?meleeTarget.id():-1;
+        if(contactGoal>=0)brain.passingDestination=null;
         if(needsRecovery(brain) && !brain.recoveryDetourAttempted && world.grounded(self.id)
                 && world.rotation(self.id).mult(Vector3f.UNIT_Y).y>.8f) {
             // An upright car can fail a short turning circle while a clear longer
@@ -656,7 +669,7 @@ public final class BotController {
             brain.passingDestination=null;brain.recoveryDetourAttempted=false;
         } else if(brain.passingDestination!=null && session.tick>=brain.passingUntil)brain.passingDestination=null;
         var closeOpponent=brain.observation.visible().stream().min(Comparator.comparingDouble(e->e.position().distanceSquared(position))).orElse(null);
-        if (brain.state!=State.EVADE_HAZARD && brain.passingDestination==null && session.tick>=brain.nextPassAttempt && closeOpponent!=null
+        if (contactGoal<0 && brain.state!=State.EVADE_HAZARD && brain.passingDestination==null && session.tick>=brain.nextPassAttempt && closeOpponent!=null
                 && closeOpponent.position().distance(position)<rules.passDistance()
                 && sameObservedLevel(self.id,closeOpponent.id(),position,closeOpponent.position(),world)) {
             brain.passingDestination=passingDestination(self.id,position,forward,closeOpponent.position(),world);
@@ -664,6 +677,7 @@ public final class BotController {
             brain.nextPassAttempt=session.tick+rules.decisionTicks();
         }
         if (brain.passingDestination!=null) destination=brain.passingDestination;
+        if(contactGoal>=0)destination=meleeTarget.position();
         ArenaDefinition.Ramp ramp=rampAt(position,roadOffset(world,self.id));
         float halfWidth=halfWidth(world,self.id);
         if (ramp!=null && (ramp.axis()==ArenaDefinition.Axis.Z
@@ -718,8 +732,6 @@ public final class BotController {
         float steer=Math.clamp(error*rules.steeringGain(),-1,1);
         float desiredSpeed=rules.cruiseSpeed()*(1-.75f*Math.min(1,Math.abs(error)/1.5f));
         if (Math.abs(error)>2) desiredSpeed=6;
-        boolean grinderApproach=self.profileId.equals("grinder")&&!self.controlled()
-                &&(self.specialPhase==VehicleState.SpecialPhase.GRINDER_WINDUP||self.specialPhase==VehicleState.SpecialPhase.GRINDER_SEARCH);
         if (brain.state==State.ATTACK && direction.length()<rules.attackDistance()&&!grinderApproach) desiredSpeed=Math.min(desiredSpeed,12);
         if (brain.state==State.SEEK_PICKUP && horizontalDistance(position,brain.destination)<8) desiredSpeed=Math.min(desiredSpeed,7);
         if (ramp!=null) desiredSpeed=Math.min(desiredSpeed,12);
@@ -746,6 +758,13 @@ public final class BotController {
         if (drivableRampHit(center)) center=null;
         if (drivableRampHit(left)) left=null;
         if (drivableRampHit(rightHit)) rightHit=null;
+        // During this one melee attempt the chosen hull is the contact goal.
+        // Static blockers, other cars and road-edge checks remain authoritative.
+        if(contactGoal>=0) {
+            if(center!=null&&center.vehicleId()==contactGoal)center=null;
+            if(left!=null&&left.vehicleId()==contactGoal)left=null;
+            if(rightHit!=null&&rightHit.vehicleId()==contactGoal)rightHit=null;
+        }
         if (center!=null && center.vehicleId()>=0 && center.fraction()*probeLength<4
                 && beginLocalTrafficEscape(brain,self.id,position,forward,center.point(),world)) return VehicleCommand.NONE;
         float clearance=center==null?1:center.fraction();
@@ -923,7 +942,16 @@ public final class BotController {
         var context=world.roadContext(id);String targetSurface=graph.surfaceId(transition.to());
         if(context.known()&&(context.flying()||!context.surfaceId().equals(targetSurface))) {
             var target=arena.surfaces().stream().filter(s->s.id().equals(targetSurface)).findFirst().orElseThrow();
-            if(context.flying()||target.level()!=context.level())return false;
+            if(context.flying())return false;
+            if(target.level()!=context.level()) {
+                // A long chassis can vote for the adjoining deck while its centre still
+                // crosses the ramp's final node. Accept only the authored continuation
+                // of this same ramp onto the surface actually confirmed by its wheels.
+                boolean joinedRamp=transition.type()==ArenaDefinition.Transition.RAMP
+                        &&graph.links(transition.to()).stream().anyMatch(link->link.type()==ArenaDefinition.Transition.RAMP
+                        &&link.objectId().equals(transition.objectId())&&graph.surfaceId(link.to()).equals(context.surfaceId()));
+                if(!joinedRamp)return false;
+            }
         }
         return horizontalDistance(position,graph.position(transition.to()))<3.5f
                 &&Math.abs(position.y-roadOffset(world,id)-graph.position(transition.to()).y)<2.2f;

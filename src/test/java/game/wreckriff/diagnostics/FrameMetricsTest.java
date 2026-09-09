@@ -17,4 +17,10 @@ class FrameMetricsTest {
         assertTrue(metrics.withinTarget());assertEquals(12.0,metrics.snapshot().get("p95FrameMs"));
         assertThrows(IllegalArgumentException.class,()->metrics.add(Double.NaN));
     }
+    @Test void percentileLimitsHaveInclusiveBoundariesAndRejectActualOverruns() {
+        var accepted=new FrameMetrics();for(int i=0;i<980;i++)accepted.add(.0167);for(int i=0;i<20;i++)accepted.add(.025);
+        assertTrue(accepted.withinTarget());assertEquals(16.7,accepted.percentileMilliseconds(.95));assertEquals(25,accepted.percentileMilliseconds(.99));
+        var slow95=new FrameMetrics();for(int i=0;i<1000;i++)slow95.add(.01671);assertFalse(slow95.withinTarget());
+        var slow99=new FrameMetrics();for(int i=0;i<980;i++)slow99.add(.01);for(int i=0;i<20;i++)slow99.add(.02501);assertFalse(slow99.withinTarget());
+    }
 }

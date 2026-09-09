@@ -18,6 +18,8 @@ public final class CombatShowcase {
     private final List<Map<String,Object>> observations=new ArrayList<>();
     private final List<Map<String,Object>> combatTimeline=new ArrayList<>();
     private double firstBallisticImpact=-1;
+    private Vector3f firstBallisticImpactPoint;
+    private Map<String,Object> warningCapture=Map.of();
     public CombatShowcase(MatchSession session,PhysicsWorld world,CombatSystem combat) {
         this.session=session;this.world=world;this.combat=combat;
         pair();
@@ -77,8 +79,9 @@ public final class CombatShowcase {
             events.merge(event.type()+":"+event.kind(),1,Integer::sum);
             if(event.type()==GameEvent.Type.EXPLOSION||event.type()==GameEvent.Type.DESTROYED) {
                 combatTimeline.add(Map.of("seconds",session.seconds(),"type",event.type().name(),"kind",event.kind(),"id",event.eventId()));
-                if(event.type()==GameEvent.Type.EXPLOSION&&event.kind().equals("ballistic")&&firstBallisticImpact<0)
-                    firstBallisticImpact=session.seconds();
+                if(event.type()==GameEvent.Type.EXPLOSION&&event.kind().equals("ballistic")&&firstBallisticImpact<0) {
+                    firstBallisticImpact=session.seconds();firstBallisticImpactPoint=event.position().clone();
+                }
             }
         }
         if(session.tick%12==0) {
@@ -103,6 +106,8 @@ public final class CombatShowcase {
     }
     public String frame(Camera camera) {
         Vector3f target=world.position(1);
+        var warning=combat.ballisticWarnings().stream().min(Comparator.comparingLong(CombatSystem.BallisticWarningView::id)).orElse(null);
+        boolean warningCloseup=session.seconds()>=23&&session.seconds()<29&&warning!=null;
         boolean close=session.seconds()<12 || (session.seconds()>=16&&session.seconds()<20);
         // Keep the ground reference stable during recoil instead of cancelling movement with the camera.
         if(session.seconds()>=12&&session.seconds()<16||session.seconds()>=29)
@@ -110,18 +115,29 @@ public final class CombatShowcase {
         if(session.seconds()>=23&&session.seconds()<29)target=new Vector3f(-42,7,-12);
         if(session.seconds()>=33&&session.seconds()<36)target=new Vector3f(-72,.55f,-48);
         Vector3f offset=close?new Vector3f(5.8f,3.0f,-7.2f):session.seconds()>=23&&session.seconds()<29?new Vector3f(21,10,-23):new Vector3f(14,8,-10);
+        if(warningCloseup) {target=warning.point();offset=new Vector3f(12,9,-14);}
+        if(firstBallisticImpactPoint!=null&&session.seconds()>=23&&session.seconds()<29) {
+            target=firstBallisticImpactPoint;offset=new Vector3f(12,9,-14);
+        }
         camera.setFrustumPerspective(close?43:55,camera.getWidth()/(float)camera.getHeight(),.1f,500);
         camera.setLocation(target.add(offset));camera.lookAt(target.add(0,.3f,close?0:-4),Vector3f.UNIT_Y);
-        String[] names={"hp-100","hp-75","hp-50","hp-25","hp-0","hp-repaired","machine-gun","power-hit","freeze","shield","napalm","ballistic-warning","ballistic-hit","cannon-hit","cannon-ricochet","cannon-lethal","wreck-removed"};
-        double[] times={1,3,5,7,9,11,13,14.25,16.5,18.5,21.3,24,firstBallisticImpact<0?Double.POSITIVE_INFINITY:firstBallisticImpact+.12,29.3,33.25,36.4,39.5};
+        // Auto-targeting can choose a different car from the staged pair. Capture a
+        // live warning on its actual impact surface, rather than a fixed time/position.
+        if(warningCloseup&&warning.remainingTicks()>=24&&captures.add("ballistic-warning")) {
+            warningCapture=Map.of("seconds",session.seconds(),"id",warning.id(),"point",warning.point().toString(),
+                    "normal",warning.normal().toString(),"radius",warning.radius(),"remainingTicks",warning.remainingTicks());
+            return "ballistic-warning";
+        }
+        String[] names={"hp-100","hp-75","hp-50","hp-25","hp-0","hp-repaired","machine-gun","power-hit","freeze","shield","napalm","ballistic-hit","cannon-hit","cannon-ricochet","cannon-lethal","wreck-removed"};
+        double[] times={1,3,5,7,9,11,13,14.25,16.5,18.5,21.3,firstBallisticImpact<0?Double.POSITIVE_INFINITY:firstBallisticImpact+.12,29.3,33.25,36.4,39.5};
         for(int i=0;i<times.length;i++)if(session.seconds()>=times[i]&&captures.add(names[i]))return names[i];
         return null;
     }
-    public Map<String,Object> evidence() { return Map.of("seconds",session.seconds(),"events",events,"observations",observations,"combatTimeline",combatTimeline,
+    public Map<String,Object> evidence() { return Map.of("seconds",session.seconds(),"events",events,"observations",observations,"combatTimeline",combatTimeline,"warningCapture",warningCapture,
             "gallery","HP gallery and positions/health between scenarios are staged; all attacks and the final lethal hit use normal commands and physics."); }
     public boolean complete() { return session.seconds()>=SECONDS; }
     public boolean demonstrated() {
-        return events.getOrDefault("FREEZE:freeze",0)>0&&events.getOrDefault("SHIELD:shield",0)>0
+        return !warningCapture.isEmpty()&&events.getOrDefault("FREEZE:freeze",0)>0&&events.getOrDefault("SHIELD:shield",0)>0
                 &&events.keySet().stream().anyMatch(key->key.startsWith("SHIELD_HIT:"))&&events.getOrDefault("EXPLOSION:power",0)>0
                 &&events.getOrDefault("EXPLOSION:ballistic",0)==4&&events.getOrDefault("EXPLOSION:cannon-ricochet",0)>=2
                 &&events.getOrDefault("DESTROYED:destroyed",0)>0&&!world.containsVehicle(1);

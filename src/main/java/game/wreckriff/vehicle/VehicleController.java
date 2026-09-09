@@ -28,6 +28,11 @@ public final class VehicleController {
     private final Deque<RetreatPoint> retreat=new ArrayDeque<>();
     private long recordedTeleportGeneration;
     private float steering, rearGrip;
+    private float encounterAcceleration=1;
+    public void encounterAcceleration(float multiplier) {
+        if(!Float.isFinite(multiplier)||multiplier<1||multiplier>1.1f)throw new IllegalArgumentException("Invalid encounter acceleration");
+        encounterAcceleration=multiplier;
+    }
     private int reverseWait, forwardWait, recoveryHold;
     private boolean reversing, turboActive;
     private boolean dashRequested;
@@ -170,7 +175,7 @@ public final class VehicleController {
         float ratio=Math.clamp(speed/limit,0,1);
         float taper=Math.max(0,1-ratio*ratio*ratio*ratio);
         float massRatio=world.mass(state.id)/rules.mass();
-        float force=power*rules.engineForce()*massRatio*profile.accelerationMultiplier()*taper
+        float force=power*rules.engineForce()*massRatio*profile.accelerationMultiplier()*encounterAcceleration*taper
                 *(power<0?rules.reverseForceMultiplier():turboActive?1.55f:1);
         body.accelerate(force/4);
         body.brake(brake*rules.brakeForce()*massRatio);
@@ -180,7 +185,9 @@ public final class VehicleController {
         steering += (nativeSteer*angle-steering)*(1-(float)Math.exp(-rules.steeringResponse()*dt));
         body.steer(steering);
         boolean handbrake=!righting && !state.controlled() && command.handbrake();
-        float gripTarget=handbrake?rules.handbrakeFriction():rules.frictionSlip();
+        float surfaceGrip=world.roadContext(state.id).grip();
+        body.setFrictionSlip(0,rules.frictionSlip()*surfaceGrip);body.setFrictionSlip(1,rules.frictionSlip()*surfaceGrip);
+        float gripTarget=(handbrake?rules.handbrakeFriction():rules.frictionSlip())*surfaceGrip;
         float gripBlend=handbrake?0.3f:Math.min(1,dt/rules.gripReturnSeconds()*3);
         rearGrip += (gripTarget-rearGrip)*gripBlend;
         body.setFrictionSlip(2,rearGrip); body.setFrictionSlip(3,rearGrip);

@@ -96,6 +96,15 @@ class VehicleSpecialsTest {
         }
     }
 
+    @Test void shieldEndsTeethContactEvenWhenControlImmunityPreventedTheGrab() {
+        var fight=new Fight("grinder","rivet");fight.intakeContact(1);fight.target().controlImmunityTicks=600;
+        fight.tick(Map.of(0,special()));fight.idle(72);
+        assertTrue(fight.player().grinding());assertEquals(-1,fight.target().grabbedBy);
+        float hp=fight.target().hp;fight.tick(Map.of(1,ability(AbilityId.SHIELD)));
+        assertFalse(fight.player().specialActive());assertEquals(hp,fight.target().hp);
+        fight.idle(30);assertEquals(hp,fight.target().hp);
+    }
+
     @Test void freezeCannotStackOnHeldVictimButFreezingTruckReleasesIt() {
         var fight=new Fight("grinder","rivet","rivet");fight.capture();
         fight.world.nextSweep=new WorldQuery.Hit(1,fight.world.position(1),Vector3f.UNIT_Z,.5f);

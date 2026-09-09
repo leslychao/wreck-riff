@@ -31,6 +31,7 @@ public final class GenerateAudio {
         prepareResults(output,sources);
         preparePickups(output);
         prepareSpecials(output);
+        prepareArenaHazards(output);
         for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
                 "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-turbo",
                 "ui-nav","ui-confirm","mine-place"))effect(output,id);
@@ -55,6 +56,9 @@ public final class GenerateAudio {
                 Pickup takes are mono 48kHz/16-bit; edge/DC cleanup; common RMS target 0.16; peak ceiling 0.82.
                 Player specials: six original local cues; pulse charge/hit, grinder start/periodic loop, dash hiss and bomb warning.
                 No external samples in these cues. Exact timing, recipes and hashes: special-provenance.json.
+                Arena hazards: seven original warning/activation pairs; crane, traffic, carousel, electricity, fire, barrier, statue.
+                Authoritative phase events trigger one shots; warning cancellation targets the same arena object.
+                Recipes and exact output/source hashes: arena-hazard-provenance.json. No external samples.
                 Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
                 Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
                 """,StandardCharsets.UTF_8);
@@ -349,6 +353,83 @@ public final class GenerateAudio {
                 "generator":"%s","generatorSha256":"%s","seed":"0x5249464657415645",
                 "sampleRate":48000,"channels":1,"bits":16,
                 "mastering":"One shots: silent tapered edges, DC cleanup, RMS target 0.16 and peak ceiling 0.82. Loop: periodic waveform, DC cleanup and peak 0.72.",
+                "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
+                """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
+    }
+
+    /** Arena phase punctuation. No idle/active loop or secondary hazard timer is created at runtime. */
+    private static void prepareArenaHazards(Path output)throws Exception {
+        String generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        List<String> evidence=new ArrayList<>();
+        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue"))
+            for(boolean warning:new boolean[]{true,false}) {
+                String id="hazard-"+kind+(warning?"-warning":"-active");
+                double seconds=warning?1.2:switch(kind) {
+                    case "crane" -> .95;case "traffic" -> 1;case "carousel" -> 1.1;
+                    case "electric" -> .8;case "fire" -> 1.3;case "barrier" -> .9;case "statue" -> 1.4;
+                    default -> throw new IllegalArgumentException(kind);
+                };
+                String recipe=switch(kind) {
+                    case "crane" -> warning?"Three low hoist alarms over a tensioned steel ratchet":"Falling heavy load; bass impact, flexing steel and concrete debris";
+                    case "traffic" -> warning?"Two alternating vehicle horns with an approaching engine":"Passing engine rush, tire scrub and a short road impact";
+                    case "carousel" -> warning?"Uneven fairground three-note alarm and motor windup":"Rotating mechanism and inharmonic gantry strike";
+                    case "electric" -> warning?"Rising electrical charge with pulsed high-frequency ticks":"Sharp electric arc followed by decaying mains buzz";
+                    case "fire" -> warning?"Pressure-valve rattle and rising pressurised hiss":"Low ignition whoosh with filtered crackling fire";
+                    case "barrier" -> warning?"Two pneumatic gate alerts followed by servomotor tension":"Sliding gate grind with a mechanical end-stop";
+                    case "statue" -> warning?"Two stone stress cracks over a growing sub-bass rumble":"Heavy falling stone and staggered crumbling debris";
+                    default -> throw new IllegalArgumentException(kind);
+                };
+                Random random=new Random(SEED^id.hashCode());float[] pcm=new float[(int)Math.round(seconds*RATE)];double low=0;
+                for(int frame=0;frame<pcm.length;frame++) {
+                    double t=frame/(double)RATE,n=random.nextDouble()*2-1;low+=.055*(n-low);
+                    double value;
+                    if(warning)value=switch(kind) {
+                        case "crane" -> pickupTone(t,.02,.20,315,0,.7)+pickupTone(t,.36,.20,365,0,.7)
+                                +pickupTone(t,.70,.23,415,0,.7)+metal(t,.015,143,4,n)*.22;
+                        case "traffic" -> pickupTone(t,.025,.32,380,0,.65)+pickupTone(t,.025,.32,510,0,.4)
+                                +pickupTone(t,.55,.34,460,0,.7)+pickupTone(t,.55,.34,610,0,.35)
+                                +Math.sin(TAU*(65*t+38*t*t))*.16*pickupEnvelope(t,.01,1.1);
+                        case "carousel" -> pickupTone(t,.02,.24,620,0,.6)+pickupTone(t,.34,.24,795,0,.6)
+                                +pickupTone(t,.68,.25,705,0,.6)+Math.sin(TAU*(40*t+70*t*t))*.23*pickupEnvelope(t,.08,1.1);
+                        case "electric" -> Math.sin(TAU*(230*t+700*t*t))*.42*pickupEnvelope(t,.01,1.08)
+                                +(n-low)*.26*Math.pow(Math.max(0,Math.sin(TAU*9*t)),8)*pickupEnvelope(t,.01,1.08);
+                        case "fire" -> (n-low)*(.08+.50*t)*pickupEnvelope(t,.02,1.1)
+                                +metal(t,.05,380,21,n)*.5+metal(t,.28,540,24,n)*.35;
+                        case "barrier" -> pickupTone(t,.02,.14,820,0,.58)+pickupTone(t,.33,.14,590,0,.58)
+                                +Math.sin(TAU*(95*t+90*t*t))*.23*pickupEnvelope(t,.45,.62)+(n-low)*.10*pickupEnvelope(t,.05,.8);
+                        case "statue" -> metal(t,.05,210,25,n)*.6+metal(t,.54,156,20,n)*.7
+                                +(Math.sin(TAU*54*t)*.40+low)*(.18+t*.5)*pickupEnvelope(t,.01,1.15);
+                        default -> throw new IllegalArgumentException(kind);
+                    };
+                    else value=switch(kind) {
+                        case "crane" -> metal(t,.02,92,7,n)*.9+low*2.5*Math.exp(-t*6)
+                                +metal(t,.15,230,14,n)*.3;
+                        case "traffic" -> Math.sin(TAU*(180*t-62*t*t))*.32*pickupEnvelope(t,.01,.9)
+                                +(n-low)*.4*pickupEnvelope(t,.09,.73)+metal(t,.08,190,24,n)*.4;
+                        case "carousel" -> Math.sin(TAU*82*t)*(1+.6*Math.sin(TAU*12*t))*.3*Math.exp(-t*3)
+                                +metal(t,.02,460,7,n)*.62;
+                        case "electric" -> (n-low)*.68*Math.exp(-t*9)
+                                +Math.tanh(Math.sin(TAU*100*t)*2)*.42*Math.exp(-t*5);
+                        case "fire" -> (low*3.2+(n-low)*.22)*Math.exp(-t*2.8)
+                                +Math.sin(TAU*(94*t-20*t*t))*.55*Math.exp(-t*6);
+                        case "barrier" -> Math.sin(TAU*(115*t+23*t*t))*.35*pickupEnvelope(t,.01,.68)
+                                +low*1.3*pickupEnvelope(t,.01,.68)+metal(t,.65,290,20,n)*.65;
+                        case "statue" -> metal(t,.02,72,4,n)*.85+low*2*Math.exp(-t*3)
+                                +metal(t,.21,141,13,n)*.4+metal(t,.45,270,18,n)*.23;
+                        default -> throw new IllegalArgumentException(kind);
+                    };
+                    pcm[frame]=(float)value;
+                }
+                masterPickup(pcm);write(output,id,new float[][]{pcm});
+                evidence.add("{\"path\":\"audio/"+id+".wav\",\"kind\":\""+kind+"\",\"phase\":\""+(warning?"warning":"active")
+                        +"\",\"frames\":"+pcm.length+",\"sha256\":\""+hash(Files.readAllBytes(output.resolve(id+".wav")))
+                        +"\",\"recipe\":\""+recipe+"\"}");
+            }
+        Files.writeString(output.resolve("arena-hazard-provenance.json"),"""
+                {"schemaVersion":1,"origin":"ORIGINAL_PROJECT_CONTENT","externalSamples":false,
+                "generator":"%s","generatorSha256":"%s","seed":"0x5249464657415645",
+                "sampleRate":48000,"channels":1,"bits":16,"looping":false,
+                "mastering":"Silent tapered edges; DC cleanup; RMS target 0.16 and linear peak ceiling 0.82",
                 "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
                 """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
     }

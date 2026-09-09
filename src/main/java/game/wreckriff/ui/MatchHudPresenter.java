@@ -60,7 +60,7 @@ public final class MatchHudPresenter {
         }
         int rivals=targets.size(),second=(int)session.seconds();
         if(rivals!=previousRivals||second!=previousSecond||session.phase!=previousPhase) {
-            objective=session.phase==MatchSession.Phase.BOSS_ENTRY?"BOSS INBOUND":session.phase==MatchSession.Phase.INTRO?"ARENA":rivals+" RIVALS";
+            objective=session.phase==MatchSession.Phase.BOSS_ENTRY?"БОСС НА АРЕНЕ":session.phase==MatchSession.Phase.INTRO?"ПОБЕДИТЕ СОПЕРНИКОВ И БОССА":rivals+" RIVALS";
             if(session.maximumTicks()!=Long.MAX_VALUE) {
                 long remaining=Math.max(0,(session.maximumTicks()-session.tick)/MatchSession.TICKS_PER_SECOND);
                 objective=String.format(java.util.Locale.ROOT,"%02d:%02d  /  %d RIVALS",remaining/60,remaining%60,rivals);

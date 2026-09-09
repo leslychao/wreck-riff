@@ -207,6 +207,9 @@ class NativeLaunchPlatformsTest {
             session.tick++;
         }
         void fly(int id,int padIndex,int fps) {
+            // ArenaSystems creates the authored moving mechanisms before the
+            // first native step. Include them in the launch leak baseline.
+            systems.beforePhysics(world,drivers);
             int baseBodies=world.bodyCount();
             float maxY=world.position(id).y;
             for(int frame=0;frame<fps*4;frame++) {

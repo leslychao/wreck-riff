@@ -15,9 +15,15 @@ import java.util.*;
 public final class ArenaPresentation extends AbstractControl {
     private final List<HazardVisual> visuals=new ArrayList<>();
     private final List<AnimatedDetail> details=new ArrayList<>();
+    private LaunchPadPresentation launches;
+    private ArenaObjectPresentation objects;
     public static ArenaPresentation attach(AssetManager assets,Node arenaVisual,
             MatchSession session,ArenaDefinition definition,ArenaSystems arenaSystems) {
+        if(arenaVisual.getControl(ArenaPresentation.class)!=null)throw new IllegalStateException("Arena presentation already attached");
         ArenaPresentation presentation=new ArenaPresentation();
+        presentation.launches=new LaunchPadPresentation(assets,arenaVisual,session,definition,arenaSystems);
+        presentation.objects=new ArenaObjectPresentation(assets,arenaVisual,definition,arenaSystems);
+        new ArenaMechanismPresentation(assets,arenaVisual,session,definition,arenaSystems);
         for(var hazard:definition.hazards()) {
             HazardVisual visual=new HazardVisual(assets,session,hazard,arenaSystems,surfaceHeight(definition,hazard));
             presentation.visuals.add(visual);arenaVisual.attachChild(visual.decoration);
@@ -32,6 +38,7 @@ public final class ArenaPresentation extends AbstractControl {
     @Override protected void controlUpdate(float dt) {
         for(var visual:visuals)visual.update(dt);
         for(var detail:details)detail.update();
+        launches.update();objects.update();
     }
     @Override protected void controlRender(RenderManager manager,ViewPort view) {}
     /** Hazard minY is a trigger bound (commonly -0.1), not the rendered driving surface. */

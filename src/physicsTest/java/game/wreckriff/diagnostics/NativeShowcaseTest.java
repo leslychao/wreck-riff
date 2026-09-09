@@ -19,9 +19,17 @@ class NativeShowcaseTest {
         try(var runtime=new MatchRuntime(session,world,arena,content.graph(),rules)) {
             for(int step=0;step<360;step++)world.step();
             var showcase=new CombatShowcase(session,world,runtime.combat());
+            var camera=new com.jme3.renderer.Camera(1280,720);boolean warningCaptured=false;
             for(int step=0;step<CombatShowcase.SECONDS*120;step++) {
                 assertEquals(MatchSession.Outcome.NONE,session.outcome,"Demo must retain a living player");
                 showcase.accept(runtime.tick(showcase.commands(),false));
+                if("ballistic-warning".equals(showcase.frame(camera))) {
+                    var warnings=runtime.combat().ballisticWarnings();
+                    assertFalse(warnings.isEmpty(),"Warning capture requires a live authoritative warning");
+                    assertTrue(camera.getLocation().distance(warnings.getFirst().point())<25,
+                            "Camera follows the actual impact surface even when another car is targeted");
+                    warningCaptured=true;
+                }
                 if(session.tick==1980) {
                     var target=session.vehicle(1);
                     assertTrue(target.frozenTicks>0,"Freeze capture must show an active native freeze");
@@ -31,6 +39,7 @@ class NativeShowcaseTest {
                         "Cannon shooter must not overlap the earlier shield-test car");
             }
             assertTrue(showcase.complete());
+            assertTrue(warningCaptured,"Showcase must capture a visible ballistic warning");
             assertTrue(showcase.demonstrated(),()->showcase.evidence().toString());
             assertFalse(world.containsVehicle(1));assertFalse(runtime.hasWrecks());
         }

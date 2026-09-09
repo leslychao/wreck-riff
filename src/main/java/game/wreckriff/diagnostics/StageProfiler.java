@@ -28,6 +28,8 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     private long previousTime;
     private Recording recording;
     private Path recordingPath;
+    private String[] renderLabels;
+    private int[] renderValues,maximumRenderValues;
     public StageProfiler() {this(System::nanoTime);}
     StageProfiler(LongSupplier clock) {this.clock=clock;}
     public void startRecording(Path directory) throws IOException,ParseException {
@@ -51,6 +53,10 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     @Override public void appSubStep(String... steps) { }
     @Override public void vpStep(VpStep step,ViewPort viewport,RenderQueue.Bucket bucket) { }
     @Override public void spStep(SpStep step,String... information) { }
+    public void renderStatistics(com.jme3.renderer.Statistics statistics) {
+        if(renderLabels==null){renderLabels=statistics.getLabels();renderValues=new int[renderLabels.length];maximumRenderValues=new int[renderLabels.length];}
+        statistics.getData(renderValues);for(int i=0;i<renderValues.length;i++)maximumRenderValues[i]=Math.max(maximumRenderValues[i],renderValues[i]);
+    }
     public Map<String,Object> snapshot() {
         var result=new LinkedHashMap<String,Object>();var application=new LinkedHashMap<String,Object>();var jme=new LinkedHashMap<String,Object>();
         stages.forEach((stage,metrics)->application.put(stage.name(),metrics.snapshot()));
@@ -59,6 +65,8 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         result.put("measurement","CPU elapsed intervals; nested app stages are not additive and do not measure GPU execution");
         result.put("gpuTiming","UNAVAILABLE: no asynchronous GPU timestamp evidence captured");
         result.put("jfrPath",recordingPath==null?"":recordingPath.toAbsolutePath().toString());result.put("jfrMaximumBytes",128L*1024*1024);
+        var render=new LinkedHashMap<String,Integer>();if(renderLabels!=null)for(int i=0;i<renderLabels.length;i++)render.put(renderLabels[i],maximumRenderValues[i]);
+        result.put("maximumRendererStatistics",render);
         return result;
     }
     @Override public void close() {

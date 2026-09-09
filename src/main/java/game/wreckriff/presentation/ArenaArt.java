@@ -43,15 +43,17 @@ public final class ArenaArt {
         return scene;
     }
     public static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials) {
-        Scene scene=load(definition);Node art=new Node("authored-arena-art");
+        attach(assets,root,definition,materials,load(definition));
+    }
+    static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials,Scene scene) {
+        Node art=new Node("authored-arena-art");
         art.setUserData("source",scene.source());art.setUserData("arenaId",scene.arenaId());
         art.setUserData("authoredPartCount",scene.parts().size());
-        Map<String,Node> groups=new HashMap<>(),cells=new LinkedHashMap<>();
-        for(var group:scene.groups()) {
-            Node node=new Node("art-motion-"+group.id());node.setLocalTranslation(group.position().vector());
-            node.setUserData("artMotion",group.motion().name());node.setUserData("artPeriod",group.period());
-            node.setUserData("artPhase",group.phase());groups.put(group.id(),node);art.attachChild(node);
-        }
+        Map<String,Node> groups=new HashMap<>(),cells=new LinkedHashMap<>(),anchors=new LinkedHashMap<>();
+        Map<String,Group> definitions=new HashMap<>();for(var group:scene.groups())definitions.put(group.id(),group);
+        Set<String> dynamic=new HashSet<>();
+        definition.destructibles().forEach(object->dynamic.add(object.geometryId()));
+        definition.barriers().forEach(barrier->dynamic.add(barrier.geometryId()));
         Map<String,Mesh> meshes=new HashMap<>();
         for(var part:scene.parts()) {
             var size=part.size();
@@ -81,10 +83,26 @@ public final class ArenaArt {
             visual.setMaterial(material);
             if(material.getParam("NormalMap")!=null&&mesh.getBuffer(VertexBuffer.Type.Tangent)==null)
                 com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(mesh);
-            if(part.group().isEmpty()) {
+            Node anchor=art;
+            if(dynamic.contains(part.anchor()))anchor=anchors.computeIfAbsent(part.anchor(),id->{
+                Node node=new Node("art-anchor-"+id);node.setUserData("artAnchor",id);art.attachChild(node);return node;
+            });
+            if(part.group().isEmpty()&&anchor==art) {
                 String cell=(int)Math.floor(part.position().x()/40)+":"+(int)Math.floor(part.position().z()/40);
                 Node node=cells.computeIfAbsent(cell,ignored->new Node("art-cell-"+cell));node.attachChild(visual);
-            } else groups.get(part.group()).attachChild(visual);
+            } else if(part.group().isEmpty())anchor.attachChild(visual);
+            else {
+                // A motion group may contain parts belonging to independent breakable objects.
+                // Split it by lifetime owner so hiding one gate cannot hide a neighbouring facade.
+                String groupKey=part.group()+":"+(anchor==art?"static":part.anchor());
+                Node parent=anchor;
+                Node node=groups.computeIfAbsent(groupKey,ignored->{
+                    Group group=definitions.get(part.group());Node motion=new Node("art-motion-"+group.id());
+                    motion.setLocalTranslation(group.position().vector());motion.setUserData("artMotion",group.motion().name());
+                    motion.setUserData("artPeriod",group.period());motion.setUserData("artPhase",group.phase());
+                    parent.attachChild(motion);return motion;
+                });node.attachChild(visual);
+            }
         }
         for(var cell:cells.values()) {cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);art.attachChild(cell);}
         root.attachChild(art);

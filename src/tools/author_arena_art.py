@@ -331,8 +331,10 @@ def necropolis():
     s.beam("bell-clapper",(0,-2,0),(0,-8,0),.6,"rust")
     s.end_group()
     for i,(x,z) in enumerate(((-18,58),(279,56),(-19,177),(278,173),(63,265),(201,265))):
-        s.backdrop_building("tomb-hall",x,z,18,23,12+(i%3)*4,"stone","light-amber")
-        s.part("tomb-obelisk",(x,27,z),(2.5,16,2.5),"dark-concrete",rotation=(0,45,0))
+        height=12+(i%3)*4
+        s.backdrop_building("tomb-hall",x,z,18,23,height,"stone","light-amber")
+        # Each spire starts inside its own stepped roof, including the shorter halls.
+        s.part("tomb-obelisk",(x,height+9,z),(2.5,16,2.5),"dark-concrete",rotation=(0,45,0))
         s.cylinder("ritual-brazier",(x,7,z-8),1.7,1.0,"black")
         s.light("ritual-fire-"+str(i),(x,8,z-8),(1.7,.8,1.7),"light-amber",True,i*.23)
         s.steam("ritual-smoke-"+str(i),(x,8.8,z-8),i*.18)

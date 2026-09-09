@@ -64,7 +64,7 @@ class NativeArsenalTest {
             float lowerHp=session.vehicle(1).hp;
             for(int tick=0;tick<60;tick++)tick(world,Map.of());
             assertTrue(session.vehicle(1).hp<lowerHp,"Fire must reach the lower compound hull");
-            assertEquals(400,session.vehicle(2).hp,"A real deck separates upper hull from impact and fire");
+            assertEquals(session.vehicle(2).maximumHp,session.vehicle(2).hp,"A real deck separates upper hull from impact and fire");
             assertTrue(combat.fireZones().getFirst().surfacePoints().stream().allMatch(point->point.y<.1f));
         }finally{combat.clear();}
     }

@@ -6,10 +6,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class MainOptionsTest {
     @Test void everyDiagnosticSwitchRequiresExplicitDevMode() {
         for(String flag:new String[]{"--seed=42","--no-audio","--ai-player","--smoke-seconds=45","--benchmark-seconds=60","--config-dir=.","--showcase",
-                "--art-showcase","--arena=construction_17","--resolution=720p","--no-glow"}) {
+                "--art-showcase","--arena=construction_17","--resolution=720p","--no-glow","--profile"}) {
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{flag}),flag);
             assertTrue(Main.Options.parse(new String[]{flag,"--dev"}).dev());
         }
+    }
+    @Test void detailedProfilingIsExplicitAndDoesNotBecomeABenchmarkDefault() {
+        assertFalse(Main.Options.parse(new String[]{"--dev","--benchmark-seconds=600"}).profile());
+        assertTrue(Main.Options.parse(new String[]{"--dev","--benchmark-seconds=60","--profile"}).profile());
+        assertFalse(Main.Options.parse(new String[]{"--dev","--profile"}).automated());
     }
     @Test void benchmarkDurationHasExplicitBoundsAndPreservesDiagnosticOptions() {
         var options=Main.Options.parse(new String[]{"--benchmark-seconds=1","--seed=42","--ai-player","--no-audio","--dev"});
@@ -63,5 +68,12 @@ class MainOptionsTest {
         for(String size:new String[]{"","480p","900p","2160p","1920x1080","1080"})
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--resolution="+size}));
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--showcase","--arena=construction_17"}));
+    }
+    @Test void vehicleShowcaseIsAnExclusiveDevOnlyModeUsingTheRosterArena() {
+        assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--vehicle-showcase"}));
+        var options=Main.Options.parse(new String[]{"--dev","--vehicle-showcase","--resolution=720p"});
+        assertTrue(options.vehicleShowcase());assertTrue(options.automated());assertEquals("dead-air-yard",options.arenaId());
+        for(String incompatible:new String[]{"--showcase","--art-showcase","--benchmark-seconds=1","--smoke-seconds=1","--arena=construction_17"})
+            assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--vehicle-showcase",incompatible}));
     }
 }

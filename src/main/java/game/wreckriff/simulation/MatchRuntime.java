@@ -6,6 +6,7 @@ import game.wreckriff.combat.*;
 import game.wreckriff.config.*;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.vehicle.VehicleController;
+import game.wreckriff.diagnostics.StageProfiler;
 import com.jme3.math.*;
 import java.util.*;
 
@@ -24,6 +25,10 @@ public final class MatchRuntime implements AutoCloseable {
     private final Map<Integer,Integer> wreckTicks=new LinkedHashMap<>();
     private boolean physicsTailStarted;
     private boolean closed;
+    private StageProfiler profiler;
+    public void profiler(StageProfiler profiler) {this.profiler=profiler;}
+    private long stamp() {return profiler==null?0:System.nanoTime();}
+    private void record(StageProfiler.Stage stage,long since) {if(profiler!=null)profiler.record(stage,System.nanoTime()-since);}
 
     public MatchRuntime(MatchSession session,PhysicsWorld world,ArenaDefinition arena,
             NavGraph graph,VehicleRules vehicleRules) {
@@ -41,6 +46,8 @@ public final class MatchRuntime implements AutoCloseable {
         bots.observeHazards(arenaSystems::activeHazards);
         combat=new CombatSystem(session,session.combatRules);
         combat.directDamageMultiplier(arenaSystems::directHitMultiplier);
+        combat.configureArenaDamage(arenaSystems::damageTargets,arenaSystems::damageObject);
+        arenaSystems.synchronizeGeometry(world,graph);
         bots.observeProjectiles(combat::projectiles);
         bots.observeBallisticWarnings(combat::ballisticWarnings);
     }
@@ -65,7 +72,15 @@ public final class MatchRuntime implements AutoCloseable {
                 session.transition(MatchSession.Phase.ERROR);return List.of();
             }
         }
+        long aiStarted=stamp();
         Map<Integer,VehicleCommand> commands=runAi?new HashMap<>(bots.commands(world)):new HashMap<>();
+        record(StageProfiler.Stage.AI,aiStarted);
+        for(var action:bots.drainBossCommands()) {
+            if(action.bossId()!=session.bossParticipantId||session.phase!=MatchSession.Phase.BOSS_COMBAT)continue;
+            var kind=ArenaSystems.BossAction.valueOf(action.kind().name());
+            if(action.stage()==BotController.BossCommandStage.BEGIN&&!action.targetId().isEmpty())arenaSystems.requestHazard(action.targetId(),kind);
+            else if(action.stage()==BotController.BossCommandStage.COMPLETE&&action.targetId().isEmpty())arenaSystems.completeBossAction(kind);
+        }
         for(var entry:overrides.entrySet()) {
             if(entry.getKey()==null||entry.getKey()<0||entry.getKey()>=session.vehicles.size())throw new IllegalArgumentException("Unknown driver override");
             commands.put(entry.getKey(),Objects.requireNonNull(entry.getValue()));
@@ -81,7 +96,7 @@ public final class MatchRuntime implements AutoCloseable {
                     Long.MIN_VALUE/2+session.tick*16+state.id);
             if (state.protectionTicks>0 || recovery.fatal()) commands.put(state.id,command.withoutAttacks());
         }
-        combat.beginTick(commands,world);
+        long combatStarted=stamp();combat.beginTick(commands,world);record(StageProfiler.Stage.COMBAT,combatStarted);
         for(var state:session.vehicles) {
             if(!state.controlled())continue;
             VehicleCommand command=commands.getOrDefault(state.id,VehicleCommand.NONE);
@@ -90,13 +105,24 @@ public final class MatchRuntime implements AutoCloseable {
                     command.rearView(),false,command.ability()));
         }
         arenaSystems.beforePhysics(world,drivers);
-        for (var state:session.vehicles) if (state.alive()) drivers.get(state.id).drive(commands.getOrDefault(state.id,VehicleCommand.NONE));
+        for (var state:session.vehicles) if (state.alive()) {
+            var driver=drivers.get(state.id);
+            driver.encounterAcceleration(state.id==session.bossParticipantId&&state.profileId.equals("boss_emcee")&&session.bossMode==3?1.1f:1);
+            driver.drive(commands.getOrDefault(state.id,VehicleCommand.NONE));
+        }
         stepPhysics();
         arenaSystems.afterPhysics(world,drivers);
-        combat.advanceProjectiles(world);
-        for (var ram:world.rams()) combat.queueRam(ram.first(),ram.second(),ram.closingSpeed(),ram.point(),ram.normal());
+        combatStarted=stamp();combat.advanceProjectiles(world);
+        for (var ram:world.rams()) {
+            combat.queueRam(ram.first(),ram.second(),ram.closingSpeed(),ram.point(),ram.normal());
+            if(ram.first()==session.bossParticipantId||ram.second()==session.bossParticipantId)bots.confirmRamContact(session.bossParticipantId,session.tick);
+        }
+        for(var contact:world.arenaContacts())combat.queueArenaRam(contact.objectId(),contact.vehicleId(),contact.closingSpeed());
+        combat.prepareArenaDamage(world);arenaSystems.synchronizeGeometry(world,graph);
         if(session.combatPhase())arenaSystems.updateHazard(world,(target,amount,cause,event)->combat.queueDamage(target,-1,amount,cause,event));
         combat.resolveDamage(world);
+        record(StageProfiler.Stage.COMBAT,combatStarted);
+        arenaSystems.synchronizeGeometry(world,graph);
         List<GameEvent> events=new ArrayList<>(combat.drainEvents());
         for (var event:events) if (event.type()==GameEvent.Type.DESTROYED) {
             world.makeWreck(event.subjectId());wreckTicks.put(event.subjectId(),3*MatchSession.TICKS_PER_SECOND);
@@ -106,8 +132,10 @@ public final class MatchRuntime implements AutoCloseable {
             arenaSystems.completeBossAction(ArenaSystems.BossAction.LANDED);
         for (var state:session.vehicles) if (state.alive()) drivers.get(state.id).recordSafePose(session.tick);
         finishTick(session);
-        if (session.outcome!=MatchSession.Outcome.NONE) events.add(new GameEvent(GameEvent.Type.MATCH_FINISHED,
-                Long.MAX_VALUE,0,-1,world.position(0),session.outcome.name().toLowerCase(Locale.ROOT),0));
+        if (session.outcome!=MatchSession.Outcome.NONE) {
+            events.add(new GameEvent(GameEvent.Type.MATCH_FINISHED,Long.MAX_VALUE,0,-1,world.position(0),session.outcome.name().toLowerCase(Locale.ROOT),0));
+            combat.clear();arenaSystems.stop(world);
+        }
         return events.stream().map(e->e.inSession(session.sessionId)).toList();
     }
     public void skipIntro() { if(session.phase==MatchSession.Phase.INTRO)session.transition(MatchSession.Phase.ARENA_COMBAT); }
@@ -218,7 +246,7 @@ public final class MatchRuntime implements AutoCloseable {
         stepPhysics();
     }
     private void stepPhysics() {
-        world.step();
+        long started=stamp();world.step();record(StageProfiler.Stage.BULLET,started);
         for(var iterator=wreckTicks.entrySet().iterator();iterator.hasNext();) {
             var entry=iterator.next();int remaining=entry.getValue()-1;
             if(remaining==0) {world.removeVehicle(entry.getKey());iterator.remove();}

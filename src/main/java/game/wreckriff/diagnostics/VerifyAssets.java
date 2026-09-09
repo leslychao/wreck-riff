@@ -159,7 +159,7 @@ public final class VerifyAssets {
             String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
             String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
             String origin = source ? asset.path : asset.source;
-            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "special-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
+            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "special-provenance", "arena-hazard-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
@@ -241,6 +241,8 @@ public final class VerifyAssets {
         Map<String,String> recorded = verifyRecordedEffects(config,assets);
         Map<String,String> pickups = verifyPickupEffects(config,assets);
         Map<String,String> specials = verifySpecialEffects(config,assets);
+        Map<String,String> authored=new HashMap<>(pickups);authored.putAll(specials);
+        authored.putAll(verifyArenaHazardEffects(config,assets));
         byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
         JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
         JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -289,7 +291,7 @@ public final class VerifyAssets {
             }
             assets.add(new Asset(path, channels == 2 ? "licensed-music" : results.containsKey(path)?"licensed-result":recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
                     channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
-                            : results.getOrDefault(path,recorded.getOrDefault(path,pickups.getOrDefault(path,specials.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples")))),
+                            : results.getOrDefault(path,recorded.getOrDefault(path,authored.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"))),
                     channels == 2 || recorded.containsKey(path)||results.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
@@ -391,6 +393,38 @@ public final class VerifyAssets {
         }
         if(!required.isEmpty())throw new IOException("Missing pickup take provenance: "+required);
         assets.add(asset(path,"pickup-provenance",bytes,generator+"; original synthesized pickup cue recipes and exact output hashes","VERIFIED"));
+        return Map.copyOf(origins);
+    }
+
+    private static Map<String,String> verifyArenaHazardEffects(AudioConfig config,List<Asset> assets)throws Exception {
+        String path="audio/arena-hazard-provenance.json",generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        byte[] bytes=resource(path);JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()||evidence.get("looping").getAsBoolean()
+                ||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
+                ||!generator.equals(evidence.get("generator").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(generator))).equals(evidence.get("generatorSha256").getAsString())
+                ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString()))
+            throw new IOException("Arena hazard audio source/provenance mismatch");
+        Set<String> required=new HashSet<>(),hashes=new HashSet<>();Map<String,String> origins=new HashMap<>();
+        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue"))
+            for(String phase:List.of("warning","active")) {
+                String cue="hazard-"+kind+"-"+phase;
+                if(!List.of(cue).equals(config.cueBanks().get(cue)))throw new IOException("Missing arena hazard cue: "+cue);
+                required.add("audio/"+cue+".wav");
+            }
+        for(JsonElement element:evidence.getAsJsonArray("assets")) {
+            JsonObject item=element.getAsJsonObject();String audio=item.get("path").getAsString();
+            if(!required.remove(audio)||!audio.equals("audio/hazard-"+item.get("kind").getAsString()+"-"+item.get("phase").getAsString()+".wav"))
+                throw new IOException("Unexpected/duplicate arena hazard cue: "+audio);
+            WaveMetrics metrics=inspectWave(uniqueResource(audio));
+            if(metrics.frames<38400||metrics.frames>67200||metrics.channels!=1||metrics.rate!=48000||metrics.bits!=16
+                    ||metrics.frames!=item.get("frames").getAsLong()||!metrics.sha256.equals(item.get("sha256").getAsString())
+                    ||!hashes.add(metrics.sha256)||metrics.peak>.82004||metrics.rms<.08||metrics.rms>.16004)
+                throw new IOException("Invalid arena hazard cue signal/format/hash: "+audio);
+            origins.put(audio,"Original arena hazard synthesis; "+item.get("recipe").getAsString()+"; audio/arena-hazard-provenance.json");
+        }
+        if(!required.isEmpty())throw new IOException("Missing arena hazard cue provenance: "+required);
+        assets.add(asset(path,"arena-hazard-provenance",bytes,generator+"; original event-driven warning/activation cues","VERIFIED"));
         return Map.copyOf(origins);
     }
 

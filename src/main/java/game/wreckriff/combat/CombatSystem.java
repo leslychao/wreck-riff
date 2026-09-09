@@ -7,11 +7,114 @@ import game.wreckriff.simulation.*;
 import game.wreckriff.config.VehicleDefinition;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 import static game.wreckriff.combat.CombatRules.ticks;
 
 /** Fixed-tick weapon acceptance, geometric attacks, and one simultaneous damage phase. */
 public final class CombatSystem {
+    public record ArenaTarget(String geometryId,Vector3f min,Vector3f max) {
+        public ArenaTarget {
+            if(geometryId==null||geometryId.isBlank()||min==null||max==null
+                    ||!finite(min)||!finite(max)||min.x>=max.x||min.y>=max.y||min.z>=max.z)
+                throw new IllegalArgumentException("Invalid arena damage target");
+            min=min.clone();max=max.clone();
+        }
+        @Override public Vector3f min(){return min.clone();}
+        @Override public Vector3f max(){return max.clone();}
+        private static boolean finite(Vector3f value) {return Float.isFinite(value.x)&&Float.isFinite(value.y)&&Float.isFinite(value.z);}
+        Vector3f closest(Vector3f point) {
+            return new Vector3f(Math.clamp(point.x,min.x,max.x),Math.clamp(point.y,min.y,max.y),Math.clamp(point.z,min.z,max.z));
+        }
+    }
+    @FunctionalInterface public interface ArenaDamageSink {void damage(String geometryId,int sourceId,float amount,String cause,long eventId);}
+    private record ArenaDamageKey(long eventId,String geometryId) {}
+    private record ArenaDamage(String geometryId,int sourceId,float amount,String cause,long eventId) {}
+    private record ArenaRamPair(String geometryId,int vehicleId) implements Comparable<ArenaRamPair> {
+        public int compareTo(ArenaRamPair other) {
+            int order=geometryId.compareTo(other.geometryId);return order==0?Integer.compare(vehicleId,other.vehicleId):order;
+        }
+    }
+    private static final int MAX_ARENA_TARGETS=128,MAX_ARENA_DAMAGE_PER_TICK=16384;
+    private Supplier<List<ArenaTarget>> arenaTargetSource=List::of;
+    private ArenaDamageSink arenaDamageSink=(geometry,source,amount,cause,event)->{};
+    private Map<String,ArenaTarget> arenaTargets=Map.of();
+    private long arenaTargetTick=Long.MIN_VALUE,arenaDamageTick=Long.MIN_VALUE;
+    private final LinkedHashMap<ArenaDamageKey,ArenaDamage> arenaDamage=new LinkedHashMap<>();
+    private final Set<ArenaDamageKey> seenArenaDamage=new HashSet<>();
+    private final Map<ArenaRamPair,Float> arenaRamSpeeds=new TreeMap<>();
+    private final Map<ArenaRamPair,Long> arenaRamReadyAt=new HashMap<>();
+
+    public void configureArenaDamage(Supplier<List<ArenaTarget>> targets,ArenaDamageSink sink) {
+        if(!arenaDamage.isEmpty()||!arenaRamSpeeds.isEmpty())throw new IllegalStateException("Cannot replace pending arena damage owner");
+        arenaTargetSource=Objects.requireNonNull(targets);arenaDamageSink=Objects.requireNonNull(sink);
+        arenaTargetTick=Long.MIN_VALUE;arenaTargets=Map.of();
+    }
+    private Map<String,ArenaTarget> arenaTargets() {
+        if(arenaTargetTick==session.tick)return arenaTargets;
+        List<ArenaTarget> supplied=Objects.requireNonNull(arenaTargetSource.get(),"Arena target catalogue");
+        if(supplied.size()>MAX_ARENA_TARGETS)throw new IllegalStateException("Arena target catalogue exceeds "+MAX_ARENA_TARGETS);
+        Map<String,ArenaTarget> result=new LinkedHashMap<>();
+        for(var target:supplied)if(target==null||result.putIfAbsent(target.geometryId(),target)!=null)
+            throw new IllegalStateException("Duplicate/null arena target");
+        arenaTargets=Collections.unmodifiableMap(result);arenaTargetTick=session.tick;return arenaTargets;
+    }
+    private boolean arenaDamageEnabled(int source) {
+        return session.outcome==MatchSession.Outcome.NONE
+                &&!(session.phase==MatchSession.Phase.BOSS_ENTRY&&source==session.bossParticipantId&&source>=0);
+    }
+    private void queueArenaDamage(String geometry,int source,float amount,String cause,long event) {
+        if(!Float.isFinite(amount)||amount<0)throw new IllegalArgumentException("Arena damage must be finite and nonnegative");
+        if(geometry==null||amount==0||!arenaDamageEnabled(source)||!arenaTargets().containsKey(geometry))return;
+        if(arenaDamageTick!=session.tick){seenArenaDamage.clear();arenaDamageTick=session.tick;}
+        var key=new ArenaDamageKey(event,geometry);if(seenArenaDamage.contains(key))return;
+        if(seenArenaDamage.size()>=MAX_ARENA_DAMAGE_PER_TICK)throw new IllegalStateException("Arena damage exceeded the per-tick budget");
+        seenArenaDamage.add(key);arenaDamage.putIfAbsent(key,new ArenaDamage(geometry,source,amount,cause,event));
+    }
+    private void directArenaDamage(WorldQuery.Hit hit,int owner,float amount,String cause,long event) {
+        if(hit!=null&&hit.vehicleId()<0)queueArenaDamage(hit.objectId(),owner,amount,cause,event);
+    }
+    private void radialArenaDamage(long eventId,int owner,String cause,Vector3f center,float radius,float maximum,
+                                   String directGeometry,WorldQuery world) {
+        if(!arenaDamageEnabled(owner))return;
+        for(var target:arenaTargets().values()) {
+            if(target.geometryId().equals(directGeometry))continue;
+            Vector3f point=target.closest(center);float distance=center.distance(point);
+            if(distance>=radius)continue;
+            var blocker=distance<.00001f?null:world.ray(center,point,-1);
+            if(blocker!=null&&!target.geometryId().equals(blocker.objectId()))continue;
+            queueArenaDamage(target.geometryId(),owner,maximum*(1-distance/radius),cause,eventId);
+        }
+    }
+    public void queueArenaRam(String geometryId,int vehicleId,float closingSpeed) {
+        if(!Float.isFinite(closingSpeed)||closingSpeed<0)throw new IllegalArgumentException("Invalid arena closing speed");
+        if(geometryId==null||!session.containsParticipant(vehicleId)||!session.vehicle(vehicleId).alive()
+                ||!arenaDamageEnabled(vehicleId)||closingSpeed<=rules.ram().minimumClosingSpeed()||!arenaTargets().containsKey(geometryId))return;
+        var pair=new ArenaRamPair(geometryId,vehicleId);
+        if(session.tick<arenaRamReadyAt.getOrDefault(pair,Long.MIN_VALUE))return;
+        arenaRamSpeeds.merge(pair,closingSpeed,Math::max);
+    }
+    /** Resolve due special payloads before the environment chooses this tick's hazard damage. */
+    public void prepareArenaDamage(WorldQuery world) {
+        advanceSpecials(Objects.requireNonNull(world));resolveArenaDamage();
+    }
+    /** May run both before hazards and after late specials in the same tick; dedup survives both calls. */
+    public void resolveArenaDamage() {
+        if(session.outcome!=MatchSession.Outcome.NONE){arenaDamage.clear();arenaRamSpeeds.clear();return;}
+        for(var entry:arenaRamSpeeds.entrySet()) {
+            var pair=entry.getKey();if(!session.vehicle(pair.vehicleId()).alive())continue;
+            float amount=Math.min(rules.ram().maximumDamage(),rules.ram().damagePerExcessSpeed()
+                    *(entry.getValue()-rules.ram().minimumClosingSpeed()));
+            queueArenaDamage(pair.geometryId(),pair.vehicleId(),amount,"ram",nextShotId++);
+            arenaRamReadyAt.put(pair,session.tick+ticks(rules.ram().cooldownSeconds()));
+        }
+        arenaRamSpeeds.clear();
+        for(var iterator=arenaDamage.entrySet().iterator();iterator.hasNext();) {
+            var request=iterator.next().getValue();
+            arenaDamageSink.damage(request.geometryId(),request.sourceId(),request.amount(),request.cause(),request.eventId());
+            iterator.remove();
+        }
+    }
     @FunctionalInterface public interface DirectDamageMultiplier {float multiplier(int targetId,Vector3f localPoint);}
     private DirectDamageMultiplier directDamageMultiplier=(target,point)->1;
     public void directDamageMultiplier(DirectDamageMultiplier multiplier) {directDamageMultiplier=Objects.requireNonNull(multiplier);}
@@ -294,6 +397,7 @@ public final class CombatSystem {
                 queueContactDamage(target.id,bomb.ownerId,amount,"special-bomb",bomb.id,
                         world.closestHullPoint(target.id,center),bomb.support.normal(),center);
             }
+            radialArenaDamage(bomb.id,bomb.ownerId,"special-bomb",center,SpecialRules.BOMB_RADIUS,SpecialRules.BOMB_DAMAGE,null,world);
             iterator.remove();
         }
     }
@@ -353,8 +457,8 @@ public final class CombatSystem {
     private void grind(VehicleState owner,WorldQuery world) {
         var target=session.vehicle(owner.specialTargetId);
         boolean held=target.grabbedBy==owner.id;
-        if(!target.alive()||target.protectionTicks>0||!grinderContact(owner,target,world)
-                ||held&&(target.shieldTicks>0||!world.grabIntact(owner.id,target.id))) {
+        if(!target.alive()||target.protectionTicks>0||target.shieldTicks>0||!grinderContact(owner,target,world)
+                ||held&&!world.grabIntact(owner.id,target.id)) {
             cancelSpecial(owner,world);return;
         }
         float amount=Math.min(SpecialRules.GRINDER_DPS*MatchSession.DT,SpecialRules.GRINDER_DAMAGE_CAP-owner.specialDamage);
@@ -478,6 +582,7 @@ public final class CombatSystem {
             events.add(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
                     hit==null?end:hit.point(),intent.kind,rules.machineGun().damage(),muzzle,Vector3f.ZERO));
             if(hit!=null)impact(intent.id,intent.ownerId,intent.kind,hit,muzzle);
+            directArenaDamage(hit,intent.ownerId,rules.machineGun().damage(),intent.kind,intent.id);
             if (hit != null && hit.vehicleId() >= 0 && hit.vehicleId() != intent.ownerId) {
                 queueContactDamage(hit.vehicleId(),intent.ownerId,directDamage(hit.vehicleId(),hit.point(),rules.machineGun().damage(),world),intent.kind,intent.id,hit.point(),hit.normal(),muzzle);
             }
@@ -583,6 +688,7 @@ public final class CombatSystem {
     }
     private void radialDamage(long id,int owner,String kind,Vector3f center,float radius,float maximum,CombatRules.Blast blast,Vector3f normal,WorldQuery world) {
         events.add(new GameEvent(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius,Vector3f.ZERO,normal));
+        radialArenaDamage(id,owner,kind,center,radius,maximum,null,world);
         for(VehicleState target:orderedVehicles) {
             if(!target.alive())continue;
             float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/radius);
@@ -803,6 +909,9 @@ public final class CombatSystem {
         if(hit!=null)impact(id,projectile.ownerId(),kind,hit,projectile.previousPosition);
         float radius=ricochet?cannon.ricochetRadius():cannon.splashRadius();
         events.add(new GameEvent(GameEvent.Type.EXPLOSION,id,direct,projectile.ownerId(),center,kind,radius,projectile.previousPosition,normal));
+        directArenaDamage(hit,projectile.ownerId(),cannon.directDamage(),kind,id);
+        radialArenaDamage(id,projectile.ownerId(),kind,center,radius,ricochet?cannon.ricochetDamage():cannon.splashDamage(),
+                hit==null?null:hit.objectId(),world);
         for(var target:orderedVehicles) {
             if(!target.alive())continue;
             if(target.id==direct) {
@@ -1028,6 +1137,9 @@ public final class CombatSystem {
         int directTarget = hit == null ? -1 : hit.vehicleId();
         events.add(event(GameEvent.Type.EXPLOSION, projectile.id(), directTarget, projectile.ownerId(),
                 center, projectile.kind(), rocket.explosionRadius()));
+        directArenaDamage(hit,projectile.ownerId(),rocket.directDamage(),projectile.kind(),projectile.id());
+        radialArenaDamage(projectile.id(),projectile.ownerId(),projectile.kind(),center,rocket.explosionRadius(),rocket.splashDamage(),
+                hit==null?null:hit.objectId(),world);
         for (VehicleState target : orderedVehicles) {
             if (!target.alive()) continue;
             boolean direct = target.id == directTarget && target.id != projectile.ownerId();
@@ -1063,7 +1175,8 @@ public final class CombatSystem {
         sum.linear.addLocal(linear);sum.torque.addLocal(point.subtract(world.position(targetId)).cross(linear));
     }
     private void impact(long id,int owner,String kind,WorldQuery.Hit hit,Vector3f origin) {
-        events.add(new GameEvent(GameEvent.Type.IMPACT,id,hit.vehicleId(),owner,hit.point(),kind,0,origin,hit.normal()));
+        var event=new GameEvent(GameEvent.Type.IMPACT,id,hit.vehicleId(),owner,hit.point(),kind,0,origin,hit.normal());
+        events.add(hit.objectId()==null?event:event.forObject(hit.objectId()));
     }
     private void shieldHit(int target,int source,long id,Vector3f point,Vector3f normal,Vector3f origin,String kind,float incoming) {
         if(session.tick<shieldFeedbackAfter.getOrDefault(target,Long.MIN_VALUE))return;
@@ -1109,6 +1222,7 @@ public final class CombatSystem {
     public void resolveDamage(WorldQuery world) {
         if (session.outcome != MatchSession.Outcome.NONE) {
             damage.clear();
+            arenaDamage.clear();arenaRamSpeeds.clear();
             controlHits.clear();
             expiredShields.clear();
             ramSpeeds.clear();
@@ -1116,6 +1230,7 @@ public final class CombatSystem {
             return;
         }
         advanceSpecials(world);
+        resolveArenaDamage();
         for (Map.Entry<Pair, Float> entry : ramSpeeds.entrySet()) {
             Pair pair = entry.getKey();
             if (!session.vehicle(pair.first).alive() || !session.vehicle(pair.second).alive()) continue;
@@ -1278,6 +1393,9 @@ public final class CombatSystem {
         ramFeedbackAt.clear();
         blasts.clear();
         seenDamage.clear();
+        arenaDamage.clear();seenArenaDamage.clear();arenaRamSpeeds.clear();arenaRamReadyAt.clear();
+        arenaTargetSource=List::of;arenaDamageSink=(geometry,source,amount,cause,event)->{};arenaTargets=Map.of();
+        arenaTargetTick=arenaDamageTick=Long.MIN_VALUE;
         destroyed.clear();
     }
 

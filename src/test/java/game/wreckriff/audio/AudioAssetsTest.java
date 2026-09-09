@@ -44,7 +44,7 @@ class AudioAssetsTest {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
         Map<String,Integer> resultFrames=Map.of("victory",172_800,"defeat",124_800,"draw",96_000);
-        assertEquals(98,config.effects().size());
+        assertEquals(112,config.effects().size());
         assertTrue(config.effects().containsAll(List.of("special-pulse-charge","special-pulse-hit","special-grinder-start",
                 "special-grinder-loop","special-dash","special-bomb-warning")));
         for(String effect:config.effects()) {
@@ -165,6 +165,27 @@ class AudioAssetsTest {
             assertEquals(source,evidence.get("generator").getAsString());
             assertEquals(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(java.nio.file.Files.readAllBytes(java.nio.file.Path.of(source)))),
                     evidence.get("generatorSha256").getAsString());
+        }
+    }
+
+    @Test void sevenArenaHazardsHaveDistinctShortWarningAndActivationPairsWithProvenance()throws Exception {
+        Set<String> hashes=new HashSet<>();AudioConfig config=AudioConfig.load();
+        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue"))
+            for(String phase:List.of("warning","active")) {
+                String cue="hazard-"+kind+"-"+phase;assertEquals(List.of(cue),config.cueBanks().get(cue));
+                try(InputStream input=asset("audio/"+cue+".wav")) {
+                    PcmWave.Header header=PcmWave.header(input);assertEquals(1,header.channels());assertEquals(48000,header.rate());assertEquals(16,header.bits());
+                    assertTrue(header.seconds()>=.8&&header.seconds()<=1.4,cue);byte[] pcm=input.readNBytes((int)header.dataBytes());
+                    assertEquals(header.dataBytes(),pcm.length);assertTrue(hashes.add(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(pcm))),cue);
+                    Metrics signal=metrics(pcm);assertTrue(signal.peak<=.82004&&signal.rms>=.08&&signal.rms<=.16004,cue+" signal");
+                    assertTrue(Math.abs(signal.mean)<.00004,cue+" DC offset");assertEquals(0,sample(pcm,0));assertEquals(0,sample(pcm,pcm.length-2));
+                }
+            }
+        assertEquals(14,hashes.size());
+        try(InputStream input=asset("audio/arena-hazard-provenance.json")) {
+            var evidence=com.google.gson.JsonParser.parseReader(new InputStreamReader(input,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            assertFalse(evidence.get("externalSamples").getAsBoolean());assertFalse(evidence.get("looping").getAsBoolean());
+            assertEquals("NEEDS_CREATIVE_REVIEW",evidence.get("artisticStatus").getAsString());assertEquals(14,evidence.getAsJsonArray("assets").size());
         }
     }
 
