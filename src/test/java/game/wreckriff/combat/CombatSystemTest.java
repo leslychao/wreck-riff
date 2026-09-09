@@ -162,6 +162,17 @@ class CombatSystemTest {
         assertEquals(167, session.vehicle(0).hp);
     }
 
+    @Test void moderateBodyContactsAreAudibleWithoutDamageAndQuietTouchesStaySilent() {
+        combat.queueRam(0,1,1.2f,Vector3f.ZERO,Vector3f.UNIT_Z);
+        assertTrue(combat.drainEvents().isEmpty());
+        combat.queueRam(0,1,3,Vector3f.ZERO,Vector3f.UNIT_Z);
+        combat.queueRam(1,0,3,Vector3f.ZERO,Vector3f.UNIT_Z);
+        combat.resolveDamage(world);
+        var events=combat.drainEvents();assertEquals(1,count(events,GameEvent.Type.RAM));
+        assertEquals(0,count(events,GameEvent.Type.DAMAGE));assertEquals(200,session.vehicle(0).hp);
+        session.tick=17;combat.queueRam(0,1,3,Vector3f.ZERO,Vector3f.UNIT_Z);assertTrue(combat.drainEvents().isEmpty());
+        session.tick=18;combat.queueRam(0,1,3,Vector3f.ZERO,Vector3f.UNIT_Z);assertEquals(1,count(combat.drainEvents(),GameEvent.Type.RAM));
+    }
     @Test void ramThresholdIsInclusiveAndRejectsNonFiniteSpeed() {
         combat.queueRam(0, 1, 5.99f, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.queueRam(0, 1, 6, Vector3f.ZERO, Vector3f.UNIT_Z);
@@ -447,7 +458,7 @@ class CombatSystemTest {
             shotDirections.add(to.subtract(from).normalizeLocal());
             return rayHit;
         }
-        @Override public Hit sweep(Vector3f from, Vector3f to, float radius, int ignored) {
+        @Override public Hit sweep(Vector3f from, Vector3f to, float radius, int ignored,float stepStart,float stepEnd) {
             Hit hit = nextSweep;
             nextSweep = null;
             return hit;

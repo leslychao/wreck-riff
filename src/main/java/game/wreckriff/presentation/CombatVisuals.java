@@ -524,6 +524,8 @@ public final class CombatVisuals implements AutoCloseable {
     }
     private void renderFields() {
         fieldBatch.begin();
+        // Warning geometry reserves its vertices before lower-priority scorch and cosmetic fields.
+        renderWarnings();
         for(var fire:fires) {
             Quaternion pose=surfaceRotation(fire.normal());
             for(Vector3f support:fire.surfacePoints()) {
@@ -543,27 +545,32 @@ public final class CombatVisuals implements AutoCloseable {
                         local(centre,pose,FastMath.cos(b)*.82f,0,FastMath.sin(b)*.82f),new ColorRGBA(.18f,.058f,.012f,1),.6f*(1-fire.age/2));
             }
         }
+        fieldBatch.end();
+    }
+    private void renderWarnings() {
         for(var warning:warnings) {
-            Vector3f centre=warning.point().add(0,.045f,0);float radius=warning.radius();
+            Vector3f normal=warning.normal(),centre=warning.point().add(normal.mult(.045f));float radius=warning.radius();
+            Quaternion pose=surfaceRotation(normal);
             float pulse=.56f+.25f*FastMath.sin(warning.remainingTicks()*FastMath.TWO_PI/36);
             for(int segment=0;segment<32;segment++) {
                 float a=segment*FastMath.TWO_PI/32,b=(segment+1)*FastMath.TWO_PI/32;
-                fieldBatch.quad(centre.add(FastMath.cos(a)*radius,0,FastMath.sin(a)*radius),
-                        centre.add(FastMath.cos(b)*radius,0,FastMath.sin(b)*radius),
-                        centre.add(FastMath.cos(b)*(radius-.11f),0,FastMath.sin(b)*(radius-.11f)),
-                        centre.add(FastMath.cos(a)*(radius-.11f),0,FastMath.sin(a)*(radius-.11f)),HOT,pulse);
+                fieldBatch.quad(local(centre,pose,FastMath.cos(a)*radius,0,FastMath.sin(a)*radius),
+                        local(centre,pose,FastMath.cos(b)*radius,0,FastMath.sin(b)*radius),
+                        local(centre,pose,FastMath.cos(b)*(radius-.11f),0,FastMath.sin(b)*(radius-.11f)),
+                        local(centre,pose,FastMath.cos(a)*(radius-.11f),0,FastMath.sin(a)*(radius-.11f)),HOT,pulse);
             }
             for(int axis=0;axis<2;axis++) {
                 Vector3f length=axis==0?new Vector3f(.6f,0,0):new Vector3f(0,0,.6f),width=axis==0?new Vector3f(0,0,.05f):new Vector3f(.05f,0,0);
+                pose.multLocal(length);pose.multLocal(width);
                 fieldBatch.quad(centre.subtract(length).subtractLocal(width),centre.add(length).subtractLocal(width),
                         centre.add(length).addLocal(width),centre.subtract(length).addLocal(width),AMBER,pulse);
             }
         }
-        fieldBatch.end();
     }
     private static Quaternion surfaceRotation(Vector3f normal) {
         Vector3f axis=Vector3f.UNIT_Y.cross(normal);
-        return axis.lengthSquared()<.00001f?new Quaternion():new Quaternion().fromAngleAxis(FastMath.acos(Math.clamp(normal.y,-1,1)),axis.normalizeLocal());
+        return axis.lengthSquared()<.00001f?new Quaternion().fromAngleAxis(normal.y<0?FastMath.PI:0,Vector3f.UNIT_X):
+                new Quaternion().fromAngleAxis(FastMath.acos(Math.clamp(normal.y,-1,1)),axis.normalizeLocal());
     }
     private static Vector3f local(Vector3f centre,Quaternion rotation,float x,float y,float z) {
         return rotation.mult(new Vector3f(x,y,z)).addLocal(centre);
@@ -614,9 +621,11 @@ public final class CombatVisuals implements AutoCloseable {
                 vertex(centre.x,centre.y,centre.z,color,alpha,SPRITE_UV[i],SPRITE_UV[i+1],radius,shape);
         }
         void triangle(Vector3f a,Vector3f b,Vector3f c,ColorRGBA color,float alpha) {
+            if(positions.remaining()<9)return;
             for(Vector3f p:List.of(a,b,c))vertex(p.x,p.y,p.z,color,alpha);
         }
         void quad(Vector3f a,Vector3f b,Vector3f c,Vector3f d,ColorRGBA color,float alpha) {
+            if(positions.remaining()<18)return;
             triangle(a,b,c,color,alpha);triangle(a,c,d,color,alpha);
         }
         void end() {

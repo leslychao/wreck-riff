@@ -118,7 +118,7 @@ final class VehicleDamageVisual extends AbstractControl {
         return result;
     }
     private static Vector3f dent(Vector3f point,int stage) {
-        if(point.y>=.36f&&point.z>1.79f&&Math.abs(Math.abs(point.x)-.53f)<.11f)return point.clone();
+        if(point.y>=.36f&&point.z>1.79f&&Math.abs(Math.abs(point.x)-.53f)<.19f)return point.clone();
         float strength=DENT_STRENGTH[stage];
         // Broad folds cross local topology; sharper ridges catch light in addition to changing the outline.
         // The weapon barrels sit above this sheet-metal envelope and keep their authored muzzle position.

@@ -119,3 +119,10 @@ historical source in `docs/asset-history`, excluded from compilation and runtime
 The generated registry distinguishes licensed recordings/textures/fonts from these
 original recipes. Technical evidence does not grant artistic or legal approval;
 owner creative review and the existing native-library distribution review remain.
+
+Result stings (Victory, Defeat, Draw) also adapt **Metalmania**, Kevin MacLeod,
+CC BY 4.0: short mono guitar/drum excerpts, filtering, release envelopes and a
+continuous slowdown for Defeat, mixed with a CC0 recorded metal impact. The
+main music loop is unchanged. Source/output hashes and exact transformations
+are retained in `audio/result-provenance.json`; retain the Metalmania credit,
+source URL and license notice above when redistributing these stings.

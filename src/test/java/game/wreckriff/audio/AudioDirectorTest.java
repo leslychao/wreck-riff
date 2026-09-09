@@ -211,6 +211,7 @@ class AudioDirectorTest {
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             director.startMatch();director.accept(List.of(event(GameEvent.Type.RAM,1,1,0,"ram",5)));
             AudioNode mild=find(scene,"sound-ram-hit");
+            assertTrue(mild.isPositional());assertEquals(16,mild.getRefDistance(),.001f,"Player contact stays audible from chase camera distance");
             director.accept(List.of(event(GameEvent.Type.RAM,2,1,0,"ram",20)));
             AudioNode hard=find(scene,"sound-ram-hit");assertNotSame(mild,hard);
             assertTrue(hard.getVolume()>mild.getVolume()*2,"A hard ram must carry more of the same premixed crush cue");
@@ -296,7 +297,7 @@ class AudioDirectorTest {
             public boolean grounded(int id){return true;}
             public float mass(int id){return 1100;}
             public Hit ray(Vector3f a,Vector3f b,int id){return null;}
-            public Hit sweep(Vector3f a,Vector3f b,float r,int id){return null;}
+            public Hit sweep(Vector3f a,Vector3f b,float r,int id,float stepStart,float stepEnd){return null;}
             public Hit staticSweep(Vector3f a,Vector3f b,float r){return null;}
             public boolean visible(Vector3f a,Vector3f b,int id){return true;}
             public float distanceToHull(int id,Vector3f p){return 0;}

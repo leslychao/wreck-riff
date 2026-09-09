@@ -15,7 +15,11 @@ public interface WorldQuery {
     boolean grounded(int vehicleId);
     float mass(int vehicleId);
     Hit ray(Vector3f from, Vector3f to, int ignoredVehicle);
-    Hit sweep(Vector3f from, Vector3f to, float radius, int ignoredVehicle);
+    default Hit sweep(Vector3f from,Vector3f to,float radius,int ignoredVehicle) {
+        return sweep(from,to,radius,ignoredVehicle,0,1);
+    }
+    /** Fractions of the native step covered by this projectile segment. */
+    Hit sweep(Vector3f from,Vector3f to,float radius,int ignoredVehicle,float stepStart,float stepEnd);
     Hit staticSweep(Vector3f from,Vector3f to,float radius);
     boolean visible(Vector3f from, Vector3f to, int targetVehicle);
     float distanceToHull(int vehicleId, Vector3f point);

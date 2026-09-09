@@ -200,7 +200,8 @@ public final class GameApplication extends SimpleApplication {
                     diagnostic.cycle(diagnosticRetries,bodies,listeners,combat.projectiles().size(),audio.voiceCount());
                     if(session.tick!=0 || session.vehicles.stream().anyMatch(v->world.wheelContacts(v.id)!=4||v.hp!=v.maximumHp))
                         throw new IllegalStateException("Loading did not prepare grounded, undamaged participants at tick zero");
-                    if(!combat.mines().isEmpty()||!combat.fireZones().isEmpty()||combat.reservedFireZones()!=0)
+                    if(!combat.mines().isEmpty()||!combat.fireZones().isEmpty()||combat.reservedFireZones()!=0
+                            ||!combat.ballisticWarnings().isEmpty()||combat.reservedBallisticCharges()!=0||runtime.hasWrecks())
                         throw new IllegalStateException("Transient weapons survive match preparation");
                     diagnostic.put("initialSimulationTick",session.tick);
                     diagnostic.put("initialHp",session.vehicles.stream().map(v->v.hp).toList());

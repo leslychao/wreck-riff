@@ -28,7 +28,7 @@ public final class TestWorld implements WorldQuery {
             return new Hit(-1,from.clone().interpolateLocal(to,.5f),new Vector3f(0,0,-1),.5f);
         return wall?new Hit(-1,from.clone().interpolateLocal(to,.5f),new Vector3f(0,0,-1),.5f):null;
     }
-    public Hit sweep(Vector3f from,Vector3f to,float radius,int ignored) {
+    public Hit sweep(Vector3f from,Vector3f to,float radius,int ignored,float stepStart,float stepEnd) {
         return blockSweeps?new Hit(-1,from.add(0,0,1),new Vector3f(0,0,-1),.1f):null;
     }
     public Hit staticSweep(Vector3f from,Vector3f to,float radius) {

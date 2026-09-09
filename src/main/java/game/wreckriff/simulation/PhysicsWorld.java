@@ -244,27 +244,33 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         }
         return nearest;
     }
-    @Override public Hit sweep(Vector3f from,Vector3f to,float radius,int ignoredVehicle) {
+    @Override public Hit sweep(Vector3f from,Vector3f to,float radius,int ignoredVehicle,float stepStart,float stepEnd) {
+        if(!Float.isFinite(stepStart)||!Float.isFinite(stepEnd)||stepStart<0||stepEnd>1||stepStart>stepEnd)
+            throw new IllegalArgumentException("Invalid sweep step interval");
         Hit nearest=staticSweep(from,to,radius);
         // Sweep in each target's relative frame; this detects a car crossing the projectile
         // path during the same tick, even when neither endpoint overlaps the car.
         for (var entry:vehicles.entrySet()) {
             int id=entry.getKey(); if (id==ignoredVehicle) continue;
             Pose old=previous.get(id); Vector3f now=position(id); Quaternion rot=rotation(id);
-            if (pointSegmentDistance(now,from,to)>rules.length()/2+radius+now.distance(old.position())) continue;
-            float angle=2*(float)Math.acos(Math.clamp(Math.abs(old.rotation().dot(rot)),0,1));
+            Pose current=new Pose(now,rot),intervalStart=interpolate(old,current,stepStart),intervalEnd=interpolate(old,current,stepEnd);
+            if (pointSegmentDistance(intervalEnd.position(),from,to)>rules.length()/2+radius+intervalEnd.position().distance(intervalStart.position())) continue;
+            float angle=2*(float)Math.acos(Math.clamp(Math.abs(intervalStart.rotation().dot(intervalEnd.rotation())),0,1));
             int parts=Math.clamp((int)Math.ceil(angle/0.04f),1,4);
             for (int part=0;part<parts;part++) {
                 float t0=part/(float)parts,t1=(part+1f)/parts;
-                Pose start=interpolate(old,new Pose(now,rot),t0),end=interpolate(old,new Pose(now,rot),t1);
+                Pose start=interpolate(old,current,stepStart+(stepEnd-stepStart)*t0),end=interpolate(old,current,stepStart+(stepEnd-stepStart)*t1);
                 Vector3f p0=from.clone().interpolateLocal(to,t0),p1=from.clone().interpolateLocal(to,t1);
                 Vector3f rel0=now.add(rot.mult(start.rotation().inverse().mult(p0.subtract(start.position()))));
                 Vector3f rel1=now.add(rot.mult(end.rotation().inverse().mult(p1.subtract(end.position()))));
                 Hit hit=nativeSweep(rel0,rel1,radius,id,false);
                 if (hit!=null) {
                     float fraction=t0+hit.fraction()/parts;
-                    if (nearest==null || fraction<nearest.fraction()) nearest=new Hit(id,
-                            from.clone().interpolateLocal(to,fraction).subtractLocal(hit.normal().mult(radius)),hit.normal(),fraction);
+                    if (nearest==null || fraction<nearest.fraction()) {
+                        Quaternion contactRotation=interpolate(old,current,stepStart+(stepEnd-stepStart)*fraction).rotation();
+                        Vector3f normal=contactRotation.mult(rot.inverse().mult(hit.normal())).normalizeLocal();
+                        nearest=new Hit(id,from.clone().interpolateLocal(to,fraction).subtractLocal(normal.mult(radius)),normal,fraction);
+                    }
                 }
             }
         }

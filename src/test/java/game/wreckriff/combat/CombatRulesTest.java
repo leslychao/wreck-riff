@@ -26,6 +26,11 @@ class CombatRulesTest {
         assertEquals(new CombatRules.Blast(4,5),rules.mine().blast());
         assertEquals(new CombatRules.Blast(2,.5f),rules.napalm().blast());
         assertEquals(new CombatRules.BlastLimits(9,6,2),rules.blastLimits());
+        assertEquals(new CombatRules.BlastLimits(16,10,6),rules.heavyBlastLimits());
+        assertEquals(65,rules.cannon().directDamage());assertEquals(13200,rules.cannon().horizontalImpulse());
+        assertEquals(2,rules.cannon().ricochets());assertEquals(4,rules.ballistic().charges());
+        assertEquals(34,rules.ballistic().damage());assertEquals(54,CombatRules.ticks(rules.ballistic().releaseIntervalSeconds()));
+        assertEquals(18,rules.napalm().assist().turnDegreesPerSecond());assertEquals(3,rules.napalm().assist().maximumDeviation());
     }
 
     @Test void T01_unknownOrMissingNestedFieldsAreRejected() {

@@ -183,7 +183,13 @@ public final class AudioDirector implements AutoCloseable {
                     shot(cue,Group.WEAPON,player?93:74,event.position(),kind.equals("cannon-ricochet")?.8f:.93f,1);
                     if (event.value()>=35 || Set.of("power","mine","cannon","ballistic").contains(kind)) duck=config.musicDuckSeconds();
                 }
-                case RAM -> shot("ram-hit",Group.WEAPON,event.subjectId()==0||player?92:66,event.position(),clamp(event.value()/18f,.08f,1),1);
+                case RAM -> {
+                    boolean involvesPlayer=event.subjectId()==0||player;
+                    Voice contact=allocate("ram-hit",Group.WEAPON,involvesPlayer?98:66,null,event.position(),
+                            clamp(event.value()/16f,.14f,1),1);
+                    if(contact!=null&&involvesPlayer)contact.node.setRefDistance(config.referenceDistance()*2);
+                    if(involvesPlayer&&event.value()>=4)duck=config.musicDuckSeconds();
+                }
                 case DAMAGE -> { if (event.value()>=1 && !OWN_CONTACT_CUE.contains(kind)) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
                         event.position(),clamp(event.value()/25f,.1f,.7f),1); }
                 case DESTROYED -> {

@@ -148,7 +148,7 @@ public final class VerifyAssets {
             String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
             String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
             String origin = source ? asset.path : asset.source;
-            if (Set.of("music", "licensed-music", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
+            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
@@ -156,7 +156,12 @@ public final class VerifyAssets {
             String author = "Wreck Riff project contributors/tooling; ownership review pending";
             String permission = "Original project content; no distribution license assigned; owner review required";
             String license = "", attribution = "OWNER_REVIEW_REQUIRED";
-            if (asset.category.equals("licensed-music") || asset.category.equals("music-provenance")) {
+            if (Set.of("licensed-result","result-provenance").contains(asset.category)) {
+                author = "Kevin MacLeod (incompetech.com); CC0 metal recordings identified in audio/sfx-sources.json";
+                permission = "CC-BY-4.0 Metalmania excerpt and CC0 impact; transformations in audio/result-provenance.json";
+                license = "licenses/assets/CC-BY-4.0.txt; licenses/assets/CC0-1.0.txt";
+                attribution = "CREDIT_TITLE_AUTHOR_SOURCE_LICENSE_AND_MODIFICATIONS";
+            } else if (asset.category.equals("licensed-music") || asset.category.equals("music-provenance")) {
                 author = "Kevin MacLeod (incompetech.com)";
                 permission = "CC-BY-4.0; source track Metalmania; local loop edit and normalization identified in audio/music-provenance.json";
                 license = "licenses/assets/CC-BY-4.0.txt";
@@ -235,6 +240,7 @@ public final class VerifyAssets {
                 || !hash(Files.readAllBytes(Path.of("src/tools/assets/audio/Metalmania-original.mp3"))).equals(source.get("originalSha256").getAsString())
                 || !hash(Files.readAllBytes(Path.of("src/tools/assets/audio/Metalmania-source.wav"))).equals(provenance.get("sourceSha256").getAsString()))
             throw new IOException("Music source/license provenance mismatch");
+        Map<String,String> results=verifyResults(config,assets,provenance);
         String metricsPath = "audio/audio-metrics.csv";
         byte[] metricsBytes = resource(metricsPath);
         Map<String, String[]> expected = new TreeMap<>();
@@ -268,15 +274,41 @@ public final class VerifyAssets {
                     || !metrics.sha256.equals(provenance.get("sha256").getAsString()))) {
                 throw new IOException("Music must match registered 112-bar loop and hash");
             }
-            assets.add(new Asset(path, channels == 2 ? "licensed-music" : recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
+            assets.add(new Asset(path, channels == 2 ? "licensed-music" : results.containsKey(path)?"licensed-result":recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
                     channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
-                            : recorded.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"),
-                    channels == 2 || recorded.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
+                            : results.getOrDefault(path,recorded.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples")),
+                    channels == 2 || recorded.containsKey(path)||results.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
         assets.add(asset("audio/score.txt", "score", resource("audio/score.txt"), "GenerateAudio.java", "SOURCE_PRESENT"));
         assets.add(asset("audio/music-provenance.json", "music-provenance", provenanceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
         assets.add(asset("audio/music-source.json", "music-provenance", sourceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
+    }
+
+    private static Map<String,String> verifyResults(AudioConfig config,List<Asset> assets,JsonObject music)throws Exception {
+        byte[] bytes=resource("audio/result-provenance.json");
+        JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||!"Kevin MacLeod".equals(evidence.get("author").getAsString())
+                ||!"CC-BY-4.0".equals(evidence.get("license").getAsString())
+                ||!"licenses/assets/CC-BY-4.0.txt".equals(evidence.get("licensePath").getAsString())
+                ||!"src/tools/assets/audio/Metalmania-source.wav".equals(evidence.get("sourcePath").getAsString())
+                ||!music.get("sourceSha256").getAsString().equals(evidence.get("sourceSha256").getAsString())
+                ||!"src/tools/assets/audio/recorded/processed/ram-hit-1.wav".equals(evidence.get("impactSourcePath").getAsString())
+                ||!"CC0-1.0".equals(evidence.get("impactLicense").getAsString())
+                ||!hash(resource("audio/ram-hit-1.wav")).equals(evidence.get("impactSourceSha256").getAsString()))
+            throw new IOException("Result sting source/license mismatch");
+        Map<String,String> result=new HashMap<>();
+        for(JsonElement entry:evidence.getAsJsonArray("assets")) {
+            JsonObject item=entry.getAsJsonObject();String path=item.get("path").getAsString();
+            if(!Set.of("audio/victory.wav","audio/defeat.wav","audio/draw.wav").contains(path)
+                    ||!config.effects().contains(path.substring(6,path.length()-4))||result.containsKey(path)
+                    ||!hash(resource(path)).equals(item.get("sha256").getAsString())
+                    ||item.get("transformation").getAsString().isBlank())throw new IOException("Result sting hash/recipe mismatch");
+            result.put(path,"Metalmania; Kevin MacLeod; CC-BY-4.0; recorded CC0 metal accent; "+item.get("transformation").getAsString());
+        }
+        if(result.size()!=3)throw new IOException("All three recorded result stings are required");
+        assets.add(asset("audio/result-provenance.json","result-provenance",bytes,"GenerateAudio.java; recorded guitar result edits","VERIFIED"));
+        return result;
     }
 
     private static Map<String,String> verifyRecordedEffects(AudioConfig config,List<Asset> assets)throws Exception {

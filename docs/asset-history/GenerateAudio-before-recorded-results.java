@@ -27,10 +27,9 @@ public final class GenerateAudio {
         METRICS.clear();METRICS.add("asset,frames,channels,sample_rate,bits,peak,rms,sha256");
         prepareMusic(output,sources);
         prepareRecordedEffects(output,sources.resolve("recorded"));
-        prepareResults(output,sources);
         for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
                 "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-ammo","pickup-turbo",
-                "ui-nav","ui-confirm","mine-place"))effect(output,id);
+                "ui-nav","ui-confirm","victory","defeat","draw","mine-place"))effect(output,id);
         Files.write(output.resolve("audio-metrics.csv"),METRICS,StandardCharsets.UTF_8);
         Files.writeString(output.resolve("score.txt"), """
                 WRECK RIFF / METALMANIA
@@ -43,8 +42,6 @@ public final class GenerateAudio {
                 output starts at source 0.1s, yielding 179.2s (112 bars at 150 BPM), no ending fade gap.
                 DC removal and linear peak normalization to 0.84; no synthesized replacement music.
                 Combat effects: recorded CC0 firearms/fireworks; source/hash/prebaked layer evidence in sfx-provenance.json.
-                Victory/defeat/draw: short Metalmania guitar/drum excerpts with a recorded metal impact.
-                These result edits retain Kevin MacLeod credit and CC BY 4.0; see result-provenance.json.
                 Ancillary engine/UI sound effects: original deterministic synthesis seed 0x5249464657415645.
                 Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
                 Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
@@ -124,65 +121,11 @@ public final class GenerateAudio {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
-    /** Recorded rock punctuation; never a synthesized note ladder or a second music loop. */
-    private static void prepareResults(Path output,Path sources)throws Exception {
-        Path musicSource=sources.resolve("Metalmania-source.wav");
-        Path impactSource=sources.resolve("recorded/processed/ram-hit-1.wav");
-        byte[] music,impact;
-        try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(musicSource.toFile())) {
-            music=input.readNBytes(RATE*4*8);
-        }
-        try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(impactSource.toFile())) {
-            var format=input.getFormat();
-            if(format.getChannels()!=1||format.getSampleRate()!=RATE||format.getSampleSizeInBits()!=16||format.isBigEndian())
-                throw new IOException("Result impact source must be PCM48k/16 mono");
-            impact=input.readNBytes(RATE*2*3+1);
-        }
-        if(music.length!=RATE*4*8||impact.length%2!=0||impact.length>RATE*2*3)
-            throw new IOException("Unexpected result recording duration");
-        List<String> evidence=new ArrayList<>();
-        for(String id:List.of("victory","defeat","draw")) {
-            boolean defeat=id.equals("defeat");
-            double seconds=id.equals("victory")?3.6:defeat?2.6:2.0;
-            double phrase=id.equals("victory")?3.2:defeat?1.55:1.6;
-            float[] pcm=new float[(int)(seconds*RATE)];
-            double phase=0,filtered=0;
-            for(int i=0;i<pcm.length;i++) {
-                double t=i/(double)RATE;
-                double speed=defeat?Math.max(.12,1-Math.max(0,t-.35)*.8):1;
-                int frame=(int)phase;double blend=phase-frame;
-                double a=(sample(music,frame,0)+sample(music,frame,1))*.5;
-                double b=(sample(music,frame+1,0)+sample(music,frame+1,1))*.5;
-                double guitar=a+(b-a)*blend;
-                double cutoff=defeat?4200*speed:6500;
-                filtered+=(1-Math.exp(-TAU*cutoff/RATE))*(guitar-filtered);
-                double envelope=t<phrase?Math.min(1,t/.004):Math.exp(-(t-phrase)*12);
-                if(t>phrase+.35)envelope=0;
-                double metal=i<impact.length/2?(short)((impact[i*2]&255)|(impact[i*2+1]<<8))/32768.0:0;
-                pcm[i]=(float)((filtered*.9*envelope+metal*(defeat?.75:.38))
-                        *Math.min(1,(pcm.length-1-i)/480.0));
-                phase+=speed;
-            }
-            float[][] channels={pcm};master(channels,.84);write(output,id,channels);
-            String edit=defeat?"Recorded guitar/drum attack; continuous tape slowdown 1.0 to 0.12; lowpass follows speed; metal crush; 2.6s"
-                    :"Recorded 150BPM guitar/drum phrase from source start; mono fold; LP6500Hz; metal accent; short release; "+seconds+"s";
-            evidence.add("{\"path\":\"audio/"+id+".wav\",\"sha256\":\""+hash(Files.readAllBytes(output.resolve(id+".wav")))
-                    +"\",\"transformation\":\""+edit+"\"}");
-        }
-        Files.writeString(output.resolve("result-provenance.json"),"""
-                {"schemaVersion":1,"author":"Kevin MacLeod","title":"Metalmania",
-                "license":"CC-BY-4.0","licensePath":"licenses/assets/CC-BY-4.0.txt",
-                "sourcePath":"src/tools/assets/audio/Metalmania-source.wav","sourceSha256":"%s",
-                "impactSourcePath":"src/tools/assets/audio/recorded/processed/ram-hit-1.wav","impactSourceSha256":"%s",
-                "impactLicense":"CC0-1.0","impactProvenance":"audio/sfx-provenance.json",
-                "generator":"src/tools/java/game/wreckriff/tools/GenerateAudio.java","assets":[%s]}
-                """.formatted(hash(Files.readAllBytes(musicSource)),hash(Files.readAllBytes(impactSource)),String.join(",",evidence)),StandardCharsets.UTF_8);
-    }
-
     private static void effect(Path output, String id) throws Exception {
         boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active").contains(id);
         double seconds = switch (id) {
             case "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active" -> 2;
+            case "victory", "defeat", "draw" -> 2.4;
             case "hazard-warning" -> 1.1;
             case "low-hp" -> .65;
             case "empty", "ui-nav" -> .11;
@@ -217,6 +160,9 @@ public final class GenerateAudio {
                 case "pickup-turbo" -> Math.sin(TAU * (300 * t + 900 * t * t)) * Math.exp(-t * 6);
                 case "ui-nav" -> Math.sin(TAU * 740 * t) * Math.exp(-t * 45);
                 case "ui-confirm" -> chime(t, 493.88, 659.25, 987.77);
+                case "victory" -> fanfare(t, new int[]{38, 45, 50, 53, 57, 62});
+                case "defeat" -> fanfare(t, new int[]{50, 48, 45, 41, 38, 26});
+                case "draw" -> fanfare(t, new int[]{38, 45, 41, 45, 38, 38});
                 default -> throw new IllegalArgumentException(id);
             };
             if (!loop) sound *= Math.min(1, i / 96.0) * Math.min(1, (pcm.length - i - 1) / 480.0);
@@ -245,6 +191,15 @@ public final class GenerateAudio {
         if (t > .15) sound += Math.sin(TAU * c * (t - .15)) * Math.exp(-(t - .15) * 14);
         return sound * .65;
     }
+
+    private static double fanfare(double t, int[] notes) {
+        int index = Math.min(notes.length - 1, (int) (t / .24));
+        double age = t - index * .24, f = frequency(notes[index]);
+        return Math.tanh(2 * (Math.sin(TAU * f * age) + .38 * Math.sin(TAU * f * 1.5 * age)))
+                * Math.exp(-age * 4.4) * Math.min(1, age * 400);
+    }
+
+    private static double frequency(int midi) { return 440 * Math.pow(2, (midi - 69) / 12.0); }
 
     private static void master(float[][] pcm, double target) {
         double peak = 0;

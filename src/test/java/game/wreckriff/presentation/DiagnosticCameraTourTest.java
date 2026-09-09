@@ -26,7 +26,7 @@ class DiagnosticCameraTourTest {
         public boolean grounded(int id){return true;}
         public float mass(int id){return 1100;}
         public Hit ray(Vector3f a,Vector3f b,int id){return null;}
-        public Hit sweep(Vector3f a,Vector3f b,float radius,int id){throw new AssertionError("Tour needs only read-only visibility rays");}
+        public Hit sweep(Vector3f a,Vector3f b,float radius,int id,float stepStart,float stepEnd){throw new AssertionError("Tour needs only read-only visibility rays");}
         public Hit staticSweep(Vector3f a,Vector3f b,float radius){throw new AssertionError("Tour needs only read-only visibility rays");}
         public boolean visible(Vector3f a,Vector3f b,int id){return true;}
         public float distanceToHull(int id,Vector3f point){return 0;}

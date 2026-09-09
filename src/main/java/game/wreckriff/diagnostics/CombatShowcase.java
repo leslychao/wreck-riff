@@ -16,6 +16,8 @@ public final class CombatShowcase {
     private final Set<String> captures=new HashSet<>();
     private final Map<String,Integer> events=new TreeMap<>();
     private final List<Map<String,Object>> observations=new ArrayList<>();
+    private final List<Map<String,Object>> combatTimeline=new ArrayList<>();
+    private double firstBallisticImpact=-1;
     public CombatShowcase(MatchSession session,PhysicsWorld world,CombatSystem combat) {
         this.session=session;this.world=world;this.combat=combat;
         pair();
@@ -70,7 +72,14 @@ public final class CombatShowcase {
         return state.hp/state.maximumHp;
     }
     public void accept(List<GameEvent> batch) {
-        for(GameEvent event:batch)events.merge(event.type()+":"+event.kind(),1,Integer::sum);
+        for(GameEvent event:batch) {
+            events.merge(event.type()+":"+event.kind(),1,Integer::sum);
+            if(event.type()==GameEvent.Type.EXPLOSION||event.type()==GameEvent.Type.DESTROYED) {
+                combatTimeline.add(Map.of("seconds",session.seconds(),"type",event.type().name(),"kind",event.kind(),"id",event.eventId()));
+                if(event.type()==GameEvent.Type.EXPLOSION&&event.kind().equals("ballistic")&&firstBallisticImpact<0)
+                    firstBallisticImpact=session.seconds();
+            }
+        }
         if(session.tick%12==0) {
             var target=session.vehicle(1);Vector3f velocity=world.velocity(1);
             observations.add(Map.of("seconds",session.seconds(),"hp",target.hp,"frozenTicks",target.frozenTicks,
@@ -103,17 +112,17 @@ public final class CombatShowcase {
         camera.setFrustumPerspective(close?43:55,camera.getWidth()/(float)camera.getHeight(),.1f,500);
         camera.setLocation(target.add(offset));camera.lookAt(target.add(0,.3f,close?0:-4),Vector3f.UNIT_Y);
         String[] names={"hp-100","hp-75","hp-50","hp-25","hp-0","hp-repaired","machine-gun","power-hit","freeze","shield","napalm","ballistic-warning","ballistic-hit","cannon-hit","cannon-ricochet","cannon-lethal","wreck-removed"};
-        double[] times={1,3,5,7,9,11,13,14.25,16.5,18.5,21.3,24,25,29.3,33.25,36.4,39.5};
+        double[] times={1,3,5,7,9,11,13,14.25,16.5,18.5,21.3,24,firstBallisticImpact<0?Double.POSITIVE_INFINITY:firstBallisticImpact+.12,29.3,33.25,36.4,39.5};
         for(int i=0;i<times.length;i++)if(session.seconds()>=times[i]&&captures.add(names[i]))return names[i];
         return null;
     }
-    public Map<String,Object> evidence() { return Map.of("seconds",session.seconds(),"events",events,"observations",observations,
+    public Map<String,Object> evidence() { return Map.of("seconds",session.seconds(),"events",events,"observations",observations,"combatTimeline",combatTimeline,
             "gallery","HP gallery and positions/health between scenarios are staged; all attacks and the final lethal hit use normal commands and physics."); }
     public boolean complete() { return session.seconds()>=SECONDS; }
     public boolean demonstrated() {
         return events.getOrDefault("FREEZE:freeze",0)>0&&events.getOrDefault("SHIELD:shield",0)>0
                 &&events.keySet().stream().anyMatch(key->key.startsWith("SHIELD_HIT:"))&&events.getOrDefault("EXPLOSION:power",0)>0
                 &&events.getOrDefault("EXPLOSION:ballistic",0)==4&&events.getOrDefault("EXPLOSION:cannon-ricochet",0)>=2
-                &&events.getOrDefault("DESTROYED:cannon",0)>0&&!world.containsVehicle(1);
+                &&events.getOrDefault("DESTROYED:destroyed",0)>0&&!world.containsVehicle(1);
     }
 }

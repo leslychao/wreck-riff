@@ -287,13 +287,34 @@ class CombatVisualsTest {
         }
     }
     @Test void ballisticWarningUsesDeclaredRoofPointAndRemovesWithAuthoritativeSnapshot() {
-        Node scene=new Node();var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,new Vector3f(4,6,8),6,60);
+        Node scene=new Node();var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,new Vector3f(4,6,8),Vector3f.UNIT_Y,6,60);
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
             visuals.update(List.of(),List.of(),List.of(),List.of(warning),null,.02f);
             Mesh fields=batch(scene,"ground-fire").getMesh();assertEquals(32*6+12,fields.getVertexCount());
             var points=fields.getFloatBuffer(VertexBuffer.Type.Position);
             for(int i=0;i<points.limit();i+=3){assertEquals(6.045f,points.get(i+1),.0001f);assertTrue(new Vector3f(points.get(i)-4,0,points.get(i+2)-8).length()<=6.001f);}
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);assertEquals(0,fields.getVertexCount());
+        }
+    }
+    @Test void ballisticWarningFollowsRampPlaneAndSurvivesSaturatedFireBuffer() {
+        Node scene=new Node();Vector3f contact=new Vector3f(4,6,8),normal=new Vector3f(-.4f,1,.25f).normalizeLocal();
+        var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,contact,normal,6,60);
+        List<Vector3f> support=new ArrayList<>();for(int i=0;i<81;i++)support.add(new Vector3f(50+i%9,0,50+i/9));
+        List<game.wreckriff.combat.CombatSystem.FireZoneView> fires=new ArrayList<>();
+        for(int i=0;i<12;i++)fires.add(new game.wreckriff.combat.CombatSystem.FireZoneView(i,1,new Vector3f(50,0,50),Vector3f.UNIT_Y,5,240,support));
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.update(List.of(),List.of(),fires,List.of(warning),null,0);
+            Mesh fields=batch(scene,"ground-fire").getMesh();assertTrue(fields.getVertexCount()<=20000);assertEquals(0,fields.getVertexCount()%3);
+            assertTrue(fields.getVertexCount()>19000,"Regression fills the existing field buffer with lower-priority geometry");
+            var points=fields.getFloatBuffer(VertexBuffer.Type.Position);
+            float lowest=Float.POSITIVE_INFINITY,highest=Float.NEGATIVE_INFINITY;
+            for(int vertex=0;vertex<32*6+12;vertex++) {
+                Vector3f point=point(points,vertex);Vector3f offset=point.subtract(contact);
+                assertEquals(.045f,offset.dot(normal),.00001f,"Every warning ring/cross vertex lies above the actual support plane");
+                assertTrue(offset.length()<=6.001f,"All warning vertices survive before the saturated fire entries");
+                lowest=Math.min(lowest,point.y);highest=Math.max(highest,point.y);
+            }
+            assertTrue(highest-lowest>3,"The warning tilts with the ramp instead of staying horizontal");
         }
     }
     @Test void ballisticCosmeticFireHasSixteenPatchLimitFreezesAndExpiresWithoutChangingHp() {
@@ -372,7 +393,7 @@ class CombatVisualsTest {
             public boolean grounded(int id){return true;}
             public float mass(int id){return 1100;}
             public Hit ray(Vector3f a,Vector3f b,int id){return null;}
-            public Hit sweep(Vector3f a,Vector3f b,float r,int id){return null;}
+            public Hit sweep(Vector3f a,Vector3f b,float r,int id,float stepStart,float stepEnd){return null;}
             public Hit staticSweep(Vector3f a,Vector3f b,float r){throw new AssertionError("Visual effects consume authoritative surface positions");}
             public boolean visible(Vector3f a,Vector3f b,int id){return true;}
             public float distanceToHull(int id,Vector3f p){return 0;}

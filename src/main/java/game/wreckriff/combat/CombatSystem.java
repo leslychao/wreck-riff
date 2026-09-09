@@ -16,9 +16,10 @@ public final class CombatSystem {
     private record Damage(int targetId, int sourceId, float amount, String cause, long eventId, Vector3f point, Vector3f normal,Vector3f origin) {}
     private record ControlHit(int targetId,int sourceId,long eventId,Vector3f point,Vector3f normal) {}
     private static final class BlastSum { final Vector3f linear=new Vector3f(),torque=new Vector3f();boolean heavy; }
-    public record BallisticWarningView(long id,int ownerId,Vector3f point,float radius,int remainingTicks) {
-        public BallisticWarningView {point=point.clone();}
+    public record BallisticWarningView(long id,int ownerId,Vector3f point,Vector3f normal,float radius,int remainingTicks) {
+        public BallisticWarningView {point=point.clone();normal=normal.clone();}
         @Override public Vector3f point() {return point.clone();}
+        @Override public Vector3f normal() {return normal.clone();}
     }
     private static final class Salvo {
         final ProjectileState carrier;
@@ -32,7 +33,7 @@ public final class CombatSystem {
         }
     }
     private record FallingCharge(long id,int ownerId,long carrierId,Vector3f origin,Vector3f velocity,
-            Vector3f point,long releaseTick,long impactTick,int lifeTicks) {}
+            Vector3f point,Vector3f normal,long releaseTick,long impactTick,int lifeTicks) {}
     public record MineView(long id,int ownerId,Vector3f position,Vector3f normal,boolean armed,float radius) {
         public MineView { position=position.clone();normal=normal.clone(); }
     }
@@ -293,7 +294,10 @@ public final class CombatSystem {
         if (blocked == null) projectiles.add(projectile);
         else {
             projectile.position.set(blocked.point());
-            if(intent.kind.equals("cannon"))cannonImpact(projectile,blocked,false,world);
+            if(intent.kind.equals("cannon")) {
+                processCannonContact(projectile,blocked,world);
+                if(!projectile.exploded)projectiles.add(projectile);
+            }
             else if(intent.kind.equals("ballistic"))ballisticImpact(projectile,blocked,world);
             else if(intent.kind.equals("freeze")||intent.kind.equals("napalm"))utilityImpact(projectile,blocked,world);
             else explode(projectile, blocked, world);
@@ -538,7 +542,8 @@ public final class CombatSystem {
         Vector3f lastContact=null;
         for(int contacts=0;contacts<3&&remaining>1e-7f&&!projectile.exploded;contacts++) {
             Vector3f end=projectile.position.add(projectile.velocity.mult(remaining)).addLocal(0,-.5f*cannon.gravity()*remaining*remaining,0);
-            WorldQuery.Hit hit=world.sweep(projectile.position,end,cannon.radius(),projectile.ricochets==0?projectile.ownerId():-1);
+            WorldQuery.Hit hit=world.sweep(projectile.position,end,cannon.radius(),projectile.ricochets==0?projectile.ownerId():-1,
+                    1-remaining/MatchSession.DT,1);
             if(hit==null) {
                 projectile.position.set(end);projectile.velocity.y-=cannon.gravity()*remaining;remaining=0;break;
             }
@@ -551,19 +556,24 @@ public final class CombatSystem {
                 if(contacts==2)projectile.exploded=true;
                 continue;
             }
-            Vector3f reflected=projectile.velocity.subtract(normal.mult(projectile.velocity.dot(normal))).multLocal(cannon.tangentRetention())
-                    .subtractLocal(normal.mult(projectile.velocity.dot(normal)*cannon.normalRestitution()));
-            boolean bounce=hit.vehicleId()<0&&normal.lengthSquared()>.5f&&projectile.ricochets<cannon.ricochets()
-                    &&reflected.length()>=cannon.minimumSpeed();
-            cannonImpact(projectile,hit,bounce,world);
-            if(bounce) {
-                projectile.ricochets++;projectile.velocity.set(reflected);
-                projectile.position.set(hit.point().add(normal.mult(cannon.radius()+.005f)));lastContact=hit.point().clone();
-            }
+            if(processCannonContact(projectile,hit,world))lastContact=hit.point().clone();
         }
         projectile.remainingTicks--;projectile.ageTicks++;
         projectile.direction.set(projectile.velocity).normalizeLocal();
         if(!projectile.exploded&&projectile.remainingTicks<=0)cannonImpact(projectile,null,false,world);
+    }
+    private boolean processCannonContact(ProjectileState projectile,WorldQuery.Hit hit,WorldQuery world) {
+        var cannon=rules.cannon();Vector3f normal=hit.normal().normalize();
+        Vector3f reflected=projectile.velocity.subtract(normal.mult(projectile.velocity.dot(normal))).multLocal(cannon.tangentRetention())
+                .subtractLocal(normal.mult(projectile.velocity.dot(normal)*cannon.normalRestitution()));
+        boolean bounce=hit.vehicleId()<0&&normal.lengthSquared()>.5f&&projectile.ricochets<cannon.ricochets()
+                &&reflected.length()>=cannon.minimumSpeed();
+        cannonImpact(projectile,hit,bounce,world);
+        if(bounce) {
+            projectile.ricochets++;projectile.velocity.set(reflected);
+            projectile.position.set(hit.point().add(normal.mult(cannon.radius()+.005f)));
+        }
+        return bounce;
     }
     private void cannonImpact(ProjectileState projectile,WorldQuery.Hit hit,boolean ricochet,WorldQuery world) {
         if(projectile.exploded)return;
@@ -648,7 +658,7 @@ public final class CombatSystem {
             case 0->new Vector3f(-spread,0,0);case 1->new Vector3f(0,0,spread);
             case 2->new Vector3f(spread,0,0);default->new Vector3f(0,0,-spread);
         };
-        Vector3f origin=salvo.carrier.position.clone(),aim=groundPoint(salvo.area.add(offset),world);
+        Vector3f origin=salvo.carrier.position.clone(),aim=groundPoint(salvo.area.add(offset),world).addLocal(0,rules.projectileRadius(),0);
         float duration=Math.max(.5f,(float)Math.sqrt(2*Math.max(.1f,origin.y-aim.y)/ballistic.gravity()));
         Vector3f velocity=aim.subtract(origin).divide(duration).addLocal(0,.5f*ballistic.gravity()*duration,0);
         int lifeTicks=Math.min(720,ticks(duration+1));
@@ -656,7 +666,7 @@ public final class CombatSystem {
         if(prediction==null) {reservedCharges--;salvo.released++;return;}
         long id=nextShotId++,release=session.tick+ticks(ballistic.minimumWarningSeconds());
         FallingCharge charge=new FallingCharge(id,salvo.carrier.ownerId(),salvo.carrier.id(),origin,velocity,
-                prediction.hit.point().clone(),release,release+prediction.ticks,lifeTicks);
+                prediction.hit.point().clone(),prediction.hit.normal().clone(),release,release+prediction.ticks,lifeTicks);
         pendingCharges.add(charge);warnings.put(id,charge);
     }
     private record Prediction(WorldQuery.Hit hit,int ticks) {}
@@ -708,7 +718,7 @@ public final class CombatSystem {
                 rules.ballistic().radius(),rules.ballistic().damage(),rules.ballistic().blast(),hit.normal(),world);
     }
     public List<BallisticWarningView> ballisticWarnings() {
-        return warnings.values().stream().map(warning->new BallisticWarningView(warning.id,warning.ownerId,warning.point,
+        return warnings.values().stream().map(warning->new BallisticWarningView(warning.id,warning.ownerId,warning.point,warning.normal,
                 rules.ballistic().radius(),(int)Math.max(0,warning.impactTick-session.tick))).toList();
     }
     public int reservedBallisticCharges() {return reservedCharges;}
@@ -823,13 +833,15 @@ public final class CombatSystem {
     public void queueRam(int first, int second, float closingSpeed,Vector3f point,Vector3f normal) {
         if (!Float.isFinite(closingSpeed) || closingSpeed < 0) throw new IllegalArgumentException("Closing speed must be finite and nonnegative");
         if (first == second || first < 0 || second < 0 || first >= session.vehicles.size() || second >= session.vehicles.size()) return;
-        if (closingSpeed <= rules.ram().minimumClosingSpeed()) return;
+        // Audible body contact is independent of the higher gameplay damage threshold.
+        if (closingSpeed < 1.25f) return;
         Pair pair = Pair.of(first, second);
         if(session.tick>=ramFeedbackAt.getOrDefault(pair,Long.MIN_VALUE)) {
             events.add(new GameEvent(GameEvent.Type.RAM,nextShotId++,pair.first,pair.second,point,"ram",closingSpeed,
                     Vector3f.ZERO,first==pair.first?normal:normal.negate()));
             ramFeedbackAt.put(pair,session.tick+ticks(.15f));
         }
+        if (closingSpeed <= rules.ram().minimumClosingSpeed()) return;
         if (session.tick < ramReadyAt.getOrDefault(pair, Long.MIN_VALUE)) return;
         ramSpeeds.merge(pair, closingSpeed, Math::max);
     }
