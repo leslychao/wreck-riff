@@ -3,8 +3,11 @@ $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $report=Get-Content (Join-Path $projectRoot 'build/reports/showcase.json') -Raw | ConvertFrom-Json
 if($report.status -ne 'PASS') {throw 'A successful current showcase is required'}
+$buildInfo=ConvertFrom-StringData (Get-Content (Join-Path $projectRoot 'build/generated-resources/build-info.properties') -Raw)
+if($report.sourceSha256 -ne $buildInfo.sourceSha256) {throw 'Showcase does not match the current build'}
 $source=[IO.Path]::GetFullPath($report.artifactDirectory)
 $destination=Join-Path $projectRoot 'build/distributions/WreckRiff-0.3.0-demo'
+if(Test-Path -LiteralPath $destination) {throw 'Preserve the earlier demo before exporting a new one'}
 [IO.Directory]::CreateDirectory($destination)|Out-Null
 Copy-Item -LiteralPath (Join-Path $source 'captures') -Destination $destination -Recurse -Force
 foreach($name in @('audio-events.json','AUDIO_README.txt','diagnostic-result.json')) {Copy-Item -LiteralPath (Join-Path $source $name) -Destination $destination -Force}

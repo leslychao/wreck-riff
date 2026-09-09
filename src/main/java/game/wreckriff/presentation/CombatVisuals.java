@@ -21,18 +21,18 @@ public final class CombatVisuals implements AutoCloseable {
     public static final float TRACER_LENGTH=1.5f;
     private static final ColorRGBA AMBER=new ColorRGBA(1,.62f,.10f,1), HOT=new ColorRGBA(1,.24f,.035f,1);
     private static final ColorRGBA ION=new ColorRGBA(.12f,.9f,1,1), SMOKE=new ColorRGBA(.17f,.18f,.19f,.24f);
-    private static final ColorRGBA CRITICAL_SMOKE=new ColorRGBA(.05f,.055f,.063f,.62f);
+    private static final ColorRGBA CRITICAL_SMOKE=new ColorRGBA(.012f,.014f,.017f,.78f);
     private static final ColorRGBA DUST=new ColorRGBA(.42f,.34f,.25f,.28f);
     private static final float SMOKE_RADIUS_LIMIT=.55f, FLASH_RADIUS_LIMIT=.68f;
     private static final float[] SPRITE_UV={0,0,1,0,1,1,0,0,1,1,0,1};
     private static final class Particle {
         final Vector3f position,velocity;
         final ColorRGBA color;
-        final boolean smoke;
+        final boolean smoke,criticalSmoke;
         final float lifetime,size,growth,gravity;
         float age;
         Particle(Vector3f position,Vector3f velocity,ColorRGBA color,float lifetime,float size,float growth,float gravity) {
-            this.position=position.clone();this.velocity=velocity.clone();this.smoke=color==SMOKE||color==CRITICAL_SMOKE||color==DUST;this.color=color.clone();
+            this.position=position.clone();this.velocity=velocity.clone();this.criticalSmoke=color==CRITICAL_SMOKE;this.smoke=color==SMOKE||criticalSmoke||color==DUST;this.color=color.clone();
             this.lifetime=lifetime;this.size=size;this.growth=growth;this.gravity=gravity;
         }
     }
@@ -76,7 +76,6 @@ public final class CombatVisuals implements AutoCloseable {
     private float flameClock;
     private List<ProjectileState> projectiles=List.of();
     private boolean closed;
-    private int debugFrames;private boolean debugPrint;
 
     public CombatVisuals(AssetManager assets,Node scene,WorldQuery world) {
         this.world=Objects.requireNonNull(world);
@@ -91,14 +90,7 @@ public final class CombatVisuals implements AutoCloseable {
                 // A transparent mesh is sorted as one object by jME, so order its sprites here.
                 // This uses the actual render camera, including rear view, without owning a camera.
                 if(!closed)renderParticles(view.getCamera());
-                if(debugPrint) {
-                    Geometry g=particleBatch.geometry;
-                    System.out.println("FX_RENDER cam="+view.getCamera().getLocation()+" bound="+g.getWorldBound()+" parent="+g.getParent().getWorldBound()+" transform="+g.getWorldTransform()+" vertices="+g.getMesh().getVertexCount());
-                    for(Particle p:particles)if(p.smoke) {System.out.println("FX_SMOKE position="+p.position+" screen="+view.getCamera().getScreenCoordinates(p.position)+" age="+p.age+" rgba="+p.color);break;}
-                    for(var type:List.of(VertexBuffer.Type.Position,VertexBuffer.Type.TexCoord,VertexBuffer.Type.TexCoord2,VertexBuffer.Type.Color)) {
-                        var b=g.getMesh().getBuffer(type);System.out.println("FX_BUFFER "+type+" id="+b.getId()+" pos="+b.getData().position()+" limit="+b.getData().limit());
-                    }
-                }
+
             }
         });
         scene.attachChild(root);
@@ -217,15 +209,15 @@ public final class CombatVisuals implements AutoCloseable {
         trailHeads.keySet().retainAll(live);
         if(session!=null)for(VehicleState vehicle:session.vehicles) {
             int id=vehicle.id;smokeClock[id]-=dt;turboClock[id]-=dt;
-            if(vehicle.alive() && vehicle.hp/vehicle.maximumHp<=.25f && smokeClock[id]<=0) {
-                Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(
-                        (visualRandom.nextFloat()-.5f)*.16f,.60f,1.05f+(visualRandom.nextFloat()-.5f)*.12f)));
-                Vector3f rise=new Vector3f((visualRandom.nextFloat()-.5f)*.18f,1.35f,(visualRandom.nextFloat()-.5f)*.14f);
-                // A narrow overlapping column reads as critical engine damage without covering the whole car.
-                // Ordinary rocket/fire smoke keeps its lighter profile; both use the same bounded alpha batch.
-                emit(bonnet,rise.addLocal(world.velocity(id).mult(.12f)),CRITICAL_SMOKE,1.12f,.18f,.32f,0);
-                smokeClock[id]=.06f;
-            }
+            if(vehicle.alive() && vehicle.hp/vehicle.maximumHp<=.25f) {
+                // Accumulate emitter time so the plume has the same density at 30/60/120 render FPS.
+                for(int emitted=0;smokeClock[id]<=0&&emitted<2;emitted++,smokeClock[id]+=.05f) {
+                    Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(
+                            (visualRandom.nextFloat()-.5f)*.06f,.72f,1.05f+(visualRandom.nextFloat()-.5f)*.06f)));
+                    Vector3f rise=new Vector3f((visualRandom.nextFloat()-.5f)*.14f,1.10f,(visualRandom.nextFloat()-.5f)*.10f);
+                    emit(bonnet,rise.addLocal(world.velocity(id).mult(.12f)),CRITICAL_SMOKE,1.8f,.18f,.25f,0);
+                }
+            } else smokeClock[id]=0;
             if(vehicle.alive() && vehicle.turbo<previousTurbo[id]-.01f && turboClock[id]<=0) {
                 for(float side:new float[]{-.72f,.72f}) {
                     Vector3f exhaust=world.position(id).add(world.rotation(id).mult(new Vector3f(side,-.11f,-2.49f)));
@@ -236,8 +228,7 @@ public final class CombatVisuals implements AutoCloseable {
             previousTurbo[id]=vehicle.turbo;
         }
         render();
-        debugPrint=Boolean.getBoolean("wreck.fxDebug")&&session!=null&&session.tick>=720&&session.tick<960&&++debugFrames%15==0;
-        if(debugPrint)System.out.println("FX_UPDATE tick="+session.tick+" hp="+session.vehicle(1).hp+" particles="+particles.size()+" cull="+particleBatch.geometry.getCullHint()+" modelbound="+particleBatch.geometry.getModelBound());
+
     }
 
     private void impact(GameEvent event) {
@@ -292,8 +283,10 @@ public final class CombatVisuals implements AutoCloseable {
         for(Particle p:ordered) {
             float size=Math.clamp(p.size+p.age*p.growth,.015f,p.smoke?SMOKE_RADIUS_LIMIT:FLASH_RADIUS_LIMIT);
             float life=p.age/p.lifetime;
-            float alpha=p.color.a*(1-life)*(p.smoke?Math.min(1,life*12):1);
-            particleBatch.sprite(p.position,size,p.color,alpha,p.smoke);
+            float fade=p.criticalSmoke?Math.min(1,p.age/.12f)*Math.clamp((p.lifetime-p.age)/.65f,0,1):
+                    (1-life)*(p.smoke?Math.min(1,life*12):1);
+            float alpha=p.color.a*fade;
+            particleBatch.sprite(p.position,size,p.color,alpha,p.criticalSmoke?3:p.smoke?1:2);
         }
         for(TracerSegment tracer:tracerSegments()) {
             Vector3f direction=tracer.to.subtract(tracer.from).normalizeLocal();
@@ -451,8 +444,7 @@ public final class CombatVisuals implements AutoCloseable {
             positions.put(x).put(y).put(z);colors.put(color.r).put(color.g).put(color.b).put(alpha);
             if(softSprites){textureCoordinates.put(u).put(v);spriteData.put(radius).put(shape);}
         }
-        void sprite(Vector3f centre,float radius,ColorRGBA color,float alpha,boolean smoke) {
-            float shape=smoke?1:2;
+        void sprite(Vector3f centre,float radius,ColorRGBA color,float alpha,float shape) {
             for(int i=0;i<SPRITE_UV.length;i+=2)
                 vertex(centre.x,centre.y,centre.z,color,alpha,SPRITE_UV[i],SPRITE_UV[i+1],radius,shape);
         }

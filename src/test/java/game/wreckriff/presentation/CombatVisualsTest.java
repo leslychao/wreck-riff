@@ -49,7 +49,7 @@ class CombatVisualsTest {
                 session.vehicle(0).hp=59;visuals.update(List.of(),List.of(),List.of(),session,.016f);
                 assertTrue(visuals.effectCount()>0);
                 session.vehicle(0).hp=0;
-                for(int frame=0;frame<80;frame++)visuals.update(List.of(),List.of(),List.of(),session,.02f);
+                for(int frame=0;frame<100;frame++)visuals.update(List.of(),List.of(),List.of(),session,.02f);
                 assertEquals(0,visuals.effectCount());
             }
             assertEquals(0,scene.getQuantity());
@@ -58,7 +58,7 @@ class CombatVisualsTest {
     @Test void damagedCarSmokeUsesSingleSoftSpriteWithBoundedRadiusAndOpacity() {
         Node scene=new Node();MatchSession session=new MatchSession(1,180);session.vehicle(0).hp=40;
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
-            for(int frame=0;frame<90;frame++)visuals.update(List.of(),List.of(),List.of(),session,1f/60);
+            for(int frame=0;frame<150;frame++)visuals.update(List.of(),List.of(),List.of(),session,1f/60);
             Geometry geometry=(Geometry)((Node)scene.getChild("combat-visuals")).getChild("particles-and-tracers");
             Mesh mesh=geometry.getMesh();
             var positions=(java.nio.FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
@@ -67,8 +67,8 @@ class CombatVisualsTest {
             assertTrue(mesh.getVertexCount()>0);assertEquals(0,mesh.getVertexCount()%6);
             for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
                 assertTrue(shapes.get(vertex*2)<=.55f,"Smoke radius must never grow into metre-scale walls");
-                assertEquals(1,shapes.get(vertex*2+1));
-                assertTrue(colors.get(vertex*4+3)<=.62f,"Critical smoke remains translucent even at its dense centre");
+                assertEquals(3,shapes.get(vertex*2+1));
+                assertTrue(colors.get(vertex*4+3)<=.78f,"Critical smoke remains translucent even at its dense centre");
                 int first=(vertex/6)*6;
                 for(int axis=0;axis<3;axis++)assertEquals(positions.get(first*3+axis),positions.get(vertex*3+axis),
                         "All six vertices use one world centre; billboard offsets are camera-facing in the shader");
@@ -80,10 +80,10 @@ class CombatVisualsTest {
     @Test void criticalSmokeFormsVisibleBoundedVerticalPlumeAboveBonnet() {
         Node scene=new Node();MatchSession session=new MatchSession(1,180);session.vehicle(0).hp=session.vehicle(0).maximumHp*.25f;
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
-            for(int frame=0;frame<90;frame++)visuals.update(List.of(),List.of(),List.of(),session,1f/60);
+            for(int frame=0;frame<150;frame++)visuals.update(List.of(),List.of(),List.of(),session,1f/60);
             Geometry geometry=batch(scene,"particles-and-tracers");Mesh mesh=geometry.getMesh();
-            assertTrue(mesh.getVertexCount()/6>=15,"The former six tiny sprites were invisible against the arena floor");
-            assertTrue(mesh.getVertexCount()/6<=20,"Critical smoke remains a narrow bounded plume");
+            assertTrue(mesh.getVertexCount()/6>=34,"The former six tiny sprites were invisible against the arena floor");
+            assertTrue(mesh.getVertexCount()/6<=38,"Critical smoke remains a narrow bounded plume");
             var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);var colors=mesh.getFloatBuffer(VertexBuffer.Type.Color);
             float highest=0,peakOpacity=0;
             for(int vertex=0;vertex<mesh.getVertexCount();vertex+=6) {
@@ -91,8 +91,8 @@ class CombatVisualsTest {
                 assertTrue(Math.abs(centre.x)<.3f&&Math.abs(centre.z-1.05f)<.3f,"Smoke stays over the bonnet rather than becoming arena fog");
                 peakOpacity=Math.max(peakOpacity,colors.get(vertex*4+3));
             }
-            assertTrue(highest>2.8f,"Rising smoke remains visible above the roof, not hidden inside the model");
-            assertTrue(peakOpacity>.45f,"Fresh billows need enough alpha to contrast with gray concrete");
+            assertTrue(highest>3.3f,"Rising smoke remains visible above the roof, not hidden inside the model");
+            assertTrue(peakOpacity>.7f,"Fresh billows need enough alpha to contrast with gray concrete");
             assertEquals(com.jme3.material.RenderState.BlendMode.Alpha,geometry.getMaterial().getAdditionalRenderState().getBlendMode(),
                     "Dark smoke must alpha-blend; additive particles cannot darken a background");
         }

@@ -5,12 +5,16 @@ varying vec2 effectUv;
 varying float effectShape;
 
 void main() {
-    if (effectShape > 0.5 && effectShape < 1.5) { gl_FragColor=vec4(effectColor.rgb,effectUv.x < 0.0 ? 1.0 : effectColor.a);return; }
     float coverage = 1.0;
     if (effectShape > 0.5) {
         // Original analytic sprite mask: no external bitmap or hard rectangular silhouette.
         float radius = length(effectUv);
-        if (effectShape < 1.5) {
+        if (effectShape > 2.5) {
+            // Critical smoke retains a broad opaque core while its outer edge stays soft.
+            float edge = 0.92 + 0.035 * sin(effectUv.x * 8.0 + effectUv.y * 5.0)
+                                      * sin(effectUv.y * 7.0 - effectUv.x * 4.0);
+            coverage = 1.0 - smoothstep(0.35, edge, radius);
+        } else if (effectShape < 1.5) {
             float lobes = 0.89 + 0.06 * sin(effectUv.x * 8.0 + effectUv.y * 5.0)
                                 * sin(effectUv.y * 7.0 - effectUv.x * 4.0);
             coverage = 1.0 - smoothstep(0.12, lobes, radius);
