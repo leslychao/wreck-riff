@@ -32,8 +32,8 @@ class SimulationLoopTest {
     @Test void lastTickVictoryAndSimultaneousDestructionHaveDefinedPriority() {
         MatchSession session=new MatchSession(42,1); session.tick=119;
         for(int i=1;i<5;i++) session.vehicle(i).hp=0;
-        session.finishTick(); assertEquals(MatchSession.Outcome.VICTORY,session.outcome);
+        MatchRuntime.finishTick(session); assertEquals(MatchSession.Outcome.VICTORY,session.outcome);
         MatchSession draw=new MatchSession(42,1); draw.vehicles.forEach(v->v.hp=0);
-        draw.finishTick(); assertEquals(MatchSession.Outcome.DRAW,draw.outcome);
+        MatchRuntime.finishTick(draw); assertEquals(MatchSession.Outcome.DRAW,draw.outcome);
     }
 }

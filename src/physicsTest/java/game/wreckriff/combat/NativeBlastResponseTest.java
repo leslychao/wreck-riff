@@ -21,7 +21,7 @@ class NativeBlastResponseTest {
     }
     private static VehicleCommand power() {return new VehicleCommand(0,0,0,false,false,false,true,WeaponType.POWER,0,false,false,AbilityId.NONE);}
     private void tick(PhysicsWorld world,Map<Integer,VehicleCommand> commands) {
-        combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);session.finishTick();
+        combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);game.wreckriff.simulation.MatchRuntime.finishTick(session);
     }
     private void hit(PhysicsWorld world) {
         tick(world,Map.of(0,power()));
@@ -53,7 +53,7 @@ class NativeBlastResponseTest {
         try(PhysicsWorld world=world()) {
             shieldSession.vehicle(1).shieldTicks=300;
             shieldCombat.beginTick(Map.of(0,power()),world);shieldCombat.advanceProjectiles(world);shieldCombat.resolveDamage(world);
-            for(int i=0;i<30&&!shieldCombat.projectiles().isEmpty();i++) {shieldSession.finishTick();shieldCombat.beginTick(Map.of(),world);shieldCombat.advanceProjectiles(world);shieldCombat.resolveDamage(world);}
+            for(int i=0;i<30&&!shieldCombat.projectiles().isEmpty();i++) {game.wreckriff.simulation.MatchRuntime.finishTick(shieldSession);shieldCombat.beginTick(Map.of(),world);shieldCombat.advanceProjectiles(world);shieldCombat.resolveDamage(world);}
             assertEquals(385,shieldSession.vehicle(1).hp,.0001f);assertEquals(1.8f,horizontal(world.velocity(1)),.0001f);assertEquals(.6f,world.velocity(1).y,.0001f);
             assertEquals(expectedShieldAngular,world.vehicle(1).getAngularVelocity().length(),.001f);
         }

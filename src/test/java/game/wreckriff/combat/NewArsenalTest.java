@@ -15,7 +15,7 @@ class NewArsenalTest {
     final TestWorld world=new TestWorld();
     static VehicleCommand fire(WeaponType type) {return new VehicleCommand(0,0,0,false,false,false,true,type,0,false,false,AbilityId.NONE);}
     List<GameEvent> tick(Map<Integer,VehicleCommand> commands) {
-        combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);session.finishTick();return combat.drainEvents();
+        combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);game.wreckriff.simulation.MatchRuntime.finishTick(session);return combat.drainEvents();
     }
     List<GameEvent> tick(VehicleCommand command) {return tick(Map.of(0,command));}
     @ParameterizedTest @ValueSource(floats={5,15,30,60})
@@ -127,7 +127,7 @@ class NewArsenalTest {
     @Test void ramFeedbackIsThrottledSeparatelyAndNeverQueuesAnotherPhysicalImpulse() {
         for(int i=0;i<37;i++) {
             combat.queueRam(0,1,10,new Vector3f(0,1,1),Vector3f.UNIT_Z);
-            combat.resolveDamage(world);session.finishTick();
+            combat.resolveDamage(world);game.wreckriff.simulation.MatchRuntime.finishTick(session);
         }
         var events=combat.drainEvents();assertEquals(3,events.stream().filter(e->e.type()==GameEvent.Type.RAM).count());
         assertEquals(2,events.stream().filter(e->e.type()==GameEvent.Type.DAMAGE).count());assertTrue(world.impulses.isEmpty());

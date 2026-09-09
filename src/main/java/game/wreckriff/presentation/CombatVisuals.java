@@ -83,9 +83,10 @@ public final class CombatVisuals implements AutoCloseable {
     private final List<HitFlare> hitFlares=new ArrayList<>();
     private final List<CosmeticFire> cosmeticFires=new ArrayList<>();
     private final BlastLight[] lights={new BlastLight(),new BlastLight()};
-    private final int[] gunShotCount=new int[5];
+    private final Map<Integer,Integer> gunShotCount=new HashMap<>();
     private final Map<Long,Vector3f> trailHeads=new HashMap<>();
-    private final float[] previousTurbo={100,100,100,100,100},smokeClock=new float[5],turboClock=new float[5];
+    private static final class Emitter { float previousTurbo=100,smokeClock,turboClock; }
+    private final Map<Integer,Emitter> emitters=new HashMap<>();
     private final Random visualRandom=new Random(0x56495355414cL); // Never touches combat RNG.
     private final Batch particleBatch,rocketBatch,fragmentBatch,fieldBatch;
     private List<CombatSystem.MineView> mines=List.of();
@@ -137,7 +138,7 @@ public final class CombatVisuals implements AutoCloseable {
         // Match IMPACT to SHOT even if their transport order changes inside a drained event batch.
         for(GameEvent event:fresh)if(event.type()==GameEvent.Type.SHOT&&"machine-gun".equals(event.kind())&&!shots.containsKey(event.eventId())) {
             if(shots.size()>=SHOT_LIMIT)shots.remove(shots.keySet().iterator().next());
-            int count=++gunShotCount[event.sourceId()];shots.put(event.eventId(),new GunShot(event,count%3==0));
+            int count=gunShotCount.merge(event.sourceId(),1,Integer::sum);shots.put(event.eventId(),new GunShot(event,count%3==0));
             emissionPriority=event.sourceId()==0?3:1;
             emit(event.origin(),Vector3f.ZERO,AMBER,.055f,.19f,1.4f,0);
         }
@@ -260,24 +261,24 @@ public final class CombatVisuals implements AutoCloseable {
         trailHeads.keySet().retainAll(live);
         if(session!=null)for(VehicleState vehicle:session.vehicles) {
             emissionPriority=vehicle.id==0?1:0;
-            int id=vehicle.id;smokeClock[id]-=dt;turboClock[id]-=dt;
+            int id=vehicle.id;Emitter emitter=emitters.computeIfAbsent(id,key->new Emitter());emitter.smokeClock-=dt;emitter.turboClock-=dt;
             if(vehicle.alive() && vehicle.hp/vehicle.maximumHp<=.25f) {
                 // Accumulate emitter time so the plume has the same density at 30/60/120 render FPS.
-                for(int emitted=0;smokeClock[id]<=0&&emitted<2;emitted++,smokeClock[id]+=.05f) {
+                for(int emitted=0;emitter.smokeClock<=0&&emitted<2;emitted++,emitter.smokeClock+=.05f) {
                     Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(
                             (visualRandom.nextFloat()-.5f)*.06f,.72f,1.05f+(visualRandom.nextFloat()-.5f)*.06f)));
                     Vector3f rise=new Vector3f((visualRandom.nextFloat()-.5f)*.14f,1.10f,(visualRandom.nextFloat()-.5f)*.10f);
                     emit(bonnet,rise.addLocal(world.velocity(id).mult(.12f)),CRITICAL_SMOKE,1.8f,.18f,.25f,0);
                 }
-            } else smokeClock[id]=0;
-            if(vehicle.alive() && vehicle.turbo<previousTurbo[id]-.01f && turboClock[id]<=0) {
+            } else emitter.smokeClock=0;
+            if(vehicle.alive() && vehicle.turbo<emitter.previousTurbo-.01f && emitter.turboClock<=0) {
                 for(float side:new float[]{-.72f,.72f}) {
                     Vector3f exhaust=world.position(id).add(world.rotation(id).mult(new Vector3f(side,-.11f,-2.49f)));
                     emit(exhaust,world.forward(id).mult(-5).addLocal(world.velocity(id).mult(.2f)),HOT,.16f,.16f,-.7f,0);
                 }
-                turboClock[id]=.025f;
+                emitter.turboClock=.025f;
             }
-            previousTurbo[id]=vehicle.turbo;
+            emitter.previousTurbo=vehicle.turbo;
         }
         emissionPriority=0;
         render();

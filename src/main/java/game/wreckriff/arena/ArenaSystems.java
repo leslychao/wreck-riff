@@ -3,6 +3,7 @@ import game.wreckriff.combat.WeaponType;
 
 import com.jme3.math.Vector3f;
 import game.wreckriff.simulation.*;
+import game.wreckriff.vehicle.VehicleController;
 import java.util.*;
 
 /** Tick-driven hazard and atomic, surface-aware resource collection. */
@@ -13,32 +14,70 @@ public final class ArenaSystems {
     }
     private final MatchSession session;
     private final ArenaDefinition definition;
+    private final ArenaLaunches launches;
     private final Map<String,Long> returnsAt=new HashMap<>();
-    private final int[] hazardExposure=new int[5];
+    private final Map<String,Map<Integer,Integer>> hazardExposure=new HashMap<>();
     private final List<GameEvent> events=new ArrayList<>();
     private long lastHazardTick=Long.MIN_VALUE,lastPickupTick=Long.MIN_VALUE;
 
     public ArenaSystems(MatchSession session,ArenaDefinition definition) {
         this.session=session; this.definition=definition;
+        launches=new ArenaLaunches(session,definition);
     }
+    public ArenaLaunches launches() { return launches; }
+    public void beforePhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.beforePhysics(world,drivers); }
+    public void afterPhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.afterPhysics(world,drivers); }
     public HazardPhase hazardPhase() {
-        var hazard=definition.hazard();
-        long phase=session.tick%hazard.periodTicks();
+        return definition.hazards().stream().map(h->hazardPhase(h.id())).max(Comparator.naturalOrder()).orElse(HazardPhase.OFF);
+    }
+    public HazardPhase hazardPhase(String id) {
+        return phaseAt(session.tick,definition.hazards(),id);
+    }
+    public static HazardPhase phaseAt(long tick,List<ArenaDefinition.Hazard> hazards,String id) {
+        long period=hazards.stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum();
+        long phase=period==0?0:tick%period;
+        ArenaDefinition.Hazard hazard=null;
+        for(var candidate:hazards) {
+            if(candidate.id().equals(id)) {hazard=candidate;break;}
+            phase-=candidate.periodTicks();
+        }
+        if(hazard==null)throw new IllegalArgumentException("Unknown hazard: "+id);
+        if(phase<0||phase>=hazard.periodTicks())return HazardPhase.OFF;
         if (phase<hazard.offTicks()) return HazardPhase.OFF;
         return phase<hazard.offTicks()+hazard.warningTicks() ? HazardPhase.WARNING : HazardPhase.ACTIVE;
+    }
+    public List<ArenaDefinition.Hazard> activeHazards() {
+        return definition.hazards().stream().filter(h->hazardPhase(h.id())==HazardPhase.ACTIVE).toList();
+    }
+    public float warningProgress(String id) {
+        long period=definition.hazards().stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum();
+        long phase=period==0?0:session.tick%period;
+        for(var hazard:definition.hazards()) {
+            if(hazard.id().equals(id))return Math.clamp((phase-hazard.offTicks())/(float)hazard.warningTicks(),0,1);
+            phase-=hazard.periodTicks();
+        }
+        throw new IllegalArgumentException("Unknown hazard: "+id);
     }
     public void updateHazard(WorldQuery world,DamageSink sink) {
         if (lastHazardTick==session.tick || session.outcome!=MatchSession.Outcome.NONE) return;
         lastHazardTick=session.tick;
-        var hazard=definition.hazard();
+        int hazardIndex=0;
+        for(var hazard:definition.hazards()) {
+        int sequence=hazardIndex++;
+        Map<Integer,Integer> exposure=hazardExposure.computeIfAbsent(hazard.id(),key->new HashMap<>());
         for (VehicleState vehicle:session.vehicles) {
-            if (!vehicle.alive() || hazardPhase()!=HazardPhase.ACTIVE || !hazard.contains(world.position(vehicle.id))) {
-                hazardExposure[vehicle.id]=0; continue;
+            if (!vehicle.alive() || hazardPhase(hazard.id())!=HazardPhase.ACTIVE || !hazard.contains(world.position(vehicle.id))) {
+                exposure.remove(vehicle.id); continue;
             }
-            if (++hazardExposure[vehicle.id]>=hazard.damageIntervalTicks()) {
-                hazardExposure[vehicle.id]=0;
-                if (vehicle.protectionTicks==0) sink.damage(vehicle.id,hazard.damage(),"hazard",Long.MIN_VALUE+session.tick*16+vehicle.id);
+            int ticks=exposure.getOrDefault(vehicle.id,0)+1;
+            if (ticks>=hazard.damageIntervalTicks()) {
+                exposure.remove(vehicle.id);
+                if (vehicle.protectionTicks==0) sink.damage(vehicle.id,hazard.damage(),"hazard",
+                        Long.MIN_VALUE+session.tick*16+vehicle.id+(long)sequence*(1L<<48));
+            } else {
+                exposure.put(vehicle.id,ticks);
             }
+        }
         }
     }
     public void collectPickups(WorldQuery world) {
@@ -109,6 +148,7 @@ public final class ArenaSystems {
         return definition.pickups().stream().filter(p->active(p.id())).toList();
     }
     public List<GameEvent> drainEvents() {
-        List<GameEvent> result=List.copyOf(events); events.clear(); return result;
+        events.addAll(launches.drainEvents());
+        List<GameEvent> result=events.stream().map(e->e.inSession(session.sessionId)).toList(); events.clear(); return result;
     }
 }

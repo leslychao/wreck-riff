@@ -5,12 +5,14 @@ import com.jme3.math.*;
 import game.wreckriff.config.VehicleRules;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.simulation.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeBallisticGuidanceTest {
-    @Test void instantOffAxisSalvoHitsAMovingNativeHullBeyondTheOldAreaLimit() {
+    @ParameterizedTest @ValueSource(floats={6,12,18})
+    void instantOffAxisSalvoHitsAMovingNativeHullBeyondTheOldAreaLimit(float speed) {
         MatchSession session=new MatchSession(42,360);CombatSystem combat=new CombatSystem(session,session.combatRules);
         try(var world=new PhysicsWorld(VehicleRules.load())) {
             world.addStatic(new BoxCollisionShape(new Vector3f(150,.5f,150)),new Vector3f(0,-.5f,0),new Quaternion());
@@ -21,14 +23,14 @@ class NativeBallisticGuidanceTest {
                 world.vehicle(id).setGravity(Vector3f.ZERO);world.vehicle(id).setDamping(0,0);
                 world.vehicle(id).setMaxSuspensionForce(0);world.vehicle(id).setFrictionSlip(0);
             }
-            world.vehicle(1).setLinearVelocity(new Vector3f(6,0,0));
+            world.vehicle(1).setLinearVelocity(new Vector3f(speed,0,0));
             VehicleCommand fire=new VehicleCommand(0,0,0,false,false,false,true,WeaponType.BALLISTIC,0,false,false,AbilityId.NONE);
             List<GameEvent> events=new ArrayList<>();
             for(int tick=0;tick<900;tick++) {
                 combat.beginTick(tick==0?Map.of(0,fire):Map.of(),world);
                 if(tick==0)assertEquals(-1,combat.lockTarget(0));
                 world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);
-                events.addAll(combat.drainEvents());session.finishTick();
+                events.addAll(combat.drainEvents());game.wreckriff.simulation.MatchRuntime.finishTick(session);
             }
             assertTrue(session.vehicle(1).hp<400,"Guided splash/contact must damage a real moving Bullet body");
             var hits=events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("ballistic")).toList();

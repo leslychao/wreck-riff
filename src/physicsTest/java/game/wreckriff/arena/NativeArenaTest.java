@@ -100,8 +100,7 @@ class NativeArenaTest {
     }
     private void driveToPickup(String pickupId,Vector3f overrideStart,float overrideYaw) {
         var target=definition.pickups().stream().filter(p->p.id().equals(pickupId)).findFirst().orElseThrow();
-        var fixture=new ArenaDefinition(definition.schemaVersion(),definition.id(),definition.bounds(),definition.boxes(),
-                definition.ramps(),definition.spawns(),List.of(target),definition.hazard(),definition.nodes(),definition.edges());
+        var fixture=definition.withPickups(List.of(target));
         MatchSession session=new MatchSession(42,360);
         new CombatSystem(session,Configs.load("combat",CombatRules.class));
         for (int id=1;id<5;id++) session.vehicle(id).hp=0;
@@ -190,8 +189,7 @@ class NativeArenaTest {
         var target=definition.pickups().stream().filter(p->p.id().equals(pickupId)).findFirst().orElseThrow();
         // The selected repair is the only enabled resource in this route fixture. The complete arena,
         // colliders and authored graph are identical to the game; the fixture only fixes the goal.
-        ArenaDefinition fixture=new ArenaDefinition(definition.schemaVersion(),definition.id(),definition.bounds(),
-                definition.boxes(),definition.ramps(),definition.spawns(),List.of(target),definition.hazard(),definition.nodes(),definition.edges());
+        ArenaDefinition fixture=definition.withPickups(List.of(target));
         MatchSession session=new MatchSession(42,360);
         session.vehicle(0).hp=60;
         for (int id=1;id<5;id++) session.vehicle(id).hp=0;

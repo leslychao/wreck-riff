@@ -132,7 +132,7 @@
     "charges": 4, "releaseIntervalSeconds": 0.45, "minimumWarningSeconds": 0.5,
     "maximumRange": 70, "fallbackRange": 40,
     "carrierHeight": 22, "carrierSpeed": 45, "minimumCarrierSeconds": 0.7, "maximumCarrierSeconds": 1.6,
-    "gravity": 18, "turnDegreesPerSecond": 45, "spread": 2,
+    "gravity": 18, "turnDegreesPerSecond": 45, "maximumLeadSeconds": 2, "maximumLead": 30, "spread": 2,
     "damage": 34, "radius": 6, "blast": { "horizontalDeltaSpeed": 4, "upwardDeltaSpeed": 2.5 }
   }
 }

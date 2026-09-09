@@ -5,6 +5,7 @@ public record VehicleRules(float mass, float gravity, float width, float length,
         float suspensionCompression, float suspensionDamping, float maxSuspensionForce,
         float frictionSlip, float handbrakeFriction, float rollInfluence,
         float engineForce, float brakeForce, float maxSpeed, float turboSpeed, float reverseSpeed,
+        float reverseForceMultiplier, float directionChangeDelaySeconds,
         float lowSpeedSteering, float highSpeedSteering, float steeringResponse,
         float handbrakeTorque, float handbrakeYawDamping, float stabilizingTorque, float gripReturnSeconds,
         float turboDrain, float turboRegen, float turboRegenDelay, float recoveryCost,
@@ -14,6 +15,8 @@ public record VehicleRules(float mass, float gravity, float width, float length,
         if (mass<=0 || gravity<=0 || wheelRadius<=0 || maxSpeed<=0 || turboSpeed<maxSpeed
                 || width<=0 || length<=0 || height<=0 || wheelBase<=0 || wheelBase>=length
                 || reverseSpeed<=0 || reverseSpeed>maxSpeed || suspensionStiffness<=0
+                || !Float.isFinite(reverseForceMultiplier) || reverseForceMultiplier<=0
+                || !Float.isFinite(directionChangeDelaySeconds) || directionChangeDelaySeconds<0 || directionChangeDelaySeconds>1
                 || suspensionCompression<0 || suspensionDamping<0 || handbrakeFriction<=0
                 || handbrakeFriction>frictionSlip || rollInfluence<0 || rollInfluence>1
                 || lowSpeedSteering<=0 || lowSpeedSteering>=90 || highSpeedSteering<=0 || highSpeedSteering>lowSpeedSteering

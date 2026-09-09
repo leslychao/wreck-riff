@@ -15,6 +15,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Replays upright navigation poses from the ten-seed battle without combat or transform correction. */
 class BotNavigationRecoveryTest {
+    @Test void closeTrafficAtTheWestDeckEndCanLeaveThroughTheSupportedRearCorridor() {
+        var definition=ArenaDefinition.load();var session=new MatchSession(3,360);var rules=VehicleRules.load();
+        for(int id=2;id<5;id++)session.vehicle(id).hp=0;
+        try(var world=new PhysicsWorld(rules)) {
+            var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(definition);
+            for(var body:content.bodies())world.addStatic(body.shape(),body.position(),body.rotation());
+            world.addVehicle(0,new Vector3f(32.51f,6.85f,2.6f),new Quaternion().fromAngleAxis(-107.22f*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y));
+            world.addVehicle(1,new Vector3f(40.69f,6.85f,2.39f),new Quaternion().fromAngleAxis(-90*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y));
+            for(int tick=0;tick<240;tick++)world.step();
+            var drivers=List.of(new VehicleController(world,session.vehicle(0),rules),new VehicleController(world,session.vehicle(1),rules));
+            var bots=new BotController(session,definition,AiRules.load());boolean leftEnd=false;
+            for(int tick=0;tick<2400;tick++) {
+                session.tick=tick;var commands=bots.commands(world);
+                for(int id=0;id<2;id++) {
+                    var command=commands.get(id).withoutAttacks();var recovery=drivers.get(id).prepare(command,tick);
+                    assertFalse(recovery.recovered()||recovery.fatal(),"Deck-end traffic used recovery: "+world.position(id));drivers.get(id).drive(command);
+                }
+                world.step();for(int id=0;id<2;id++)drivers.get(id).recordSafePose(tick);
+                leftEnd|=world.position(0).x>44&&world.position(0).distance(world.position(1))>8;
+            }
+            assertTrue(leftEnd,"Car never left the confined deck end: "+world.position(0)+" / "+world.position(1));
+        }
+    }
     @Test void opponentsCanUseTheGarageFloorForASupportedPassingCorridor() {
         var definition=ArenaDefinition.load();var session=new MatchSession(1,360);var rules=VehicleRules.load();
         for(int id=2;id<5;id++)session.vehicle(id).hp=0;
@@ -45,13 +68,16 @@ class BotNavigationRecoveryTest {
             "-46.88,0.85,27.80,-166.22,repair-deck",
             "-54.60,0.85,28.91,135.92,repair-deck",
             "30.29,6.85,-0.91,-148.84,repair-garage",
-            "64.04,6.85,0.16,127.56,repair-garage"
+            "64.04,6.85,0.16,127.56,repair-garage",
+            "32.509,6.85,2.601,-107.22,repair-deck",
+            "54.623,0.85,44.886,20.06,repair-deck",
+            "35.652,6.85,-0.236,-84.88,repair-garage",
+            "35.871,6.85,5.071,-33.61,repair-deck"
     })
     void uprightBattlePoseCanFollowItsRouteWithoutRecovery(float x,float y,float z,float yaw,String pickupId) {
         ArenaDefinition definition=ArenaDefinition.load();
         var target=definition.pickups().stream().filter(p->p.id().equals(pickupId)).findFirst().orElseThrow();
-        var fixture=new ArenaDefinition(definition.schemaVersion(),definition.id(),definition.bounds(),definition.boxes(),
-                definition.ramps(),definition.spawns(),List.of(target),definition.hazard(),definition.nodes(),definition.edges());
+        var fixture=definition.withPickups(List.of(target));
         var session=new MatchSession(42,360);
         session.vehicle(0).hp=60;
         for(int id=1;id<5;id++)session.vehicle(id).hp=0;

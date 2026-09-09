@@ -80,6 +80,22 @@ class BotControllerTest {
         world.wall=false; session.tick=12; bots.commands(world);
         assertFalse(bots.route(0).contains(33),"A visibly unavailable upper repair must no longer be the destination");
     }
+    @Test void actualRouteProgressAfterReverseCancelsStaleRecoveryBeforeTheNextSamplingWindow() {
+        MatchSession session=new MatchSession(42,360);TestWorld world=new TestWorld();
+        world.positions[0]=new Vector3f(54,.8f,-41);world.blockSweeps=true;session.vehicle(0).hp=60;
+        BotController bots=new BotController(session,arena,rules);
+        for(int tick=0;tick<620;tick++) {
+            // Two unsuccessful reverse attempts, then the blocker clears and the car
+            // actually advances two metres towards its route before the next 180-tick sample.
+            // Traffic blocks it again afterwards; that must start a new stuck episode.
+            if(tick==530)world.blockSweeps=false;
+            if(tick==560)world.blockSweeps=true;
+            if(tick>=540&&tick<560)world.positions[0].z+=.1f;
+            session.tick=tick;VehicleCommand command=bots.commands(world).get(0);
+            assertFalse(command.recover(),"Recovered despite demonstrated route progress at tick "+tick);
+        }
+        assertEquals(0,bots.metrics(0).reverseAttempts());
+    }
     @Test void lowTurboSeeksCellsAfterRepairAndAmmoAndKeepsAnUsefulRouteDuringRegen() {
         MatchSession session=new MatchSession(2,360);TestWorld world=new TestWorld();
         world.positions[0]=new Vector3f(0,.8f,-36);session.vehicle(0).turbo=19;

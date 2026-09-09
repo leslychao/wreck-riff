@@ -13,23 +13,30 @@ import java.util.*;
 
 /** Session-owned visual feedback; reads the arena phase and physics without advancing either. */
 public final class ArenaPresentation extends AbstractControl {
+    private final List<HazardVisual> visuals=new ArrayList<>();
+    public static ArenaPresentation attach(AssetManager assets,Node arenaVisual,
+            MatchSession session,ArenaDefinition definition,ArenaSystems arenaSystems) {
+        ArenaPresentation presentation=new ArenaPresentation();
+        for(var hazard:definition.hazards()) {
+            HazardVisual visual=new HazardVisual(assets,session,hazard,arenaSystems);
+            presentation.visuals.add(visual);arenaVisual.attachChild(visual.decoration);
+        }
+        arenaVisual.addControl(presentation);presentation.controlUpdate(0);return presentation;
+    }
+    @Override protected void controlUpdate(float dt) { for(var visual:visuals)visual.update(dt); }
+    @Override protected void controlRender(RenderManager manager,ViewPort view) {}
+    private static final class HazardVisual {
     private final MatchSession session;
     private final ArenaDefinition.Hazard hazard;
     private final ArenaSystems arenaSystems;
-    private final Node decoration=new Node("arena-feedback");
+    private final Node decoration;
     private final Material indicator;
     private final Geometry arcs;
 
-    public static ArenaPresentation attach(AssetManager assets,Node arenaVisual,
-            MatchSession session,ArenaDefinition definition,ArenaSystems arenaSystems) {
-        ArenaPresentation presentation=new ArenaPresentation(assets,session,definition.hazard(),arenaSystems);
-        arenaVisual.attachChild(presentation.decoration);arenaVisual.addControl(presentation);
-        presentation.controlUpdate(0);
-        return presentation;
-    }
-    private ArenaPresentation(AssetManager assets,MatchSession session,
+    private HazardVisual(AssetManager assets,MatchSession session,
             ArenaDefinition.Hazard hazard,ArenaSystems arenaSystems) {
         this.session=session;this.hazard=hazard;this.arenaSystems=arenaSystems;
+        decoration=new Node("arena-feedback-"+hazard.id());decoration.setLocalTranslation(0,hazard.minY(),0);
         indicator=unlit(assets,new ColorRGBA(.15f,.105f,.025f,1));
         List<Vector3f> strips=new ArrayList<>();
         float cx=(hazard.minX()+hazard.maxX())*.5f,cz=(hazard.minZ()+hazard.maxZ())*.5f;
@@ -57,15 +64,15 @@ public final class ArenaPresentation extends AbstractControl {
 
     }
 
-    @Override protected void controlUpdate(float dt) {
+    void update(float dt) {
         updateHazard();
     }
     private void updateHazard() {
-        ArenaSystems.HazardPhase phase=arenaSystems.hazardPhase();
+        ArenaSystems.HazardPhase phase=arenaSystems.hazardPhase(hazard.id());
         ColorRGBA color=switch(phase) {
             case OFF -> new ColorRGBA(.15f,.105f,.025f,1);
             case WARNING -> {
-                float progress=(session.tick%hazard.periodTicks()-hazard.offTicks())/(float)hazard.warningTicks();
+                float progress=arenaSystems.warningProgress(hazard.id());
                 // Continuous amber charge, no flashing or independent presentation clock.
                 float intensity=.55f+.45f*Math.clamp(progress,0,1);
                 yield new ColorRGBA(intensity,.43f*intensity,.025f,1);
@@ -81,7 +88,7 @@ public final class ArenaPresentation extends AbstractControl {
         float y=.22f+(segment%2==0?.10f:.36f)+(row-2)*.055f;
         return new Vector3f(x,y,z+(segment%3-1)*.21f);
     }
-    @Override protected void controlRender(RenderManager manager,ViewPort view) { }
+    }
     private static Material unlit(AssetManager assets,ColorRGBA color) {
         Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");material.setColor("Color",color);
         material.getAdditionalRenderState().setFaceCullMode(RenderState.FaceCullMode.Off);return material;

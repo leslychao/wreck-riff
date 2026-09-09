@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "id": "dead-air-yard",
+      "resourceKey": "arena",
+      "campaign": false
+    },
+    {
+      "id": "construction_17",
+      "resourceKey": "arena-construction-17",
+      "campaign": true
+    },
+    {
+      "id": "neon_zero",
+      "resourceKey": "arena-neon-zero",
+      "campaign": true
+    },
+    {
+      "id": "euphoria_park",
+      "resourceKey": "arena-euphoria-park",
+      "campaign": true
+    },
+    {
+      "id": "ash_necropolis",
+      "resourceKey": "arena-ash-necropolis",
+      "campaign": true
+    },
+    {
+      "id": "doomsday_arena",
+      "resourceKey": "arena-doomsday",
+      "campaign": true
+    }
+  ]
+}

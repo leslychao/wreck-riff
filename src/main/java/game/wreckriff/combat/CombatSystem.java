@@ -67,7 +67,8 @@ public final class CombatSystem {
 
     private final MatchSession session;
     private final CombatRules rules;
-    private final List<VehicleState> orderedVehicles;
+    private final List<VehicleState> orderedVehicles=new ArrayList<>();
+    private final SplittableRandom weaponSeed;
     private final List<ProjectileState> projectiles = new ArrayList<>();
     private final List<ShotIntent> intents = new ArrayList<>();
     private final List<Damage> damage = new ArrayList<>();
@@ -101,11 +102,14 @@ public final class CombatSystem {
     public CombatSystem(MatchSession session, CombatRules rules) {
         this.session = Objects.requireNonNull(session);
         this.rules = Objects.requireNonNull(rules);
-        orderedVehicles = session.vehicles.stream().sorted(Comparator.comparingInt(v -> v.id)).toList();
-        SplittableRandom weaponSeed = new SplittableRandom(session.seed ^ 0x575245434b524946L);
-        for (VehicleState vehicle : orderedVehicles) {
-            spreadRandom.put(vehicle.id, weaponSeed.split());
-        }
+        weaponSeed = new SplittableRandom(session.seed ^ 0x575245434b524946L);
+        for(var vehicle:session.vehicles)registerParticipant(vehicle);
+    }
+    public void registerParticipant(VehicleState vehicle) {
+        if(orderedVehicles.stream().anyMatch(v->v.id==vehicle.id))throw new IllegalArgumentException("Duplicate combat participant: "+vehicle.id);
+        if(!session.containsParticipant(vehicle.id)||session.vehicle(vehicle.id)!=vehicle)throw new IllegalArgumentException("Unregistered participant");
+        orderedVehicles.add(vehicle);orderedVehicles.sort(Comparator.comparingInt(v->v.id));
+        spreadRandom.put(vehicle.id,weaponSeed.split());
     }
 
     /** Call once before the physics step; edges must already have been consumed by the input owner. */
@@ -675,7 +679,10 @@ public final class CombatSystem {
             case 0->new Vector3f(-spread,0,0);case 1->new Vector3f(0,0,spread);
             case 2->new Vector3f(spread,0,0);default->new Vector3f(0,0,-spread);
         };
-        Vector3f origin=salvo.carrier.position.clone(),aim=groundPoint(salvo.area.add(offset),world).addLocal(0,rules.projectileRadius(),0);
+        Vector3f origin=salvo.carrier.position.clone();
+        Vector3f aim=groundPoint(salvo.targetId<0?salvo.area.add(offset)
+                :ballisticAim(salvo.targetId,origin,0,ballistic.minimumWarningSeconds(),offset,world),world)
+                .addLocal(0,rules.projectileRadius(),0);
         float duration=Math.max(.5f,(float)Math.sqrt(2*Math.max(.1f,origin.y-aim.y)/ballistic.gravity()));
         Vector3f velocity=aim.subtract(origin).divide(duration).addLocal(0,.5f*ballistic.gravity()*duration,0);
         int lifeTicks=Math.min(720,ticks(duration+1));
@@ -727,7 +734,7 @@ public final class CombatSystem {
         else {
             charge.position.set(end);
             if(charge.remainingTicks<=0) {charge.exploded=true;warnings.remove(charge.id());}
-            else if(charge.ageTicks%12==1||warning.impactTick-session.tick<=12) {
+            else if(charge.ageTicks%12==1||(warning.impactTick>session.tick&&warning.impactTick-session.tick<=12)) {
                 Prediction prediction=predictCharge(charge.position,charge.velocity,charge.remainingTicks,world);
                 if(prediction!=null) {
                     warning.point.set(prediction.hit.point());warning.normal.set(prediction.hit.normal());
@@ -742,7 +749,7 @@ public final class CombatSystem {
         if(!session.vehicle(target).alive()||!world.visible(charge.position,world.position(target),target)) {
             charge.targetId=-1;return;
         }
-        Vector3f aim=world.position(target).add(offset);
+        Vector3f aim=ballisticAim(target,charge.position,charge.velocity.y,0,offset,world);
         // It remains a falling charge: no climbing back to a target that has jumped over it.
         aim.y=Math.min(aim.y,charge.position.y-.1f);
         Vector3f desired=aim.subtract(charge.position).normalizeLocal();
@@ -755,6 +762,14 @@ public final class CombatSystem {
             Vector3f axis=direction.cross(desired).normalizeLocal();
             if(axis.lengthSquared()>0)new Quaternion().fromAngleAxis(permitted,axis).mult(charge.velocity,charge.velocity);
         }
+    }
+    private Vector3f ballisticAim(int target,Vector3f origin,float verticalSpeed,float delay,Vector3f offset,WorldQuery world) {
+        var ballistic=rules.ballistic();Vector3f position=world.position(target);
+        float height=Math.max(.1f,origin.y-position.y),gravity=ballistic.gravity();
+        float flight=(verticalSpeed+(float)Math.sqrt(verticalSpeed*verticalSpeed+2*gravity*height))/gravity;
+        Vector3f lead=horizontal(world.velocity(target)).multLocal(Math.min(ballistic.maximumLeadSeconds(),flight+delay));
+        if(lead.length()>ballistic.maximumLead())lead.normalizeLocal().multLocal(ballistic.maximumLead());
+        return position.add(lead).addLocal(offset);
     }
     private void ballisticImpact(ProjectileState projectile,WorldQuery.Hit hit,WorldQuery world) {
         if(projectile.exploded)return;projectile.exploded=true;projectile.position.set(hit.point());
@@ -1038,7 +1053,7 @@ public final class CombatSystem {
     public int reservedFireZones() {return reservedFireZones;}
     public int pendingDamageCount() { return damage.size(); }
     public List<GameEvent> drainEvents() {
-        List<GameEvent> result = List.copyOf(events);
+        List<GameEvent> result = events.stream().map(e->e.inSession(session.sessionId)).toList();
         events.clear();
         return result;
     }

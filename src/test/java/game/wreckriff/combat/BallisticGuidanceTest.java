@@ -29,6 +29,7 @@ class BallisticGuidanceTest {
         fire();
         assertEquals(-1,combat.lockTarget(0),"Fixture fires before any lock can complete");
         assertEquals(2,combat.projectiles().getFirst().targetId());
+        assertEquals(2,combat.ballisticTarget(0),"HUD and shot use the same immediate selection");
         assertEquals(1,session.vehicle(0).weapon(WeaponType.BALLISTIC).ammo);
     }
 
@@ -104,6 +105,15 @@ class BallisticGuidanceTest {
             }
             f.combat.clear();assertTrue(f.combat.ballisticWarnings().isEmpty());assertEquals(0,f.combat.occupiedProjectileSlots());
         }
+    }
+
+    @Test void aLateSharpDodgeCanEscapeAnAlreadyFallingCharge() {
+        world.floor=true;world.positions[1].set(0,1,40);fire();ProjectileState drop=firstDrop();
+        for(int i=0;i<105;i++)tick();
+        world.positions[1].x=30;float health=session.vehicle(1).hp;
+        while(!drop.exploded)tick();
+        assertTrue(drop.position().distance(world.positions[1])>session.combatRules.ballistic().radius()+1);
+        assertEquals(health,session.vehicle(1).hp,"Guidance must not guarantee a hit after a sudden late dodge");
     }
 
     private Vector3f warning(long id) {

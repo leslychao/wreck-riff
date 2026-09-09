@@ -47,7 +47,8 @@ public final class BotController {
     private final Supplier<List<ArenaDefinition.Pickup>> activePickups;
     private Supplier<List<ProjectileState>> observedProjectiles=List::of;
     private Supplier<List<CombatSystem.BallisticWarningView>> observedBallisticWarnings=List::of;
-    private final Brain[] brains=new Brain[5];
+    private final Map<Integer,Brain> brains=new HashMap<>();
+    private Supplier<List<ArenaDefinition.Hazard>> activeHazards;
     private long lastCommandTick=Long.MIN_VALUE;
     private Map<Integer,VehicleCommand> cached=Map.of();
 
@@ -64,7 +65,8 @@ public final class BotController {
     public BotController(MatchSession session,ArenaDefinition arena,NavGraph graph,AiRules rules,
             Supplier<List<ArenaDefinition.Pickup>> activePickups) {
         this.session=session; this.arena=arena; this.graph=graph; this.rules=rules; this.activePickups=activePickups;
-        for (int id=0;id<brains.length;id++) brains[id]=new Brain(session.seed ^ (0x9E3779B97F4A7C15L*(id+1)));
+        activeHazards=()->arena.hazards().stream().filter(h->ArenaSystems.phaseAt(session.tick,arena.hazards(),h.id())==ArenaSystems.HazardPhase.ACTIVE).toList();
+        for(var vehicle:session.vehicles)registerParticipant(vehicle.id);
     }
     public Map<Integer,VehicleCommand> commands(WorldQuery world) {
         if (lastCommandTick==session.tick) return cached;
@@ -73,7 +75,7 @@ public final class BotController {
         Set<String> active=new HashSet<>();
         for (var pickup:activePickups.get()) active.add(pickup.id());
         for (VehicleState vehicle:session.vehicles) {
-            Brain brain=brains[vehicle.id];
+            Brain brain=brains.get(vehicle.id);
             if (!vehicle.alive() || session.outcome!=MatchSession.Outcome.NONE) {
                 brain.state=State.DESTROYED; result.put(vehicle.id,VehicleCommand.NONE); continue;
             }
@@ -152,9 +154,9 @@ public final class BotController {
         Vector3f position=world.position(self.id);
         boolean hazardActive=visibleActiveHazard(self.id,world);
         if(evadeBallistic(self,brain,position,hazardActive,world))return;
-        if (hazardActive && arena.hazard().contains(position)) {
+        if (hazardActive && insideActiveHazard(position)) {
             brain.state=State.EVADE_HAZARD; brain.pickup=null;
-            int escape=graph.nodes().stream().filter(n->!arena.hazard().contains(n.position().vector()))
+            int escape=graph.nodes().stream().filter(n->!insideActiveHazard(n.position().vector()))
                     .min(Comparator.comparingDouble(n->n.position().vector().distanceSquared(position))).orElseThrow().id();
             route(brain,position,graph.position(escape),true,world,self.id); return;
         }
@@ -282,7 +284,7 @@ public final class BotController {
         List<ArenaDefinition.NavNode> candidates=graph.nodes().stream()
                 .filter(n->Math.abs(n.position().y()+.45f-position.y)<2.2f)
                 .filter(n->active.stream().noneMatch(w->horizontalDistance(n.position().vector(),w.point)<w.radius+3))
-                .filter(n->!hazardActive||!arena.hazard().contains(n.position().vector()))
+                .filter(n->!hazardActive||!insideActiveHazard(n.position().vector()))
                 .sorted(Comparator.comparingDouble((ArenaDefinition.NavNode n)->n.position().vector().distanceSquared(position))
                         .thenComparingInt(ArenaDefinition.NavNode::id)).limit(12).toList();
         for(var candidate:candidates) {
@@ -327,7 +329,7 @@ public final class BotController {
         int start=navigationStart(position,world,vehicleId);
         for (var pickup:arena.pickups()) {
             if (pickup.type()!=type || session.tick<brain.pickupUnavailableUntil.getOrDefault(pickup.id(),0L)
-                    || (activeHazard && arena.hazard().contains(pickup.position().vector()))) continue;
+                    || (activeHazard && insideActiveHazard(pickup.position().vector()))) continue;
             List<Integer> path=graph.path(start,graph.nearest(pickup.position().vector()),activeHazard,
                     rules.turnPenalty(),rules.activeHazardPenalty());
             if (path.isEmpty()) continue;
@@ -636,6 +638,12 @@ public final class BotController {
         }
         brain.lastPosition=position.clone();
         if (session.tick<brain.reverseUntil) { brain.progressWindowStart=session.tick; brain.progress=0; return; }
+        // Successful movement ends this stuck episode immediately. Waiting for the
+        // full sample window could let its old recovery deadline stop a car that
+        // has already resumed following the route after reversing.
+        if (brain.progress>=rules.stuckMinimumProgress()) {
+            brain.stuckSince=-1;brain.reverseAttempts=0;
+        }
         if (session.tick-brain.progressWindowStart<rules.stuckCheckTicks()) return;
         if (brain.requiredMovement && brain.progress<rules.stuckMinimumProgress()) {
             if (brain.stuckSince<0) brain.stuckSince=brain.progressWindowStart;
@@ -646,8 +654,6 @@ public final class BotController {
                     +" path="+brain.path+" pathIndex="+brain.pathIndex
                     +" forward="+world.forward(self.id)+" velocity="+world.velocity(self.id)+" backing="+brain.backingToRoute
                     +" target="+brain.target+" reverseAttempt="+brain.reverseAttempts);
-        } else if (brain.progress>=rules.stuckMinimumProgress()) {
-            brain.stuckSince=-1; brain.reverseAttempts=0;
         }
         brain.progress=0; brain.progressWindowStart=session.tick;
     }
@@ -707,7 +713,7 @@ public final class BotController {
     private ArenaDefinition.Ramp rampAt(Vector3f position) {
         for (var ramp:arena.ramps()) if (position.x>=ramp.minX()-.5f && position.x<=ramp.maxX()+.5f
                 && position.z>=ramp.minZ() && position.z<=ramp.maxZ()) {
-            float height=ramp.startY()+(ramp.endY()-ramp.startY())*(position.z-ramp.minZ())/(ramp.maxZ()-ramp.minZ());
+            float height=ramp.heightAt(position.x,position.z);
             if (Math.abs(position.y-height-.45f)<.8f) return ramp;
         }
         return null;
@@ -716,37 +722,36 @@ public final class BotController {
         return roadSurface(point,false);
     }
     private boolean roadSurface(Vector3f point,boolean hullEdgeSample) {
-        // Lateral hull probes already include the body width. Applying the centerline
-        // clearance to them again would falsely block reverse exits beside a railing.
-        float rampMargin=1.2f,deckMargin=hullEdgeSample?.2f:2.5f;
-        if (Math.abs(point.y)<.15f) return true;
-        for (var ramp:arena.ramps()) if (point.x>=ramp.minX()+rampMargin && point.x<=ramp.maxX()-rampMargin
-                && point.z>=ramp.minZ() && point.z<=ramp.maxZ()) {
-            float height=ramp.startY()+(ramp.endY()-ramp.startY())*(point.z-ramp.minZ())/(ramp.maxZ()-ramp.minZ());
-            if (Math.abs(height-point.y)<.15f) return true;
-        }
-        var deck=arena.boxes().stream().filter(b->b.id().equals("upper-deck")).findFirst().orElseThrow();
-        boolean rampOpening=arena.ramps().stream().anyMatch(r->point.x>=r.minX()+rampMargin && point.x<=r.maxX()-rampMargin
-                && (Math.abs(r.minZ()-point.z)<3 || Math.abs(r.maxZ()-point.z)<3));
-        return Math.abs(point.y-(deck.center().y()+deck.size().y()/2))<.15f
-                && Math.abs(point.x-deck.center().x())<deck.size().x()/2-deckMargin
-                && (Math.abs(point.z-deck.center().z())<deck.size().z()/2-deckMargin
-                    || rampOpening && Math.abs(point.z-deck.center().z())<=deck.size().z()/2);
+        var surface=arena.surfaceAt(point,0,.15f);
+        if(surface.isEmpty())return false;
+        if(surface.get().level()==0)return true;
+        float margin=hullEdgeSample?.2f:2.5f;
+        if(arena.surfaceAt(point,margin,.15f).isPresent())return true;
+        // The ramp/plate seam is part of the same connected road; do not inset it twice.
+        return arena.ramps().stream().anyMatch(r->r.containsXZ(point.x,point.z,-.3f)
+                &&Math.abs(r.heightAt(point.x,point.z)-point.y)<.2f);
+    }
+    public void registerParticipant(int id) {
+        brains.computeIfAbsent(id,key->new Brain(session.seed ^ (0x9E3779B97F4A7C15L*(key+1))));
+    }
+    public void observeHazards(Supplier<List<ArenaDefinition.Hazard>> source) { activeHazards=Objects.requireNonNull(source); }
+    private boolean insideActiveHazard(Vector3f point) {
+        return activeHazards.get().stream().anyMatch(h->h.contains(point));
     }
     private boolean visibleActiveHazard(int vehicleId,WorldQuery world) {
-        var hazard=arena.hazard();
-        long phase=session.tick%hazard.periodTicks();
-        if (phase<hazard.offTicks()+hazard.warningTicks()) return false;
-        Vector3f center=new Vector3f((hazard.minX()+hazard.maxX())*.5f,.6f,(hazard.minZ()+hazard.maxZ())*.5f);
         Vector3f eye=world.position(vehicleId).add(0,.6f,0);
-        return eye.distance(center)<=rules.sightRange() && world.ray(eye,center,vehicleId)==null;
+        for(var hazard:activeHazards.get()) {
+            Vector3f center=hazard.center().vector();
+            if(eye.distance(center)<=rules.sightRange()&&world.ray(eye,center,vehicleId)==null)return true;
+        }
+        return false;
     }
-    public State state(int id) { return brains[id].state; }
-    public int targetId(int id) { return brains[id].target; }
-    public BotObservation observation(int id) { return brains[id].observation; }
-    public List<Integer> route(int id) { return brains[id].path; }
+    public State state(int id) { return brains.get(id).state; }
+    public int targetId(int id) { return brains.get(id).target; }
+    public BotObservation observation(int id) { return brains.get(id).observation; }
+    public List<Integer> route(int id) { return brains.get(id).path; }
     public Metrics metrics(int id) {
-        Brain brain=brains[id];
+        Brain brain=brains.get(id);
         return new Metrics(id,brain.state,brain.target,brain.reverseAttempts,session.vehicle(id).recoveries,
                 brain.aliveTicks,brain.maximumStationaryTicks,brain.destination==null?null:brain.destination.clone());
     }

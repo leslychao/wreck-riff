@@ -35,7 +35,7 @@ class NativeRecoveryTest {
                 for(int i=0;i<120;i++)runtime.tick(Map.of(),false);
                 VehicleCommand cannon=new VehicleCommand(0,0,0,false,false,false,true,WeaponType.CANNON,0,false,false,AbilityId.NONE);
                 runtime.tick(Map.of(0,cannon),false);
-                boolean crossed=false,directBlocked=false,intervened=false,recovered=false,fatal=false;Vector3f emergencyPose=null;
+                boolean cannonHit=false,crossed=false,directBlocked=false,intervened=false,recovered=false,fatal=false;Vector3f emergencyPose=null;
                 for(int i=0;i<360;i++) {
                     Vector3f before=world.position(1);
                     if(before.x>81&&!intervened) {
@@ -49,11 +49,15 @@ class NativeRecoveryTest {
                     }
                     if(before.x>82||(route.equals("manual")&&crossed)) {emergencyPose=before;directBlocked|=world.staticSweep(before.add(0,.5f,0),new Vector3f(74,.929f,0),.2f)!=null;}
                     Map<Integer,VehicleCommand> commands=route.equals("manual")&&crossed?Map.of(1,RECOVER):Map.of();
-                    for(var event:runtime.tick(commands,false))if(event.type()==GameEvent.Type.DAMAGE&&event.subjectId()==1) {
-                        recovered|=event.kind().equals("recovery");fatal|=event.kind().equals("out-of-bounds");
+                    for(var event:runtime.tick(commands,false)) {
+                        cannonHit|=event.type()==GameEvent.Type.EXPLOSION&&event.kind().equals("cannon")&&event.subjectId()==1;
+                        if(event.type()==GameEvent.Type.DAMAGE&&event.subjectId()==1) {
+                            recovered|=event.kind().equals("recovery");fatal|=event.kind().equals("out-of-bounds");
+                        }
                     }
                     if(recovered||fatal)break;
                 }
+                assertTrue(cannonHit,"The scenario requires an accepted direct Cannon hit");
                 assertTrue(crossed,"Real Cannon must carry the chassis over the wall; final="+world.position(1));
                 assertTrue(directBlocked,"The direct recovery segment must be blocked by the wall; emergency="+emergencyPose+" final="+world.position(1));
                 assertEquals(route.equals("clear"),recovered,"Only continuous, clear native history authorizes retreat");

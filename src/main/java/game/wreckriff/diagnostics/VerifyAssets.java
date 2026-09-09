@@ -3,6 +3,7 @@ package game.wreckriff.diagnostics;
 import com.google.gson.*;
 import game.wreckriff.ai.AiRules;
 import game.wreckriff.arena.ArenaDefinition;
+import game.wreckriff.arena.ArenaRegistry;
 import game.wreckriff.audio.*;
 import game.wreckriff.combat.CombatRules;
 import game.wreckriff.config.*;
@@ -44,7 +45,7 @@ public final class VerifyAssets {
             "CC0-1.0.txt", "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
             "Roboto-OFL.txt", "061402327a96aadb0bfb694a960ed289ecd38d383e396243831ab81feb109c41");
     private static final Map<String, Class<?>> CONFIGS = Map.of(
-            "ai", AiRules.class, "arena", ArenaDefinition.class, "audio", AudioConfig.class,
+            "ai", AiRules.class, "arena", ArenaDefinition.class, "arenas", ArenaRegistry.Catalogue.class, "audio", AudioConfig.class,
             "camera", CameraRules.class, "combat", CombatRules.class, "gamepad", GamepadProfile.class,
             "match", MatchRules.class, "vehicle", VehicleRules.class);
     private static final Set<String> REQUIRED_NATIVE_ENTRIES = Set.of(
@@ -72,12 +73,26 @@ public final class VerifyAssets {
                 "Before external distribution, verify corresponding-source delivery and replacement rights for the LGPL OpenAL Soft native library.",
                 "The jpackage Java runtime retains its own legal notices; packageWindows verifies their presence. No legal approval is inferred."));
         List<String> nativeEntries = new ArrayList<>();
-        for (String name : new TreeSet<>(CONFIGS.keySet())) attempt(errors, "config/" + name + ".json", () -> {
+        Map<String,Class<?>> configs=new TreeMap<>(CONFIGS);
+        attempt(errors,"arena catalogue",()-> {
+            var registry=ArenaRegistry.load();
+            for(var entry:registry.entries())configs.put(entry.resourceKey(),ArenaDefinition.class);
+            for(var entry:registry.entries())if(entry.campaign()) {
+                var arena=registry.definition(entry.id());
+                for(String path:List.of(arena.metadata().music(),arena.metadata().bossMusic()))
+                    attempt(errors,entry.id()+" music "+path,()-> {
+                        byte[] bytes=resource(path);
+                        if(bytes.length<1024)throw new IOException("Empty/truncated arena music: "+path);
+                        assets.add(asset(path,"campaign-music",bytes,"Original campaign composition; authoring source required","RESOURCE_PRESENT"));
+                    });
+            }
+        });
+        for (String name : configs.keySet()) attempt(errors, "config/" + name + ".json", () -> {
             String path = "config/" + name + ".json";
             byte[] bytes = resource(path);
             JsonElement json = JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8));
-            Configs.validate(json, CONFIGS.get(name), name);
-            Configs.gson().fromJson(json, CONFIGS.get(name));
+            Configs.validate(json, configs.get(name), name);
+            Configs.gson().fromJson(json, configs.get(name));
             assets.add(asset(path, "config", bytes, "src/main/resources/" + path, "VALIDATED"));
         });
         attempt(errors, "audio", () -> verifyAudio(assets));

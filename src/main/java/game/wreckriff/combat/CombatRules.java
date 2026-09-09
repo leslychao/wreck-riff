@@ -110,7 +110,8 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
     public record Ballistic(int initialAmmo,int maximumAmmo,float cooldownSeconds,int charges,float releaseIntervalSeconds,
             float minimumWarningSeconds,float maximumRange,float fallbackRange,
             float carrierHeight,float carrierSpeed,float minimumCarrierSeconds,float maximumCarrierSeconds,
-            float gravity,float turnDegreesPerSecond,float spread,float damage,float radius,Blast blast) {
+            float gravity,float turnDegreesPerSecond,float maximumLeadSeconds,float maximumLead,
+            float spread,float damage,float radius,Blast blast) {
         public Ballistic {
             ammo(initialAmmo,maximumAmmo);positive("ballistic.cooldown",cooldownSeconds);
             if(charges!=4)throw new IllegalArgumentException("Ballistic salvo must contain four charges");
@@ -120,6 +121,7 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
             positive("ballistic.minimumCarrierTime",minimumCarrierSeconds);positive("ballistic.maximumCarrierTime",maximumCarrierSeconds);
             if(maximumCarrierSeconds<minimumCarrierSeconds)throw new IllegalArgumentException("Invalid carrier time");
             positive("ballistic.gravity",gravity);range("ballistic.turn",turnDegreesPerSecond,Float.MIN_NORMAL,180);
+            positive("ballistic.maximumLeadSeconds",maximumLeadSeconds);positive("ballistic.maximumLead",maximumLead);
             positive("ballistic.spread",spread);
             positive("ballistic.damage",damage);positive("ballistic.radius",radius);Objects.requireNonNull(blast,"ballistic.blast");
         }

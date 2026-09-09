@@ -1,16 +1,27 @@
 package game.wreckriff.simulation;
 
 import com.jme3.math.Vector3f;
+import java.util.UUID;
+import java.util.Objects;
 
 public record GameEvent(Type type, long eventId, int subjectId, int sourceId,
-        Vector3f position, String kind, float value, Vector3f origin, Vector3f normal) {
+        Vector3f position, String kind, float value, Vector3f origin, Vector3f normal,UUID sessionId) {
     public enum Type { SHOT, IMPACT, EXPLOSION, RAM, DAMAGE, DESTROYED, PICKUP, MATCH_FINISHED, EMPTY,
-        FREEZE, SHIELD, SHIELD_HIT, SHIELD_ENDED, CONTROL_ENDED, MINE_PLACED, FIRE_STARTED, FIRE_ENDED }
+        FREEZE, SHIELD, SHIELD_HIT, SHIELD_ENDED, CONTROL_ENDED, MINE_PLACED, FIRE_STARTED, FIRE_ENDED,
+        LAUNCH_COMPRESS, LAUNCHED, LANDED, LAUNCH_REJECTED }
     public GameEvent {
         position = copy(position); origin = copy(origin); normal = copy(normal);
     }
     public GameEvent(Type type,long eventId,int subjectId,int sourceId,Vector3f position,String kind,float value) {
-        this(type,eventId,subjectId,sourceId,position,kind,value,Vector3f.ZERO,Vector3f.ZERO);
+        this(type,eventId,subjectId,sourceId,position,kind,value,Vector3f.ZERO,Vector3f.ZERO,null);
+    }
+    public GameEvent(Type type,long eventId,int subjectId,int sourceId,Vector3f position,String kind,float value,Vector3f origin,Vector3f normal) {
+        this(type,eventId,subjectId,sourceId,position,kind,value,origin,normal,null);
+    }
+    public GameEvent inSession(UUID id) {
+        Objects.requireNonNull(id);
+        if(sessionId!=null&&!sessionId.equals(id))throw new IllegalArgumentException("Event belongs to another session");
+        return sessionId!=null?this:new GameEvent(type,eventId,subjectId,sourceId,position,kind,value,origin,normal,id);
     }
     @Override public Vector3f position() { return position.clone(); }
     @Override public Vector3f origin() { return origin.clone(); }

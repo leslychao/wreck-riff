@@ -36,7 +36,7 @@ class NativePauseTest {
             assertFalse(runtime.arenaSystems().active(repair.id()), "Fixture includes a running pickup respawn timer");
             runtime.arenaSystems().drainEvents();
 
-            var hazard = definition.hazard();
+            var hazard = definition.hazards().getFirst();
             world.teleport(0, new Vector3f((hazard.minX() + hazard.maxX()) / 2, 0.6f,
                     (hazard.minZ() + hazard.maxZ()) / 2), new Quaternion());
             player.hp = 170;

@@ -148,7 +148,7 @@ class NativeCombatTest {
         combat.advanceProjectiles(world);
         for (PhysicsWorld.Ram ram : world.rams()) combat.queueRam(ram.first(), ram.second(), ram.closingSpeed(),ram.point(),ram.normal());
         combat.resolveDamage(world);
-        session.finishTick();
+        game.wreckriff.simulation.MatchRuntime.finishTick(session);
     }
 
     private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, null, 0, false, false,AbilityId.NONE); }

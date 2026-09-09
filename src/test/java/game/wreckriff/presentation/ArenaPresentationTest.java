@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ArenaPresentationTest {
     @Test void hazardFeedbackUsesExactAuthoritativePhasesAndFreezesWithTick() {
         Fixture fixture=new Fixture();
-        ArenaDefinition.Hazard hazard=fixture.definition.hazard();
+        ArenaDefinition.Hazard hazard=fixture.definition.hazards().getFirst();
         fixture.session.tick=hazard.offTicks()-1;fixture.visual.update(.02f);
         assertEquals("OFF",fixture.feedback().getUserData("hazardPhase"));
         assertEquals(Spatial.CullHint.Always,fixture.arcs().getCullHint());
@@ -45,7 +45,7 @@ class ArenaPresentationTest {
             for(int i=1;i<5;i++)session.vehicle(i).hp=0;
             visual=ArenaPresentation.attach(PresentationTestAssets.shared(),root,session,definition,new ArenaSystems(session,definition));
         }
-        Node feedback(){return(Node)root.getChild("arena-feedback");}
+        Node feedback(){return(Node)root.getChild("arena-feedback-"+definition.hazards().getFirst().id());}
         Geometry arcs(){return(Geometry)feedback().getChild("hazard-active-arcs");}
         ColorRGBA indicatorColor(){return(ColorRGBA)((Geometry)feedback().getChild("hazard-indicator")).getMaterial().getParam("Color").getValue();}
     }

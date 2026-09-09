@@ -8,6 +8,9 @@ public final class VehicleState {
     public final int id;
     public final String name;
     public final boolean player;
+    public final String profileId;
+    public final int liveryId;
+    public final boolean boss;
     public final float maximumHp;
     public final float repairFraction;
     public float hp;
@@ -25,8 +28,14 @@ public final class VehicleState {
     public int lastAttacker = -1;
     public long lastAttackTick = Long.MIN_VALUE;
     public VehicleState(int id, String name, boolean player,CombatRules rules) {
+        this(id,name,player,"rivet",Math.floorMod(id,5),false,
+                player?rules.health().playerMaximumHp():rules.health().botMaximumHp(),rules);
+    }
+    public VehicleState(int id,String name,boolean player,String profileId,int liveryId,boolean boss,float maximumHp,CombatRules rules) {
+        if(id<0||name==null||name.isBlank()||profileId==null||profileId.isBlank()||liveryId<0||liveryId>=5
+                ||!Float.isFinite(maximumHp)||maximumHp<=0||player&&boss)throw new IllegalArgumentException("Invalid participant");
         this.id=id; this.name=name; this.player=player;
-        maximumHp=player?rules.health().playerMaximumHp():rules.health().botMaximumHp();hp=maximumHp;
+        this.profileId=profileId;this.liveryId=liveryId;this.boss=boss;this.maximumHp=maximumHp;hp=maximumHp;
         repairFraction=rules.health().repairFraction();initializeArsenal(rules);
     }
     public void initializeWeapon(WeaponType type,int ammunition,int maximum) { weapons.put(type,new WeaponSlot(ammunition,maximum)); }

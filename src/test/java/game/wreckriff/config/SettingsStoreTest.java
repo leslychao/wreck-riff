@@ -1,7 +1,6 @@
 package game.wreckriff.config;
 
 import com.jme3.input.KeyInput;
-import game.wreckriff.simulation.MatchSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.*;
@@ -96,26 +95,17 @@ class SettingsStoreTest {
         var settings=new SettingsStore(directory).settings();
         assertEquals(settings.keys.size(),new HashSet<>(settings.keys.values()).size(),"Each keyboard action must have a distinct usable binding");
     }
-    @Test void nonFiniteStatisticsCannotBreakMatchCompletion() throws Exception {
-        Files.writeString(directory.resolve("stats.json"),"{\"schemaVersion\":1,\"totalDamage\":\"NaN\",\"wins\":-4}");
-        SettingsStore store=new SettingsStore(directory);MatchSession session=new MatchSession(1,180);
-        session.outcome=MatchSession.Outcome.VICTORY;session.vehicle(0).damageDealt=40;
-        assertDoesNotThrow(()->store.record(session));
-        assertTrue(Double.isFinite(store.stats().totalDamage));assertTrue(store.stats().wins>=1);
-    }
-    @Test void oneCompletedSessionIsRecordedOnceAndRetryCanRecordAnother() {
-        SettingsStore store=new SettingsStore(directory);MatchSession one=new MatchSession(1,180);
-        store.record(one);assertEquals(0,store.stats().completedMatches);
-        one.outcome=MatchSession.Outcome.VICTORY;one.vehicle(0).damageDealt=123;one.vehicle(0).eliminations=2;
-        store.record(one);store.record(one);assertEquals(1,store.stats().completedMatches);assertEquals(123,store.stats().totalDamage);
-        MatchSession two=new MatchSession(1,180);two.outcome=MatchSession.Outcome.DRAW;store.record(two);
-        assertEquals(2,store.stats().completedMatches);assertEquals(1,store.stats().wins);assertEquals(1,store.stats().draws);
-    }
-    @Test void unavailableDataDirectoryStillAllowsACompleteInMemoryMatch() throws Exception {
+    @Test void unavailableDataDirectoryStillAllowsInMemoryPreferences() throws Exception {
         Path path=directory.resolve("a-file");Files.writeString(path,"occupied");
-        SettingsStore store=new SettingsStore(path);store.saveSettings();
-        MatchSession session=new MatchSession(1,180);session.outcome=MatchSession.Outcome.DEFEAT;
-        assertDoesNotThrow(()->store.record(session));assertEquals(1,store.stats().losses);
+        SettingsStore store=new SettingsStore(path);store.settings().music=.25f;
+        assertDoesNotThrow(store::saveSettings);assertEquals(.25f,store.settings().music);
         assertEquals("occupied",Files.readString(path));
+    }
+    @Test void preferencesNeverReadMigrateOrRewriteTheProgressFile() throws Exception {
+        String future="{\"schemaVersion\":99,\"campaign\":\"preserve\"}";
+        Files.writeString(directory.resolve("stats.json"),future);
+        SettingsStore store=new SettingsStore(directory);store.saveSettings();
+        assertEquals(future,Files.readString(directory.resolve("stats.json")));
+        assertEquals("",store.warning());
     }
 }

@@ -196,11 +196,11 @@ class CombatSystemTest {
         session.vehicles.forEach(v->v.hp=200);
         for (int i = 1; i < 5; i++) combat.queueDamage(i, 0, 200, "machine-gun", i);
         combat.resolveDamage(world);
-        session.finishTick();
+        game.wreckriff.simulation.MatchRuntime.finishTick(session);
         assertEquals(MatchSession.Outcome.VICTORY, session.outcome);
         combat.queueDamage(0, 1, 999, "power", 1000);
         combat.resolveDamage(world);
-        session.finishTick();
+        game.wreckriff.simulation.MatchRuntime.finishTick(session);
         assertEquals(MatchSession.Outcome.VICTORY, session.outcome);
     }
 
@@ -398,7 +398,7 @@ class CombatSystemTest {
         if (reversed) Collections.reverse(targets);
         for (int id : targets) combat.queueDamage(id, (id + 1) % 5, 250, "power", id + 100);
         combat.resolveDamage(world);
-        session.finishTick();
+        game.wreckriff.simulation.MatchRuntime.finishTick(session);
         assertEquals(5, count(combat.drainEvents(), GameEvent.Type.DESTROYED));
         return session.vehicles.stream().map(v -> v.damageDealt).toList();
     }
@@ -428,7 +428,7 @@ class CombatSystemTest {
         combat.beginTick(Map.of(0, command), world);
         combat.advanceProjectiles(world);
         combat.resolveDamage(world);
-        session.finishTick();
+        game.wreckriff.simulation.MatchRuntime.finishTick(session);
     }
 
     private static long count(List<GameEvent> events, GameEvent.Type type) {

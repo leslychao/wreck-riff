@@ -23,6 +23,8 @@ import game.wreckriff.input.*;
 import game.wreckriff.presentation.*;
 import game.wreckriff.simulation.*;
 import game.wreckriff.ui.GameUi;
+import game.wreckriff.ui.EnemyHealthBars;
+import game.wreckriff.ui.EnemyHealthBarProjection;
 import game.wreckriff.vehicle.VehicleController;
 import java.io.IOException;
 import java.nio.file.*;
@@ -34,6 +36,8 @@ import static game.wreckriff.app.ScreenFlow.Screen;
 public final class GameApplication extends SimpleApplication {
     private final Main.Options options;
     private final SettingsStore store;
+    private final ProgressStore progress;
+    private ProgressStore.Attempt attempt;
     private final ScreenFlow flow=new ScreenFlow();
     private final Node matchNode=new Node("match"),menuNode=new Node("menu-scene");
     private final Map<Integer,Node> vehicleModels=new HashMap<>();
@@ -41,6 +45,8 @@ public final class GameApplication extends SimpleApplication {
     private final Map<Integer,VehicleController> drivers=new LinkedHashMap<>();
     private InputSystem input;
     private GameUi ui;
+    private EnemyHealthBars enemyHealthBars;
+    private final List<EnemyHealthBars.Marker> enemyHealthMarkers=new ArrayList<>();
     private AudioDirector audio;
     private PhysicsWorld world;
     private MatchSession session;
@@ -92,7 +98,12 @@ public final class GameApplication extends SimpleApplication {
     private float pauseMusicSeconds;
     private boolean pauseChecked,diagnosticEnding,initialized;
 
-    public GameApplication(Main.Options options,SettingsStore store) { this.options=options; this.store=store; }
+    public GameApplication(Main.Options options,SettingsStore store) {
+        this.options=options;this.store=store;
+        Path progressDirectory=options.dev()&&!options.automated()
+                ?store.directory().resolve("diagnostics").resolve("interactive-progress"):store.directory();
+        progress=new ProgressStore(progressDirectory);
+    }
     @Override public void simpleInitApp() {
         if(options.automated()) {
             long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
@@ -124,6 +135,8 @@ public final class GameApplication extends SimpleApplication {
                 diagnostic.write(store.directory(),"RUNNING");
             }
             ui=new GameUi(assetManager,guiNode); ui.resize(cam.getWidth(),cam.getHeight());
+            enemyHealthBars=new EnemyHealthBars(assetManager,guiNode);
+            enemyHealthBars.setVisible(false);
             input=new InputSystem(inputManager,store::settings,GamepadProfile.load(store.directory())); input.onKey(this::key); input.onUi(this::uiAction);
             input.onDisconnect(()->pause("Controller disconnected. Reconnect or use the keyboard."));
             audio=new AudioDirector(assetManager,audioRenderer,listener,rootNode);
@@ -135,6 +148,7 @@ public final class GameApplication extends SimpleApplication {
             flow.onChanged(this::screenChanged); flow.menu();
             initialized=true;
             if(!store.warning().isEmpty()) notice(store.warning());
+            if(!progress.warning().isEmpty()) notice(progress.warning());
             if(!store.bindingWarning().isEmpty()) notice(store.bindingWarning());
             if(audioRenderer==null) notice("Audio unavailable / disabled. Music acceptance remains pending.");
         } catch(Exception e) { fail(e); }
@@ -167,7 +181,8 @@ public final class GameApplication extends SimpleApplication {
             try {
                 cleanupMatch();
                 long seed=options.fixedSeed()?options.seed():System.nanoTime();
-                session=new MatchSession(seed,matchRules.durationSeconds()); report=new SessionReport();
+                attempt=progress.beginAttempt(ProgressStore.LEGACY_ARENA,ProgressStore.Mode.LEGACY,false);
+                session=new MatchSession(seed,matchRules.durationSeconds(),Configs.load("combat",CombatRules.class),attempt.id()); report=new SessionReport();
                 world=new PhysicsWorld(vehicleRules);
                 arena=ArenaDefinition.load(); content=new ArenaFactory(assetManager).build(arena);
                 if(options.automated()&&!options.showcase()) visualTour=new DiagnosticCameraTour(arena);
@@ -255,6 +270,7 @@ public final class GameApplication extends SimpleApplication {
                 if(showcaseText!=null)showcaseText.setText(showcase.label());
                 if(shot!=null)capture(shot);
             }
+            updateEnemyHealthBars(drawable);
             if(options.automated()) advanceDiagnostic(drawable);
         } catch(Exception e) { fail(e); }
     }
@@ -274,7 +290,10 @@ public final class GameApplication extends SimpleApplication {
         combatVisuals.accept(events);
         if(session.outcome!=MatchSession.Outcome.NONE) {
             diagnosticResults++;
-            store.record(session); writeReport(); audio.stopMatch();
+            var playerState=session.vehicle(0);
+            progress.record(new ProgressStore.Result(attempt,ProgressStore.Outcome.valueOf(session.outcome.name()),
+                    playerState.damageDealt,playerState.eliminations,session.activeTicks,false));
+            writeReport(); audio.stopMatch();
             audio.accept(events);
             flow.results();
         } else audio.accept(events);
@@ -300,8 +319,9 @@ public final class GameApplication extends SimpleApplication {
         if(advancing) {
             combatVisuals.update(combat.projectiles(),combat.mines(),combat.fireZones(),combat.ballisticWarnings(),session,dt);
             var hazard=arenaSystems.hazardPhase();
-            audio.hazard(hazard==ArenaSystems.HazardPhase.WARNING,hazard==ArenaSystems.HazardPhase.ACTIVE,
-                    new Vector3f((arena.hazard().minX()+arena.hazard().maxX())/2,0.2f,(arena.hazard().minZ()+arena.hazard().maxZ())/2));
+            Vector3f hazardPosition=arena.hazards().stream().filter(h->arenaSystems.hazardPhase(h.id())!=ArenaSystems.HazardPhase.OFF)
+                    .map(h->h.center().vector()).findFirst().orElseGet(()->world.position(0));
+            audio.hazard(hazard==ArenaSystems.HazardPhase.WARNING,hazard==ArenaSystems.HazardPhase.ACTIVE,hazardPosition);
             audio.update(session,world,dt);
         } else if(results) {
             combatVisuals.update(List.of(),List.of(),List.of(),List.of(),null,dt);
@@ -313,6 +333,23 @@ public final class GameApplication extends SimpleApplication {
         }
         chase.update(world,0,alpha,dt,rearView,drivers.get(0).turboActive(),store.settings().shake);
         updateHud();
+    }
+    /** Runs after camera overrides, including rear view and diagnostic shots. */
+    private void updateEnemyHealthBars(boolean drawable) {
+        boolean visible=drawable&&world!=null&&session!=null&&flow.screen()==Screen.RUNNING;
+        enemyHealthBars.setVisible(visible);
+        if(!visible)return;
+        enemyHealthBars.resize(cam.getWidth(),cam.getHeight(),1);
+        enemyHealthMarkers.clear();
+        for(var state:session.vehicles) {
+            if(state.player||!state.alive()||!world.containsVehicle(state.id))continue;
+            Node model=vehicleModels.get(state.id);
+            if(model==null||model.getParent()==null)continue;
+            var pose=new PhysicsWorld.Pose(model.getLocalTranslation(),model.getLocalRotation());
+            var marker=EnemyHealthBarProjection.project(cam,world,state.id,pose,state.hp,state.maximumHp,world.profile(state.id));
+            if(marker!=null)enemyHealthMarkers.add(marker);
+        }
+        enemyHealthBars.update(enemyHealthMarkers);
     }
     private void createNavigationLines() {
         navNode=new Node("navigation-debug"); matchNode.attachChild(navNode);
@@ -326,6 +363,7 @@ public final class GameApplication extends SimpleApplication {
     }
     private void screenChanged() {
         screenSince=elapsed;
+        if(enemyHealthBars!=null)enemyHealthBars.setVisible(flow.screen()==Screen.RUNNING);
         if(flow.screen()==Screen.RUNNING) message="";
         if(diagnostic!=null)diagnostic.transition(flow.screen().name(),elapsed);
         input.clear(); input.setGameplay(flow.screen()==Screen.RUNNING);
@@ -348,7 +386,7 @@ public final class GameApplication extends SimpleApplication {
                 ui.button("CREDITS & LICENSES",140,406,640,()->flow.open(Screen.CREDITS));
                 ui.button("QUIT",140,328,640,this::stop);
                 ui.text("ONE ARENA / FIVE MACHINES / NO SECOND CHANCES",144,245,18,GameUi.ACCENT);
-                ui.text("0.4.0  |  Local single-player  |  "+store.stats().completedMatches+" completed matches",144,196,18,GameUi.PAPER);
+                ui.text("0.4.0  |  Local single-player  |  "+progress.snapshot().stats().completedMatches()+" completed matches",144,196,18,GameUi.PAPER);
             }
             case LOADING -> { ui.title("TUNING IN","Loading Dead Air Yard..."); }
             case RUNNING -> createHud();
@@ -586,6 +624,8 @@ public final class GameApplication extends SimpleApplication {
         catch(IOException e) {Logger.getLogger(getClass().getName()).warning("Cannot write report: "+e.getMessage());}
     }
     private void cleanupMatch() {
+        if(enemyHealthBars!=null){enemyHealthBars.clear();enemyHealthBars.setVisible(false);}
+        enemyHealthMarkers.clear();
         if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
         if(audio!=null)audio.stopMatch(); if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
@@ -610,6 +650,7 @@ public final class GameApplication extends SimpleApplication {
         try {
             if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
             writeReport();cleanupMatch();if(audio!=null)audio.close();if(input!=null)input.close();
+            if(enemyHealthBars!=null)enemyHealthBars.close();
             super.destroy();
             diagnosticCompletion.shutdownCompleted();
         } catch(RuntimeException | Error failure) {
@@ -617,6 +658,11 @@ public final class GameApplication extends SimpleApplication {
             if(diagnostic!=null)diagnostic.error("Shutdown failed: "+failure);
             throw failure;
         } finally {
+            progress.close();
+            if(progress.savePending()) {
+                Logger.getLogger(getClass().getName()).warning(progress.warning());
+                if(diagnostic!=null) {diagnostic.error("Progress did not flush during shutdown: "+progress.warning());diagnosticCompletion.shutdownFailed();}
+            }
             if(fileLog!=null){Logger.getLogger("").removeHandler(fileLog);fileLog.close();}
             if(warningLog!=null)Logger.getLogger("").removeHandler(warningLog);
             if(options.automated()) {

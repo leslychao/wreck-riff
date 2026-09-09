@@ -37,7 +37,8 @@ public final class AudioDirector implements AutoCloseable {
     private final Deque<DelayedImpact> delayedImpacts=new ArrayDeque<>();
     private final List<Voice> voices = new ArrayList<>();
     private final Map<String,Voice> loops = new HashMap<>();
-    private final float[] priorSpeed = new float[5], priorTurbo = new float[5], enginePitch = new float[5];
+    private static final class Motion { float priorSpeed,priorTurbo=100,enginePitch=1; }
+    private final Map<Integer,Motion> motion=new HashMap<>();
     private AudioNode music;
     private AudioCapture capture;
     private double impactClock;
@@ -51,8 +52,6 @@ public final class AudioDirector implements AutoCloseable {
     AudioDirector(AssetManager assets, AudioRenderer renderer, Listener listener, Node parent, AudioConfig config) {
         this.renderer=renderer; this.listener=listener; this.config=config;
         cueBanks=config.cueBanks();
-        Arrays.fill(enginePitch, 1);
-        Arrays.fill(priorTurbo, 100);
         parent.attachChild(audioRoot);
         if (renderer == null) return; // Application emits the explicit no-device/no-audio diagnostic.
         try {
@@ -88,7 +87,7 @@ public final class AudioDirector implements AutoCloseable {
         }
         sessionId=null; matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;
         nextTake.clear(); acceptedEvents.clear(); delayedImpacts.clear();impactClock=0;
-        Arrays.fill(priorSpeed, 0); Arrays.fill(priorTurbo, 100); Arrays.fill(enginePitch, 1);
+        motion.clear();
     }
 
     public void update(MatchSession session, WorldQuery world, float dt) {
@@ -116,26 +115,27 @@ public final class AudioDirector implements AutoCloseable {
             }
             Vector3f velocity=world.velocity(id), position=world.position(id);
             float speed=velocity.length();
-            float acceleration=dt > 0 ? Math.max(0, (speed-priorSpeed[id])/dt) : 0;
+            Motion previous=motion.computeIfAbsent(id,key->new Motion());
+            float acceleration=dt > 0 ? Math.max(0, (speed-previous.priorSpeed)/dt) : 0;
             float blend=clamp(speed/23f, 0, 1);
             float targetPitch=clamp(.82f+speed*.019f+Math.min(acceleration,12)*.012f,
                     config.enginePitchMin(), config.enginePitchMax());
-            enginePitch[id]+=(targetPitch-enginePitch[id])*(1-(float)Math.exp(-dt/config.engineSmoothingSeconds()));
+            previous.enginePitch+=(targetPitch-previous.enginePitch)*(1-(float)Math.exp(-dt/config.engineSmoothingSeconds()));
             float own=vehicle.player ? .84f : .49f;
             loop("idle-"+id,"engine-idle",Group.ENGINE,vehicle.player?72:22,position,velocity,
-                    own*(1-blend*.85f),enginePitch[id]);
+                    own*(1-blend*.85f),previous.enginePitch);
             loop("drive-"+id,"engine-drive",Group.ENGINE,vehicle.player?72:22,position,velocity,
-                    own*blend,clamp(enginePitch[id]*.87f,.5f,2));
+                    own*blend,clamp(previous.enginePitch*.87f,.5f,2));
             Vector3f right=world.rotation(id).mult(Vector3f.UNIT_X);
             float lateral=Math.abs(velocity.dot(right));
             // Grounded lateral movement, not a key state, determines tyre noise.
             float slipping=world.grounded(id)?clamp((lateral-1.8f)/8f,0,1):0;
             loop("slip-"+id,"tyre-slip",Group.ENGINE,vehicle.player?55:12,position,velocity,
                     slipping*own*.8f,clamp(.87f+lateral*.015f,.5f,2));
-            boolean boosting=vehicle.turbo < priorTurbo[id]-.01f;
+            boolean boosting=vehicle.turbo < previous.priorTurbo-.01f;
             loop("turbo-"+id,"turbo-loop",Group.ENGINE,vehicle.player?68:25,position,velocity,
                     boosting?own*.9f:0,1);
-            priorSpeed[id]=speed; priorTurbo[id]=vehicle.turbo;
+            previous.priorSpeed=speed; previous.priorTurbo=vehicle.turbo;
             if (vehicle.player && vehicle.hp<=vehicle.maximumHp*.25f && lowHpClock<=0) {
                 shot("low-hp",Group.THREAT,100,null,.65f,1); lowHpClock=3;
             }

@@ -1,0 +1,2631 @@
+{
+  "schemaVersion": 2,
+  "id": "neon_zero",
+  "metadata": {
+    "title": "НЕОН-РАЙОН ZERO",
+    "theme": "NEON",
+    "normalEnemies": 7,
+    "durationSeconds": 0,
+    "recoveryCost": 0,
+    "introduction": "Два этажа. Два подброса. Одна победа.",
+    "music": "audio/campaign/neon_zero-normal.ogg",
+    "bossMusic": "audio/campaign/neon_zero-boss.ogg"
+  },
+  "bounds": {
+    "minX": 0,
+    "maxX": 280,
+    "minZ": 0,
+    "maxZ": 240,
+    "recoveryY": -12
+  },
+  "boxes": [
+    {
+      "id": "boundary-west",
+      "center": {
+        "x": -0.4,
+        "y": 1.5,
+        "z": 120.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 3,
+        "z": 240
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "boundary-east",
+      "center": {
+        "x": 280.4,
+        "y": 1.5,
+        "z": 120.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 3,
+        "z": 240
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "boundary-south",
+      "center": {
+        "x": 140.0,
+        "y": 1.5,
+        "z": -0.4
+      },
+      "size": {
+        "x": 280,
+        "y": 3,
+        "z": 0.8
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "boundary-north",
+      "center": {
+        "x": 140.0,
+        "y": 1.5,
+        "z": 240.4
+      },
+      "size": {
+        "x": 280,
+        "y": 3,
+        "z": 0.8
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "floor",
+      "center": {
+        "x": 140.0,
+        "y": -0.3,
+        "z": 120.0
+      },
+      "size": {
+        "x": 280,
+        "y": 0.6,
+        "z": 240
+      },
+      "material": "asphalt",
+      "collision": true
+    },
+    {
+      "id": "transport-plaza",
+      "center": {
+        "x": 140.0,
+        "y": 7.7,
+        "z": 166.0
+      },
+      "size": {
+        "x": 152,
+        "y": 0.6,
+        "z": 116
+      },
+      "material": "asphalt",
+      "collision": true
+    },
+    {
+      "id": "upper-service-block",
+      "center": {
+        "x": 138.0,
+        "y": 10.0,
+        "z": 164.0
+      },
+      "size": {
+        "x": 28,
+        "y": 4,
+        "z": 32
+      },
+      "material": "blue",
+      "collision": true
+    },
+    {
+      "id": "service-base",
+      "center": {
+        "x": 138.0,
+        "y": 3.7,
+        "z": 164.0
+      },
+      "size": {
+        "x": 24,
+        "y": 7.4,
+        "z": 32
+      },
+      "material": "concrete",
+      "collision": true
+    },
+    {
+      "id": "shop-west",
+      "center": {
+        "x": 77.0,
+        "y": 3.0,
+        "z": 51.0
+      },
+      "size": {
+        "x": 38,
+        "y": 6,
+        "z": 18
+      },
+      "material": "blue",
+      "collision": true
+    },
+    {
+      "id": "shop-east",
+      "center": {
+        "x": 199.0,
+        "y": 3.0,
+        "z": 47.0
+      },
+      "size": {
+        "x": 30,
+        "y": 6,
+        "z": 18
+      },
+      "material": "black",
+      "collision": true
+    },
+    {
+      "id": "lower-west-island",
+      "center": {
+        "x": 78.0,
+        "y": 2.5,
+        "z": 161.0
+      },
+      "size": {
+        "x": 24,
+        "y": 5,
+        "z": 18
+      },
+      "material": "blue",
+      "collision": true
+    },
+    {
+      "id": "plaza-west-0",
+      "center": {
+        "x": 63.7,
+        "y": 8.6,
+        "z": 112.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.2,
+        "z": 8
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-west-1",
+      "center": {
+        "x": 63.7,
+        "y": 8.6,
+        "z": 182.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.2,
+        "z": 84
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-east-0",
+      "center": {
+        "x": 216.3,
+        "y": 8.6,
+        "z": 130.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.2,
+        "z": 44
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-east-1",
+      "center": {
+        "x": 216.3,
+        "y": 8.6,
+        "z": 182.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.2,
+        "z": 12
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-east-2",
+      "center": {
+        "x": 216.3,
+        "y": 8.6,
+        "z": 218.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.2,
+        "z": 12
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-south-0",
+      "center": {
+        "x": 96.0,
+        "y": 8.6,
+        "z": 107.7
+      },
+      "size": {
+        "x": 64,
+        "y": 1.2,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-south-1",
+      "center": {
+        "x": 184.0,
+        "y": 8.6,
+        "z": 107.7
+      },
+      "size": {
+        "x": 64,
+        "y": 1.2,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "plaza-north-0",
+      "center": {
+        "x": 140.0,
+        "y": 8.6,
+        "z": 224.3
+      },
+      "size": {
+        "x": 152,
+        "y": 1.2,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "short-cut-panel",
+      "center": {
+        "x": 78,
+        "y": 2.5,
+        "z": 90
+      },
+      "size": {
+        "x": 1,
+        "y": 5,
+        "z": 16
+      },
+      "material": "yellow",
+      "collision": true
+    },
+    {
+      "id": "secret-gate-panel",
+      "center": {
+        "x": 226,
+        "y": 2.5,
+        "z": 104
+      },
+      "size": {
+        "x": 12,
+        "y": 5,
+        "z": 1
+      },
+      "material": "yellow",
+      "collision": true
+    },
+    {
+      "id": "secret-front-left",
+      "center": {
+        "x": 219.0,
+        "y": 3.0,
+        "z": 104.0
+      },
+      "size": {
+        "x": 2,
+        "y": 6,
+        "z": 0.8000000000000114
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "secret-front-right",
+      "center": {
+        "x": 242.0,
+        "y": 3.0,
+        "z": 104.0
+      },
+      "size": {
+        "x": 20,
+        "y": 6,
+        "z": 0.8000000000000114
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "secret-back-left",
+      "center": {
+        "x": 228.0,
+        "y": 3.0,
+        "z": 132.0
+      },
+      "size": {
+        "x": 20,
+        "y": 6,
+        "z": 0.8000000000000114
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "secret-back-right",
+      "center": {
+        "x": 251.0,
+        "y": 3.0,
+        "z": 132.0
+      },
+      "size": {
+        "x": 2,
+        "y": 6,
+        "z": 0.8000000000000114
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "secret-west-wall",
+      "center": {
+        "x": 218.0,
+        "y": 3.0,
+        "z": 118.0
+      },
+      "size": {
+        "x": 0.8000000000000114,
+        "y": 6,
+        "z": 28
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "secret-east-wall",
+      "center": {
+        "x": 252.0,
+        "y": 3.0,
+        "z": 118.0
+      },
+      "size": {
+        "x": 0.8000000000000114,
+        "y": 6,
+        "z": 28
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "secret-canopy",
+      "center": {
+        "x": 235.0,
+        "y": 7.1,
+        "z": 118.0
+      },
+      "size": {
+        "x": 34,
+        "y": 0.6,
+        "z": 28
+      },
+      "material": "rust",
+      "collision": true
+    },
+    {
+      "id": "traffic-west-stop",
+      "center": {
+        "x": 117.0,
+        "y": 0.6,
+        "z": 71.0
+      },
+      "size": {
+        "x": 2,
+        "y": 1.2,
+        "z": 18
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "traffic-east-stop",
+      "center": {
+        "x": 163.0,
+        "y": 0.6,
+        "z": 71.0
+      },
+      "size": {
+        "x": 2,
+        "y": 1.2,
+        "z": 18
+      },
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "city-barrier-west-panel",
+      "center": {
+        "x": 104,
+        "y": 1,
+        "z": 130
+      },
+      "size": {
+        "x": 1,
+        "y": 2,
+        "z": 16
+      },
+      "material": "yellow",
+      "collision": false
+    },
+    {
+      "id": "city-barrier-east-panel",
+      "center": {
+        "x": 176,
+        "y": 1,
+        "z": 130
+      },
+      "size": {
+        "x": 1,
+        "y": 2,
+        "z": 16
+      },
+      "material": "yellow",
+      "collision": false
+    }
+  ],
+  "ramps": [
+    {
+      "id": "upper-ramp",
+      "minX": 128,
+      "maxX": 152,
+      "minZ": 42,
+      "maxZ": 108,
+      "startY": 0,
+      "endY": 8,
+      "bottomY": -0.6,
+      "axis": "Z",
+      "material": "concrete"
+    }
+  ],
+  "spawns": [
+    {
+      "id": 0,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 24
+      },
+      "yawDegrees": 45
+    },
+    {
+      "id": 1,
+      "position": {
+        "x": 252,
+        "y": 0,
+        "z": 24
+      },
+      "yawDegrees": -49.399
+    },
+    {
+      "id": 2,
+      "position": {
+        "x": 250,
+        "y": 0,
+        "z": 94
+      },
+      "yawDegrees": -76.701
+    },
+    {
+      "id": 3,
+      "position": {
+        "x": 250,
+        "y": 0,
+        "z": 220
+      },
+      "yawDegrees": -132.274
+    },
+    {
+      "id": 4,
+      "position": {
+        "x": 180,
+        "y": 0,
+        "z": 224
+      },
+      "yawDegrees": -158.962
+    },
+    {
+      "id": 5,
+      "position": {
+        "x": 92,
+        "y": 0,
+        "z": 224
+      },
+      "yawDegrees": 155.225
+    },
+    {
+      "id": 6,
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 208
+      },
+      "yawDegrees": 128.157
+    },
+    {
+      "id": 7,
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 82
+      },
+      "yawDegrees": 71.259
+    }
+  ],
+  "pickups": [
+    {
+      "id": "W1",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 44,
+        "y": 0,
+        "z": 48
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W2",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 120,
+        "y": 0,
+        "z": 28
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W3",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 228,
+        "y": 0,
+        "z": 48
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W4",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 248,
+        "y": 0,
+        "z": 142
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W5",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 174,
+        "y": 0,
+        "z": 232
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W6",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 34,
+        "y": 0,
+        "z": 188
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W7",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 82,
+        "y": 8,
+        "z": 192
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "W8",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 140,
+        "y": 8,
+        "z": 202
+      },
+      "respawnTicks": 5400
+    },
+    {
+      "id": "R1",
+      "type": "REPAIR",
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 224
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "R2",
+      "type": "REPAIR",
+      "position": {
+        "x": 252,
+        "y": 0,
+        "z": 28
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "M1",
+      "type": "TURBO_CELL",
+      "position": {
+        "x": 192,
+        "y": 0,
+        "z": 96
+      },
+      "respawnTicks": 3600
+    },
+    {
+      "id": "S1",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 232,
+        "y": 0,
+        "z": 118
+      },
+      "respawnTicks": 7200
+    }
+  ],
+  "hazards": [
+    {
+      "id": "traffic-west",
+      "type": "TRAFFIC",
+      "sector": "traffic",
+      "minX": 14.0,
+      "maxX": 118.0,
+      "minZ": 62.0,
+      "maxZ": 80.0,
+      "minY": -0.1,
+      "maxY": 4,
+      "offTicks": 1680,
+      "warningTicks": 180,
+      "activeTicks": 480,
+      "damageIntervalTicks": 180,
+      "damage": 120
+    },
+    {
+      "id": "traffic-east",
+      "type": "TRAFFIC",
+      "sector": "traffic",
+      "minX": 166.0,
+      "maxX": 270.0,
+      "minZ": 62.0,
+      "maxZ": 80.0,
+      "minY": -0.1,
+      "maxY": 4,
+      "offTicks": 1680,
+      "warningTicks": 180,
+      "activeTicks": 480,
+      "damageIntervalTicks": 180,
+      "damage": 120
+    },
+    {
+      "id": "electric-strip",
+      "type": "ELECTRIC",
+      "sector": "east-electric",
+      "minX": 221.0,
+      "maxX": 231.0,
+      "minZ": 81.0,
+      "maxZ": 103.0,
+      "minY": -0.1,
+      "maxY": 6,
+      "offTicks": 1680,
+      "warningTicks": 180,
+      "activeTicks": 300,
+      "damageIntervalTicks": 120,
+      "damage": 32
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 24
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 1,
+      "position": {
+        "x": 140.0,
+        "y": 0,
+        "z": 24
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 2,
+      "position": {
+        "x": 266,
+        "y": 0,
+        "z": 24
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 3,
+      "position": {
+        "x": 266,
+        "y": 0,
+        "z": 90
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 4,
+      "position": {
+        "x": 266,
+        "y": 0,
+        "z": 128
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 5,
+      "position": {
+        "x": 266,
+        "y": 0,
+        "z": 164
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 6,
+      "position": {
+        "x": 266,
+        "y": 0,
+        "z": 200
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 7,
+      "position": {
+        "x": 266,
+        "y": 0,
+        "z": 224
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 8,
+      "position": {
+        "x": 140.0,
+        "y": 0,
+        "z": 224
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 9,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 224
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 10,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 200
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 11,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 164
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 12,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 128
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 13,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 90
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 14,
+      "position": {
+        "x": 88,
+        "y": 8,
+        "z": 128
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 15,
+      "position": {
+        "x": 140,
+        "y": 8,
+        "z": 128
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 16,
+      "position": {
+        "x": 192,
+        "y": 8,
+        "z": 128
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 17,
+      "position": {
+        "x": 192,
+        "y": 8,
+        "z": 164
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 18,
+      "position": {
+        "x": 192,
+        "y": 8,
+        "z": 200
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 19,
+      "position": {
+        "x": 140,
+        "y": 8,
+        "z": 200
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 20,
+      "position": {
+        "x": 88,
+        "y": 8,
+        "z": 200
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 21,
+      "position": {
+        "x": 16,
+        "y": 0,
+        "z": 128
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 22,
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 128
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 23,
+      "position": {
+        "x": 88,
+        "y": 8,
+        "z": 128
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 24,
+      "position": {
+        "x": 264,
+        "y": 0,
+        "z": 200
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 25,
+      "position": {
+        "x": 252,
+        "y": 0,
+        "z": 200
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 26,
+      "position": {
+        "x": 192,
+        "y": 8,
+        "z": 200
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 27,
+      "position": {
+        "x": 140.0,
+        "y": 0,
+        "z": 32
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 28,
+      "position": {
+        "x": 140.0,
+        "y": 0,
+        "z": 42.0
+      },
+      "surfaceId": "upper-ramp"
+    },
+    {
+      "id": 29,
+      "position": {
+        "x": 140.0,
+        "y": 2,
+        "z": 58.5
+      },
+      "surfaceId": "upper-ramp"
+    },
+    {
+      "id": 30,
+      "position": {
+        "x": 140.0,
+        "y": 4,
+        "z": 75.0
+      },
+      "surfaceId": "upper-ramp"
+    },
+    {
+      "id": 31,
+      "position": {
+        "x": 140.0,
+        "y": 6,
+        "z": 91.5
+      },
+      "surfaceId": "upper-ramp"
+    },
+    {
+      "id": 32,
+      "position": {
+        "x": 140.0,
+        "y": 8,
+        "z": 108.0
+      },
+      "surfaceId": "upper-ramp"
+    },
+    {
+      "id": 33,
+      "position": {
+        "x": 140.0,
+        "y": 8,
+        "z": 120
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 34,
+      "position": {
+        "x": 216,
+        "y": 8,
+        "z": 164
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 35,
+      "position": {
+        "x": 250,
+        "y": 0,
+        "z": 164
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 36,
+      "position": {
+        "x": 226,
+        "y": 0,
+        "z": 96
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 37,
+      "position": {
+        "x": 244,
+        "y": 0,
+        "z": 140
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 38,
+      "position": {
+        "x": 226,
+        "y": 0,
+        "z": 112
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 39,
+      "position": {
+        "x": 244,
+        "y": 0,
+        "z": 124
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 40,
+      "position": {
+        "x": 44,
+        "y": 0,
+        "z": 48
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 41,
+      "position": {
+        "x": 120,
+        "y": 0,
+        "z": 28
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 42,
+      "position": {
+        "x": 228,
+        "y": 0,
+        "z": 48
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 43,
+      "position": {
+        "x": 248,
+        "y": 0,
+        "z": 142
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 44,
+      "position": {
+        "x": 174,
+        "y": 0,
+        "z": 232
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 45,
+      "position": {
+        "x": 34,
+        "y": 0,
+        "z": 188
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 46,
+      "position": {
+        "x": 82,
+        "y": 8,
+        "z": 192
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 47,
+      "position": {
+        "x": 140,
+        "y": 8,
+        "z": 202
+      },
+      "surfaceId": "transport-plaza"
+    },
+    {
+      "id": 48,
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 224
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 49,
+      "position": {
+        "x": 252,
+        "y": 0,
+        "z": 28
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 50,
+      "position": {
+        "x": 192,
+        "y": 0,
+        "z": 96
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 51,
+      "position": {
+        "x": 232,
+        "y": 0,
+        "z": 118
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 52,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 24
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 53,
+      "position": {
+        "x": 252,
+        "y": 0,
+        "z": 24
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 54,
+      "position": {
+        "x": 250,
+        "y": 0,
+        "z": 94
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 55,
+      "position": {
+        "x": 250,
+        "y": 0,
+        "z": 220
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 56,
+      "position": {
+        "x": 180,
+        "y": 0,
+        "z": 224
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 57,
+      "position": {
+        "x": 92,
+        "y": 0,
+        "z": 224
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 58,
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 208
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 59,
+      "position": {
+        "x": 28,
+        "y": 0,
+        "z": 82
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 60,
+      "position": {
+        "x": 64,
+        "y": 0,
+        "z": 90
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 61,
+      "position": {
+        "x": 92,
+        "y": 0,
+        "z": 90
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 62,
+      "position": {
+        "x": 90,
+        "y": 0,
+        "z": 130
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 63,
+      "position": {
+        "x": 118,
+        "y": 0,
+        "z": 130
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 64,
+      "position": {
+        "x": 162,
+        "y": 0,
+        "z": 130
+      },
+      "surfaceId": "floor"
+    },
+    {
+      "id": 65,
+      "position": {
+        "x": 190,
+        "y": 0,
+        "z": 130
+      },
+      "surfaceId": "floor"
+    }
+  ],
+  "edges": [
+    {
+      "id": "road-south-west-south-mid",
+      "to": 1,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 0
+    },
+    {
+      "id": "road-south-mid-south-east",
+      "to": 2,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 1
+    },
+    {
+      "id": "road-south-east-east-0",
+      "to": 3,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 2
+    },
+    {
+      "id": "road-east-0-east-1",
+      "to": 4,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 3
+    },
+    {
+      "id": "road-east-1-east-2",
+      "to": 5,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 4
+    },
+    {
+      "id": "road-east-2-east-3",
+      "to": 6,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 5
+    },
+    {
+      "id": "road-east-3-north-east",
+      "to": 7,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 6
+    },
+    {
+      "id": "road-north-east-north-mid",
+      "to": 8,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 7
+    },
+    {
+      "id": "road-north-mid-north-west",
+      "to": 9,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 8
+    },
+    {
+      "id": "road-north-west-west-3",
+      "to": 10,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 9
+    },
+    {
+      "id": "road-west-3-west-2",
+      "to": 11,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 10
+    },
+    {
+      "id": "road-west-2-west-1",
+      "to": 12,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 11
+    },
+    {
+      "id": "road-west-1-west-0",
+      "to": 13,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 12
+    },
+    {
+      "id": "road-west-0-south-west",
+      "to": 0,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 13
+    },
+    {
+      "id": "road-u-sw-u-sm",
+      "to": 15,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 14
+    },
+    {
+      "id": "road-u-sm-u-se",
+      "to": 16,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 15
+    },
+    {
+      "id": "road-u-se-u-east-mid",
+      "to": 17,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 16
+    },
+    {
+      "id": "road-u-east-mid-u-ne",
+      "to": 18,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 17
+    },
+    {
+      "id": "road-u-ne-u-nm",
+      "to": 19,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 18
+    },
+    {
+      "id": "road-u-nm-u-nw",
+      "to": 20,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 19
+    },
+    {
+      "id": "road-u-nw-u-sw",
+      "to": 14,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 20
+    },
+    {
+      "id": "road-launch-a-entry-west-1",
+      "to": 12,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 21
+    },
+    {
+      "id": "road-launch-a-entry-west-2",
+      "to": 11,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 21
+    },
+    {
+      "id": "road-launch-a-entry-launch-a-source",
+      "to": 22,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 21
+    },
+    {
+      "id": "road-launch-a-landing-u-sw",
+      "to": 14,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 23
+    },
+    {
+      "id": "road-launch-a-landing-u-sm",
+      "to": 15,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 23
+    },
+    {
+      "id": "launch-launch-a-source-launch-a-landing",
+      "to": 23,
+      "width": 10,
+      "clearance": 30,
+      "type": "LAUNCH",
+      "objectId": "launch-a",
+      "bidirectional": false,
+      "from": 22
+    },
+    {
+      "id": "road-launch-b-entry-east-3",
+      "to": 6,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 24
+    },
+    {
+      "id": "road-launch-b-entry-north-east",
+      "to": 7,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 24
+    },
+    {
+      "id": "road-launch-b-entry-launch-b-source",
+      "to": 25,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 24
+    },
+    {
+      "id": "road-launch-b-landing-u-ne",
+      "to": 18,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 26
+    },
+    {
+      "id": "road-launch-b-landing-u-east-mid",
+      "to": 17,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 26
+    },
+    {
+      "id": "launch-launch-b-source-launch-b-landing",
+      "to": 26,
+      "width": 10,
+      "clearance": 30,
+      "type": "LAUNCH",
+      "objectId": "launch-b",
+      "bidirectional": false,
+      "from": 25
+    },
+    {
+      "id": "road-ramp-approach-south-mid",
+      "to": 1,
+      "width": 20,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 27
+    },
+    {
+      "id": "road-ramp-approach-south-west",
+      "to": 0,
+      "width": 20,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 27
+    },
+    {
+      "id": "ramp-ramp-approach-ramp-0",
+      "to": 28,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "RAMP",
+      "objectId": "upper-ramp",
+      "bidirectional": true,
+      "from": 27
+    },
+    {
+      "id": "ramp-ramp-0-ramp-1",
+      "to": 29,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "RAMP",
+      "objectId": "upper-ramp",
+      "bidirectional": true,
+      "from": 28
+    },
+    {
+      "id": "ramp-ramp-1-ramp-2",
+      "to": 30,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "RAMP",
+      "objectId": "upper-ramp",
+      "bidirectional": true,
+      "from": 29
+    },
+    {
+      "id": "ramp-ramp-2-ramp-3",
+      "to": 31,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "RAMP",
+      "objectId": "upper-ramp",
+      "bidirectional": true,
+      "from": 30
+    },
+    {
+      "id": "ramp-ramp-3-ramp-4",
+      "to": 32,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "RAMP",
+      "objectId": "upper-ramp",
+      "bidirectional": true,
+      "from": 31
+    },
+    {
+      "id": "road-ramp-exit-u-sm",
+      "to": 15,
+      "width": 20,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 33
+    },
+    {
+      "id": "road-ramp-exit-ramp-4",
+      "to": 32,
+      "width": 20,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 33
+    },
+    {
+      "id": "ramp-ramp-4-ramp-exit",
+      "to": 33,
+      "width": 24,
+      "clearance": 7.35,
+      "type": "RAMP",
+      "objectId": "upper-ramp",
+      "bidirectional": true,
+      "from": 32
+    },
+    {
+      "id": "road-drop-upper-u-east-mid",
+      "to": 17,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 34
+    },
+    {
+      "id": "road-drop-upper-u-nm",
+      "to": 19,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 34
+    },
+    {
+      "id": "road-drop-lower-east-2",
+      "to": 5,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 35
+    },
+    {
+      "id": "road-drop-lower-launch-b-source",
+      "to": 25,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 35
+    },
+    {
+      "id": "drop-drop-upper-drop-lower",
+      "to": 35,
+      "width": 24,
+      "clearance": 30,
+      "type": "DROP",
+      "objectId": "drop",
+      "bidirectional": false,
+      "from": 34
+    },
+    {
+      "id": "road-secret-entry-road-east-0",
+      "to": 3,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 36
+    },
+    {
+      "id": "road-secret-entry-road-south-east",
+      "to": 2,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 36
+    },
+    {
+      "id": "road-secret-exit-road-drop-lower",
+      "to": 35,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 37
+    },
+    {
+      "id": "road-secret-exit-road-east-2",
+      "to": 5,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 37
+    },
+    {
+      "id": "openable-secret-entry-road-secret-entry-inside",
+      "to": 38,
+      "width": 12,
+      "clearance": 6.7,
+      "type": "OPENABLE",
+      "objectId": "secret-gate",
+      "bidirectional": true,
+      "from": 36
+    },
+    {
+      "id": "road-secret-entry-inside-secret-exit-inside",
+      "to": 39,
+      "width": 12,
+      "clearance": 6.7,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 38
+    },
+    {
+      "id": "road-secret-exit-inside-secret-exit-road",
+      "to": 37,
+      "width": 12,
+      "clearance": 6.7,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 39
+    },
+    {
+      "id": "road-pickup-W1-south-west",
+      "to": 0,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 40
+    },
+    {
+      "id": "road-pickup-W1-west-0",
+      "to": 13,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 40
+    },
+    {
+      "id": "road-pickup-W2-ramp-approach",
+      "to": 27,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 41
+    },
+    {
+      "id": "road-pickup-W2-south-mid",
+      "to": 1,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 41
+    },
+    {
+      "id": "road-pickup-W3-south-east",
+      "to": 2,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 42
+    },
+    {
+      "id": "road-pickup-W3-secret-entry-road",
+      "to": 36,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 42
+    },
+    {
+      "id": "road-pickup-W4-secret-exit-road",
+      "to": 37,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 43
+    },
+    {
+      "id": "road-pickup-W4-secret-exit-inside",
+      "to": 39,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 43
+    },
+    {
+      "id": "road-pickup-W5-north-mid",
+      "to": 8,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 44
+    },
+    {
+      "id": "road-pickup-W5-launch-b-source",
+      "to": 25,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 44
+    },
+    {
+      "id": "road-pickup-W6-west-3",
+      "to": 10,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 45
+    },
+    {
+      "id": "road-pickup-W6-west-2",
+      "to": 11,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 45
+    },
+    {
+      "id": "road-pickup-W7-u-nw",
+      "to": 20,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 46
+    },
+    {
+      "id": "road-pickup-W7-u-nm",
+      "to": 19,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 46
+    },
+    {
+      "id": "road-pickup-W8-u-nm",
+      "to": 19,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 47
+    },
+    {
+      "id": "road-pickup-W8-launch-b-landing",
+      "to": 26,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 47
+    },
+    {
+      "id": "road-pickup-R1-north-west",
+      "to": 9,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 48
+    },
+    {
+      "id": "road-pickup-R1-west-3",
+      "to": 10,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 48
+    },
+    {
+      "id": "road-pickup-R2-south-east",
+      "to": 2,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 49
+    },
+    {
+      "id": "road-pickup-R2-pickup-W3",
+      "to": 42,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 49
+    },
+    {
+      "id": "road-pickup-M1-secret-entry-road",
+      "to": 36,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 50
+    },
+    {
+      "id": "road-pickup-M1-pickup-W3",
+      "to": 42,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 50
+    },
+    {
+      "id": "road-pickup-S1-secret-entry-inside",
+      "to": 38,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 51
+    },
+    {
+      "id": "road-pickup-S1-secret-exit-inside",
+      "to": 39,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 51
+    },
+    {
+      "id": "road-spawn-0-south-west",
+      "to": 0,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 52
+    },
+    {
+      "id": "road-spawn-0-pickup-W1",
+      "to": 40,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 52
+    },
+    {
+      "id": "road-spawn-1-pickup-R2",
+      "to": 49,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 53
+    },
+    {
+      "id": "road-spawn-1-south-east",
+      "to": 2,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 53
+    },
+    {
+      "id": "road-spawn-2-east-0",
+      "to": 3,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 54
+    },
+    {
+      "id": "road-spawn-2-secret-entry-road",
+      "to": 36,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 54
+    },
+    {
+      "id": "road-spawn-3-north-east",
+      "to": 7,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 55
+    },
+    {
+      "id": "road-spawn-3-launch-b-source",
+      "to": 25,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 55
+    },
+    {
+      "id": "road-spawn-4-pickup-W5",
+      "to": 44,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 56
+    },
+    {
+      "id": "road-spawn-4-north-mid",
+      "to": 8,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 56
+    },
+    {
+      "id": "road-spawn-5-north-mid",
+      "to": 8,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 57
+    },
+    {
+      "id": "road-spawn-5-pickup-R1",
+      "to": 48,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 57
+    },
+    {
+      "id": "road-spawn-6-west-3",
+      "to": 10,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 58
+    },
+    {
+      "id": "road-spawn-6-pickup-R1",
+      "to": 48,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 58
+    },
+    {
+      "id": "road-spawn-7-west-0",
+      "to": 13,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 59
+    },
+    {
+      "id": "road-spawn-7-pickup-W1",
+      "to": 40,
+      "width": 6,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 59
+    },
+    {
+      "id": "road-short-cut-before-spawn-7",
+      "to": 59,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 60
+    },
+    {
+      "id": "road-short-cut-before-west-0",
+      "to": 13,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 60
+    },
+    {
+      "id": "road-short-cut-after-pickup-W2",
+      "to": 41,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 61
+    },
+    {
+      "id": "road-short-cut-after-pickup-W6",
+      "to": 45,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 61
+    },
+    {
+      "id": "openable-short-cut-before-short-cut-after",
+      "to": 61,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "OPENABLE",
+      "objectId": "short-cut",
+      "bidirectional": true,
+      "from": 60
+    },
+    {
+      "id": "road-city-barrier-west-before-short-cut-after",
+      "to": 61,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 62
+    },
+    {
+      "id": "road-city-barrier-west-before-short-cut-before",
+      "to": 60,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 62
+    },
+    {
+      "id": "road-city-barrier-west-after-city-barrier-west-before",
+      "to": 62,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 63
+    },
+    {
+      "id": "road-city-barrier-west-after-short-cut-after",
+      "to": 61,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 63
+    },
+    {
+      "id": "openable-city-barrier-west-before-city-barrier-west-after",
+      "to": 63,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "OPENABLE",
+      "objectId": "city-barrier-west",
+      "bidirectional": true,
+      "from": 62
+    },
+    {
+      "id": "road-city-barrier-east-before-city-barrier-west-after",
+      "to": 63,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 64
+    },
+    {
+      "id": "road-city-barrier-east-before-pickup-M1",
+      "to": 50,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 64
+    },
+    {
+      "id": "road-city-barrier-east-after-city-barrier-east-before",
+      "to": 64,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 65
+    },
+    {
+      "id": "road-city-barrier-east-after-pickup-M1",
+      "to": 50,
+      "width": 8,
+      "clearance": 7.35,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true,
+      "from": 65
+    },
+    {
+      "id": "openable-city-barrier-east-before-city-barrier-east-after",
+      "to": 65,
+      "width": 16,
+      "clearance": 7.35,
+      "type": "OPENABLE",
+      "objectId": "city-barrier-east",
+      "bidirectional": true,
+      "from": 64
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "floor",
+      "geometryId": "floor",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "transport-plaza",
+      "geometryId": "transport-plaza",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "upper-ramp",
+      "geometryId": "upper-ramp",
+      "level": 0,
+      "grip": 1
+    }
+  ],
+  "launchPads": [
+    {
+      "id": "launch-a",
+      "source": {
+        "x": 28,
+        "y": 0,
+        "z": 128
+      },
+      "target": {
+        "x": 88,
+        "y": 8,
+        "z": 128
+      },
+      "sourceSurfaceId": "floor",
+      "landingSurfaceId": "transport-plaza",
+      "length": 12,
+      "width": 10,
+      "maximumEntryAngle": 55,
+      "minimumSpeed": 2,
+      "compressionTicks": 12,
+      "flightSeconds": 2.1,
+      "rearmTicks": 120
+    },
+    {
+      "id": "launch-b",
+      "source": {
+        "x": 252,
+        "y": 0,
+        "z": 200
+      },
+      "target": {
+        "x": 192,
+        "y": 8,
+        "z": 200
+      },
+      "sourceSurfaceId": "floor",
+      "landingSurfaceId": "transport-plaza",
+      "length": 12,
+      "width": 10,
+      "maximumEntryAngle": 55,
+      "minimumSpeed": 2,
+      "compressionTicks": 12,
+      "flightSeconds": 2.1,
+      "rearmTicks": 120
+    }
+  ],
+  "drops": [
+    {
+      "id": "drop",
+      "start": {
+        "x": 216,
+        "y": 8,
+        "z": 164
+      },
+      "end": {
+        "x": 250,
+        "y": 0,
+        "z": 164
+      },
+      "width": 24
+    }
+  ],
+  "destructibles": [
+    {
+      "id": "short-cut",
+      "geometryId": "short-cut-panel",
+      "maximumHp": 25,
+      "effect": "OPEN_ROUTE",
+      "delayTicks": 0,
+      "blockTicks": 0
+    },
+    {
+      "id": "secret-gate",
+      "geometryId": "secret-gate-panel",
+      "maximumHp": 25,
+      "effect": "OPEN_ROUTE",
+      "delayTicks": 0,
+      "blockTicks": 0
+    }
+  ],
+  "secrets": [
+    {
+      "id": "secret",
+      "gateId": "secret-gate",
+      "entry": {
+        "x": 226,
+        "y": 0,
+        "z": 104
+      },
+      "exit": {
+        "x": 244,
+        "y": 0,
+        "z": 132
+      },
+      "pickupId": "S1"
+    }
+  ],
+  "bosses": [
+    {
+      "id": "boss_prefect",
+      "name": "Префект",
+      "profileId": "boss_prefect",
+      "maximumHp": 3400,
+      "primary": "HOMING",
+      "secondary": "MINE",
+      "entrances": [
+        {
+          "id": 100,
+          "position": {
+            "x": 252,
+            "y": 0,
+            "z": 44
+          },
+          "yawDegrees": -90
+        },
+        {
+          "id": 101,
+          "position": {
+            "x": 28,
+            "y": 0,
+            "z": 216
+          },
+          "yawDegrees": 90
+        }
+      ],
+      "launchPadIds": [],
+      "quotes": [
+        "В этом районе даже аварии происходят по разрешению",
+        "Ваш маршрут отменён"
+      ]
+    }
+  ],
+  "barriers": [
+    {
+      "id": "city-barrier-west",
+      "geometryId": "city-barrier-west-panel",
+      "sector": "city-barrier-west",
+      "offTicks": 1680,
+      "warningTicks": 180,
+      "activeTicks": 480
+    },
+    {
+      "id": "city-barrier-east",
+      "geometryId": "city-barrier-east-panel",
+      "sector": "city-barrier-east",
+      "offTicks": 1680,
+      "warningTicks": 180,
+      "activeTicks": 480
+    }
+  ]
+}

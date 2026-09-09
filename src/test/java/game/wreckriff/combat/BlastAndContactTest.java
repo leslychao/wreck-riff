@@ -14,7 +14,7 @@ class BlastAndContactTest {
     private static VehicleCommand fire(WeaponType type) {return new VehicleCommand(0,0,0,false,false,false,true,type,-1,false,false,AbilityId.NONE);}
     private static VehicleCommand ability(AbilityId ability) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,ability);}
     private static VehicleCommand mg() {return new VehicleCommand(0,0,0,false,false,true,false,null,0,false,false,AbilityId.NONE);}
-    private void tick(Map<Integer,VehicleCommand> commands) {combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);session.finishTick();}
+    private void tick(Map<Integer,VehicleCommand> commands) {combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);game.wreckriff.simulation.MatchRuntime.finishTick(session);}
     private void tick(VehicleCommand command) {tick(Map.of(0,command));}
     private WorldQuery.Hit contact(int target) {return new WorldQuery.Hit(target,new Vector3f(.7f,.5f,6),new Vector3f(0,0,-1),.5f);}
     private Vector3f delta(int id) {return world.linear.get(id).divide(world.mass(id));}

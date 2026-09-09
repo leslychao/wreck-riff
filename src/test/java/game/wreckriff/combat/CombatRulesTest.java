@@ -30,6 +30,7 @@ class CombatRulesTest {
         assertEquals(65,rules.cannon().directDamage());assertEquals(13200,rules.cannon().horizontalImpulse());
         assertEquals(2,rules.cannon().ricochets());assertEquals(4,rules.ballistic().charges());
         assertEquals(34,rules.ballistic().damage());assertEquals(54,CombatRules.ticks(rules.ballistic().releaseIntervalSeconds()));
+        assertEquals(45,rules.ballistic().turnDegreesPerSecond());assertEquals(70,rules.ballistic().maximumRange());
         assertEquals(18,rules.napalm().assist().turnDegreesPerSecond());assertEquals(3,rules.napalm().assist().maximumDeviation());
     }
 

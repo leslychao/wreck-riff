@@ -20,7 +20,7 @@ class NativeArsenalTest {
         return world;
     }
     private List<GameEvent> tick(PhysicsWorld world,Map<Integer,VehicleCommand> commands) {
-        combat.beginTick(commands,world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);session.finishTick();return combat.drainEvents();
+        combat.beginTick(commands,world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);game.wreckriff.simulation.MatchRuntime.finishTick(session);return combat.drainEvents();
     }
     private static VehicleCommand ability(AbilityId ability) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,ability);}
     private static VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,null,0,false,false,AbilityId.NONE);}

@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "captured": "2026-09-09",
+  "source": "src/main/resources/config/combat.json",
+  "sourceSha256": "062378a30477359758b9b68eaa552e72892627c3bea32d69abc9438f50553327",
+  "selectable": [
+    "homing",
+    "power",
+    "mine",
+    "napalm",
+    "ballistic",
+    "cannon"
+  ],
+  "independent": [
+    "machine-gun"
+  ],
+  "abilities": [
+    "freeze",
+    "shield"
+  ],
+  "rules": {
+    "maximumProjectiles": 64,
+    "projectileRadius": 0.15,
+    "explosionSurfaceOffset": 0.03,
+    "ownerSplashMultiplier": 0.5,
+    "killCreditSeconds": 5.0,
+    "emptyFeedbackSeconds": 0.4,
+    "machineGun": {
+      "damage": 3.0,
+      "shotsPerSecond": 10.0,
+      "range": 75.0,
+      "spreadDegrees": 1.0
+    },
+    "homing": {
+      "directDamage": 32.0,
+      "splashDamage": 24.0,
+      "cooldownSeconds": 0.8,
+      "initialAmmo": 6,
+      "maximumAmmo": 12,
+      "speed": 40.0,
+      "ttlSeconds": 4.0,
+      "explosionRadius": 6.0,
+      "blast": {
+        "horizontalDeltaSpeed": 4,
+        "upwardDeltaSpeed": 1
+      }
+    },
+    "power": {
+      "directDamage": 50.0,
+      "splashDamage": 40.0,
+      "cooldownSeconds": 1.1,
+      "initialAmmo": 4,
+      "maximumAmmo": 8,
+      "speed": 70.0,
+      "ttlSeconds": 2.6,
+      "explosionRadius": 8.0,
+      "blast": {
+        "horizontalDeltaSpeed": 6,
+        "upwardDeltaSpeed": 2
+      }
+    },
+    "targeting": {
+      "acquisitionConeDegrees": 18.0,
+      "acquisitionRange": 70.0,
+      "acquisitionSeconds": 0.15,
+      "retentionConeDegrees": 35.0,
+      "occlusionGraceSeconds": 0.3,
+      "turnDegreesPerSecond": 80.0
+    },
+    "ram": {
+      "minimumClosingSpeed": 6.0,
+      "damagePerExcessSpeed": 2.0,
+      "maximumDamage": 25.0,
+      "cooldownSeconds": 0.6
+    },
+    "mine": {
+      "maximumActive": 10,
+      "initialAmmo": 3,
+      "maximumAmmo": 6,
+      "cooldownSeconds": 1,
+      "placementDistance": 3,
+      "supportDepth": 3,
+      "armSeconds": 0.6,
+      "triggerRadius": 3,
+      "explosionRadius": 6,
+      "damage": 70,
+      "lifetimeSeconds": 25,
+      "blast": {
+        "horizontalDeltaSpeed": 4,
+        "upwardDeltaSpeed": 5
+      }
+    },
+    "napalm": {
+      "maximumZones": 6,
+      "initialAmmo": 3,
+      "maximumAmmo": 6,
+      "cooldownSeconds": 1.4,
+      "speed": 28,
+      "gravity": 18,
+      "ttlSeconds": 3,
+      "impactDamage": 20,
+      "radius": 5,
+      "durationSeconds": 4,
+      "damagePerSecond": 30,
+      "intervalSeconds": 0.25,
+      "supportDepth": 4,
+      "blast": {
+        "horizontalDeltaSpeed": 2,
+        "upwardDeltaSpeed": 0.5
+      },
+      "assist": {
+        "minimumRange": 5,
+        "maximumRange": 60,
+        "coneDegrees": 12,
+        "leadSeconds": 0.25,
+        "maximumLead": 5,
+        "turnDegreesPerSecond": 18,
+        "maximumDeviation": 3,
+        "occlusionSeconds": 0.2,
+        "minimumFlightSeconds": 0.25,
+        "maximumFlightSeconds": 2.2,
+        "fallbackRange": 30
+      }
+    },
+    "control": {
+      "freezeSeconds": 2,
+      "freezeCooldownSeconds": 10,
+      "freezeSpeed": 50,
+      "freezeTtlSeconds": 1.2,
+      "freezeRadius": 0.3,
+      "shieldSeconds": 2.5,
+      "shieldCooldownSeconds": 16,
+      "shieldDamageMultiplier": 0.3,
+      "immunitySeconds": 3
+    },
+    "health": {
+      "playerMaximumHp": 800,
+      "botMaximumHp": 400,
+      "repairFraction": 0.25
+    },
+    "blastLimits": {
+      "horizontalDeltaSpeed": 9,
+      "upwardDeltaSpeed": 6,
+      "angularDeltaSpeed": 2
+    },
+    "heavyBlastLimits": {
+      "horizontalDeltaSpeed": 16,
+      "upwardDeltaSpeed": 10,
+      "angularDeltaSpeed": 6
+    },
+    "cannon": {
+      "initialAmmo": 3,
+      "maximumAmmo": 6,
+      "cooldownSeconds": 2.4,
+      "speed": 55,
+      "radius": 0.25,
+      "upwardSpeed": 2,
+      "gravity": 18,
+      "ttlSeconds": 4,
+      "ricochets": 2,
+      "normalRestitution": 0.7,
+      "tangentRetention": 0.9,
+      "minimumSpeed": 12,
+      "directDamage": 65,
+      "ricochetDamage": 22,
+      "ricochetRadius": 3.5,
+      "splashDamage": 30,
+      "splashRadius": 4,
+      "horizontalImpulse": 13200,
+      "upwardImpulse": 8800,
+      "splashBlast": {
+        "horizontalDeltaSpeed": 4,
+        "upwardDeltaSpeed": 2
+      }
+    },
+    "ballistic": {
+      "initialAmmo": 2,
+      "maximumAmmo": 4,
+      "cooldownSeconds": 4.5,
+      "charges": 4,
+      "releaseIntervalSeconds": 0.45,
+      "minimumWarningSeconds": 0.5,
+      "maximumRange": 70,
+      "fallbackRange": 40,
+      "carrierHeight": 22,
+      "carrierSpeed": 45,
+      "minimumCarrierSeconds": 0.7,
+      "maximumCarrierSeconds": 1.6,
+      "gravity": 18,
+      "turnDegreesPerSecond": 45,
+      "maximumLeadSeconds": 2,
+      "maximumLead": 30,
+      "spread": 2,
+      "damage": 34,
+      "radius": 6,
+      "blast": {
+        "horizontalDeltaSpeed": 4,
+        "upwardDeltaSpeed": 2.5
+      }
+    }
+  }
+}

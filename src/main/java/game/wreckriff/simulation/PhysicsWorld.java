@@ -10,6 +10,8 @@ import com.jme3.bullet.objects.*;
 import com.jme3.math.*;
 import com.jme3.system.NativeLibraryLoader;
 import game.wreckriff.config.VehicleRules;
+import game.wreckriff.config.VehicleProfile;
+import game.wreckriff.arena.ArenaDefinition;
 import java.util.*;
 
 /** Single-threaded native physics owner. No scene controls are attached to bodies. */
@@ -22,8 +24,14 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     private final PhysicsSpace space;
     private final VehicleRules rules;
+    private final VehicleProfile defaultProfile;
     private final Map<Integer,PhysicsVehicle> vehicles=new LinkedHashMap<>();
+    private final Map<Integer,VehicleProfile> profiles=new HashMap<>();
+    private final Map<Integer,RoadContext> roadContexts=new HashMap<>();
+    private final Map<String,ArenaDefinition.Surface> surfacesByGeometry=new HashMap<>();
+    private ArenaDefinition arenaDefinition;
     private final Map<Integer,Integer> wheelContactCounts=new HashMap<>();
+    private final Map<Integer,Integer> wheelContactMasks=new HashMap<>();
     private final Map<PhysicsCollisionObject,Integer> identities=new IdentityHashMap<>();
     private final Map<Integer,Pose> previous=new HashMap<>();
     private final Map<Integer,Long> teleportGenerations=new HashMap<>();
@@ -31,33 +39,74 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<Integer,Vector3f> preStepVelocity=new HashMap<>();
     private final Map<Long,Ram> rams=new LinkedHashMap<>();
     private final Map<Float,SphereCollisionShape> sweepShapes=new HashMap<>();
-    private final List<PhysicsRigidBody> statics=new ArrayList<>();
+    private final Map<Integer,PhysicsRigidBody> statics=new LinkedHashMap<>();
+    private final Map<String,Integer> staticIds=new LinkedHashMap<>();
+    private final Map<Integer,String> staticNames=new HashMap<>();
+    private final Map<PhysicsCollisionObject,Integer> staticIdentities=new IdentityHashMap<>();
+    private int nextStaticId;
     private final Map<Integer,New6Dof> immobilizers=new HashMap<>();
-    private final PhysicsGhostObject recoveryProbe;
+    private final Map<VehicleProfile,PhysicsGhostObject> recoveryProbes=new IdentityHashMap<>();
     private final PhysicsCollisionListener contactListener=this::contact;
     private boolean closed;
 
     public PhysicsWorld(VehicleRules rules) {
         this.rules=rules;
+        defaultProfile=VehicleProfile.rivet(rules);
         NativeLibraryLoader.loadNativeLibrary("bulletjme",true);
         space=new PhysicsSpace(PhysicsSpace.BroadphaseType.DBVT);
         space.setGravity(new Vector3f(0,-rules.gravity(),0));
         space.useDeterministicDispatch(true);
         space.addCollisionListener(contactListener);
         space.addOngoingCollisionListener(contactListener);
-        recoveryProbe=new PhysicsGhostObject(chassisShape(0.12f));
     }
     public PhysicsSpace space() { return space; }
+    /** Bind road metadata once; all support observations still come from native wheel contacts. */
+    public void configureArena(ArenaDefinition definition) {
+        Objects.requireNonNull(definition);
+        if(arenaDefinition!=null&&arenaDefinition!=definition)throw new IllegalStateException("Physics world already belongs to an arena");
+        arenaDefinition=definition;surfacesByGeometry.clear();
+        for(var surface:definition.surfaces())surfacesByGeometry.put(surface.geometryId(),surface);
+        for(var entry:vehicles.entrySet())refreshRoadContext(entry.getKey(),entry.getValue());
+    }
+    @Override public RoadContext roadContext(int id) { return roadContexts.getOrDefault(id,RoadContext.UNKNOWN); }
+    public void beginLaunch(int id,String launchId,String sourceId,String targetId) {
+        if(arenaDefinition==null)throw new IllegalStateException("Launch needs arena road metadata");
+        var source=arenaDefinition.surfaces().stream().filter(s->s.id().equals(sourceId)).findFirst().orElseThrow();
+        var target=arenaDefinition.surfaces().stream().filter(s->s.id().equals(targetId)).findFirst().orElseThrow();
+        roadContexts.put(id,new RoadContext(source.id(),source.level(),source.grip(),RoadContext.Motion.LAUNCH,launchId,target.id(),target.level()));
+    }
+    public void endLaunch(int id) {
+        roadContexts.put(id,roadContext(id).airborne());
+        PhysicsVehicle body=vehicles.get(id);if(body!=null)refreshRoadContext(id,body);
+    }
     public PhysicsRigidBody addStatic(CollisionShape shape,Vector3f position,Quaternion rotation) {
+        return addStatic("static-"+nextStaticId,shape,position,rotation);
+    }
+    /** Surface IDs never move or get reused when another collider is removed. */
+    public PhysicsRigidBody addStatic(String objectId,CollisionShape shape,Vector3f position,Quaternion rotation) {
+        if(objectId==null||objectId.isBlank()||staticIds.containsKey(objectId))throw new IllegalArgumentException("Duplicate/invalid static object "+objectId);
         PhysicsRigidBody body=new PhysicsRigidBody(shape,0);
         body.setPhysicsLocation(position); body.setPhysicsRotation(rotation);
-        body.setFriction(0.8f); body.setRestitution(0); space.addCollisionObject(body); statics.add(body);
+        body.setFriction(0.8f); body.setRestitution(0); space.addCollisionObject(body);
+        int surfaceId=nextStaticId++;
+        statics.put(surfaceId,body);staticIds.put(objectId,surfaceId);staticNames.put(surfaceId,objectId);staticIdentities.put(body,surfaceId);
         return body;
     }
+    public String staticObjectId(int surfaceId) { return staticNames.get(surfaceId); }
+    public boolean removeStatic(String objectId) {
+        Integer surfaceId=staticIds.remove(objectId);if(surfaceId==null)return false;
+        PhysicsRigidBody body=statics.remove(surfaceId);
+        space.removeCollisionObject(body);staticIdentities.remove(body);staticNames.remove(surfaceId);
+        return true;
+    }
     public PhysicsVehicle addVehicle(int id,Vector3f position,Quaternion orientation) {
+        return addVehicle(id,position,orientation,defaultProfile);
+    }
+    public PhysicsVehicle addVehicle(int id,Vector3f position,Quaternion orientation,VehicleProfile profile) {
         if (vehicles.containsKey(id)) throw new IllegalArgumentException("Duplicate vehicle "+id);
-        CompoundCollisionShape shape=chassisShape(0);
-        PhysicsVehicle body=new PhysicsVehicle(shape,rules.mass());
+        Objects.requireNonNull(profile);
+        CompoundCollisionShape shape=chassisShape(profile,0);
+        PhysicsVehicle body=new PhysicsVehicle(shape,profile.mass());
         body.setPhysicsLocation(position); body.setPhysicsRotation(orientation);
         body.setDamping(0.02f,0.18f); body.setFriction(0.6f);
         // Bullet multiplies the two materials: only car/car contacts bounce.
@@ -67,28 +116,32 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         body.setSuspensionStiffness(rules.suspensionStiffness());
         body.setSuspensionCompression(rules.suspensionCompression());
         body.setSuspensionDamping(rules.suspensionDamping());
-        body.setMaxSuspensionForce(rules.maxSuspensionForce());
-        body.setMaxSuspensionTravelCm(rules.suspensionRestLength()*100);
+        body.setMaxSuspensionForce(rules.maxSuspensionForce()*profile.massRatio());
+        body.setMaxSuspensionTravelCm(profile.suspensionRestLength()*100);
         body.setFrictionSlip(rules.frictionSlip());
         for (int wheel=0;wheel<4;wheel++) {
-            float x=(wheel%2==0?-1:1)*(rules.width()/2-0.05f);
-            float z=(wheel<2?1:-1)*rules.wheelBase()/2;
-            body.addWheel(new Vector3f(x,0.15f,z),new Vector3f(0,-1,0),new Vector3f(-1,0,0),
-                    rules.suspensionRestLength(),rules.wheelRadius(),wheel<2);
+            body.addWheel(profile.wheelConnection(wheel),new Vector3f(0,-1,0),new Vector3f(-1,0,0),
+                    profile.suspensionRestLength(),profile.wheelRadius(),wheel<2);
             body.setRollInfluence(wheel,rules.rollInfluence());
         }
         space.addCollisionObject(body);
         body.getController().setCoordinateSystem(0,1,2);
         vehicles.put(id,body); identities.put(body,id);
+        profiles.put(id,profile);
+        recoveryProbes.computeIfAbsent(profile,key->new PhysicsGhostObject(chassisShape(key,.12f)));
         teleportGenerations.put(id,0L);
         body.updateWheels(); refreshWheelContacts(id,body); resetInterpolation(id);
         return body;
     }
-    private CompoundCollisionShape chassisShape(float extra) {
-        CompoundCollisionShape shape=new CompoundCollisionShape(2);
-        shape.addChildShape(new BoxCollisionShape(new Vector3f(rules.width()/2+extra,0.3f+extra,rules.length()/2+extra)),new Vector3f(0,0.2f,0));
-        shape.addChildShape(new BoxCollisionShape(new Vector3f(0.83f+extra,0.32f+extra,0.85f+extra)),new Vector3f(0,0.65f,-0.25f));
+    private CompoundCollisionShape chassisShape(VehicleProfile profile,float extra) {
+        CompoundCollisionShape shape=new CompoundCollisionShape(profile.hullBoxes().size());
+        for(var box:profile.hullBoxes())shape.addChildShape(new BoxCollisionShape(box.extent().addLocal(extra,extra,extra)),box.center());
         return shape;
+    }
+    @Override public VehicleProfile profile(int id) {
+        VehicleProfile profile=profiles.get(id);
+        if(profile==null)throw new IllegalArgumentException("Unknown vehicle "+id);
+        return profile;
     }
     public PhysicsVehicle vehicle(int id) { return vehicles.get(id); }
     public boolean containsVehicle(int id) { return vehicles.containsKey(id); }
@@ -98,7 +151,8 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         teleportGenerations.remove(id);
         if(vehicles.containsKey(id))resetInterpolation(id);
         PhysicsVehicle body=vehicles.remove(id);
-        if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id); }
+        if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id);wheelContactMasks.remove(id); }
+        roadContexts.remove(id);
     }
     public void step() {
         rams.clear();
@@ -172,7 +226,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         return body!=null?body.getPhysicsRotation():previous.get(id).rotation().clone();
     }
     @Override public Vector3f velocity(int id) { return vehicles.containsKey(id)?vehicle(id).getLinearVelocity():new Vector3f(); }
-    @Override public float mass(int id) { return vehicles.containsKey(id)?vehicle(id).getMass():rules.mass(); }
+    @Override public float mass(int id) { return vehicles.containsKey(id)?vehicle(id).getMass():profile(id).mass(); }
     /** Keep the same dynamic chassis and momentum, but stop all driver actuators. */
     public void makeWreck(int id) {
         immobilize(id,false);
@@ -189,9 +243,54 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private void refreshWheelContacts(int id,PhysicsVehicle body) {
         // castRay updates Bullet wheel/suspension state. Keep it in the physics
         // owner; HUD, AI, recovery and repeated diagnostics only read this snapshot.
-        int count=0;
-        for (int i=0;i<4;i++) if (body.castRay(i)>=0) count++;
+        int count=0,mask=0;
+        for (int i=0;i<4;i++) if (body.castRay(i)>=0) {count++;mask|=1<<i;}
         wheelContactCounts.put(id,count);
+        wheelContactMasks.put(id,mask);
+        refreshRoadContext(id,body);
+    }
+    private void refreshRoadContext(int id,PhysicsVehicle body) {
+        RoadContext previous=roadContext(id);
+        if(previous.motion()==RoadContext.Motion.LAUNCH)return;
+        if(arenaDefinition==null||wheelContacts(id)==0) {roadContexts.put(id,previous.airborne());return;}
+        Map<String,Integer> votes=new LinkedHashMap<>();
+        Map<String,ArenaDefinition.Surface> found=new HashMap<>();
+        for(int i=0;i<body.getNumWheels();i++) {
+            if((wheelContactMasks.getOrDefault(id,0)&(1<<i))==0)continue;
+            var wheel=body.getWheel(i);
+            Vector3f point=wheel.getCollisionLocation();
+            if(point==null||!Float.isFinite(point.x)||!Float.isFinite(point.y)||!Float.isFinite(point.z))continue;
+            var support=support(point.add(0,.08f,0),.16f);
+            if(support==null||support.point().distanceSquared(point)>.03f*.03f||support.normal().y<.65f)continue;
+            var surface=surfacesByGeometry.get(staticObjectId(support.surfaceId()));
+            // Older anonymous static registration has no authored ID. Resolve only
+            // at the verified native contact, never at a guessed car height.
+            if(surface==null)surface=arenaDefinition.surfaceAt(support.point(),0,.03f).orElse(null);
+            if(surface==null)continue;
+            votes.merge(surface.id(),1,Integer::sum);found.put(surface.id(),surface);
+        }
+        String selected=votes.keySet().stream().max(Comparator.<String>comparingInt(votes::get).thenComparing(Comparator.reverseOrder())).orElse(null);
+        if(selected==null) {roadContexts.put(id,previous.airborne());return;}
+        var surface=found.get(selected);
+        boolean ramp=arenaDefinition.ramps().stream().anyMatch(r->r.id().equals(surface.geometryId()));
+        roadContexts.put(id,new RoadContext(surface.id(),surface.level(),surface.grip(),ramp?RoadContext.Motion.RAMP:RoadContext.Motion.ROAD,
+                ramp?surface.geometryId():"","",surface.level()));
+    }
+    /** Solve the native fixed-step ballistic recurrence with this body's real damping. */
+    public Vector3f launchVelocity(int id,Vector3f destination,float seconds) {
+        if(!Float.isFinite(seconds)||seconds<=0)throw new IllegalArgumentException("Invalid flight duration");
+        PhysicsVehicle body=vehicle(id);int steps=Math.max(1,Math.round(seconds/MatchSession.DT));
+        double damping=Math.pow(1-body.getLinearDamping(),MatchSession.DT);
+        double velocityCoefficient=1,gravityVelocity=0,positionCoefficient=0,gravityPosition=0;
+        for(int tick=0;tick<steps;tick++) {
+            velocityCoefficient*=damping;
+            gravityVelocity=(gravityVelocity+MatchSession.DT)*damping;
+            positionCoefficient+=velocityCoefficient*MatchSession.DT;
+            gravityPosition+=gravityVelocity*MatchSession.DT;
+        }
+        Vector3f displacement=destination.subtract(position(id));
+        Vector3f gravity=body.getGravity(null);
+        return displacement.subtract(gravity.mult((float)gravityPosition)).divideLocal((float)positionCoefficient);
     }
     @Override public Hit ray(Vector3f from,Vector3f to,int ignoredVehicle) {
         Hit nearest=null;
@@ -208,11 +307,11 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         if(!Float.isFinite(depth)||depth<=0)throw new IllegalArgumentException("Invalid support depth");
         PhysicsRayTestResult nearest=null;
         for(var hit:space.rayTest(from,from.add(0,-depth,0))) {
-            if(!statics.contains(hit.getCollisionObject()))continue;
+            if(!staticIdentities.containsKey(hit.getCollisionObject()))continue;
             if(nearest==null||hit.getHitFraction()<nearest.getHitFraction())nearest=hit;
         }
         if(nearest==null)return null;
-        return new Support(statics.indexOf(nearest.getCollisionObject()),from.add(0,-depth*nearest.getHitFraction(),0),nearest.getHitNormalLocal());
+        return new Support(staticIdentities.get(nearest.getCollisionObject()),from.add(0,-depth*nearest.getHitFraction(),0),nearest.getHitNormalLocal());
     }
     @Override public void immobilize(int id,boolean frozen) {
         New6Dof previous=immobilizers.get(id);
@@ -258,7 +357,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             int id=entry.getKey(); if (id==ignoredVehicle) continue;
             Pose old=previous.get(id); Vector3f now=position(id); Quaternion rot=rotation(id);
             Pose current=new Pose(now,rot),intervalStart=interpolate(old,current,stepStart),intervalEnd=interpolate(old,current,stepEnd);
-            if (pointSegmentDistance(intervalEnd.position(),from,to)>rules.length()/2+radius+intervalEnd.position().distance(intervalStart.position())) continue;
+            if (pointSegmentDistance(intervalEnd.position(),from,to)>profile(id).hullBounds().radius()+radius+intervalEnd.position().distance(intervalStart.position())) continue;
             float angle=2*(float)Math.acos(Math.clamp(Math.abs(intervalStart.rotation().dot(intervalEnd.rotation())),0,1));
             int parts=Math.clamp((int)Math.ceil(angle/0.04f),1,4);
             for (int part=0;part<parts;part++) {
@@ -291,8 +390,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     @Override public float distanceToHull(int id,Vector3f point) {
         Vector3f local=rotation(id).inverse().mult(point.subtract(position(id)));
-        return Math.min(boxDistance(local,new Vector3f(0,0.2f,0),new Vector3f(rules.width()/2,0.3f,rules.length()/2)),
-                boxDistance(local,new Vector3f(0,0.65f,-0.25f),new Vector3f(0.83f,0.32f,0.85f)));
+        float distance=Float.POSITIVE_INFINITY;
+        for(var box:profile(id).hullBoxes())distance=Math.min(distance,boxDistance(local,box.center(),box.extent()));
+        return distance;
     }
     private static float boxDistance(Vector3f point,Vector3f center,Vector3f extent) {
         Vector3f delta=point.subtract(center);
@@ -308,26 +408,36 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     @Override public Vector3f closestHullPoint(int id,Vector3f from) {
         Vector3f local=rotation(id).inverse().mult(from.subtract(position(id)));
-        Vector3f lower=boxClosest(local,new Vector3f(0,.2f,0),new Vector3f(rules.width()/2,.3f,rules.length()/2));
-        Vector3f upper=boxClosest(local,new Vector3f(0,.65f,-.25f),new Vector3f(.83f,.32f,.85f));
-        return position(id).add(rotation(id).mult(local.distanceSquared(lower)<=local.distanceSquared(upper)?lower:upper));
+        Vector3f closest=null;float distance=Float.POSITIVE_INFINITY;
+        for(var box:profile(id).hullBoxes()) {
+            Vector3f candidate=boxClosest(local,box.center(),box.extent());float candidateDistance=local.distanceSquared(candidate);
+            if(candidateDistance<distance){closest=candidate;distance=candidateDistance;}
+        }
+        return position(id).add(rotation(id).mult(closest));
     }
     private static Vector3f boxClosest(Vector3f point,Vector3f center,Vector3f extent) {
         return new Vector3f(Math.clamp(point.x,center.x-extent.x,center.x+extent.x),
                 Math.clamp(point.y,center.y-extent.y,center.y+extent.y),Math.clamp(point.z,center.z-extent.z,center.z+extent.z));
     }
     public boolean freePose(int id,Vector3f position,Quaternion rotation) {
-        PhysicsGhostObject probe=recoveryProbe;
+        return freePose(profile(id),position,rotation,id);
+    }
+    public boolean freeSpawnPose(VehicleProfile profile,Vector3f position,Quaternion rotation) {
+        return freePose(profile,position,rotation,-2);
+    }
+    private boolean freePose(VehicleProfile profile,Vector3f position,Quaternion rotation,int ignoredVehicle) {
+        PhysicsGhostObject probe=recoveryProbes.computeIfAbsent(profile,key->new PhysicsGhostObject(chassisShape(key,.12f)));
         probe.setPhysicsLocation(position); probe.setPhysicsRotation(rotation);
         boolean[] blocked={false};
         space.contactTest(probe,event->{
             PhysicsCollisionObject other=event.getObjectA()==probe?event.getObjectB():event.getObjectA();
-            if (identities.getOrDefault(other,-1)!=id && event.getDistance1() < -0.01f) blocked[0]=true;
+            if (identities.getOrDefault(other,-1)!=ignoredVehicle && event.getDistance1() < -0.01f) blocked[0]=true;
         });
         return !blocked[0];
     }
     public void teleport(int id,Vector3f position,Quaternion rotation) {
         immobilize(id,false);
+        roadContexts.put(id,RoadContext.UNKNOWN);
         teleportGenerations.merge(id,1L,Long::sum);
         PhysicsVehicle body=vehicle(id); body.setPhysicsLocation(position); body.setPhysicsRotation(rotation);
         body.setLinearVelocity(Vector3f.ZERO); body.setAngularVelocity(Vector3f.ZERO); body.clearForces();
@@ -340,8 +450,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.removeCollisionListener(contactListener);
         space.removeOngoingCollisionListener(contactListener);
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
-        for (PhysicsRigidBody body:statics) space.removeCollisionObject(body);
-        vehicles.clear(); wheelContactCounts.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear(); statics.clear(); rams.clear(); sweepShapes.clear();
+        for (PhysicsRigidBody body:statics.values()) space.removeCollisionObject(body);
+        vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelContactMasks.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();
+        statics.clear();staticIds.clear();staticNames.clear();staticIdentities.clear();preStepVelocity.clear();rams.clear();sweepShapes.clear();
         space.destroy();
     }
 }

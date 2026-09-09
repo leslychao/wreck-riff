@@ -23,7 +23,7 @@ public final class ArenaFactory {
     public ArenaFactory(AssetManager assets) { this.assets=Objects.requireNonNull(assets);this.materials=new SurfaceMaterials(assets); }
 
     public ArenaContent build(ArenaDefinition definition) {
-        Node root=new Node("Dead Air Yard");
+        Node root=new Node(definition.metadata().title());
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         List<ArenaContent.StaticBody> bodies=new ArrayList<>();
         for (var part:definition.boxes()) {
@@ -52,12 +52,12 @@ public final class ArenaFactory {
         return switch(name){case "asphalt","concrete" -> 4;case "rust","blue" -> 3;default -> 2;};
     }
     private static Mesh rampMesh(ArenaDefinition.Ramp ramp) {
-        Vector3f[] v={new Vector3f(ramp.minX(),ramp.startY(),ramp.minZ()),
-                new Vector3f(ramp.maxX(),ramp.startY(),ramp.minZ()),
-                new Vector3f(ramp.maxX(),ramp.endY(),ramp.maxZ()),
-                new Vector3f(ramp.minX(),ramp.endY(),ramp.maxZ()),
-                new Vector3f(ramp.minX(),-.5f,ramp.minZ()),new Vector3f(ramp.maxX(),-.5f,ramp.minZ()),
-                new Vector3f(ramp.maxX(),-.5f,ramp.maxZ()),new Vector3f(ramp.minX(),-.5f,ramp.maxZ())};
+        Vector3f[] v={new Vector3f(ramp.minX(),ramp.heightAt(ramp.minX(),ramp.minZ()),ramp.minZ()),
+                new Vector3f(ramp.maxX(),ramp.heightAt(ramp.maxX(),ramp.minZ()),ramp.minZ()),
+                new Vector3f(ramp.maxX(),ramp.heightAt(ramp.maxX(),ramp.maxZ()),ramp.maxZ()),
+                new Vector3f(ramp.minX(),ramp.heightAt(ramp.minX(),ramp.maxZ()),ramp.maxZ()),
+                new Vector3f(ramp.minX(),ramp.bottomY(),ramp.minZ()),new Vector3f(ramp.maxX(),ramp.bottomY(),ramp.minZ()),
+                new Vector3f(ramp.maxX(),ramp.bottomY(),ramp.maxZ()),new Vector3f(ramp.minX(),ramp.bottomY(),ramp.maxZ())};
         int[] faces={0,3,2,0,2,1, 4,5,6,4,6,7, 0,1,5,0,5,4,
                 1,2,6,1,6,5, 2,3,7,2,7,6, 3,0,4,3,4,7};
         List<Vector3f> triangles=new ArrayList<>();for(int vertex:faces)triangles.add(v[vertex]);
@@ -66,6 +66,7 @@ public final class ArenaFactory {
     private void addDecoration(Node root,ArenaDefinition definition) {
         Node structure=new Node("authored-industrial-details");
         // Static details are outside the driving volume or flush on existing solid faces.
+        if(definition.metadata().theme()==ArenaDefinition.Theme.INDUSTRIAL_YARD) {
         addIndustrialDetails(structure);
         addBackdrop(root,structure);
         // Markings have no collision: these thin surfaces cannot turn into invisible curbs.
@@ -77,14 +78,16 @@ public final class ArenaFactory {
             box(root,"south-lane-"+x,new Vector3f(x,.008f,-59),new Vector3f(2.2f,.008f,.16f),"yellow");
             box(root,"north-lane-"+x,new Vector3f(x,.008f,59),new Vector3f(2.2f,.008f,.16f),"yellow");
         }
-        var hazard=definition.hazard();
+        }
+        for(var hazard:definition.hazards()) {
         box(root,"hazard-surface",new Vector3f((hazard.minX()+hazard.maxX())*.5f,.012f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f((hazard.maxX()-hazard.minX())*.5f,.012f,
                 (hazard.maxZ()-hazard.minZ())*.5f),"black");
         for (float x=hazard.minX()+1;x<hazard.maxX();x+=2) box(root,"hazard-stripe",new Vector3f(x,.03f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f(.32f,.02f,(hazard.maxZ()-hazard.minZ())*.5f-.2f),"yellow");
+        }
         structure.updateGeometricState();GeometryBatchFactory.optimize(structure,false);root.attachChild(structure);
-        addSigns(root);
+        if(definition.metadata().theme()==ArenaDefinition.Theme.INDUSTRIAL_YARD)addSigns(root);
         for (var pickup:definition.pickups()) {
             Geometry stand=new Geometry("stand-"+pickup.id(),new Cylinder(2,16,1.2f,.12f,true));
             stand.rotate(FastMath.HALF_PI,0,0); stand.setLocalTranslation(pickup.position().vector().add(0,.06f,0));

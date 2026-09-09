@@ -14,7 +14,7 @@ class ControlAndArsenalTest {
     private CombatSystem combat=new CombatSystem(session,rules);
     private final FlatWorld world=new FlatWorld();
     private void tick(Map<Integer,VehicleCommand> commands) {
-        combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);session.finishTick();
+        combat.beginTick(commands,world);combat.advanceProjectiles(world);combat.resolveDamage(world);game.wreckriff.simulation.MatchRuntime.finishTick(session);
     }
     private void tick(VehicleCommand command) {tick(Map.of(0,command));}
     private VehicleCommand ability(AbilityId id) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,id);}
