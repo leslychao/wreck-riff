@@ -32,7 +32,7 @@ class NativeVehicleTest {
             world.removeVehicle(0); assertEquals(1,world.bodyCount());
         }
     }
-    @Test void accelerationAndBrakingMeetMvpTargetsUsingForces() {
+    @Test void accelerationAndBrakingMeetArcadeTargetsUsingForces() {
         try(PhysicsWorld world=world()) {
             VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)),VehicleRules.load());
             int acceleration=0;
@@ -41,8 +41,8 @@ class NativeVehicleTest {
             int braking=0;
             while(world.velocity(0).z>0.5f && braking<600) { controller.drive(BRAKE); world.step(); braking++; }
             System.out.printf("P03 acceleration=%.3fs braking=%.3fs%n",acceleration/120f,braking/120f);
-            assertTrue(acceleration/120f>=2.6f && acceleration/120f<=3.2f,"0->20 m/s outside agreed 2.6-3.2 s: "+acceleration/120f);
-            assertTrue(braking/120f>=1.0f && braking/120f<=1.5f,"20->0 outside agreed 1.0-1.5 s: "+braking/120f);
+            assertTrue(acceleration/120f>=1.8f && acceleration/120f<=2.2f,"0->20 m/s outside agreed 1.8-2.2 s: "+acceleration/120f);
+            assertTrue(braking/120f>=.75f && braking/120f<=.95f,"20->0.5 m/s outside agreed 0.75-0.95 s: "+braking/120f);
         }
     }
     @Test void positiveSteerTurnsTowardDriversRight() {

@@ -35,7 +35,7 @@ class DrivingBoundaryTest {
                 assertTrue(world.rotation(0).mult(Vector3f.UNIT_Y).y>0.6f,"Handbrake must not flip the chassis");
             }
             System.out.printf(java.util.Locale.ROOT,"P04 handbrake first150=%.3fs yawAt1.3s=%.1f%n",first150/120f,total*FastMath.RAD_TO_DEG);
-            assertTrue(first150>=96 && first150<=156,"150 degree turn must take 0.8..1.3s: "+first150/120f);
+            assertTrue(first150>=78 && first150<=114,"150 degree turn must take 0.65..0.95s: "+first150/120f);
         }
     }
     @Test void nativeTrajectoriesAgreeAtThirtySixtyAnd144RenderFps() {

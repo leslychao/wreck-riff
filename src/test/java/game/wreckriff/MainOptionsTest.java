@@ -5,7 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MainOptionsTest {
     @Test void everyDiagnosticSwitchRequiresExplicitDevMode() {
-        for(String flag:new String[]{"--seed=42","--no-audio","--ai-player","--smoke-seconds=45","--benchmark-seconds=60","--config-dir=.","--showcase"}) {
+        for(String flag:new String[]{"--seed=42","--no-audio","--ai-player","--smoke-seconds=45","--benchmark-seconds=60","--config-dir=.","--showcase",
+                "--art-showcase","--arena=construction_17","--resolution=720p","--no-glow"}) {
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{flag}),flag);
             assertTrue(Main.Options.parse(new String[]{flag,"--dev"}).dev());
         }
@@ -31,6 +32,7 @@ class MainOptionsTest {
         assertTrue(Main.Options.parse(new String[]{"--dev","--smoke-seconds=1"}).automated());
         assertTrue(Main.Options.parse(new String[]{"--dev","--benchmark-seconds=1"}).automated());
         assertTrue(Main.Options.parse(new String[]{"--dev","--showcase"}).automated());
+        assertTrue(Main.Options.parse(new String[]{"--dev","--art-showcase"}).automated());
     }
     @Test void seedLimitsAndSmokeBoundariesAreParsedWithoutLosingPrecision() {
         assertEquals(Long.MIN_VALUE,Main.Options.parse(new String[]{"--dev","--seed="+Long.MIN_VALUE}).seed());
@@ -44,5 +46,22 @@ class MainOptionsTest {
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--headless"}));
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--seed=9223372036854775808"}));
         assertFalse(Main.Options.parse(new String[]{}).fixedSeed());
+    }
+    @Test void artShowcaseSelectsOneArenaAndExplicitResolutionWithoutChangingBenchmarkDefaults() {
+        var art=Main.Options.parse(new String[]{"--dev","--art-showcase","--arena=neon_zero","--resolution=1080p","--no-glow"});
+        assertTrue(art.artShowcase());assertFalse(art.showcase());assertEquals("neon_zero",art.arenaId());
+        assertEquals(1080,art.resolutionHeight());assertTrue(art.noGlow());assertEquals(0,art.benchmarkSeconds());
+        var ordinary=Main.Options.parse(new String[]{});
+        assertEquals("dead-air-yard",ordinary.arenaId());assertEquals(0,ordinary.resolutionHeight());assertFalse(ordinary.noGlow());
+        assertEquals(720,Main.Options.parse(new String[]{"--dev","--resolution=720p"}).resolutionHeight());
+        for(String other:new String[]{"--showcase","--smoke-seconds=40","--benchmark-seconds=60"})
+            assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--art-showcase",other}));
+    }
+    @Test void invalidArenaPathsAndUnsupportedResolutionsFailBeforeStartingGraphics() {
+        for(String identity:new String[]{"","../arena","C:/arena","neon zero","NEON_ZERO"})
+            assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--arena="+identity}));
+        for(String size:new String[]{"","480p","900p","2160p","1920x1080","1080"})
+            assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--resolution="+size}));
+        assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--showcase","--arena=construction_17"}));
     }
 }

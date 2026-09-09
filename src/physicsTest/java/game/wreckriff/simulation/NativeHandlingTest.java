@@ -61,10 +61,10 @@ class NativeHandlingTest {
         Turn slow=turn(8,1,false,"rivet"),medium=turn(14,1,false,"rivet");
         float reverseSeconds=reverseToEight();
         System.out.printf(java.util.Locale.ROOT,"HANDLING radius8=%.6f radius14=%.6f reverse0to8=%.6f%n",slow.radius,medium.radius,reverseSeconds);
-        // Measured on this native fixture before the September 9 handling change.
-        assertTrue(slow.radius<=6.419723f*.85f,"8 m/s turn must be at least 15% tighter: "+slow.radius);
-        assertTrue(medium.radius<=7.662365f*.85f,"14 m/s turn must be at least 15% tighter: "+medium.radius);
-        assertTrue(reverseSeconds<=1.266667f*.85f,"Reverse acceleration must be at least 15% faster: "+reverseSeconds);
+        // Fresh September 9 baseline immediately before the maximum-arcade iteration.
+        assertTrue(slow.radius<=4.856473f*.85f,"8 m/s turn must be another 15% tighter: "+slow.radius);
+        assertTrue(medium.radius<=6.108980f*.85f,"14 m/s turn must be another 15% tighter: "+medium.radius);
+        assertTrue(reverseSeconds<=.8f,"Reverse acceleration must reach 8 m/s within 0.8 seconds: "+reverseSeconds);
         assertTrue(slow.upright>.9f&&medium.upright>.9f);
     }
     @Test void directionChangesBrakeThenWaitSixStepsAndReapplyWithoutDelay() {
@@ -119,7 +119,7 @@ class NativeHandlingTest {
             rig.step(REVERSE);
             assertTrue(rig.world.vehicle(0).getWheel(0).getEngineForce()<0);
             for(int tick=0;tick<1200;tick++)rig.step(REVERSE);
-            assertTrue(rig.speed()< -14&&rig.speed()>=-15.1f,"Actual reverse speed: "+rig.speed());
+            assertTrue(rig.speed()< -(rig.rules.reverseSpeed()-1)&&rig.speed()>=-rig.rules.reverseSpeed()-.1f,"Actual reverse speed: "+rig.speed());
             rig.world.vehicle(0).setLinearVelocity(rig.world.forward(0).mult(-20));
             rig.driver.drive(REVERSE);
             assertEquals(0f,rig.world.vehicle(0).getWheel(0).getEngineForce(),0f);
@@ -134,7 +134,8 @@ class NativeHandlingTest {
             assertEquals(Math.abs(right.yaw),Math.abs(left.yaw),.04f);
             assertTrue(right.upright>.6f&&left.upright>.6f);
         }
-        for(float speed:new float[]{28,40}) {
+        var rules=VehicleRules.load();
+        for(float speed:new float[]{rules.maxSpeed(),rules.turboSpeed()}) {
             Turn highSpeed=turn(speed,1,false,"rivet");
             assertTrue(highSpeed.upright>.6f,"High-speed steering must not overturn");
         }

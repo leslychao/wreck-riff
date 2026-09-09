@@ -29,7 +29,7 @@ class CombatVisualsTest {
                 assertEquals(vertices.limit()/3*4,colors.limit());
                 if(geometry.getName().equals("particles-and-tracers")) {
                     assertTrue(vertices.limit()/3<=CombatVisuals.PARTICLE_LIMIT*6+CombatVisuals.SHOT_LIMIT*12);
-                    for(var kind:List.of(VertexBuffer.Type.TexCoord,VertexBuffer.Type.TexCoord2)) {
+                    for(var kind:List.of(VertexBuffer.Type.TexCoord,VertexBuffer.Type.TexCoord2,VertexBuffer.Type.TexCoord3)) {
                         var data=(java.nio.FloatBuffer)geometry.getMesh().getBuffer(kind).getData();
                         assertEquals(vertices.limit()/3*2,data.limit());
                         for(int i=0;i<data.limit();i++)assertTrue(Float.isFinite(data.get(i)));
@@ -379,6 +379,87 @@ class CombatVisualsTest {
     }
     private static GameEvent shot(long id,int source,Vector3f origin,Vector3f end) {
         return new GameEvent(GameEvent.Type.SHOT,id,source,source,end,"machine-gun",8,origin,Vector3f.ZERO);
+    }
+    @Test void onlyPickupOwnerStartsTypedBurstAndEveryTypeExpiresWithoutLooping() {
+        Set<ColorRGBA> colors=new HashSet<>();
+        for(String kind:List.of("homing-ammo","power-ammo","mine-ammo","napalm-ammo","ballistic-ammo","cannon-ammo","repair","turbo")) {
+            Node scene=new Node();
+            try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+                visuals.accept(List.of(event(GameEvent.Type.PICKUP,11,kind,1)));
+                assertEquals(0,visuals.effectCount(),"Generic event dispatch cannot duplicate the pickup owner's burst");
+                visuals.pickupBurst(kind,new Vector3f(2,1.1f,4));
+                assertEquals(10,visuals.effectCount());
+                visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+                var mesh=batch(scene,"particles-and-tracers").getMesh();var buffer=mesh.getFloatBuffer(VertexBuffer.Type.Color);
+                colors.add(new ColorRGBA(buffer.get(0),buffer.get(1),buffer.get(2),buffer.get(3)));
+                assertEquals(60,mesh.getVertexCount());
+                for(int frame=0;frame<5;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
+                assertEquals(0,visuals.effectCount());
+            }
+        }
+        assertEquals(8,colors.size(),"Pickup families have authored individual burst colours");
+    }
+    @Test void spriteVariationIsStableOnPauseAndDoesNotAddGeometry() {
+        Node scene=new Node();
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,19,"power",5)));
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            Mesh mesh=batch(scene,"particles-and-tracers").getMesh();
+            float[] before=floats(mesh,VertexBuffer.Type.TexCoord3);Set<Float> angles=new HashSet<>();
+            for(int i=0;i<before.length;i+=12)angles.add(before[i]);
+            assertTrue(angles.size()>10,"Sprites rotate their masks independently instead of repeating the same stamp");
+            for(int frame=0;frame<50;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            assertArrayEquals(before,floats(mesh,VertexBuffer.Type.TexCoord3));
+            assertEquals(mesh.getVertexCount()*2,before.length);
+        }
+    }
+    @Test void minimumFlashDisablesBlastLightsButPreservesTheWarningAndContactConfirmation() {
+        Node scene=new Node();
+        var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,new Vector3f(4,6,8),Vector3f.UNIT_Y,6,60);
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.update(List.of(),List.of(),List.of(),List.of(warning),null,0);
+            float[] positions=floats(batch(scene,"ground-fire").getMesh(),VertexBuffer.Type.Position);
+            float[] colors=floats(batch(scene,"ground-fire").getMesh(),VertexBuffer.Type.Color);
+            visuals.setFlashIntensity(0);visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,1,"power",5)));
+            visuals.update(List.of(),List.of(),List.of(),List.of(warning),null,0);
+            assertTrue(visuals.effectCount()>0);assertEquals(0f,batch(scene,"particles-and-tracers").getMaterial().getParam("FlashIntensity").getValue());
+            for(var light:scene.getLocalLightList())assertFalse(light.isEnabled());
+            assertArrayEquals(positions,floats(batch(scene,"ground-fire").getMesh(),VertexBuffer.Type.Position));
+            assertArrayEquals(colors,floats(batch(scene,"ground-fire").getMesh(),VertexBuffer.Type.Color));
+            assertThrows(IllegalArgumentException.class,()->visuals.setFlashIntensity(Float.NaN));
+            assertThrows(IllegalArgumentException.class,()->visuals.setFlashIntensity(2));
+        }
+    }
+    @Test void cannonRicochetCreatesShortMetalFanWithoutExplosionSmoke() {
+        Node scene=new Node();
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,9,-1,0,new Vector3f(0,1,8),"cannon-ricochet",0,new Vector3f(0,1,7),Vector3f.UNIT_Z.negate())));
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,.06f);
+            Mesh mesh=batch(scene,"particles-and-tracers").getMesh();var shape=mesh.getFloatBuffer(VertexBuffer.Type.TexCoord2);
+            assertTrue(mesh.getVertexCount()>0);
+            for(int vertex=0;vertex<mesh.getVertexCount();vertex++)assertEquals(2,shape.get(vertex*2+1),"Ricochet emits sparks, not flame or smoke");
+            for(var light:scene.getLocalLightList())assertFalse(light.isEnabled());
+            for(int frame=0;frame<4;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
+            assertEquals(0,visuals.effectCount());
+        }
+    }
+    @Test void fireOutlineFollowsClippedSupportCellsAndStaysVisibleAtMinimumFlash() {
+        Node scene=new Node();Vector3f a=new Vector3f(4,6,8),b=a.add(1,0,0);
+        var fire=new game.wreckriff.combat.CombatSystem.FireZoneView(1,0,a,Vector3f.UNIT_Y,5,120,List.of(a,b));
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.setFlashIntensity(0);visuals.update(List.of(),List.of(),List.of(fire),List.of(),null,0);
+            Mesh mesh=batch(scene,"ground-fire").getMesh();var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);var colors=mesh.getFloatBuffer(VertexBuffer.Type.Color);
+            assertEquals(6*6+2*8*3,mesh.getVertexCount(),"Six outer cell edges reserve space before two scorch patches; shared seam is omitted");
+            for(int vertex=0;vertex<36;vertex++) {
+                Vector3f point=point(positions,vertex);
+                assertEquals(6.045f,point.y,.0001f);
+                assertTrue(point.x>=3.35f&&point.x<=5.65f&&point.z>=7.35f&&point.z<=8.65f,"Outline cannot bridge absent support cells");
+                assertEquals(.62f,colors.get(vertex*4+3),.0001f);
+            }
+        }
+    }
+    private static float[] floats(Mesh mesh,VertexBuffer.Type type) {
+        var values=mesh.getFloatBuffer(type).duplicate().rewind();float[] result=new float[values.remaining()];values.get(result);return result;
     }
     private static Geometry batch(Node scene,String name) {return (Geometry)((Node)scene.getChild("combat-visuals")).getChild(name);}
     private static Vector3f point(java.nio.FloatBuffer positions,int vertex) {return new Vector3f(positions.get(vertex*3),positions.get(vertex*3+1),positions.get(vertex*3+2));}

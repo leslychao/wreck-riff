@@ -4,20 +4,22 @@ import com.jme3.scene.Mesh;
 import com.jme3.scene.VertexBuffer;
 import game.wreckriff.combat.AbilityId;
 import game.wreckriff.combat.WeaponType;
+import game.wreckriff.config.VehicleDefinition;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 
 /** Original Wreck Riff vector artwork. Authored here; no downloaded font glyphs or image assets. */
 public final class VectorIcons {
-    public enum Icon {HOMING,POWER,MINE,NAPALM,BALLISTIC,CANNON,MACHINE_GUN,FREEZE,SHIELD,HEALTH,TURBO,CHEVRON,DIAMOND,CROWN}
+    public enum Icon {HOMING,POWER,MINE,NAPALM,BALLISTIC,CANNON,MACHINE_GUN,FREEZE,SHIELD,PULSE,GRINDER,DASH,HEALTH,TURBO,CHEVRON,DIAMOND,CROWN}
     private final EnumMap<Icon,Mesh> meshes=new EnumMap<>(Icon.class);
     public VectorIcons() {for(Icon icon:Icon.values())meshes.put(icon,draw(icon));}
     public Mesh mesh(Icon icon) {return meshes.get(icon);}
     public static Icon weapon(WeaponType type) {return Icon.valueOf(type.name());}
     public static Icon ability(AbilityId ability) {
-        return switch(ability){case FREEZE->Icon.FREEZE;case SHIELD->Icon.SHIELD;case NONE->throw new IllegalArgumentException("NONE has no ability icon");};
+        return switch(ability){case FREEZE->Icon.FREEZE;case SHIELD->Icon.SHIELD;case SPECIAL->Icon.PULSE;case NONE->throw new IllegalArgumentException("NONE has no ability icon");};
     }
+    public static Icon special(String profileId) {return switch(VehicleDefinition.forId(profileId)){case RIVET->Icon.PULSE;case GRINDER->Icon.GRINDER;case SPARK->Icon.DASH;};}
     private static Mesh draw(Icon icon) {
         Pen pen=new Pen();
         switch(icon) {
@@ -30,6 +32,9 @@ public final class VectorIcons {
             case MACHINE_GUN -> {for(int i=0;i<3;i++){float x=.13f+i*.29f;pen.path(x,.13f,x,.66f,x+.10f,.88f,x+.20f,.66f,x+.20f,.13f,x,.13f);pen.line(x,.3f,x+.20f,.3f);}}
             case FREEZE -> {for(int i=0;i<6;i++){double angle=i*Math.PI/3;float x=(float)Math.cos(angle),y=(float)Math.sin(angle);pen.line(.5f,.5f,.5f+x*.41f,.5f+y*.41f);for(int side:new int[]{-1,1}){double branch=angle+side*.8;pen.line(.5f+x*.25f,.5f+y*.25f,.5f+x*.25f+(float)Math.cos(branch)*.15f,.5f+y*.25f+(float)Math.sin(branch)*.15f);}}}
             case SHIELD -> {pen.path(.5f,.93f,.86f,.78f,.81f,.41f,.66f,.19f,.5f,.07f,.34f,.19f,.19f,.41f,.14f,.78f,.5f,.93f);pen.path(.3f,.61f,.46f,.43f,.72f,.7f);}
+            case PULSE -> {pen.line(.12f,.12f,.12f,.88f);pen.path(.32f,.2f,.62f,.5f,.32f,.8f);pen.path(.60f,.2f,.90f,.5f,.60f,.8f);}
+            case GRINDER -> {pen.circle(.3f,.5f,.2f);pen.circle(.7f,.5f,.2f);for(float x:new float[]{.3f,.7f})for(int i=0;i<8;i++){double a=i*Math.PI/4;pen.line(x+(float)Math.cos(a)*.2f,.5f+(float)Math.sin(a)*.2f,x+(float)Math.cos(a)*.29f,.5f+(float)Math.sin(a)*.29f);}}
+            case DASH -> {pen.path(.1f,.3f,.35f,.3f,.35f,.65f,.82f,.65f);pen.path(.65f,.83f,.84f,.65f,.65f,.47f);pen.circle(.15f,.18f,.08f);}
             case HEALTH -> {pen.polygon(.39f,.13f,.61f,.13f,.61f,.39f,.88f,.39f,.88f,.61f,.61f,.61f,.61f,.88f,.39f,.88f,.39f,.61f,.12f,.61f,.12f,.39f,.39f,.39f);}
             case TURBO -> {pen.path(.60f,.94f,.21f,.48f,.47f,.48f,.36f,.07f,.82f,.61f,.54f,.61f,.60f,.94f);}
             case CHEVRON -> pen.path(.13f,.27f,.5f,.75f,.87f,.27f);

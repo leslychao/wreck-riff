@@ -6,7 +6,9 @@ import game.wreckriff.config.VehicleProfile;
 
 /** Geometry boundary. The live implementation always queries real Bullet colliders. */
 public interface WorldQuery {
-    record Hit(int vehicleId, Vector3f point, Vector3f normal, float fraction) {}
+    record Hit(int vehicleId, Vector3f point, Vector3f normal, float fraction,String objectId) {
+        public Hit(int vehicleId,Vector3f point,Vector3f normal,float fraction) {this(vehicleId,point,normal,fraction,null);}
+    }
     record Support(int surfaceId,Vector3f point,Vector3f normal) {
         public Support { point=point.clone(); normal=normal.clone(); }
     }
@@ -36,6 +38,15 @@ public interface WorldQuery {
     }
     /** Native implementations own the temporary constraint and its entire lifecycle. */
     default void immobilize(int vehicleId,boolean frozen) {}
+    /** Actual native chassis contact; proximity alone cannot start a capture. */
+    default boolean touchingVehicles(int first,int second) { return false; }
+    default boolean beginGrab(int owner,int target) { return false; }
+    default void endGrab(int owner) {}
+    default boolean grabIntact(int owner,int target) { return false; }
+    /** Native movement only; direction is captured once and never follows later steering. */
+    default boolean beginDash(int id,Vector3f direction) { return false; }
+    default void endDash(int id) {}
+    default boolean dashActive(int id) { return false; }
     default Vector3f forward(int id) { return rotation(id).mult(Vector3f.UNIT_Z); }
     default Vector3f weaponBase(int id) { return position(id).add(rotation(id).mult(profile(id).weaponBase())); }
     default Vector3f muzzle(int id) { return position(id).add(rotation(id).mult(profile(id).muzzle())); }

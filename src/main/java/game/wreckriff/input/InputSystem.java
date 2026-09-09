@@ -46,6 +46,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     public void setGameplay(boolean value) { gameplay=value; manager.setCursorVisible(!value); }
     public int activePad() { return activePad; }
     public boolean usingGamepad() {return usingGamepad;}
+    public boolean shiftHeld() {return keys.contains(KeyInput.KEY_LSHIFT)||keys.contains(KeyInput.KEY_RSHIFT);}
     /** Prompts use the active physical device and its actual loaded bindings. */
     public String displayBinding(String action) {
         return displayBinding(action,usingGamepad);
@@ -61,6 +62,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
             case "Handbrake"->buttonLabel(profile.handbrake());case "Turbo"->buttonLabel(profile.turbo());
             case "Machine gun"->buttonLabel(profile.machineGun());case "Selected weapon"->buttonLabel(profile.rocket());
             case "Freeze"->buttonLabel(profile.freeze());case "Shield"->buttonLabel(profile.shield());
+            case "Special"->buttonLabel(profile.special());
             case "Previous weapon"->buttonLabel(profile.previousWeapon());case "Next weapon"->buttonLabel(profile.nextWeapon());
             case "Rear view"->buttonLabel(profile.rearView());case "Recover"->buttonLabel(profile.recover());
             case "Pause"->buttonLabel(profile.pause());default->"UNBOUND";
@@ -101,7 +103,9 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
         padRear=availableButton(profile.rearView()); padRecover=availableButton(profile.recover());
         if(gameplay) {
             if(edge(profile.shield())) requestAbility(AbilityId.SHIELD);
+            if(edge(profile.special())) requestAbility(AbilityId.SPECIAL);
             if(edge(profile.freeze())) requestAbility(AbilityId.FREEZE);
+            if(edge(profile.activate()))uiAction.accept("accept");
         } else if(edge(profile.activate())) uiAction.accept("activate");
         if(edge(profile.previousWeapon())) { if(gameplay) weaponDelta--; else uiAction.accept("left"); }
         if(edge(profile.nextWeapon())) { if(gameplay) weaponDelta++; else uiAction.accept("right"); }
@@ -122,7 +126,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     private void requestAbility(AbilityId next) {
         if(priority(next)>priority(ability)) ability=next;
     }
-    private static int priority(AbilityId id) { return switch(id) {case NONE->0;case FREEZE->1;case SHIELD->2;}; }
+    private static int priority(AbilityId id) { return switch(id) {case NONE->0;case FREEZE->1;case SPECIAL->2;case SHIELD->3;}; }
     public VehicleCommand consume() {
         float steer=held("Steer right")?1:held("Steer left")?-1:axisSteer;
         VehicleCommand result=new VehicleCommand(Math.max(held("Throttle")?1:0,axisThrottle),Math.max(held("Brake / reverse")?1:0,axisBrake),
@@ -150,6 +154,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
             if(!suppressedKeys.contains(event.getKeyCode())) keyPressed.accept(event.getKeyCode());
             if(gameplay&&newPress&&!suppressedKeys.contains(event.getKeyCode())) {
                 if(matches("Freeze",event.getKeyCode())) requestAbility(AbilityId.FREEZE);
+                if(matches("Special",event.getKeyCode())) requestAbility(AbilityId.SPECIAL);
                 if(matches("Shield",event.getKeyCode())) requestAbility(AbilityId.SHIELD);
                 for(WeaponType weapon:WeaponType.values()) if(matches(weaponBinding(weapon),event.getKeyCode())) directWeapon=weapon;
                 if(matches("Previous weapon",event.getKeyCode())) weaponDelta--;

@@ -10,7 +10,7 @@ class VehicleVisualTest {
     @Test void allFiveRivetsHaveCompleteSilhouettesIndependentWheelsAndStayWithinBudget() {
         var assets=PresentationTestAssets.shared();
         for(int livery=0;livery<5;livery++) {
-            Node car=VehicleVisual.create(assets,livery);
+            Node car=VehicleVisual.create(assets,game.wreckriff.config.VehicleProfile.rivet(),livery);
             for(int i=0;i<4;i++) assertInstanceOf(Node.class,car.getChild("wheel-"+i));
             assertNotNull(car.getChild("glass")); assertNotNull(car.getChild("headlights"));
             assertNotNull(car.getChild("taillights")); assertNotNull(car.getChild("livery-markings"));
@@ -28,7 +28,7 @@ class VehicleVisualTest {
                 }
                 if(geometry.getName().equals("paint")) {
                     assertNotNull(geometry.getMaterial().getParam("DiffuseMap"));
-                    assertNotNull(geometry.getMaterial().getParam("NormalMap"));
+                    assertNull(geometry.getMaterial().getParam("NormalMap"),"Paint does not inherit structural diamond-plate relief");
                     assertNotNull(geometry.getMaterial().getParam("SpecularMap"));
                 }
             }});

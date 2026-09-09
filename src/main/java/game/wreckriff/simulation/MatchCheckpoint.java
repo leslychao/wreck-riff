@@ -15,7 +15,7 @@ public final class MatchCheckpoint {
             var slot=state.weapon(type);weapons.put(type.id(),new ProgressStore.WeaponResource(slot.ammo,slot.cooldownTicks));
         }
         Map<String,Long> abilities=new LinkedHashMap<>();
-        for(var ability:List.of(AbilityId.FREEZE,AbilityId.SHIELD))abilities.put(ability.name().toLowerCase(Locale.ROOT),(long)state.abilityCooldown(ability));
+        for(var ability:List.of(AbilityId.FREEZE,AbilityId.SHIELD,AbilityId.SPECIAL))abilities.put(ability.name().toLowerCase(Locale.ROOT),(long)state.abilityCooldown(ability));
         return new ProgressStore.PlayerResources(state.hp,state.turbo,state.selectedWeapon.id(),weapons,abilities,
                 new ProgressStore.ResourceTimers(state.machineGunCooldown,state.turboQuietTicks,state.recoveryCooldown,
                         state.protectionTicks,state.frozenTicks,state.shieldTicks,state.controlImmunityTicks,state.impactStabilizerTicks));
@@ -30,13 +30,13 @@ public final class MatchCheckpoint {
             var resource=data.weapons().get(type.id());var slot=state.weapon(type);
             slot.ammo=resource.ammunition();slot.cooldownTicks=Math.toIntExact(resource.cooldownTicks());
         }
-        for(var ability:List.of(AbilityId.FREEZE,AbilityId.SHIELD))state.abilityCooldown(ability,Math.toIntExact(data.abilityCooldownTicks().get(ability.name().toLowerCase(Locale.ROOT))));
+        for(var ability:List.of(AbilityId.FREEZE,AbilityId.SHIELD,AbilityId.SPECIAL))state.abilityCooldown(ability,Math.toIntExact(data.abilityCooldownTicks().get(ability.name().toLowerCase(Locale.ROOT))));
         var timer=data.timers();
         state.machineGunCooldown=Math.toIntExact(timer.machineGunCooldown());state.turboQuietTicks=Math.toIntExact(timer.turboQuietTicks());
         state.recoveryCooldown=Math.toIntExact(timer.recoveryCooldown());state.protectionTicks=Math.toIntExact(timer.protectionTicks());
         state.frozenTicks=Math.toIntExact(timer.frozenTicks());state.shieldTicks=Math.toIntExact(timer.shieldTicks());
         state.controlImmunityTicks=Math.toIntExact(timer.controlImmunityTicks());state.impactStabilizerTicks=Math.toIntExact(timer.impactStabilizerTicks());
-        state.heavyImpactPending=false;
+        state.heavyImpactPending=false;state.clearSpecial();state.grabbedBy=-1;
     }
     public static void validateReferences(ArenaRegistry registry,ProgressStore.Checkpoint checkpoint) {
         var arena=registry.definition(checkpoint.arenaId());

@@ -163,7 +163,8 @@ public final class CombatVisuals implements AutoCloseable {
                 }
                 case SHIELD_ENDED -> { }
                 case EXPLOSION -> {
-                    explosion(event.position(),contactNormal(event),event.kind());
+                    if("cannon-ricochet".equals(event.kind()))ricochet(event);
+                    else explosion(event.position(),contactNormal(event),event.kind());
                     if("ballistic".equals(event.kind())&&event.normal().lengthSquared()>.1f)addCosmeticFire(event);
                 }
                 case RAM -> {if(event.value()>=3)ram(event);}
@@ -283,7 +284,7 @@ public final class CombatVisuals implements AutoCloseable {
                         if(i%2==0)emit(at,randomDirection(.45f),HOT,.18f,.09f,.2f,0);
                     } else if("cannon".equals(rocket.kind()))emit(at,randomDirection(.3f),AMBER,.18f,.055f,.02f,0);
                     else if("freeze".equals(rocket.kind()))emit(at,Vector3f.ZERO,ION,.12f,.045f,.02f,0);
-                    else emit(at,Vector3f.ZERO,ION,.25f,.065f,.12f,0);
+                    else emit(at,Vector3f.ZERO,AMBER,.25f,.065f,.12f,0);
                 }
                 trailHeads.put(rocket.id(),position);
             } else if(!trailHeads.containsKey(rocket.id()))trailHeads.put(rocket.id(),previous);
@@ -336,6 +337,18 @@ public final class CombatVisuals implements AutoCloseable {
             emit(event.position(),velocity,i%3==0?DUST:AMBER,i%3==0?.5f:.32f,i%3==0?.16f:.065f,.1f,i%3==0?0:7);
         }
         for(int i=0;i<(int)(5*force);i++)addShard(event.position(),randomDirection(3*force).addLocal(0,2,0),.6f,.045f,METAL);
+    }
+    private void ricochet(GameEvent event) {
+        Vector3f normal=contactNormal(event),incoming=event.position().subtract(event.origin()).normalizeLocal();
+        Vector3f reflected=incoming.subtract(normal.mult(2*incoming.dot(normal)));
+        if(reflected.lengthSquared()<.1f)reflected=normal.clone();
+        emit(event.position(),Vector3f.ZERO,AMBER,.055f,.22f,.2f,0);
+        for(int i=0;i<16;i++) {
+            Vector3f speed=reflected.mult(6+visualRandom.nextFloat()*5).addLocal(randomDirection(2.4f));
+            float into=speed.dot(normal);if(into<0)speed.subtractLocal(normal.mult(into));
+            emit(event.position().add(normal.mult(.025f)),speed,AMBER,.17f+i%3*.025f,.042f,-.08f,5);
+            if(i<12)addShard(event.position(),speed.mult(.6f),.32f,.024f+visualRandom.nextFloat()*.024f,METAL);
+        }
     }
     private void shieldFlare(GameEvent event) {
         if(hitFlares.size()>=FLARE_LIMIT)hitFlares.remove(0);hitFlares.add(new HitFlare(event));
@@ -490,7 +503,7 @@ public final class CombatVisuals implements AutoCloseable {
             }
             float radius=carrier?.34f:drop?.20f:power?.19f:napalm?.25f:.11f,
                     tail=carrier?-.85f:drop?-.42f:power?-.5f:napalm?-.28f:-.35f,nose=carrier?.9f:drop?.55f:power?.52f:napalm?.36f:.55f;
-            ColorRGBA color=carrier?new ColorRGBA(.32f,.34f,.37f,1):drop?new ColorRGBA(.82f,.38f,.04f,1):power?HOT:napalm?AMBER:ION;
+            ColorRGBA color=carrier?new ColorRGBA(.32f,.34f,.37f,1):drop?new ColorRGBA(.82f,.38f,.04f,1):power?HOT:napalm?AMBER:new ColorRGBA(.70f,.65f,.49f,1);
             for(int i=0;i<6;i++) {
                 float a=i*FastMath.TWO_PI/6,b=(i+1)*FastMath.TWO_PI/6;
                 Vector3f p=local(centre,rotation,FastMath.cos(a)*radius,FastMath.sin(a)*radius,tail);
@@ -564,6 +577,7 @@ public final class CombatVisuals implements AutoCloseable {
         fieldBatch.begin();
         // Warning geometry reserves its vertices before lower-priority scorch and cosmetic fields.
         renderWarnings();
+        renderFireBoundaries();
         for(var fire:fires) {
             Quaternion pose=surfaceRotation(fire.normal());
             for(Vector3f support:fire.surfacePoints()) {
@@ -585,6 +599,27 @@ public final class CombatVisuals implements AutoCloseable {
         }
         fieldBatch.end();
     }
+    private void renderFireBoundaries() {
+        // Follow the authoritative connected one-metre support grid. A decorative circle would
+        // falsely bridge walls, pits or the edge of a roof clipped out by the combat owner.
+        for(var fire:fires) {
+            Set<Long> cells=new HashSet<>();Vector3f origin=fire.position(),normal=fire.normal();
+            for(Vector3f point:fire.surfacePoints())cells.add(gridCell(Math.round(point.x-origin.x),Math.round(point.z-origin.z)));
+            for(Vector3f point:fire.surfacePoints()) {
+                int x=Math.round(point.x-origin.x),z=Math.round(point.z-origin.z);
+                for(int edge=0;edge<4;edge++) {
+                    int dx=edge==0?1:edge==1?-1:0,dz=edge==2?1:edge==3?-1:0;
+                    if(cells.contains(gridCell(x+dx,z+dz)))continue;
+                    Vector3f outward=new Vector3f(dx,-(normal.x*dx+normal.z*dz)/Math.max(.6f,normal.y),dz);
+                    Vector3f tangent=new Vector3f(-dz,(normal.x*dz-normal.z*dx)/Math.max(.6f,normal.y),dx).multLocal(.5f);
+                    Vector3f centre=point.add(outward.mult(.60f)).addLocal(normal.mult(.045f)),width=outward.mult(.045f);
+                    fieldBatch.quad(centre.subtract(tangent).subtractLocal(width),centre.add(tangent).subtractLocal(width),
+                            centre.add(tangent).addLocal(width),centre.subtract(tangent).addLocal(width),AMBER,.62f);
+                }
+            }
+        }
+    }
+    private static long gridCell(int x,int z) {return ((long)x<<32)|(z&0xffffffffL);}
     private void renderWarnings() {
         for(var warning:warnings) {
             Vector3f normal=warning.normal(),centre=warning.point().add(normal.mult(.045f));float radius=warning.radius();

@@ -16,6 +16,7 @@ class MatchCheckpointTest {
         source.machineGunCooldown=9;source.turboQuietTicks=101;source.recoveryCooldown=21;source.protectionTicks=7;
         source.frozenTicks=18;source.shieldTicks=22;source.controlImmunityTicks=24;source.impactStabilizerTicks=4;
         source.abilityCooldown(AbilityId.FREEZE,91);source.abilityCooldown(AbilityId.SHIELD,123);
+        source.abilityCooldown(AbilityId.SPECIAL,881);
         var saved=MatchCheckpoint.player(source);
         source.hp=1;source.weapon(WeaponType.CANNON).ammo=2;
         VehicleState restored=new VehicleState(0,"Rivet",true,rules);

@@ -14,6 +14,8 @@ import com.jme3.material.RenderState;
 import jme3tools.optimize.GeometryBatchFactory;
 import game.wreckriff.presentation.SurfaceMaterials;
 import game.wreckriff.presentation.SurfaceMesh;
+import game.wreckriff.presentation.ArenaArt;
+import game.wreckriff.presentation.ArenaPresentation;
 import java.util.*;
 
 /** Original, parameter-driven industrial yard. Every solid uses the rendered geometry. */
@@ -30,7 +32,7 @@ public final class ArenaFactory {
             Vector3f half=part.size().vector().mult(.5f);
             Geometry visual=new Geometry(part.id(),SurfaceMesh.box(half.x,half.y,half.z,tileSize(part.material())));
             visual.setLocalTranslation(part.center().vector());
-            visual.setMaterial(material(part.material())); root.attachChild(visual);
+            visual.setMaterial(material(surfaceMaterial(part,definition.metadata().theme()))); root.attachChild(visual);
             if (part.collision()) bodies.add(new ArenaContent.StaticBody(part.id(),new BoxCollisionShape(half),
                     part.center().vector(),new Quaternion()));
         }
@@ -48,6 +50,17 @@ public final class ArenaFactory {
         return new ArenaContent(root,bodies,definition.spawns(),definition.pickups(),new NavGraph(definition));
     }
     public Material material(String name) {return materials.material(name);}
+    private static String surfaceMaterial(ArenaDefinition.BoxPart part,ArenaDefinition.Theme theme) {
+        // Collision and material IDs in arena data stay authoritative. This only selects the surface finish.
+        if(theme==ArenaDefinition.Theme.NECROPOLIS) {
+            if(part.material().equals("ivory")||part.material().equals("rust"))return "stone";
+            if(part.material().equals("steel"))return "black";
+        }
+        if((theme==ArenaDefinition.Theme.NEON||theme==ArenaDefinition.Theme.SHOW)
+                &&part.material().equals("rust"))return "dark-concrete";
+        if(theme==ArenaDefinition.Theme.CARNIVAL&&part.material().equals("red"))return "faded-red";
+        return part.material();
+    }
     private static float tileSize(String name) {
         return switch(name){case "asphalt","concrete" -> 4;case "rust","blue" -> 3;default -> 2;};
     }
@@ -80,67 +93,16 @@ public final class ArenaFactory {
         }
         }
         for(var hazard:definition.hazards()) {
-        box(root,"hazard-surface",new Vector3f((hazard.minX()+hazard.maxX())*.5f,.012f,
+        float surfaceY=ArenaPresentation.surfaceHeight(definition,hazard);
+        box(root,"hazard-surface",new Vector3f((hazard.minX()+hazard.maxX())*.5f,surfaceY+.012f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f((hazard.maxX()-hazard.minX())*.5f,.012f,
                 (hazard.maxZ()-hazard.minZ())*.5f),"black");
-        for (float x=hazard.minX()+1;x<hazard.maxX();x+=2) box(root,"hazard-stripe",new Vector3f(x,.03f,
+        for (float x=hazard.minX()+1;x<hazard.maxX();x+=2) box(root,"hazard-stripe",new Vector3f(x,surfaceY+.03f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f(.32f,.02f,(hazard.maxZ()-hazard.minZ())*.5f-.2f),"yellow");
         }
         structure.updateGeometricState();GeometryBatchFactory.optimize(structure,false);root.attachChild(structure);
         if(definition.metadata().theme()==ArenaDefinition.Theme.INDUSTRIAL_YARD)addSigns(root);
-        for (var pickup:definition.pickups()) {
-            Geometry stand=new Geometry("stand-"+pickup.id(),new Cylinder(2,16,1.2f,.12f,true));
-            stand.rotate(FastMath.HALF_PI,0,0); stand.setLocalTranslation(pickup.position().vector().add(0,.06f,0));
-            stand.setMaterial(material("steel")); root.attachChild(stand);
-            Node item=new Node("pickup-"+pickup.id());item.setLocalTranslation(pickup.position().vector().add(0,1.1f,0));
-            switch (pickup.type()) {
-                case REPAIR -> {
-                    box(item,"cross-x",new Vector3f(),new Vector3f(.65f,.19f,.19f),"repair");
-                    box(item,"cross-y",new Vector3f(),new Vector3f(.19f,.65f,.19f),"repair");
-                    box(item,"cross-z",new Vector3f(),new Vector3f(.19f,.19f,.65f),"repair");
-                }
-                case HOMING_AMMO -> {
-                    pickupRocket(item,-.34f,.17f,.9f,"yellow");pickupRocket(item,.34f,.17f,.9f,"yellow");
-                }
-                case POWER_AMMO -> pickupRocket(item,0,.31f,1.2f,"red");
-                case BALLISTIC_AMMO -> {
-                    pickupRocket(item,-.31f,.20f,1.1f,"cyan");pickupRocket(item,.31f,.20f,1.1f,"cyan");
-                    box(item,"salvo-cradle",new Vector3f(0,-.48f,0),new Vector3f(.62f,.12f,.28f),"steel");
-                }
-                case CANNON_AMMO -> {
-                    for(float x:new float[]{-.3f,.3f}) {
-                        Geometry ball=new Geometry("cannon-ammunition",new Sphere(10,16,.30f));
-                        ball.setLocalTranslation(x,0,0);ball.setMaterial(material("steel"));item.attachChild(ball);
-                    }
-                    box(item,"cannon-cradle",new Vector3f(0,-.34f,0),new Vector3f(.68f,.1f,.3f),"yellow");
-                }
-                case MINE_AMMO -> {
-                    cylinder(item,"mine-magazine",new Vector3f(),.55f,.24f,"steel");
-                    cylinder(item,"mine-trigger",new Vector3f(0,.2f,0),.2f,.18f,"red");
-                }
-                case NAPALM_AMMO -> {
-                    cylinder(item,"napalm-canister",new Vector3f(),.38f,1.15f,"yellow");
-                    cylinder(item,"canister-lid",new Vector3f(0,.64f,0),.22f,.13f,"red");
-                    box(item,"napalm-band",new Vector3f(0,0,-.38f),new Vector3f(.24f,.14f,.022f),"red");
-                }
-                case TURBO_CELL -> {
-                    Geometry cell=new Geometry("energy-cell",new Cylinder(2,10,.46f,1.0f,true));
-                    cell.rotate(FastMath.HALF_PI,0,0);cell.setMaterial(material("cyan"));item.attachChild(cell);
-                    box(item,"terminal",new Vector3f(0,.65f,0),new Vector3f(.22f,.15f,.22f),"ivory");
-                    box(item,"charge-mark",new Vector3f(0,0,-.47f),new Vector3f(.30f,.08f,.035f),"black");
-                    box(item,"charge-plus",new Vector3f(0,0,-.48f),new Vector3f(.08f,.30f,.035f),"black");
-                }
-            }
-            root.attachChild(item);
-        }
-    }
-    private void pickupRocket(Node root,float x,float radius,float height,String color) {
-        Geometry body=new Geometry("ammo-shell",new Cylinder(2,8,radius,height,true));
-        body.rotate(FastMath.HALF_PI,0,0);body.setLocalTranslation(x,0,0);body.setMaterial(material(color));root.attachChild(body);
-        Geometry nose=new Geometry("ammo-nose",new Sphere(5,8,radius));
-        nose.setLocalTranslation(x,height*.5f,0);nose.setLocalScale(1,1.7f,1);nose.setMaterial(material("ivory"));root.attachChild(nose);
-        box(root,"ammo-fin-x",new Vector3f(x,-height*.4f,0),new Vector3f(radius*1.7f,.16f,.05f),"steel");
-        box(root,"ammo-fin-z",new Vector3f(x,-height*.4f,0),new Vector3f(.05f,.16f,radius*1.7f),"steel");
+        ArenaArt.attach(assets,root,definition,materials);
     }
     private void box(Node root,String id,Vector3f position,Vector3f half,String material) {
         Geometry visual=new Geometry(id,SurfaceMesh.box(half.x,half.y,half.z,tileSize(material)));

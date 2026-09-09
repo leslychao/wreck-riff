@@ -1,0 +1,12 @@
+MaterialDef CombatParticles {
+    MaterialParameters {
+    }
+    Technique {
+        VertexShader GLSL150 GLSL100 : materials/CombatParticles.vert
+        FragmentShader GLSL150 GLSL100 : materials/CombatParticles.frag
+        WorldParameters {
+            WorldViewMatrix
+            ProjectionMatrix
+        }
+    }
+}

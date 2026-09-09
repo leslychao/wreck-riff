@@ -11,9 +11,27 @@ import game.wreckriff.simulation.RoadContext;
 import game.wreckriff.simulation.WorldQuery;
 import java.lang.reflect.Proxy;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MatchHudPresenterTest {
+    @ParameterizedTest
+    @CsvSource({"HOMING,60", "POWER,84", "MINE,84", "NAPALM,108", "CANNON,168", "BALLISTIC,360"})
+    void weaponHudUsesApprovedDurationAndRemainingSimulationTicks(WeaponType type, int intervalTicks) {
+        var session = new MatchSession(12, 360);
+        var slot = session.vehicle(0).weapon(type);
+        slot.cooldownTicks = intervalTicks / 2;
+        var presenter = new MatchHudPresenter();
+        var snapshot = presenter.snapshot(session, observations(2),
+                new MatchHudPresenter.Targeting(-1, -1, -1), "RMB", "", 0);
+        var status = snapshot.weapons().get(type);
+        assertEquals(intervalTicks / 120f, status.cooldownDurationSeconds(), .0001f);
+        assertEquals(intervalTicks / 240f, status.cooldownSeconds(), .0001f);
+        assertEquals(slot.ammo, status.ammo());
+        assertEquals(intervalTicks / 2, slot.cooldownTicks, "Rendering must not advance reload time");
+    }
+
     private WorldQuery observations(float airborneHeight) {
         return (WorldQuery)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->{
             int id=(Integer)args[0];

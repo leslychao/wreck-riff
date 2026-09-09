@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class BossVehicleVisualTest {
     private static final VehicleRules RULES=VehicleRules.load();
 
-    @Test void rivetOverloadPreservesEveryMeshAndWheelExactly() {
-        Node old=VehicleVisual.create(PresentationTestAssets.shared(),2);
+    @Test void canonicalRivetProfileBuildsRepeatableMeshesAndWheels() {
+        Node old=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),2);
         Node profiled=VehicleVisual.create(PresentationTestAssets.shared(),VehicleProfile.rivet(RULES),2);
         Map<String,Geometry> original=geometries(old),actual=geometries(profiled);
         assertEquals(original.keySet(),actual.keySet());
@@ -85,12 +85,15 @@ class BossVehicleVisualTest {
             assertEquals(Spatial.CullHint.Inherit,model.getChild("boss-panels").getLocalCullHint());
         }
     }
-    @Test void criticalDecorativePanelsFollowThirtyPercentBoundaryAndRepair() {
+    @Test void bossPresentationFollowsAuthoritativePhaseAndVulnerabilityIndependentlyOfDamage() {
         for(String id:List.of("boss_emcee","boss_ash_shepherd","boss_director")) {
             Node model=VehicleVisual.create(PresentationTestAssets.shared(),VehicleProfile.boss(id,RULES),0);
-            for(float hp:new float[]{.31f,.30f,.29f,.31f}) {
-                VehicleVisual.updateDamage(model,hp);
-                assertEquals(hp<=.30f?Spatial.CullHint.Always:Spatial.CullHint.Inherit,model.getChild("boss-panels").getLocalCullHint());
+            for(int phase:new int[]{0,1,2,0}) {
+                VehicleVisual.updateBossPhase(model,phase,phase==1);
+                assertEquals(phase==2?Spatial.CullHint.Always:Spatial.CullHint.Inherit,model.getChild("boss-panels").getLocalCullHint());
+                assertEquals(phase==1?Spatial.CullHint.Inherit:Spatial.CullHint.Always,model.getChild("service-core").getLocalCullHint());
+                assertEquals(phase==1?Spatial.CullHint.Always:Spatial.CullHint.Inherit,model.getChild("service-cover").getLocalCullHint());
+                assertEquals(phase,(int)model.getUserData("bossVisualPhase"));
             }
         }
     }

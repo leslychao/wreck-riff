@@ -10,7 +10,6 @@ import com.jme3.scene.*;
 import com.jme3.util.BufferUtils;
 import com.jme3.util.mikktspace.MikktspaceTangentGenerator;
 import game.wreckriff.config.VehicleProfile;
-import game.wreckriff.config.VehicleProfile;
 import java.util.*;
 
 /** Authored Rivet coupe, built from local parameterized surfaces; +Z front, +X right. */
@@ -22,15 +21,14 @@ public final class VehicleVisual {
     };
     private VehicleVisual() {}
 
-    public static Node create(AssetManager assets,VehicleProfile profile,int liveryId) {
-        Objects.requireNonNull(profile);
-        return profile.id().equals("rivet")?create(assets,liveryId):BossVehicleVisual.create(assets,profile,liveryId);
-    }
-
     /** Profile-sized geometry lives at unit root scale, so wheel poses and sockets share native metres. */
     public static Node create(AssetManager assets, VehicleProfile profile, int livery) {
         Objects.requireNonNull(profile,"Vehicle profile required");
-        Node root=profile.id().equals("rivet")?rivet(assets,livery):boss(assets,profile,livery);
+        Node root=switch(profile.id()) {
+            case "rivet" -> rivet(assets,livery);
+            case "grinder","spark" -> PlayerVehicleVisual.create(assets,profile,livery);
+            default -> BossVehicleVisual.create(assets,profile,livery);
+        };
         root.setUserData("profileId",profile.id());
         root.setUserData("assetOrigin","original-java-procedural");
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
@@ -171,160 +169,19 @@ public final class VehicleVisual {
     /** Pure presentation: phase comes from the match, vulnerability only from a real gameplay window. */
     public static void updateBossPhase(Node vehicle,int phase,boolean vulnerable) {
         if(phase<0||phase>2)throw new IllegalArgumentException("Boss phase 0..2 required");
-        if(vehicle.getChild("phase-armor")==null)return;
-        vehicle.getChild("phase-armor").setCullHint(phase==2?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
+        if(vehicle.getChild("boss-panels")==null)return;
+        boolean alive=!Integer.valueOf(4).equals(vehicle.getUserData("damageStage"));
+        vulnerable&=alive;
+        vehicle.getChild("boss-panels").setCullHint(phase==2?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
         vehicle.getChild("service-cover").setCullHint(vulnerable?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
         vehicle.getChild("service-core").setCullHint(vulnerable?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
-        Geometry screens=(Geometry)vehicle.getChild("phase-screens");
+        // Screens and work lights share one emissive draw; their colour follows the real boss phase.
+        Geometry screens=(Geometry)vehicle.getChild("headlights");
         if(screens!=null) {
-            ColorRGBA color=phase==0?new ColorRGBA(.13f,.64f,.80f,1):phase==1?new ColorRGBA(1,.50f,.10f,1):new ColorRGBA(.9f,.12f,.045f,1);
+            ColorRGBA color=!alive?new ColorRGBA(.025f,.025f,.025f,1):phase==0?new ColorRGBA(.13f,.64f,.80f,1):phase==1?new ColorRGBA(1,.50f,.10f,1):new ColorRGBA(.9f,.12f,.045f,1);
             screens.getMaterial().setColor("Color",color);screens.getMaterial().setColor("GlowColor",color.mult(.35f));
         }
         vehicle.setUserData("bossVisualPhase",phase);vehicle.setUserData("servicePanelOpen",vulnerable);
-    }
-
-    private static Node boss(AssetManager assets,VehicleProfile profile,int livery) {
-        Node root=new Node(profile.id());SurfaceMaterials surfaces=new SurfaceMaterials(assets);
-        float w=profile.width()*.5f,l=profile.length()*.5f,h=profile.hullBounds().maxY();
-        Builder paint=new Builder(),steel=new Builder(),rubber=new Builder(),glass=new Builder(),marks=new Builder();
-        Builder lamps=new Builder(),tails=new Builder(),armor=new Builder(),screens=new Builder();
-        ColorRGBA color;
-        // The axle/chassis structure is shared. Upper bodies are independently authored, never scaled Rivets.
-        steel.box(0,.06f*h,0,w*.65f,h*.09f,l*.94f);
-        rubber.box(0,.17f*h,0,w*.80f,h*.075f,l*.82f);
-        switch(profile.id()) {
-            case "boss_foreman" -> {
-                color=new ColorRGBA(.89f,.55f,.10f,1);
-                // Broad stepped blade, high square working cab and an open, ribbed dump bed.
-                paint.loft(new float[][]{{l*.70f,w*.79f,.12f*h,.32f*h},{l*.97f,w,.025f*h,.29f*h}});
-                steel.box(0,.025f*h,l*.97f,w,h*.028f,l*.025f);
-                paint.box(0,.56f*h,l*.24f,w*.71f,h*.29f,l*.20f);
-                glass.box(0,.68f*h,l*.445f,w*.61f,h*.145f,l*.005f);
-                glass.box(w*.715f,.68f*h,l*.24f,w*.006f,h*.14f,l*.15f);
-                glass.box(-w*.715f,.68f*h,l*.24f,w*.006f,h*.14f,l*.15f);
-                steel.box(0,.865f*h,l*.24f,w*.80f,h*.023f,l*.25f);
-                paint.box(0,.31f*h,-l*.49f,w*.89f,h*.045f,l*.43f);
-                for(float side:new float[]{-1,1}) {
-                    paint.box(side*w*.90f,.52f*h,-l*.49f,w*.072f,h*.20f,l*.43f);
-                    for(int rib=0;rib<5;rib++)steel.box(side*w*.979f,.53f*h,-l*(.12f+rib*.17f),w*.018f,h*.20f,l*.022f);
-                    lamps.box(side*w*.55f,.887f*h,l*.475f,w*.15f,h*.034f,l*.020f);
-                }
-                armor.box(0,.5f*h,-l*.935f,w*.89f,h*.19f,l*.04f);
-                for(int stripe=-3;stripe<=3;stripe++)marks.box(stripe*w*.25f,.19f*h,l*.999f,w*.055f,h*.085f,l*.002f);
-            }
-            case "boss_prefect" -> {
-                color=new ColorRGBA(.12f,.20f,.27f,1);
-                paint.loft(new float[][]{{-l,w*.84f,.01f*h,.27f*h},{-l*.78f,w*.95f,-.02f*h,.36f*h},
-                        {l*.78f,w*.95f,-.02f*h,.33f*h},{l,w*.82f,.01f*h,.23f*h}});
-                paint.loft(new float[][]{{-l*.61f,w*.73f,.32f*h,.40f*h},{-l*.42f,w*.70f,.32f*h,.67f*h},
-                        {l*.23f,w*.70f,.32f*h,.67f*h},{l*.44f,w*.76f,.32f*h,.35f*h}});
-                glass.quad(v(-w*.65f,.37f*h,l*.42f),v(w*.65f,.37f*h,l*.42f),v(w*.62f,.65f*h,l*.23f),v(-w*.62f,.65f*h,l*.23f));
-                for(float side:new float[]{-1,1}) {
-                    for(int window=0;window<3;window++)glass.box(side*w*.706f,.51f*h,-l*.32f+window*l*.21f,w*.004f,h*.115f,l*.083f);
-                    steel.box(side*w*.95f,.37f*h,0,w*.025f,h*.018f,l*.80f);
-                    lamps.box(side*w*.59f,.22f*h,l*.975f,w*.25f,h*.028f,l*.025f);
-                    screens.box(side*w*.24f,.697f*h,-l*.02f,w*.20f,h*.035f,l*.11f);
-                    armor.box(side*w*.96f,.19f*h,-l*.03f,w*.018f,h*.12f,l*.38f);
-                }
-                marks.box(0,.348f*h,l*.67f,w*.18f,h*.004f,l*.15f);
-            }
-            case "boss_emcee" -> {
-                color=new ColorRGBA(.62f,.19f,.34f,1);
-                paint.box(0,.35f*h,0,w*.79f,h*.15f,l*.71f);
-                paint.loft(new float[][]{{-l*.45f,w*.64f,.44f*h,.63f*h},{-l*.25f,w*.61f,.44f*h,.83f*h},
-                        {l*.15f,w*.61f,.44f*h,.83f*h},{l*.43f,w*.68f,.44f*h,.48f*h}});
-                glass.quad(v(-w*.56f,.50f*h,l*.415f),v(w*.56f,.50f*h,l*.415f),v(w*.52f,.80f*h,l*.15f),v(-w*.52f,.80f*h,l*.15f));
-                // Flared mechanical loudhailer grille, visibly wider at its front lip.
-                steel.cylinderZ(0,.37f*h,l*.82f,w*.37f,l*.23f,10);
-                rubber.cylinderZ(0,.37f*h,l*.94f,w*.29f,l*.012f,10);
-                steel.cylinderZ(0,.37f*h,l*.96f,w*.12f,l*.012f,10);
-                for(float side:new float[]{-1,1}) {
-                    steel.box(side*w*.67f,.73f*h,-l*.50f,w*.035f,h*.24f,l*.028f);
-                    lamps.box(side*w*.54f,.94f*h,-l*.50f,w*.14f,h*.037f,l*.06f);
-                    paint.box(side*w*.82f,.28f*h,l*.30f,w*.08f,h*.07f,l*.49f);
-                    armor.box(side*w*.80f,.42f*h,-l*.48f,w*.035f,h*.19f,l*.18f);
-                }
-                steel.box(-w*.30f,.87f*h,-l*.57f,w*.32f,h*.10f,l*.08f);
-                screens.box(-w*.30f,.87f*h,-l*.655f,w*.28f,h*.08f,l*.006f);
-                for(int i=-2;i<=2;i++)marks.box(i*w*.16f,.51f*h,l*.63f,w*.045f,h*.055f,l*.008f);
-            }
-            case "boss_ash_shepherd" -> {
-                color=new ColorRGBA(.32f,.34f,.31f,1);
-                paint.box(0,.46f*h,-l*.22f,w*.85f,h*.25f,l*.70f);
-                paint.box(0,.34f*h,l*.64f,w*.75f,h*.17f,l*.30f);
-                paint.loft(new float[][]{{l*.15f,w*.71f,.50f*h,.67f*h},{l*.31f,w*.65f,.50f*h,.84f*h},
-                        {l*.55f,w*.65f,.50f*h,.84f*h},{l*.76f,w*.71f,.50f*h,.52f*h}});
-                glass.quad(v(-w*.58f,.54f*h,l*.744f),v(w*.58f,.54f*h,l*.744f),v(w*.55f,.80f*h,l*.55f),v(-w*.55f,.80f*h,l*.55f));
-                for(float side:new float[]{-1,1}) {
-                    steel.box(side*w*.66f,.78f*h,-l*.67f,w*.028f,h*.205f,l*.028f);
-                    for(int panel=0;panel<4;panel++)armor.box(side*w*.90f,.44f*h,-l*.73f+panel*l*.28f,w*.045f,h*.20f,l*.105f);
-                    lamps.box(side*w*.60f,.34f*h,l*.957f,w*.045f,h*.12f,l*.007f);
-                    // Chain rhythm is cut into the existing side silhouette, with no dangling collision traps.
-                    for(int chain=0;chain<8;chain++)steel.box(side*w*.953f,.38f*h+(chain%2)*.025f*h,-l*.81f+chain*l*.13f,w*.014f,h*.022f,l*.03f);
-                }
-                steel.box(0,.982f*h,-l*.67f,w*.69f,h*.017f,l*.034f);
-                steel.cylinderZ(0,.82f*h,-l*.67f,w*.18f,l*.13f,10);
-                marks.box(0,.725f*h,-l*.20f,w*.095f,h*.006f,l*.48f);
-                marks.box(0,.728f*h,-l*.20f,w*.53f,h*.006f,l*.035f);
-            }
-            case "boss_director" -> {
-                color=new ColorRGBA(.25f,.27f,.32f,1);
-                paint.box(0,.39f*h,l*.52f,w*.83f,h*.22f,l*.34f);
-                paint.box(0,.65f*h,l*.30f,w*.75f,h*.20f,l*.22f);
-                glass.box(0,.70f*h,l*.527f,w*.64f,h*.12f,l*.004f);
-                steel.box(0,.25f*h,l*.94f,w*.94f,h*.035f,l*.035f);
-                for(int i=-4;i<=4;i++)steel.box(i*w*.135f,.38f*h,l*.87f,w*.022f,h*.105f,l*.017f);
-                paint.box(0,.25f*h,-l*.51f,w*.89f,h*.055f,l*.46f);
-                for(float side:new float[]{-1,1}) {
-                    armor.box(side*w*.91f,.52f*h,-l*.46f,w*.052f,h*.21f,l*.39f);
-                    rubber.box(side*w*.88f,.53f*h,-l*.46f,w*.025f,h*.19f,l*.36f);
-                    screens.box(side*w*.94f,.54f*h,-l*.46f,w*.008f,h*.145f,l*.30f);
-                    steel.box(side*w*.77f,.63f*h,-l*.72f,w*.026f,h*.34f,l*.025f);
-                    lamps.box(side*w*.68f,.953f*h,-l*.72f,w*.13f,h*.028f,l*.045f);
-                    lamps.box(side*w*.70f,.31f*h,l*.914f,w*.14f,h*.032f,l*.012f);
-                }
-                steel.box(0,.965f*h,-l*.72f,w*.79f,h*.020f,l*.028f);
-                marks.box(0,.871f*h,l*.30f,w*.45f,h*.005f,l*.13f);
-            }
-            default -> throw new IllegalArgumentException("Unknown visual profile "+profile.id());
-        }
-        for(int barrel=0;barrel<2;barrel++) {
-            Vector3f muzzle=profile.machineGunMuzzle(barrel);
-            steel.cylinderZ(muzzle.x,muzzle.y,muzzle.z-.30f,.085f,.58f,10);
-            rubber.cylinderZ(muzzle.x,muzzle.y,muzzle.z-.005f,.057f,.01f,10);
-        }
-        Vector3f weapon=profile.muzzle();steel.cylinderZ(weapon.x,weapon.y,weapon.z-.47f,.17f,.90f,12);
-        rubber.cylinderZ(weapon.x,weapon.y,weapon.z-.012f,.118f,.018f,12);
-        for(int side:new int[]{-1,1}) {
-            tails.box(side*w*.63f,.25f*h,-l*.975f,w*.095f,h*.03f,l*.014f);
-            Node exhaust=new Node("exhaust-"+(side<0?"left":"right"));
-            exhaust.setLocalTranslation(side*w*.68f,.04f*h,profile.fullBounds().minZ()+.03f);root.attachChild(exhaust);
-            steel.cylinderZ(exhaust.getLocalTranslation().x,exhaust.getLocalTranslation().y,exhaust.getLocalTranslation().z+.12f,.12f,.22f,10);
-        }
-        paint.attach(root,"paint",surfaces.paint(color));steel.attach(root,"steel",surfaces.material("steel"));
-        rubber.attach(root,"rubber-trim",surfaces.rubber());glass.attach(root,"glass",SurfaceMaterials.lit(assets,new ColorRGBA(.018f,.055f,.075f,1),100,.32f));
-        marks.attach(root,"livery-markings",SurfaceMaterials.lit(assets,new ColorRGBA(.82f,.77f,.59f,1),10,.12f));
-        lamps.attach(root,"headlights",unlit(assets,new ColorRGBA(1,.72f,.34f,1)));tails.attach(root,"taillights",unlit(assets,new ColorRGBA(.86f,.09f,.025f,1)));
-        armor.attach(root,"phase-armor",surfaces.paint(color.mult(.72f)));
-        screens.attach(root,"phase-screens",unlit(assets,new ColorRGBA(.13f,.64f,.80f,1)));
-        // Visible service cover occupies the same local face as the future authoritative weakpoint.
-        Builder cover=new Builder(),core=new Builder();boolean sidePanel=profile.id().equals("boss_prefect");
-        if(sidePanel) {
-            cover.box(w*.985f,.22f*h,0,w*.01f,h*.105f,l*.22f);
-            core.box(w*.985f,.22f*h,0,w*.008f,h*.085f,l*.19f);
-        } else {
-            cover.box(0,.35f*h,-l*.978f,w*.34f,h*.14f,l*.015f);
-            core.box(0,.35f*h,-l*.980f,w*.30f,h*.11f,l*.01f);
-        }
-        cover.attach(root,"service-cover",surfaces.material("steel"));core.attach(root,"service-core",unlit(assets,new ColorRGBA(.12f,.9f,.83f,1)));
-        root.getChild("service-core").setCullHint(Spatial.CullHint.Always);
-        for(int i=0;i<4;i++) {
-            Node wheel=wheel(i,surfaces.material("steel"),surfaces.rubber());
-            float scale=profile.wheelRadius()/.38f;wheel.setLocalScale(scale);
-            wheel.setLocalTranslation(profile.wheelConnection(i).add(0,-profile.suspensionRestLength(),0));root.attachChild(wheel);
-        }
-        anchors(root,profile);root.setUserData("livery",livery);root.setUserData("bossVisualPhase",0);
-        return root;
     }
 
     public static void updateDamage(Node vehicle,float hpFraction) {vehicle.getControl(VehicleDamageVisual.class).damage(hpFraction);}

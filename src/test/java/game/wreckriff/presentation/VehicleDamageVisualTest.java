@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class VehicleDamageVisualTest {
     @Test void exactHpBoundariesSelectFivePrebuiltStagesAndRepairRestoresOriginalMeshes() {
-        Node car=VehicleVisual.create(PresentationTestAssets.shared(),0);
+        Node car=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),0);
         Geometry paint=(Geometry)car.getChild("paint");Mesh intact=paint.getMesh();
         Map<Integer,Mesh> stages=new HashMap<>();stages.put(0,intact);
         float[] fractions={1,.7501f,.75f,.5001f,.5f,.2501f,.25f,.0001f,0};
@@ -31,7 +31,7 @@ class VehicleDamageVisualTest {
         assertThrows(IllegalArgumentException.class,()->VehicleVisual.updateDamage(car,Float.NaN));
     }
     @Test void dentsAreBoundedAllBuffersFiniteAndPhysicalWheelNodesStayUntouched() {
-        Node car=VehicleVisual.create(PresentationTestAssets.shared(),1);
+        Node car=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),1);
         List<Geometry> body=new ArrayList<>();Map<Geometry,float[]> intact=new IdentityHashMap<>();
         for(Spatial child:car.getChildren())if(child instanceof Geometry geometry && !child.getName().equals("glass-cracks")&&!child.getName().equals("body-wear")) {
             body.add(geometry);intact.put(geometry,positions(geometry.getMesh()));
@@ -58,7 +58,7 @@ class VehicleDamageVisualTest {
         }
     }
     @Test void panelTopologyProducesVisibleLocalCreasesAndKeepsActualGunMuzzlesFixed() {
-        Node car=VehicleVisual.create(PresentationTestAssets.shared(),0);
+        Node car=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),0);
         Geometry paint=(Geometry)car.getChild("paint"),steel=(Geometry)car.getChild("steel");
         float[] original=positions(paint.getMesh()),gunOriginal=positions(steel.getMesh());
         float priorHood=0,priorDoor=0;
@@ -82,7 +82,7 @@ class VehicleDamageVisualTest {
         VehicleVisual.updateDamage(car,1);assertArrayEquals(original,positions(paint.getMesh()));
     }
     @Test void damageMaterialsAreOwnedByEachCarAndBrokenLampProgressionIsReversible() {
-        var assets=PresentationTestAssets.shared();Node first=VehicleVisual.create(assets,0),second=VehicleVisual.create(assets,0);
+        var assets=PresentationTestAssets.shared();Node first=VehicleVisual.create(assets,game.wreckriff.config.VehicleProfile.rivet(),0),second=VehicleVisual.create(assets,game.wreckriff.config.VehicleProfile.rivet(),0);
         List<Material> firstMaterials=new ArrayList<>(),secondMaterials=new ArrayList<>();
         first.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry)firstMaterials.add(geometry.getMaterial());});
         second.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry)secondMaterials.add(geometry.getMaterial());});
@@ -98,7 +98,7 @@ class VehicleDamageVisualTest {
         for(int vertex=0;vertex<lamp.getMesh().getVertexCount();vertex++)assertEquals(1,colors.get(vertex*4));
     }
     @Test void bodyFollowingFrostAndShellRespectStatusRepairDeathAndActiveGeometryBudget() {
-        Node car=VehicleVisual.create(PresentationTestAssets.shared(),0);
+        Node car=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),0);
         Node frost=(Node)car.getChild("frost-overlay"),shield=(Node)car.getChild("shield-shell");
         assertEquals(Spatial.CullHint.Always,frost.getCullHint());assertEquals(Spatial.CullHint.Always,shield.getCullHint());
         for(float hp:new float[]{1,.75f,.5f,.25f}) {
@@ -123,9 +123,9 @@ class VehicleDamageVisualTest {
     }
     @Test void rebuildingCarForRetryReusesImmutableTextureImagesWithoutSharingDamageMaterials() {
         var assets=PresentationTestAssets.shared();
-        Node original=VehicleVisual.create(assets,0);
+        Node original=VehicleVisual.create(assets,game.wreckriff.config.VehicleProfile.rivet(),0);
         for(int retry=0;retry<3;retry++) {
-            Node rebuilt=VehicleVisual.create(assets,retry);
+            Node rebuilt=VehicleVisual.create(assets,game.wreckriff.config.VehicleProfile.rivet(),retry);
             for(String part:List.of("paint","steel","rubber-trim")) {
                 Material first=((Geometry)original.getChild(part)).getMaterial(),next=((Geometry)rebuilt.getChild(part)).getMaterial();
                 assertNotSame(first,next);

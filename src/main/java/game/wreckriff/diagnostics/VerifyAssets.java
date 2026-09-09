@@ -88,6 +88,8 @@ public final class VerifyAssets {
         });
         attempt(errors, "audio", () -> verifyAudio(assets));
         attempt(errors, "campaign music", () -> verifyCampaignMusic(assets));
+        attempt(errors, "pickup models", () -> verifyPickupModels(assets));
+        attempt(errors, "arena art", () -> verifyArenaArt(assets));
         attempt(errors, "font", () -> verifyFont(assets));
         attempt(errors, "licensed textures", () -> verifyTextures(assets));
         attempt(errors, "asset license evidence", () -> {
@@ -116,6 +118,7 @@ public final class VerifyAssets {
         });
         attempt(errors, "procedural sources", () -> {
             for (String path : List.of("src/tools/java/game/wreckriff/tools/GenerateAudio.java", "src/tools/java/game/wreckriff/tools/GenerateFont.java", "src/tools/prepare_recorded_sfx.py",
+                    "src/tools/java/game/wreckriff/tools/GeneratePickupModels.java",
                     "src/main/java/game/wreckriff/presentation/VehicleVisual.java", "src/main/java/game/wreckriff/arena/ArenaFactory.java",
                     "src/main/java/game/wreckriff/presentation/CombatVisuals.java", "src/main/java/game/wreckriff/presentation/ArenaPresentation.java")) {
                 byte[] bytes = Files.readAllBytes(Path.of(path));
@@ -292,6 +295,65 @@ public final class VerifyAssets {
         assets.add(asset("audio/score.txt", "score", resource("audio/score.txt"), "GenerateAudio.java", "SOURCE_PRESENT"));
         assets.add(asset("audio/music-provenance.json", "music-provenance", provenanceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
         assets.add(asset("audio/music-source.json", "music-provenance", sourceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
+    }
+
+    private static void verifyPickupModels(List<Asset> assets)throws Exception {
+        String manifest="models/pickups/provenance.json",generator="src/tools/java/game/wreckriff/tools/GeneratePickupModels.java";
+        byte[] bytes=resource(manifest);
+        JsonObject provenance=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(!"original-java-procedural".equals(provenance.get("origin").getAsString())
+                ||!generator.equals(provenance.get("generator").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(generator))).equals(provenance.get("generatorSha256").getAsString()))
+            throw new IOException("Pickup model source/provenance mismatch");
+        Map<String,game.wreckriff.presentation.PickupStyle> required=new HashMap<>();
+        for(var style:game.wreckriff.presentation.PickupStyle.values())required.put(style.model(),style);
+        Set<String> hashes=new HashSet<>();var manager=new com.jme3.asset.DesktopAssetManager(true);
+        for(JsonElement element:provenance.getAsJsonArray("models")) {
+            JsonObject entry=element.getAsJsonObject();String path=entry.get("asset").getAsString();
+            var style=required.remove(path);
+            if(style==null||!style.name().equals(entry.get("type").getAsString()))
+                throw new IOException("Unexpected/duplicate pickup model: "+path);
+            byte[] modelBytes=resource(path);String digest=hash(modelBytes);
+            if(!digest.equals(entry.get("sha256").getAsString())||!hashes.add(digest))
+                throw new IOException("Pickup model hash mismatch or reused model: "+path);
+            var model=manager.loadModel(path);model.updateGeometricState();
+            if(!style.kind().equals(model.getUserData("pickupKind"))||!"original-java-procedural".equals(model.getUserData("assetOrigin")))
+                throw new IOException("Pickup model identity mismatch: "+path);
+            if(!(model.getWorldBound() instanceof com.jme3.bounding.BoundingBox bound)
+                    ||!com.jme3.math.Vector3f.isValidVector(bound.getCenter())
+                    ||!Float.isFinite(bound.getXExtent())||!Float.isFinite(bound.getYExtent())||!Float.isFinite(bound.getZExtent())
+                    ||bound.getXExtent()<=.1f||bound.getZExtent()<=.1f||bound.getYExtent()<=.05f
+                    ||bound.getXExtent()>1.05f||bound.getZExtent()>1.05f||bound.getYExtent()>1.05f)
+                throw new IOException("Pickup model bounds must fit its road pad: "+path);
+            int[] triangles={0};
+            model.depthFirstTraversal(spatial->{
+                if(spatial.getNumControls()!=0)throw new IllegalArgumentException("Pickup model contains runtime controls: "+path);
+                if(spatial instanceof com.jme3.scene.Geometry geometry) {
+                    var mesh=geometry.getMesh();triangles[0]+=mesh.getTriangleCount();
+                    if(geometry.getMaterial()==null||mesh.getVertexCount()==0)throw new IllegalArgumentException("Empty pickup geometry: "+path);
+                    for(var type:List.of(com.jme3.scene.VertexBuffer.Type.Position,com.jme3.scene.VertexBuffer.Type.Normal,
+                            com.jme3.scene.VertexBuffer.Type.TexCoord,com.jme3.scene.VertexBuffer.Type.Tangent)) {
+                        var buffer=mesh.getFloatBuffer(type);if(buffer==null)continue;
+                        var data=buffer.asReadOnlyBuffer();data.rewind();
+                        while(data.hasRemaining())if(!Float.isFinite(data.get()))throw new IllegalArgumentException("Non-finite pickup vertices: "+path);
+                    }
+                }
+            });
+            if(triangles[0]<40||triangles[0]>10000)throw new IOException("Empty or oversized pickup mesh: "+path);
+            assets.add(asset(path,"pickup-model",modelBytes,generator+"; original exported geometry; existing licensed SurfaceMaterials","MODEL_AND_HASH_VERIFIED"));
+        }
+        if(!required.isEmpty())throw new IOException("Missing pickup models: "+required.keySet());
+        assets.add(asset(manifest,"pickup-model-provenance",bytes,generator,"VERIFIED"));
+    }
+
+    private static void verifyArenaArt(List<Asset> assets)throws Exception {
+        var registry=ArenaRegistry.load();
+        for(var entry:registry.entries()) {
+            var scene=game.wreckriff.presentation.ArenaArt.load(registry.definition(entry.id()));
+            if(scene.parts().isEmpty())throw new IOException("Arena has no authored art: "+entry.id());
+            String path="config/arena-art-"+entry.id().replace('_','-')+".json";
+            assets.add(asset(path,"arena-art",resource(path),scene.source()+"; "+scene.license(),"SCENE_VALIDATED"));
+        }
     }
 
     private static Map<String,String> verifyPickupEffects(AudioConfig config,List<Asset> assets)throws Exception {

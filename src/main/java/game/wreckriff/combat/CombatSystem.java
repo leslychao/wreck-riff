@@ -4,6 +4,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.simulation.*;
+import game.wreckriff.config.VehicleDefinition;
 
 import java.util.*;
 
@@ -11,6 +12,15 @@ import static game.wreckriff.combat.CombatRules.ticks;
 
 /** Fixed-tick weapon acceptance, geometric attacks, and one simultaneous damage phase. */
 public final class CombatSystem {
+    @FunctionalInterface public interface DirectDamageMultiplier {float multiplier(int targetId,Vector3f localPoint);}
+    private DirectDamageMultiplier directDamageMultiplier=(target,point)->1;
+    public void directDamageMultiplier(DirectDamageMultiplier multiplier) {directDamageMultiplier=Objects.requireNonNull(multiplier);}
+    private float directDamage(int targetId,Vector3f point,float amount,WorldQuery world) {
+        Vector3f local=world.rotation(targetId).inverse().mult(point.subtract(world.position(targetId)));
+        float factor=directDamageMultiplier.multiplier(targetId,local);
+        if(factor!=1&&factor!=1.25f)throw new IllegalStateException("Unsupported target damage multiplier");
+        return amount*factor;
+    }
     private record ShotIntent(long id, int ownerId, String kind, int targetId, float pitch, float yaw, int barrel) {}
     private record DamageKey(long eventId, int targetId) {}
     private record Damage(int targetId, int sourceId, float amount, String cause, long eventId, Vector3f point, Vector3f normal,Vector3f origin) {}
@@ -53,6 +63,12 @@ public final class CombatSystem {
     }
     private record Mine(long id,int ownerId,WorldQuery.Support support,long armedAt,long expiresAt) {}
     private record FireZone(long id,int ownerId,WorldQuery.Support support,long expiresAt,List<Vector3f> points) {}
+    private record SpecialBomb(long id,int ownerId,WorldQuery.Support support,long explodeAt) {}
+    public record SpecialBombView(long id,int ownerId,Vector3f position,Vector3f normal,int remainingTicks,float radius) {
+        public SpecialBombView {position=position.clone();normal=normal.clone();}
+        @Override public Vector3f position() {return position.clone();}
+        @Override public Vector3f normal() {return normal.clone();}
+    }
     private record Pair(int first, int second) implements Comparable<Pair> {
         static Pair of(int first, int second) { return new Pair(Math.min(first, second), Math.max(first, second)); }
         @Override public int compareTo(Pair other) {
@@ -76,6 +92,7 @@ public final class CombatSystem {
     private final List<ControlHit> controlHits=new ArrayList<>();
     private final List<Mine> mines=new ArrayList<>();
     private final List<FireZone> fireZones=new ArrayList<>();
+    private final List<SpecialBomb> specialBombs=new ArrayList<>();
     private final Map<Long,Salvo> salvos=new LinkedHashMap<>();
     private final List<FallingCharge> pendingCharges=new ArrayList<>();
     private final Map<Long,FallingCharge> warnings=new LinkedHashMap<>();
@@ -98,6 +115,7 @@ public final class CombatSystem {
     private int reservedCharges;
     private WorldQuery lastWorld;
     private long lastControlTimerTick=Long.MIN_VALUE;
+    private long lastSpecialTick=Long.MIN_VALUE;
 
     public CombatSystem(MatchSession session, CombatRules rules) {
         this.session = Objects.requireNonNull(session);
@@ -150,7 +168,8 @@ public final class CombatSystem {
                 vehicle.machineGunCooldown = rules.machineGun().cooldownTicks();
             }
             if (command.selectedWeapon()) acceptWeapon(vehicle, world);
-            acceptAbility(vehicle,command.ability(),world);
+            if(command.ability()==AbilityId.SPECIAL)acceptSpecial(vehicle,command,world);
+            else acceptAbility(vehicle,command.ability(),world);
         }
     }
 
@@ -195,10 +214,173 @@ public final class CombatSystem {
         if(type==WeaponType.BALLISTIC)reservedCharges+=rules.ballistic().charges();
     }
     private void acceptAbility(VehicleState vehicle,AbilityId ability,WorldQuery world) {
-        if(ability==AbilityId.NONE||ability==AbilityId.SHIELD||vehicle.abilityCooldown(ability)>0)return;
+        if(ability!=AbilityId.FREEZE||vehicle.abilityCooldown(ability)>0)return;
         if(ability==AbilityId.FREEZE&&!projectileCapacity(1)) {denied(vehicle,world,"projectile-limit");return;}
         intents.add(new ShotIntent(nextShotId++,vehicle.id,"freeze",-1,0,0,0));
         vehicle.abilityCooldown(ability,ticks(rules.control().freezeCooldownSeconds()));
+    }
+
+    private void acceptSpecial(VehicleState owner,VehicleCommand command,WorldQuery world) {
+        if(owner.boss||owner.controlled()||owner.specialActive()||owner.abilityCooldown(AbilityId.SPECIAL)>0)return;
+        var definition=VehicleDefinition.forId(owner.profileId);
+        WorldQuery.Support support=null;
+        if(definition==VehicleDefinition.SPARK) {
+            if(!world.grounded(owner.id)||specialBombs.size()>=SpecialRules.MAXIMUM_BOMBS) {denied(owner,world,"special-unavailable");return;}
+            support=world.support(world.position(owner.id).add(0,.25f,0),world.profile(owner.id).roadOffset()+1);
+            if(support==null||support.normal().y<.5f) {denied(owner,world,"special-needs-road");return;}
+        }
+        owner.specialDamage=0;owner.specialTargetId=-1;
+        owner.abilityCooldown(AbilityId.SPECIAL,ticks(SpecialRules.cooldownSeconds(owner.profileId)));
+        switch(definition) {
+            case RIVET->{owner.specialPhase=VehicleState.SpecialPhase.PULSE_WINDUP;owner.specialTicks=ticks(SpecialRules.PULSE_WINDUP);}
+            case GRINDER->{owner.specialPhase=VehicleState.SpecialPhase.GRINDER_WINDUP;owner.specialTicks=ticks(SpecialRules.GRINDER_WINDUP);}
+            case SPARK->{
+                owner.specialPhase=VehicleState.SpecialPhase.DASH;owner.specialTicks=ticks(SpecialRules.DASH_SECONDS);
+                // Positive steering is driver's right: the camera/driver convention is local -X.
+                owner.dashDirection.set(world.rotation(owner.id).mult(new Vector3f(command.steer()<0?1:-1,0,0)));
+                owner.dashDirection.y=0;owner.dashDirection.normalizeLocal();
+                long id=nextShotId++;
+                specialBombs.add(new SpecialBomb(id,owner.id,support,session.tick+ticks(SpecialRules.BOMB_FUSE)));
+                events.add(new GameEvent(GameEvent.Type.BOMB_PLACED,id,owner.id,owner.id,support.point(),"special-bomb",
+                        SpecialRules.BOMB_RADIUS,world.position(owner.id),support.normal()));
+            }
+        }
+        events.add(event(GameEvent.Type.SPECIAL_STARTED,nextShotId++,owner.id,owner.id,world.position(owner.id),owner.profileId,
+                owner.specialTicks/(float)MatchSession.TICKS_PER_SECOND));
+    }
+
+    /** After the native step, using actual contacts, before the common simultaneous damage resolution. */
+    public void advanceSpecials(WorldQuery world) {
+        if(session.outcome!=MatchSession.Outcome.NONE||lastSpecialTick==session.tick)return;
+        lastSpecialTick=session.tick;
+        for(var owner:orderedVehicles) {
+            if(!owner.specialActive())continue;
+            if(!owner.alive()||owner.controlled()) {cancelSpecial(owner,world);continue;}
+            switch(owner.specialPhase) {
+                case PULSE_WINDUP->{if(--owner.specialTicks==0) {pulse(owner,world);cancelSpecial(owner,world);}}
+                case GRINDER_WINDUP->{if(--owner.specialTicks==0) {
+                    owner.specialPhase=VehicleState.SpecialPhase.GRINDER_SEARCH;owner.specialTicks=ticks(SpecialRules.GRINDER_SEARCH);
+                }}
+                case GRINDER_SEARCH->{
+                    int targetId=grinderTarget(owner,world);
+                    if(targetId>=0) {
+                        owner.specialTargetId=targetId;owner.specialPhase=VehicleState.SpecialPhase.GRINDER_CONTACT;
+                        owner.specialTicks=ticks(SpecialRules.GRINDER_CONTACT);
+                        var target=session.vehicle(targetId);
+                        if(!target.boss&&!target.controlled()&&target.controlImmunityTicks==0&&target.shieldTicks==0
+                                &&world.beginGrab(owner.id,target.id)) {
+                            // Cancel an in-progress dodge or windup as soon as the physical capture succeeds.
+                            cancelSpecial(target,world);target.grabbedBy=owner.id;
+                            events.add(event(GameEvent.Type.GRAB_STARTED,nextShotId++,target.id,owner.id,world.position(target.id),"grinder",SpecialRules.GRINDER_CONTACT));
+                        }
+                        grind(owner,world);
+                    } else if(--owner.specialTicks==0)cancelSpecial(owner,world);
+                }
+                case GRINDER_CONTACT->grind(owner,world);
+                case DASH->{if(--owner.specialTicks==0||!world.grounded(owner.id))cancelSpecial(owner,world);}
+                case READY->{ }
+            }
+        }
+        for(var iterator=specialBombs.iterator();iterator.hasNext();) {
+            var bomb=iterator.next();if(session.tick<bomb.explodeAt)continue;
+            Vector3f center=bomb.support.point().add(bomb.support.normal().mult(.08f));
+            events.add(new GameEvent(GameEvent.Type.EXPLOSION,bomb.id,-1,bomb.ownerId,center,"special-bomb",SpecialRules.BOMB_RADIUS,
+                    center,bomb.support.normal()));
+            for(var target:orderedVehicles) {
+                if(!target.alive())continue;
+                float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/SpecialRules.BOMB_RADIUS);
+                if(falloff<=0||!exposed(center,target.id,world))continue;
+                float amount=SpecialRules.BOMB_DAMAGE*falloff*(target.id==bomb.ownerId?rules.ownerSplashMultiplier():1);
+                queueContactDamage(target.id,bomb.ownerId,amount,"special-bomb",bomb.id,
+                        world.closestHullPoint(target.id,center),bomb.support.normal(),center);
+            }
+            iterator.remove();
+        }
+    }
+
+    private void pulse(VehicleState owner,WorldQuery world) {
+        Vector3f origin=world.position(owner.id).add(world.rotation(owner.id).mult(world.profile(owner.id).grinderIntake()));
+        Vector3f forward=world.forward(owner.id).setY(0).normalizeLocal();
+        VehicleState chosen=null;float nearest=Float.POSITIVE_INFINITY;
+        for(var target:orderedVehicles) {
+            if(target.id==owner.id||!target.alive()||target.protectionTicks>0)continue;
+            Vector3f point=world.closestHullPoint(target.id,origin),offset=point.subtract(origin);
+            float distance=offset.length();
+            if(distance>SpecialRules.PULSE_RANGE||distance>=nearest||!specialExposed(owner.id,origin,target.id,world))continue;
+            // Use the full direction for the cone: a car on another deck is not in a flat forward pulse.
+            if(distance>.001f&&forward.dot(offset.divide(distance))<Math.cos(radians(SpecialRules.PULSE_HALF_ANGLE)))continue;
+            nearest=distance;chosen=target;
+        }
+        long id=nextShotId++;
+        Vector3f end=chosen==null?origin.add(forward.mult(SpecialRules.PULSE_RANGE)):world.closestHullPoint(chosen.id,origin);
+        events.add(new GameEvent(GameEvent.Type.SPECIAL_HIT,id,chosen==null?-1:chosen.id,owner.id,end,"pulse",SpecialRules.PULSE_DAMAGE,origin,forward));
+        if(chosen==null)return;
+        queueContactDamage(chosen.id,owner.id,SpecialRules.PULSE_DAMAGE,"pulse",id,end,forward.negate(),origin);
+        Vector3f direction=world.position(chosen.id).subtract(world.position(owner.id)).setY(0);
+        if(direction.lengthSquared()<.0001f)direction.set(forward);else direction.normalizeLocal();
+        float magnitude=Math.min(SpecialRules.PULSE_IMPULSE,SpecialRules.PULSE_MAX_DELTA_SPEED*world.mass(chosen.id));
+        if(chosen.shieldTicks>0)magnitude*=rules.control().shieldDamageMultiplier();
+        blasts.computeIfAbsent(chosen.id,ignored->new BlastSum()).linear.addLocal(direction.mult(magnitude));
+    }
+
+    private int grinderTarget(VehicleState owner,WorldQuery world) {
+        if(!world.grounded(owner.id))return -1;
+        Vector3f intake=world.position(owner.id).add(world.rotation(owner.id).mult(world.profile(owner.id).grinderIntake()));
+        int candidate=-1;float nearest=Float.POSITIVE_INFINITY;
+        for(var target:orderedVehicles) {
+            if(target.id==owner.id||!target.alive()||target.protectionTicks>0||!grinderContact(owner,target,world))continue;
+            float distance=world.distanceToHull(target.id,intake);
+            if(distance<nearest) {nearest=distance;candidate=target.id;}
+        }
+        return candidate;
+    }
+    private boolean grinderContact(VehicleState owner,VehicleState target,WorldQuery world) {
+        if(!world.grounded(owner.id)||!world.grounded(target.id)||!world.touchingVehicles(owner.id,target.id))return false;
+        Vector3f intake=world.position(owner.id).add(world.rotation(owner.id).mult(world.profile(owner.id).grinderIntake()));
+        Vector3f point=world.closestHullPoint(target.id,intake);
+        Vector3f local=world.rotation(owner.id).inverse().mult(point.subtract(world.position(owner.id)));
+        Vector3f socket=world.profile(owner.id).grinderIntake();
+        return local.z>=socket.z-.65f&&Math.abs(local.x)<=world.profile(owner.id).width()*.48f
+                &&point.distance(intake)<=world.profile(owner.id).width()*.6f&&specialExposed(owner.id,intake,target.id,world);
+    }
+    private boolean specialExposed(int ownerId,Vector3f origin,int targetId,WorldQuery world) {
+        for(var sample:world.hullVisibilityPoints(targetId)) {
+            var hit=world.ray(origin,sample,ownerId);
+            if(hit==null||hit.vehicleId()==targetId||hit.fraction()>=.999f)return true;
+        }
+        return false;
+    }
+    private void grind(VehicleState owner,WorldQuery world) {
+        var target=session.vehicle(owner.specialTargetId);
+        boolean held=target.grabbedBy==owner.id;
+        if(!target.alive()||target.protectionTicks>0||!grinderContact(owner,target,world)
+                ||held&&(target.shieldTicks>0||!world.grabIntact(owner.id,target.id))) {
+            cancelSpecial(owner,world);return;
+        }
+        float amount=Math.min(SpecialRules.GRINDER_DPS*MatchSession.DT,SpecialRules.GRINDER_DAMAGE_CAP-owner.specialDamage);
+        if(amount>0) {
+            owner.specialDamage+=amount;
+            Vector3f intake=world.position(owner.id).add(world.rotation(owner.id).mult(world.profile(owner.id).grinderIntake()));
+            queueContactDamage(target.id,owner.id,amount,"grinder",nextShotId++,world.closestHullPoint(target.id,intake),world.forward(owner.id).negate(),intake);
+        }
+        if(--owner.specialTicks==0)cancelSpecial(owner,world);
+    }
+    public void cancelSpecial(VehicleState owner,WorldQuery world) {
+        if(owner.specialTargetId>=0&&session.containsParticipant(owner.specialTargetId)) {
+            var target=session.vehicle(owner.specialTargetId);
+            if(target.grabbedBy==owner.id) {
+                target.grabbedBy=-1;target.controlImmunityTicks=ticks(rules.control().immunitySeconds());
+                events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,owner.id,world.position(target.id),"grinder",0));
+            }
+        }
+        world.endGrab(owner.id);
+        if(owner.dashing())world.endDash(owner.id);
+        if(owner.specialActive())events.add(event(GameEvent.Type.SPECIAL_ENDED,nextShotId++,owner.id,owner.id,world.position(owner.id),owner.profileId,0));
+        owner.clearSpecial();
+    }
+    public List<SpecialBombView> specialBombs() {
+        return specialBombs.stream().map(b->new SpecialBombView(b.id,b.ownerId,b.support.point(),b.support.normal(),
+                (int)Math.max(0,b.explodeAt-session.tick),SpecialRules.BOMB_RADIUS)).toList();
     }
 
     private void updateLock(VehicleState owner, WorldQuery world) {
@@ -279,16 +461,24 @@ public final class CombatSystem {
         Vector3f muzzle = intent.kind.equals("machine-gun")?world.machineGunMuzzle(intent.ownerId,intent.barrel):world.muzzle(intent.ownerId);
         WorldQuery.Hit blocked = world.ray(world.weaponBase(intent.ownerId), muzzle, intent.ownerId);
         Vector3f forward = world.forward(intent.ownerId).normalizeLocal();
+        var owner=session.vehicle(intent.ownerId);
+        boolean aimedIntoGrinder=owner.grinding()&&owner.specialTargetId>=0
+                &&session.vehicle(owner.specialTargetId).grabbedBy==owner.id;
+        if(aimedIntoGrinder) {
+            Vector3f point=world.closestHullPoint(owner.specialTargetId,muzzle);
+            forward=point.subtract(muzzle).normalizeLocal();
+        }
         if (intent.kind.equals("machine-gun")) {
             Quaternion spread = new Quaternion().fromAngles(intent.pitch, intent.yaw, 0);
-            Vector3f direction = world.rotation(intent.ownerId).mult(spread.mult(Vector3f.UNIT_Z)).normalizeLocal();
+            Quaternion orientation=aimedIntoGrinder?new Quaternion().lookAt(forward,Vector3f.UNIT_Y):world.rotation(intent.ownerId);
+            Vector3f direction = orientation.mult(spread.mult(Vector3f.UNIT_Z)).normalizeLocal();
             Vector3f end = muzzle.add(direction.mult(rules.machineGun().range()));
             WorldQuery.Hit hit = blocked == null ? world.ray(muzzle, end, intent.ownerId) : blocked;
             events.add(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
                     hit==null?end:hit.point(),intent.kind,rules.machineGun().damage(),muzzle,Vector3f.ZERO));
             if(hit!=null)impact(intent.id,intent.ownerId,intent.kind,hit,muzzle);
             if (hit != null && hit.vehicleId() >= 0 && hit.vehicleId() != intent.ownerId) {
-                queueContactDamage(hit.vehicleId(),intent.ownerId,rules.machineGun().damage(),intent.kind,intent.id,hit.point(),hit.normal(),muzzle);
+                queueContactDamage(hit.vehicleId(),intent.ownerId,directDamage(hit.vehicleId(),hit.point(),rules.machineGun().damage(),world),intent.kind,intent.id,hit.point(),hit.normal(),muzzle);
             }
             return;
         }
@@ -302,7 +492,7 @@ public final class CombatSystem {
         if(intent.kind.equals("napalm")) {
             launchNapalm(projectile,world);
         }
-        if(intent.kind.equals("cannon"))projectile.velocity.set(forwardXZ(intent.ownerId,world).mult(rules.cannon().speed())).addLocal(0,rules.cannon().upwardSpeed(),0);
+        if(intent.kind.equals("cannon"))projectile.velocity.set((aimedIntoGrinder?forward:forwardXZ(intent.ownerId,world)).mult(rules.cannon().speed())).addLocal(0,rules.cannon().upwardSpeed(),0);
         if(intent.kind.equals("ballistic"))launchCarrier(projectile,world);
         events.add(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
                 blocked==null?muzzle:blocked.point(),intent.kind,0,muzzle,Vector3f.ZERO));
@@ -616,7 +806,7 @@ public final class CombatSystem {
             if(!target.alive())continue;
             if(target.id==direct) {
                 float owner=target.id==projectile.ownerId()?rules.ownerSplashMultiplier():1;
-                queueContactDamage(target.id,projectile.ownerId(),cannon.directDamage()*owner,"cannon",id,point,normal);
+                queueContactDamage(target.id,projectile.ownerId(),directDamage(target.id,point,cannon.directDamage()*owner,world),"cannon",id,point,normal);
                 if(target.protectionTicks==0) {
                     float multiplier=owner*(target.shieldTicks>0?rules.control().shieldDamageMultiplier():1)
                             *projectile.velocity.length()/cannon.speed();
@@ -847,7 +1037,7 @@ public final class CombatSystem {
             if (target.id == projectile.ownerId()) amount *= rules.ownerSplashMultiplier();
             Vector3f point=direct?hit.point():world.closestHullPoint(target.id,center);
             Vector3f normal=direct?hit.normal():center.subtract(point).normalizeLocal();
-            queueContactDamage(target.id,projectile.ownerId(),amount,projectile.kind(),projectile.id(),point,normal);
+            queueContactDamage(target.id,projectile.ownerId(),direct?directDamage(target.id,point,amount,world):amount,projectile.kind(),projectile.id(),point,normal);
             addBlast(target.id,projectile.ownerId(),center,point,rocket.blast(),direct?1:falloff,world);
         }
     }
@@ -893,6 +1083,7 @@ public final class CombatSystem {
             throw new IllegalArgumentException("Invalid damage participant");
         }
         Objects.requireNonNull(cause, "cause");
+        if(session.phase==MatchSession.Phase.BOSS_ENTRY&&sourceId==session.bossParticipantId&&sourceId>=0)return;
         if (amount == 0 || !seenDamage.add(new DamageKey(sourceEvent, targetId))) return;
         damage.add(new Damage(targetId, sourceId, amount, cause, sourceEvent,point,normal,origin));
     }
@@ -923,6 +1114,7 @@ public final class CombatSystem {
             blasts.clear();
             return;
         }
+        advanceSpecials(world);
         for (Map.Entry<Pair, Float> entry : ramSpeeds.entrySet()) {
             Pair pair = entry.getKey();
             if (!session.vehicle(pair.first).alive() || !session.vehicle(pair.second).alive()) continue;
@@ -963,6 +1155,8 @@ public final class CombatSystem {
         blasts.clear();
         for (VehicleState target : orderedVehicles) {
             if (target.alive() || !destroyed.add(target.id)) continue;
+            releaseControl(target,world,false);
+            cancelSpecial(target,world);
             world.immobilize(target.id,false);
             target.frozenTicks=target.shieldTicks=target.controlImmunityTicks=0;
             target.heavyImpactPending=false;target.impactStabilizerTicks=0;
@@ -1014,9 +1208,9 @@ public final class CombatSystem {
             lastControlTimerTick=session.tick;
             for(VehicleState target:orderedVehicles) {
                 if(!target.alive())continue;
-                boolean controlled=target.controlled();
+                boolean controlled=target.frozenTicks>0;
                 target.frozenTicks=Math.max(0,target.frozenTicks-1);
-                if(controlled&&!target.controlled()) {
+                if(controlled&&target.frozenTicks==0) {
                     target.controlImmunityTicks=ticks(rules.control().immunitySeconds());world.immobilize(target.id,false);
                     events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"freeze",0));
                 }
@@ -1028,6 +1222,7 @@ public final class CombatSystem {
             if(!target.alive()||target.protectionTicks>0)continue;
             if(target.shieldTicks>0) {shieldHit(target.id,hit.sourceId,hit.eventId,hit.point,hit.normal,Vector3f.ZERO,"freeze",0);continue;}
             if(target.controlled()||target.controlImmunityTicks>0)continue;
+            cancelSpecial(target,world);
             target.frozenTicks=ticks(rules.control().freezeSeconds());world.immobilize(target.id,true);
             events.add(new GameEvent(GameEvent.Type.FREEZE,hit.eventId,target.id,hit.sourceId,hit.point,"freeze",rules.control().freezeSeconds(),Vector3f.ZERO,hit.normal));
         }
@@ -1036,7 +1231,8 @@ public final class CombatSystem {
     public void endControl(VehicleState target,WorldQuery world) { releaseControl(target,world,true); }
     public void cancelControl(VehicleState target,WorldQuery world) { releaseControl(target,world,false); }
     private void releaseControl(VehicleState target,WorldQuery world,boolean feedback) {
-        if(target.controlled()) {
+        if(target.grabbedBy>=0)cancelSpecial(session.vehicle(target.grabbedBy),world);
+        if(target.frozenTicks>0) {
             target.frozenTicks=0;target.controlImmunityTicks=ticks(rules.control().immunitySeconds());
             if(feedback)events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"freeze",0));
         }
@@ -1059,12 +1255,15 @@ public final class CombatSystem {
     }
 
     public void clear() {
-        if(lastWorld!=null)for(var vehicle:orderedVehicles)lastWorld.immobilize(vehicle.id,false);
+        if(lastWorld!=null)for(var vehicle:orderedVehicles) {
+            cancelSpecial(vehicle,lastWorld);lastWorld.immobilize(vehicle.id,false);
+        }
         for(var vehicle:orderedVehicles) {
             vehicle.frozenTicks=vehicle.shieldTicks=vehicle.controlImmunityTicks=vehicle.impactStabilizerTicks=0;
+            vehicle.clearSpecial();vehicle.grabbedBy=-1;
             vehicle.heavyImpactPending=false;
         }
-        mines.clear();fireZones.clear();controlHits.clear();fireExposureTicks.clear();reservedFireZones=0;
+        mines.clear();fireZones.clear();specialBombs.clear();controlHits.clear();fireExposureTicks.clear();reservedFireZones=0;
         projectiles.clear();
         salvos.clear();pendingCharges.clear();warnings.clear();napalmTargets.clear();reservedCharges=0;
         intents.clear();

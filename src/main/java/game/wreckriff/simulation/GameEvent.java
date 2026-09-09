@@ -8,7 +8,8 @@ public record GameEvent(Type type, long eventId, int subjectId, int sourceId,
         Vector3f position, String kind, float value, Vector3f origin, Vector3f normal,UUID sessionId,String objectId) {
     public enum Type { SHOT, IMPACT, EXPLOSION, RAM, DAMAGE, DESTROYED, PICKUP, MATCH_FINISHED, EMPTY,
         FREEZE, SHIELD, SHIELD_HIT, SHIELD_ENDED, CONTROL_ENDED, MINE_PLACED, FIRE_STARTED, FIRE_ENDED,
-        LAUNCH_COMPRESS, LAUNCHED, LANDED, LAUNCH_REJECTED }
+        LAUNCH_COMPRESS, LAUNCHED, LANDED, LAUNCH_REJECTED,
+        SPECIAL_STARTED, SPECIAL_HIT, SPECIAL_ENDED, GRAB_STARTED, BOMB_PLACED }
     public GameEvent {
         position = copy(position); origin = copy(origin); normal = copy(normal);
     }

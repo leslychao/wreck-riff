@@ -26,14 +26,8 @@ final class VehicleDamageVisual extends AbstractControl {
     private final Material scratchMaterial,sootMaterial;
     private final Mesh[] crackStages=new Mesh[STAGES],wearStages=new Mesh[STAGES];
     private int stage;
-    private final Spatial bossPanels;
-    private final boolean shedPanels;
-
-    static void install(AssetManager assets,Node root) {install(assets,root,null);}
     static void install(AssetManager assets,Node root,VehicleProfile profile) {root.addControl(new VehicleDamageVisual(assets,root,profile));}
     private VehicleDamageVisual(AssetManager assets,Node root,VehicleProfile profile) {
-        bossPanels=root.getChild("boss-panels");
-        shedPanels=profile!=null&&Set.of("boss_emcee","boss_ash_shepherd","boss_director").contains(profile.id());
         IdentityHashMap<Material,Material[]> materials=new IdentityHashMap<>();
         for(Spatial child:List.copyOf(root.getChildren())) {
             if(child.getName().startsWith("wheel-")||child.getName().startsWith("exhaust-"))continue;
@@ -49,7 +43,7 @@ final class VehicleDamageVisual extends AbstractControl {
                 if(geometry.getName().equals("paint")||geometry.getName().equals("glass")) {
                     Mesh[] overlays=new Mesh[STAGES];for(int damage=0;damage<STAGES;damage++)overlays[damage]=offset(meshes[damage],.010f);
                     Geometry overlay=new Geometry("frost-"+geometry.getName(),overlays[0]);
-                    Material ice=SurfaceMaterials.lit(assets,new ColorRGBA(.42f,.78f,.95f,.56f),85,.2f);
+                    Material ice=SurfaceMaterials.lit(assets,new ColorRGBA(.36f,.76f,.95f,.62f),110,.35f);
                     if(geometry.getMaterial().getParam("DiffuseMap")!=null)
                         ice.setTexture("DiffuseMap",(com.jme3.texture.Texture)geometry.getMaterial().getParam("DiffuseMap").getValue());
                     ice.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
@@ -58,14 +52,14 @@ final class VehicleDamageVisual extends AbstractControl {
                     frost.attachChild(overlay);frostParts.add(new Part(overlay,overlays,null));
                     Mesh[] shells=new Mesh[STAGES];for(int damage=0;damage<STAGES;damage++)shells[damage]=offset(meshes[damage],.065f);
                     Geometry shell=new Geometry("shield-"+geometry.getName(),shells[0]);
-                    shell.setMaterial(translucent(assets,new ColorRGBA(.08f,.52f,1,.23f)));
+                    shell.setMaterial(translucent(assets,new ColorRGBA(.08f,.52f,1,.20f)));
                     shell.setQueueBucket(RenderQueue.Bucket.Transparent);shell.setShadowMode(RenderQueue.ShadowMode.Off);
                     shield.attachChild(shell);shieldParts.add(new Part(shell,shells,null));
                 }
             }});
         }
         for(int damage=1;damage<STAGES;damage++) {
-            if(profile==null) {crackStages[damage]=cracks(damage);wearStages[damage]=damage<3?scratches(damage):soot(damage);}
+            if(profile.id().equals("rivet")) {crackStages[damage]=cracks(damage);wearStages[damage]=damage<3?scratches(damage):soot(damage);}
             else {
                 final int selected=damage;
                 Mesh damagedGlass=parts.stream().filter(p->p.geometry.getName().equals("glass")).findFirst().orElseThrow().meshes[selected];
@@ -91,8 +85,6 @@ final class VehicleDamageVisual extends AbstractControl {
     }
     void damage(float hpFraction) {
         int next=stage(hpFraction);
-        if(bossPanels!=null&&shedPanels)
-            bossPanels.setCullHint(hpFraction<=.30f?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
         if(next==stage)return;stage=next;
         for(Part part:parts) {part.geometry.setMesh(part.meshes[stage]);part.geometry.setMaterial(part.materials[stage]);}
         for(Part part:frostParts)part.geometry.setMesh(part.meshes[stage]);
@@ -177,7 +169,7 @@ final class VehicleDamageVisual extends AbstractControl {
         Mesh mesh=original.deepClone();FloatBuffer positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);
         for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
             Vector3f point=new Vector3f(positions.get(vertex*3),positions.get(vertex*3+1),positions.get(vertex*3+2));
-            Vector3f changed=profile==null?dent(point,stage):bossDent(point,stage,profile);
+            Vector3f changed=profile.id().equals("rivet")?dent(point,stage):bossDent(point,stage,profile);
             positions.put(vertex*3,changed.x);positions.put(vertex*3+1,changed.y);positions.put(vertex*3+2,changed.z);
         }
         mesh.getBuffer(VertexBuffer.Type.Position).updateData(positions);

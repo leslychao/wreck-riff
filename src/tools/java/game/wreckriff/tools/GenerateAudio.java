@@ -243,9 +243,9 @@ public final class GenerateAudio {
                         case "power" -> metal(t,.01,145*pitch,12,n)*.80
                                 + metal(t,.065+offset,230*pitch,20,n)*.36
                                 + pickupTone(t,.025,.36,74*pitch,-25,.70);
-                        case "mine" -> metal(t,.008,1250*pitch,88,n)*.72
-                                + metal(t,.085+offset,1610*pitch,92,n)*.68
-                                + pickupTone(t,.16,.14,1045*pitch,0,.40);
+                        case "mine" -> metal(t,.008,1250*pitch,88,n)*.60
+                                + metal(t,.085+offset,1610*pitch,92,n)*.56
+                                + pickupTone(t,.16,.14,1045*pitch,0,.58);
                         case "napalm" -> {
                             double water=Math.sin(TAU*(180*pitch*t+480*t*t)+1.9*Math.sin(TAU*37*t));
                             double slosh=(water*.33+low*2.5)*pickupEnvelope(t,.008,.23);

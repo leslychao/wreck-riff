@@ -31,7 +31,7 @@ public final class SceneLighting {
         BloomFilter bloom=new BloomFilter(BloomFilter.GlowMode.Objects);
         bloom.setDownSamplingFactor(4);bloom.setBlurScale(1.2f);bloom.setBloomIntensity(.65f);
         FilterPostProcessor post=new FilterPostProcessor(assets);post.addFilter(bloom);viewport.addProcessor(post);
-        Handle handle=new Handle(ambient,sun,rim,shadows,bloom,viewport);
+        Handle handle=new Handle(ambient,sun,rim,shadows,bloom,post,viewport);
         handle.apply(Theme.INDUSTRIAL_YARD,true);return handle;
     }
 
@@ -54,14 +54,17 @@ public final class SceneLighting {
         private final DirectionalLight key,rim;
         private final DirectionalLightShadowRenderer shadows;
         private final BloomFilter bloom;
+        private final FilterPostProcessor post;
         private final ViewPort viewport;
         private Theme theme;
         private boolean glowEnabled;
+        private int samples=-1;
         private Handle(AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
-                DirectionalLightShadowRenderer shadows,BloomFilter bloom,ViewPort viewport) {
-            this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.viewport=viewport;
+                DirectionalLightShadowRenderer shadows,BloomFilter bloom,FilterPostProcessor post,ViewPort viewport) {
+            this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.post=post;this.viewport=viewport;
         }
         public void apply(Theme theme,boolean glowEnabled) {
+            if(this.theme==theme&&this.glowEnabled==glowEnabled)return;
             Profile colors=profile(theme);this.theme=theme;this.glowEnabled=glowEnabled;
             ambient.setColor(colors.ambient());key.setColor(colors.key());rim.setColor(colors.rim());
             viewport.setBackgroundColor(colors.sky());shadows.setShadowIntensity(.57f);
@@ -69,5 +72,11 @@ public final class SceneLighting {
         }
         public Theme theme() {return theme;}
         public boolean glowEnabled() {return glowEnabled;}
+        public void setSamples(int samples) {
+            if(samples!=0&&samples!=2&&samples!=4&&samples!=8)throw new IllegalArgumentException("Invalid MSAA samples");
+            if(this.samples==samples)return;
+            this.samples=samples;
+            post.setNumSamples(samples);
+        }
     }
 }

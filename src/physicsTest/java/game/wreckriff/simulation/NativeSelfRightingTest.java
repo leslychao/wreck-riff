@@ -33,7 +33,7 @@ class NativeSelfRightingTest {
         Rig(float roll) {this(roll,"rivet");}
         Rig(float roll,String profileId) {
             profile=profileId.equals("rivet")?VehicleProfile.rivet(rules):VehicleProfile.boss(profileId,rules);
-            world.addStatic("floor",new BoxCollisionShape(new Vector3f(50,.5f,50)),new Vector3f(0,-.5f,0),new Quaternion());
+            world.addStatic("floor",new BoxCollisionShape(new Vector3f(300,.5f,300)),new Vector3f(0,-.5f,0),new Quaternion());
             Quaternion rotation=new Quaternion().fromAngleAxis(.4f,Vector3f.UNIT_Y)
                     .mult(new Quaternion().fromAngleAxis(roll*FastMath.DEG_TO_RAD,Vector3f.UNIT_Z));
             float minimum=Float.POSITIVE_INFINITY;
@@ -62,10 +62,6 @@ class NativeSelfRightingTest {
                     assertTrue(engaged,"Input must actually invoke righting");
                     return tick;
                 }
-            }
-            for(int wheel=0;wheel<4;wheel++) {
-                var nativeWheel=world.vehicle(0).getWheel(wheel);var point=nativeWheel.getCollisionLocation();
-                System.out.println("WHEEL "+wheel+" point="+point+" normal="+nativeWheel.getCollisionNormal()+" support="+world.support(point.add(0,.08f,0),.16f));
             }
             fail("Must stand on wheels within "+maxTicks+" ticks; up="+up()+" contacts="+world.wheelContacts(0)+" staticWheels="+world.supportedWheelContacts(0)
                     +" supported="+world.chassisSupported(0)+" angular="+world.vehicle(0).getAngularVelocity()
@@ -160,6 +156,16 @@ class NativeSelfRightingTest {
             if(left==null)left=angular;else assertTrue(left.dot(angular)<0,"Mirrored steer must choose opposite roll");
             rig.step(input==LEFT?RIGHT:LEFT);
             assertTrue(angular.dot(rig.world.vehicle(0).getAngularVelocity())>0,"Changing steer must not flip the locked roll axis");
+        }
+    }
+    @Test void wreckStopsReportingRightingWithoutAnotherDriverTick() {
+        try(var rig=new Rig(180)) {
+            for(int tick=0;tick<25;tick++)rig.step(GAS);
+            assertTrue(rig.driver.rightingActive());
+            rig.state.hp=0;rig.world.makeWreck(0);
+            // MatchRuntime omits dead drivers and advances only the native wreck.
+            rig.world.step();
+            assertFalse(rig.driver.rightingActive());
         }
     }
     @Test void selfRightingIsIndependentOfRenderRate() {

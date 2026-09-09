@@ -76,6 +76,7 @@ class NativeWheelInitializationTest {
         VehicleRules rules = VehicleRules.load();
         List<Sample> samples = new ArrayList<>();
         boolean[] injected = {false};
+        float[] nativeAngleBeforeCorruption={0};
         try (PhysicsWorld world = arenaWorld(rules)) {
             world.addVehicle(0, new Vector3f(54, 3.85f, -24), yaw(45));
             world.vehicle(0).brake(rules.brakeForce());
@@ -92,6 +93,7 @@ class NativeWheelInitializationTest {
                     // Model the upstream first-contact output defect after Bullet
                     // integrates the chassis, before PhysicsWorld updates wheels.
                     var wheel = world.vehicle(0).getWheel(0);
+                    nativeAngleBeforeCorruption[0]=wheel.getRotationAngle();
                     wheel.setRotationAngle(Float.NaN);
                     injected[0] = Float.isNaN(wheel.getRotationAngle());
                 }
@@ -102,6 +104,8 @@ class NativeWheelInitializationTest {
                 for (int tick = 0; tick < 240; tick++) {
                     driver.drive(tick < 120 ? REVERSE_TURN : REVERSE_STRAIGHT);
                     world.step();
+                    if(tick==0&&corruptNativeOutput)assertEquals(nativeAngleBeforeCorruption[0],world.vehicle(0).getWheel(0).getRotationAngle(),0f,
+                            "Corrupt output repair must preserve the actual native wheel phase");
                     if (tick == 0 && listenerRegistered) {
                         world.space().removeTickListener(corruption);
                         listenerRegistered = false;

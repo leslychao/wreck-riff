@@ -122,6 +122,7 @@ tasks.register('generatePickupModels', JavaExec) {
     mainClass = 'game.wreckriff.tools.GeneratePickupModels'
     args file('src/main/resources').absolutePath
     args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    args file('src/tools/java/game/wreckriff/tools/GeneratePickupModels.java').absolutePath
     inputs.files(sourceSets.tools.allSource, sourceSets.main.output.classesDirs)
     inputs.dir('src/main/resources/textures')
     outputs.dir(layout.buildDirectory.dir('generated-resources/models/pickups'))

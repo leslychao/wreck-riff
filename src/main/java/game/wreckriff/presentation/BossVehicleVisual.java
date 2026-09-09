@@ -13,6 +13,7 @@ final class BossVehicleVisual {
     private final VehicleProfile profile;
     private final float w,y,l;
     private final Builder paint=new Builder(),metal=new Builder(),trim=new Builder(),glass=new Builder(),lights=new Builder(),rear=new Builder(),panels=new Builder();
+    private final Builder serviceCover=new Builder(),serviceCore=new Builder();
     private BossVehicleVisual(VehicleProfile profile) {
         this.profile=profile;w=profile.width()/2;y=profile.height()/1.07f;l=profile.length()/2;
     }
@@ -27,7 +28,7 @@ final class BossVehicleVisual {
             case "boss_director" -> {author.director();yield new ColorRGBA(.13f,.17f,.24f,1);}
             default -> throw new IllegalArgumentException("Unknown boss silhouette "+profile.id());
         };
-        Node root=new Node(profile.id());author.runningGear(root);
+        Node root=new Node(profile.id());author.runningGear(root);author.servicePanel();
         var surfaces=new SurfaceMaterials(assets);
         Material steel=surfaces.material("steel"),rubber=surfaces.rubber();
         author.paint.attach(root,"paint",surfaces.paint(color));
@@ -36,6 +37,10 @@ final class BossVehicleVisual {
         author.lights.attach(root,"headlights",VehicleVisual.unlit(assets,profile.id().equals("boss_emcee")?new ColorRGBA(1,.66f,.16f,1):new ColorRGBA(.63f,.88f,1,1)));
         author.rear.attach(root,"taillights",VehicleVisual.unlit(assets,new ColorRGBA(1,.11f,.04f,1)));
         author.panels.attach(root,"boss-panels",surfaces.paint(color.mult(.7f)));
+        author.serviceCover.attach(root,"service-cover",surfaces.material("steel"));
+        author.serviceCore.attach(root,"service-core",VehicleVisual.unlit(assets,new ColorRGBA(.12f,.9f,.83f,1)));
+        root.getChild("service-core").setCullHint(Spatial.CullHint.Always);
+        root.setUserData("bossVisualPhase",0);root.setUserData("servicePanelOpen",false);
         for(int wheel=0;wheel<4;wheel++) {
             Node node=VehicleVisual.wheel(wheel,steel,rubber);
             // The existing axle mesh stays independent; only its tyre size follows
@@ -47,7 +52,7 @@ final class BossVehicleVisual {
         root.setUserData("profileId",profile.id());root.setUserData("livery",liveryId);
         root.setUserData("assetOrigin","original-java-procedural");
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
-        VehicleDamageVisual.install(assets,root,profile);return root;
+        return root;
     }
     private void foreman() {
         hull(new float[][]{{-1,.84f,-.08f,.29f},{-.84f,.97f,-.1f,.42f},{.56f,.98f,-.1f,.43f},{.94f,.9f,-.08f,.30f}});
@@ -161,6 +166,15 @@ final class BossVehicleVisual {
         glass.quad(point(-width*.81f,.57f,front+.004f),point(width*.81f,.57f,front+.004f),
                 point(width*.77f,roof-.045f,front-.062f),point(-width*.77f,roof-.045f,front-.062f));
         for(int side:new int[]{-1,1})box(glass,side*width*.917f,(roof+.56f)/2,(back+front)/2,.003f,(roof-.56f)/2,(front-back)*.32f);
+    }
+    private void servicePanel() {
+        if(profile.id().equals("boss_prefect")) {
+            box(serviceCover,.975f,.25f,.38f,.008f,.11f,.18f);
+            box(serviceCore,.974f,.25f,.38f,.006f,.088f,.155f);
+        } else {
+            box(serviceCover,0,.26f,-1.008f,.30f,.10f,.008f);
+            box(serviceCore,0,.26f,-1.009f,.26f,.078f,.005f);
+        }
     }
     private void runningGear(Node root) {
         for(int wheel=0;wheel<4;wheel++) {

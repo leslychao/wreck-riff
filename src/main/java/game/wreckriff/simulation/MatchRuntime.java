@@ -36,9 +36,11 @@ public final class MatchRuntime implements AutoCloseable {
             drivers.put(state.id,new VehicleController(world,state,vehicleRules,arena.bounds(),arena.metadata().recoveryCost()));
         }
         arenaSystems=new ArenaSystems(session,arena);
+        arenaSystems.configureBoss(bossProfile);
         bots=new BotController(session,arena,graph,AiRules.load(),arenaSystems::activePickups);
         bots.observeHazards(arenaSystems::activeHazards);
         combat=new CombatSystem(session,session.combatRules);
+        combat.directDamageMultiplier(arenaSystems::directHitMultiplier);
         bots.observeProjectiles(combat::projectiles);
         bots.observeBallisticWarnings(combat::ballisticWarnings);
     }
@@ -100,6 +102,8 @@ public final class MatchRuntime implements AutoCloseable {
             world.makeWreck(event.subjectId());wreckTicks.put(event.subjectId(),3*MatchSession.TICKS_PER_SECOND);
         }
         arenaSystems.collectPickups(world); events.addAll(arenaSystems.drainEvents());
+        if(events.stream().anyMatch(event->event.type()==GameEvent.Type.LANDED&&event.subjectId()==session.bossParticipantId))
+            arenaSystems.completeBossAction(ArenaSystems.BossAction.LANDED);
         for (var state:session.vehicles) if (state.alive()) drivers.get(state.id).recordSafePose(session.tick);
         finishTick(session);
         if (session.outcome!=MatchSession.Outcome.NONE) events.add(new GameEvent(GameEvent.Type.MATCH_FINISHED,

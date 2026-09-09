@@ -5,6 +5,7 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import game.wreckriff.config.VehicleRules;
+import game.wreckriff.config.VehicleProfile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -65,10 +66,11 @@ class NativeBodySupportTest {
 
     @ParameterizedTest @ValueSource(ints={-90,90,180})
     void wheelSupportRecoversAfterOverturnedSuspensionReturnsUprightAndMoves(int degrees) {
-        try(PhysicsWorld world=floor()) {
+        try(PhysicsWorld world=floor(300)) {
             var body=world.addVehicle(0,new Vector3f(0,3,0),roll(degrees));
             for(int tick=0;tick<240;tick++)world.step();
-            world.teleport(0,new Vector3f(0,world.profile(0).roadOffset(),0),new Quaternion());
+            Quaternion leaning=new Quaternion().fromAngleAxis(.4f,Vector3f.UNIT_Y).mult(roll(8));
+            world.teleport(0,new Vector3f(0,world.profile(0).roadOffset(),0),leaning);
             body.setLinearVelocity(new Vector3f(4,.16f,2));
             boolean allFour=false;
             for(int tick=0;tick<240;tick++) {
@@ -79,6 +81,23 @@ class NativeBodySupportTest {
                 allFour|=contacts==4;
             }
             assertTrue(allFour,"Fixture must actually regain all four suspension contacts");
+        }
+    }
+
+    @Test void suspensionOnAnotherVehicleCannotBecomeStaticWheelSupport() {
+        try(PhysicsWorld world=floor()) {
+            var boss=VehicleProfile.boss("boss_foreman",VehicleRules.load());
+            var lower=world.addVehicle(0,new Vector3f(0,10,0),new Quaternion(),boss);
+            float roof=10+boss.hullBounds().maxY();
+            var upper=world.addVehicle(1,new Vector3f(0,roof+.45f,0),new Quaternion());
+            lower.setGravity(Vector3f.ZERO);lower.setLinearFactor(Vector3f.ZERO);lower.setAngularFactor(Vector3f.ZERO);
+            upper.setGravity(Vector3f.ZERO);upper.setLinearFactor(Vector3f.ZERO);upper.setAngularFactor(Vector3f.ZERO);
+            for(int tick=0;tick<30;tick++) {
+                world.step();
+                assertEquals(4,world.wheelContacts(1),"Fixture requires the upper wheels to reach the boss roof");
+                assertEquals(0,world.supportedWheelContacts(1),"An upward vehicle roof is not registered static support");
+                assertFalse(world.chassisSupported(1));
+            }
         }
     }
 
@@ -236,8 +255,11 @@ class NativeBodySupportTest {
     }
 
     private PhysicsWorld floor() {
+        return floor(100);
+    }
+    private PhysicsWorld floor(float halfExtent) {
         PhysicsWorld world=new PhysicsWorld(VehicleRules.load());
-        world.addStatic("floor",new BoxCollisionShape(new Vector3f(100,.5f,100)),new Vector3f(0,-.5f,0),new Quaternion());
+        world.addStatic("floor",new BoxCollisionShape(new Vector3f(halfExtent,.5f,halfExtent)),new Vector3f(0,-.5f,0),new Quaternion());
         return world;
     }
     private Quaternion roll(int degrees) {return new Quaternion().fromAngleAxis(degrees*(float)Math.PI/180,Vector3f.UNIT_Z);}

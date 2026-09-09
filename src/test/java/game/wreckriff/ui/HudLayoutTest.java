@@ -16,6 +16,12 @@ class HudLayoutTest {
             assertFalse(layout.weapons().overlaps(layout.abilities()));
             assertFalse(layout.objective().overlaps(layout.radar()));
             assertTrue(layout.fontSize()>=14);
+            assertEquals(3,layout.abilitySlots().size());
+            for(UiBounds slot:layout.abilitySlots()) {
+                assertTrue(slot.x()>=layout.abilities().x()&&slot.right()<=layout.abilities().right()+.001f);
+                assertTrue(slot.y()>=layout.abilities().y()&&slot.top()<=layout.abilities().top()+.001f);
+                assertFalse(slot.overlaps(layout.health()));assertFalse(slot.overlaps(layout.weapons()));
+            }
         }
     }
 

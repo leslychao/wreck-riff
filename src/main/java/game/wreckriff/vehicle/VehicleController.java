@@ -4,6 +4,7 @@ import com.jme3.bullet.objects.PhysicsVehicle;
 import com.jme3.math.*;
 import game.wreckriff.config.VehicleRules;
 import game.wreckriff.config.VehicleProfile;
+import game.wreckriff.combat.SpecialRules;
 import game.wreckriff.arena.ArenaDefinition.Bounds;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.simulation.*;
@@ -29,6 +30,7 @@ public final class VehicleController {
     private float steering, rearGrip;
     private int reverseWait, forwardWait, recoveryHold;
     private boolean reversing, turboActive;
+    private boolean dashRequested;
     private Vector3f launchDirection;
     private Vector3f rightingAxis;
     private int rightingHold, rightingStable, rightingUnsupported;
@@ -50,7 +52,7 @@ public final class VehicleController {
     public boolean reversing() { return reversing; }
     public boolean turboActive() { return turboActive; }
     public boolean launchActive() { return launchDirection!=null; }
-    public boolean rightingActive() { return rightingAxis!=null; }
+    public boolean rightingActive() { return state.alive()&&rightingAxis!=null; }
     public void beginLaunch(Vector3f direction) {
         if(direction==null||direction.lengthSquared()<.1f)throw new IllegalArgumentException("Invalid launch direction");
         launchDirection=direction.clone().setY(0).normalizeLocal();
@@ -112,7 +114,10 @@ public final class VehicleController {
     }
     public void drive(VehicleCommand command) {
         PhysicsVehicle body=world.vehicle(state.id);
-        if (body==null || !state.alive()) { resetRighting(); return; }
+        if (body==null || !state.alive()) { world.endDash(state.id);dashRequested=false;resetRighting(); return; }
+        if(state.dashing()&&!dashRequested)world.beginDash(state.id,state.dashDirection);
+        if(!state.dashing())world.endDash(state.id);
+        dashRequested=state.dashing();
         if(state.heavyImpactPending) {
             state.impactStabilizerTicks=seconds(rules.impactStabilizerOffSeconds()+rules.impactStabilizerReturnSeconds());
             state.heavyImpactPending=false;
@@ -125,7 +130,7 @@ public final class VehicleController {
         int supportedWheels=world.supportedWheelContacts(state.id);
         updateRighting(command,supportedWheels);
         boolean righting=rightingActive();
-        float throttle=righting?0:command.throttle(), reverse=righting?0:command.brakeReverse();
+        float throttle=righting||state.controlled()?0:command.throttle(), reverse=righting||state.controlled()?0:command.brakeReverse();
         float brake=0, power=0;
         int directionDelay=seconds(rules.directionChangeDelaySeconds());
         if (reverse>0) {
@@ -145,7 +150,7 @@ public final class VehicleController {
                 else brake=throttle;
             } else forwardWait=0;
         }
-        turboActive=!righting && command.turbo() && power>0 && grounded>0 && state.turbo>=rules.turboDrain()*dt && state.protectionTicks==0;
+        turboActive=!righting && !state.grinding() && !state.controlled() && command.turbo() && power>0 && grounded>0 && state.turbo>=rules.turboDrain()*dt && state.protectionTicks==0;
         if (turboActive) {
             state.turbo=Math.max(0,state.turbo-rules.turboDrain()*dt); state.turboQuietTicks=0;
         } else {
@@ -153,7 +158,15 @@ public final class VehicleController {
             if (state.turboQuietTicks>=seconds(rules.turboRegenDelay())) state.turbo=Math.min(100,state.turbo+rules.turboRegen()*dt);
         }
         float maxSpeed=rules.maxSpeed()*profile.speedMultiplier();
-        float limit=(power<0?rules.reverseSpeed():(turboActive?rules.turboSpeed():rules.maxSpeed()))*profile.speedMultiplier();
+        float limit=power<0?rules.reverseSpeed()*profile.speedMultiplier():turboActive?rules.turboSpeed()*profile.turboMultiplier():maxSpeed;
+        if(state.grinding()) {
+            limit=Math.min(limit,SpecialRules.GRINDER_SPEED_CAP);
+            Vector3f horizontal=velocity.clone().setY(0);
+            if(horizontal.length()>SpecialRules.GRINDER_SPEED_CAP) {
+                Vector3f limited=horizontal.normalize().mult(SpecialRules.GRINDER_SPEED_CAP);
+                body.applyCentralImpulse(limited.subtract(horizontal).multLocal(body.getMass()));
+            }
+        }
         float ratio=Math.clamp(speed/limit,0,1);
         float taper=Math.max(0,1-ratio*ratio*ratio*ratio);
         float massRatio=world.mass(state.id)/rules.mass();
@@ -162,10 +175,11 @@ public final class VehicleController {
         body.accelerate(force/4);
         body.brake(brake*rules.brakeForce()*massRatio);
         float angle=FastMath.interpolateLinear(Math.clamp(speed/maxSpeed,0,1),rules.lowSpeedSteering(),rules.highSpeedSteering())*FastMath.DEG_TO_RAD*profile.turnMultiplier();
-        float nativeSteer=righting?0:-command.steer();
+        if(state.grinding())angle*=SpecialRules.GRINDER_STEER_MULTIPLIER;
+        float nativeSteer=righting||state.controlled()?0:-command.steer();
         steering += (nativeSteer*angle-steering)*(1-(float)Math.exp(-rules.steeringResponse()*dt));
         body.steer(steering);
-        boolean handbrake=!righting && command.handbrake();
+        boolean handbrake=!righting && !state.controlled() && command.handbrake();
         float gripTarget=handbrake?rules.handbrakeFriction():rules.frictionSlip();
         float gripBlend=handbrake?0.3f:Math.min(1,dt/rules.gripReturnSeconds()*3);
         rearGrip += (gripTarget-rearGrip)*gripBlend;
@@ -202,7 +216,7 @@ public final class VehicleController {
         long generation=world.teleportGeneration(state.id);
         if(generation!=rightingGeneration) { resetRighting(); rightingGeneration=generation; }
         float input=Math.max(Math.abs(command.steer()),Math.max(command.throttle(),command.brakeReverse()));
-        if(input<=.2f || launchActive() || state.controlled() || world.touchingVehicle(state.id)
+        if(input<=.2f || launchActive() || state.dashing() || state.controlled() || world.touchingVehicle(state.id)
                 || state.impactStabilizerTicks>0) { resetRighting(); return; }
         Vector3f up=world.rotation(state.id).mult(Vector3f.UNIT_Y);
         boolean supported=world.chassisSupported(state.id)||(grounded>0&&up.y>.35f);

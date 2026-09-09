@@ -3,6 +3,7 @@ package game.wreckriff.ui;
 import game.wreckriff.combat.AbilityId;
 import game.wreckriff.combat.CombatRules;
 import game.wreckriff.combat.WeaponType;
+import game.wreckriff.combat.SpecialRules;
 import game.wreckriff.simulation.MatchSession;
 import game.wreckriff.simulation.WorldQuery;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ public final class MatchHudPresenter {
         var abilities=new EnumMap<AbilityId,HudView.AbilityStatus>(AbilityId.class);
         abilities.put(AbilityId.FREEZE,new HudView.AbilityStatus(0,seconds(player.abilityCooldown(AbilityId.FREEZE)),session.combatRules.control().freezeCooldownSeconds()));
         abilities.put(AbilityId.SHIELD,new HudView.AbilityStatus(seconds(player.shieldTicks),seconds(player.abilityCooldown(AbilityId.SHIELD)),session.combatRules.control().shieldCooldownSeconds()));
+        abilities.put(AbilityId.SPECIAL,new HudView.AbilityStatus(seconds(player.specialRemainingTicks()),seconds(player.abilityCooldown(AbilityId.SPECIAL)),SpecialRules.cooldownSeconds(player.profileId)));
         HudView.Effect effect=player.shieldTicks>0?HudView.Effect.SHIELDED:player.frozenTicks>0?HudView.Effect.FROZEN:
                 player.controlImmunityTicks>0?HudView.Effect.IMMUNE:HudView.Effect.NONE;
         if(previousWeapon!=player.selectedWeapon||!previousFireBinding.equals(fireBinding)) {

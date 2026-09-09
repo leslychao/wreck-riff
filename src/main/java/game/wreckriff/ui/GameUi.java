@@ -17,28 +17,20 @@ public final class GameUi {
     private final AssetManager assets;
     private final BitmapFont font;
     private final BitmapFont boldFont;
-    private final Node root=new Node("ui-grid");
+    private final Node root=new Node("ui");
     private final List<Button> buttons=new ArrayList<>();
     private final UiFocusModel focus=new UiFocusModel();
     private final Map<String,UiScrollModel> scrollModels=new HashMap<>();
     private String restoreFocus;
-    private float scale=1,offsetX,offsetY;
     private float previousMouseX=Float.NaN,previousMouseY=Float.NaN;
     public GameUi(AssetManager assets,Node gui) {
         this.assets=assets; font=assets.loadFont("fonts/wreck.fnt"); boldFont=assets.loadFont("fonts/wreck-bold.fnt"); gui.attachChild(root);
     }
     public Node root() { return root; }
-    public void resize(int width,int height) {
-        scale=Math.min(width/1920f,height/1080f);
-        offsetX=(width-1920*scale)/2; offsetY=(height-1080*scale)/2;
-        root.setLocalScale(scale); root.setLocalTranslation(offsetX,offsetY,0);
-    }
-    public void usePixelCoordinates() {scale=1;offsetX=offsetY=0;root.setLocalScale(1);root.setLocalTranslation(0,0,0);}
+    public void usePixelCoordinates() {root.setLocalScale(1);root.setLocalTranslation(0,0,0);}
     public void clear() {root.detachAllChildren();buttons.clear();focus.replace(List.of());restoreFocus=null;}
     public void clearPreservingFocus() {String selected=focus.selectedId();clear();restoreFocus=selected;}
-    public int selection() {return Math.max(0,focus.selectedIndex());}
     public String selectedId() {return focus.selectedId();}
-    public void select(int index) {if(!buttons.isEmpty())focus.select(buttons.get(Math.clamp(index,0,buttons.size()-1)).id);highlight();}
     public boolean select(String id) {boolean changed=focus.select(id);highlight();return changed;}
     public UiScrollModel scrollModel(String id,float contentHeight,float viewportHeight) {
         UiScrollModel model=scrollModels.computeIfAbsent(id,ignored->new UiScrollModel());model.resize(contentHeight,viewportHeight);return model;
@@ -63,18 +55,14 @@ public final class GameUi {
         text.setBox(new com.jme3.font.Rectangle(0,0,width,100000));text.setLineWrapMode(LineWrapMode.Word);text.setText(value);
         return text.getLineHeight()*text.getLineCount();
     }
-    public void title(String title,String subtitle) {
-        rect("panel",90,85,850,910,INK,0);
-        rect("stripe",90,85,8,910,ACCENT,1);
-        text(title,140,930,62,PAPER); text(subtitle,144,855,21,ACCENT);
-    }
-    public void button(String label,float x,float y,float width,Runnable action) {
-        button("button-"+buttons.size(),label,new UiBounds(x,y,width,55),true,action);
+    public float fitTextSize(String value,float width,float requested) {
+        BitmapText text=new BitmapText(requested>=27?boldFont:font);text.setSize(requested);text.setText(value);
+        return Math.max(14,Math.min(requested,requested*width/Math.max(1,text.getLineWidth())));
     }
     public void button(String id,String label,UiBounds bounds,boolean enabled,Runnable action) {
         if(buttons.stream().anyMatch(button->button.id.equals(id)))throw new IllegalArgumentException("Duplicate button: "+id);
         Geometry plate=rect(id,bounds.x(),bounds.y(),bounds.width(),bounds.height(),INK,1);
-        float size=Math.max(14,Math.min(24,bounds.height()*.44f));
+        float size=fitTextSize(label,Math.max(1,bounds.width()-28),Math.max(14,Math.min(24,bounds.height()*.44f)));
         BitmapText text=paragraph(label,new UiBounds(bounds.x()+14,bounds.y()+5,Math.max(0,bounds.width()-28),bounds.height()-10),size,PAPER);
         buttons.add(new Button(id,bounds,plate,text,enabled,Objects.requireNonNull(action)));
         refreshFocus();
@@ -89,17 +77,16 @@ public final class GameUi {
         refreshFocus();highlight();
     }
     private void refreshFocus() {focus.replace(buttons.stream().map(button->new UiFocusModel.Item(button.id,button.bounds,button.enabled)).toList());}
-    public void move(int delta) {focus.cycle(delta);highlight();}
     public void move(UiFocusModel.Direction direction) {focus.move(direction);highlight();}
     public void activate() {int index=focus.selectedIndex();if(index>=0)buttons.get(index).action.run();}
     public void hover(float screenX,float screenY) {
         if(screenX==previousMouseX && screenY==previousMouseY) return;
         previousMouseX=screenX; previousMouseY=screenY;
-        float x=(screenX-offsetX)/scale,y=(screenY-offsetY)/scale;
+        float x=screenX,y=screenY;
         for(Button button:buttons)if(button.enabled && button.bounds.contains(x,y)) {focus.select(button.id);highlight();return;}
     }
     public void click(float screenX,float screenY) {
-        float x=(screenX-offsetX)/scale,y=(screenY-offsetY)/scale;
+        float x=screenX,y=screenY;
         for(Button button:List.copyOf(buttons))if(button.enabled && button.bounds.contains(x,y)) {focus.select(button.id);button.action.run();return;}
     }
     private void highlight() {

@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 
 /** One owner for lifetime statistics, campaign progress and immutable fixed-tick checkpoints. */
 public final class ProgressStore implements AutoCloseable {
-    public static final int SCHEMA_VERSION=2;
+    public static final int SCHEMA_VERSION=3;
     public static final String LEGACY_ARENA="dead-air-yard";
     public static final List<String> CAMPAIGN_ARENAS=List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena");
     private static final Set<String> WEAPONS=Arrays.stream(WeaponType.values()).map(WeaponType::id).collect(Collectors.toUnmodifiableSet());
-    private static final Set<String> ABILITIES=Set.of("freeze","shield");
+    private static final Set<String> ABILITIES=Set.of("freeze","shield","special");
     private static final Gson JSON=new GsonBuilder().setPrettyPrinting().serializeNulls().create();
     private static final int MAX_FILE_BYTES=4*1024*1024, MAX_ARENA_OBJECTS=512;
     private static final Set<String> NULLABLE=Set.of("Snapshot.activeAttempt","Campaign.currentArenaId","Campaign.checkpoint",
@@ -81,12 +81,12 @@ public final class ProgressStore implements AutoCloseable {
     public record PlayerResources(float hp,float turbo,String selectedWeapon,Map<String,WeaponResource> weapons,
                                   Map<String,Long> abilityCooldownTicks,ResourceTimers timers) {
         public PlayerResources {
-            require(Float.isFinite(hp)&&hp>0&&hp<=800,"Checkpoint HP must be in (0, 800]");
+            require(Float.isFinite(hp)&&hp>0,"Checkpoint HP must be positive and finite");
             require(Float.isFinite(turbo)&&turbo>=0&&turbo<=100,"Checkpoint turbo must be in [0, 100]");
             require(WEAPONS.contains(selectedWeapon),"Unknown selectedWeapon: "+selectedWeapon);
             weapons=immutableMap(weapons);require(weapons.keySet().equals(WEAPONS),"Checkpoint must contain exactly the existing six weapons");
             abilityCooldownTicks=immutableMap(abilityCooldownTicks);
-            require(abilityCooldownTicks.keySet().equals(ABILITIES),"Checkpoint must contain Freeze and Shield cooldowns");
+            require(abilityCooldownTicks.keySet().equals(ABILITIES),"Checkpoint must contain Freeze, Shield and Special cooldowns");
             abilityCooldownTicks.forEach((id,ticks)->require(ticks>=0&&ticks<=Integer.MAX_VALUE,"Invalid ability cooldown: "+id));
             Objects.requireNonNull(timers,"player.timers");
         }
@@ -122,9 +122,10 @@ public final class ProgressStore implements AutoCloseable {
     public record Checkpoint(String arenaId,String profileId,int liveryId,long seed,String difficulty,CheckpointStage stage,
                              PlayerResources player,SafePose safePose,ArenaState arena,long activeTicksBeforeBoss) {
         public Checkpoint {
-            campaignArena(arenaId);require("rivet".equals(profileId),"Unknown player profileId: "+profileId);
+            campaignArena(arenaId);VehicleDefinition definition=VehicleDefinition.forId(profileId);
             require(liveryId>=0&&liveryId<5,"Unknown liveryId: "+liveryId);require("normal".equals(difficulty),"Unsupported difficulty: "+difficulty);
             Objects.requireNonNull(stage,"checkpoint.stage");Objects.requireNonNull(player,"checkpoint.player");
+            require(player.hp()<=definition.maximumHp(),"Checkpoint HP exceeds this profile");
             Objects.requireNonNull(safePose,"checkpoint.safePose");Objects.requireNonNull(arena,"checkpoint.arena");
             nonNegative(activeTicksBeforeBoss,"activeTicksBeforeBoss");
         }
@@ -323,17 +324,17 @@ public final class ProgressStore implements AutoCloseable {
         }
         if(loaded==null) return;
         snapshot=loaded.snapshot();persistedBytes=loaded.bytes();persistedRevision=snapshot.revision();
-        if(loaded.migrated()) {
+        if(loaded.sourceVersion()<SCHEMA_VERSION) {
             try {
-                Path original=directory.resolve("stats.json.v1.bak");
+                Path original=directory.resolve("stats.json.v"+loaded.sourceVersion()+".bak");
                 if(!Files.exists(original)) writeForced(original,persistedBytes,StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE);
-                snapshot=new Snapshot(SCHEMA_VERSION,1,0,snapshot.stats(),snapshot.campaign(),null,snapshot.records());
+                snapshot=new Snapshot(SCHEMA_VERSION,Math.incrementExact(snapshot.revision()),snapshot.attemptSequence(),snapshot.stats(),snapshot.campaign(),snapshot.activeAttempt(),snapshot.records());
                 synchronized(this) { enqueueLatest(); }
             } catch(IOException|RuntimeException e) { warning="Statistics migration stays in memory; the original file is preserved.";readOnly=true; }
         }
     }
 
-    private record Loaded(Snapshot snapshot,byte[] bytes,boolean migrated) {}
+    private record Loaded(Snapshot snapshot,byte[] bytes,int sourceVersion) {}
     private static final class FutureSchema extends IOException {}
 
     private Loaded decode(byte[] bytes) throws IOException {
@@ -345,18 +346,42 @@ public final class ProgressStore implements AutoCloseable {
         JsonElement schema=tree.get("schemaVersion");
         require(schema!=null&&schema.isJsonPrimitive()&&schema.getAsJsonPrimitive().isNumber(),"Missing progress schemaVersion");
         int version=schema.getAsBigDecimal().intValueExact();if(version>SCHEMA_VERSION) throw new FutureSchema();
-        require(version==1||version==SCHEMA_VERSION,"Unsupported progress schemaVersion");
+        require(version>=1&&version<=SCHEMA_VERSION,"Unsupported progress schemaVersion");
         if(version==1) {
             Set<String> fields=Set.of("schemaVersion","completedMatches","wins","losses","draws","totalEliminations","totalDamage");
             require(fields.containsAll(tree.keySet()),"Unknown version-one statistics field");
             Stats stats=new Stats(oldLong(tree,"completedMatches"),oldLong(tree,"wins"),oldLong(tree,"losses"),oldLong(tree,"draws"),
                     oldLong(tree,"totalEliminations"),oldDouble(tree,"totalDamage"));
-            return new Loaded(new Snapshot(SCHEMA_VERSION,0,0,stats,Campaign.initial(),null,Map.of()),bytes,true);
+            return new Loaded(new Snapshot(SCHEMA_VERSION,0,0,stats,Campaign.initial(),null,Map.of()),bytes,version);
+        }
+        if(version==2) {
+            validateTree(tree,Snapshot.class,"Snapshot",false);
+            var checkpoint=tree.getAsJsonObject("campaign").get("checkpoint");
+            if(!checkpoint.isJsonNull()) {
+                var saved=checkpoint.getAsJsonObject();
+                require("rivet".equals(saved.get("profileId").getAsString()),"Unknown version-two player profile");
+                var player=saved.getAsJsonObject("player");
+                player.addProperty("selectedWeapon",player.get("selectedWeapon").getAsString().toLowerCase(Locale.ROOT));
+                canonicalResourceIds(player,"weapons");canonicalResourceIds(player,"abilityCooldownTicks");
+                var abilities=player.getAsJsonObject("abilityCooldownTicks");
+                require(abilities.keySet().equals(Set.of("freeze","shield")),"Invalid version-two abilities");
+                abilities.addProperty("special",0);
+            }
+            tree.addProperty("schemaVersion",SCHEMA_VERSION);
         }
         validateTree(tree,Snapshot.class,"Snapshot",false);
         Snapshot decoded=JSON.fromJson(tree,Snapshot.class);
         if(decoded.campaign().checkpoint()!=null) references.validate(decoded.campaign().checkpoint());
-        return new Loaded(decoded,bytes,false);
+        return new Loaded(decoded,bytes,version);
+    }
+
+    private static void canonicalResourceIds(JsonObject player,String field) {
+        JsonObject canonical=new JsonObject();
+        for(var entry:player.getAsJsonObject(field).entrySet()) {
+            String id=entry.getKey().toLowerCase(Locale.ROOT);
+            require(!canonical.has(id),"Duplicate resource ID: "+id);canonical.add(id,entry.getValue());
+        }
+        player.add(field,canonical);
     }
 
     private void writeAtomic(byte[] bytes) throws IOException {

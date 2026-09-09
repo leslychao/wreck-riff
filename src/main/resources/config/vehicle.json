@@ -2,18 +2,18 @@
   "mass": 1100, "gravity": 18, "width": 2.1, "length": 4.6, "height": 1.25,
   "wheelRadius": 0.38, "wheelBase": 2.8, "suspensionRestLength": 0.28,
   "suspensionStiffness": 55, "suspensionCompression": 4.45, "suspensionDamping": 4.9,
-  "maxSuspensionForce": 14000, "frictionSlip": 3.0, "handbrakeFriction": 0.65,
-  "rollInfluence": 0.10, "engineForce": 8500, "brakeForce": 40,
-  "maxSpeed": 28, "turboSpeed": 40, "reverseSpeed": 15,
-  "reverseForceMultiplier": 1.2, "directionChangeDelaySeconds": 0.05,
-  "lowSpeedSteering": 42, "highSpeedSteering": 17, "steeringResponse": 20,
-  "handbrakeTorque": 5000, "handbrakeYawDamping": 6500, "stabilizingTorque": 9000, "gripReturnSeconds": 0.25,
+  "maxSuspensionForce": 14000, "frictionSlip": 3.3, "handbrakeFriction": 0.65,
+  "rollInfluence": 0.15, "engineForce": 11500, "brakeForce": 55,
+  "maxSpeed": 34, "turboSpeed": 46, "reverseSpeed": 18,
+  "reverseForceMultiplier": 1.3, "directionChangeDelaySeconds": 0.05,
+  "lowSpeedSteering": 50, "highSpeedSteering": 18, "steeringResponse": 30,
+  "handbrakeTorque": 6500, "handbrakeYawDamping": 6500, "stabilizingTorque": 9000, "gripReturnSeconds": 0.16,
   "turboDrain": 40, "turboRegen": 15, "turboRegenDelay": 1,
   "recoveryCost": 15, "recoveryHold": 1, "recoveryCooldown": 5, "recoveryProtection": 0.35,
   "carPairRestitution": 0.20, "impactStabilizerOffSeconds": 0.2, "impactStabilizerReturnSeconds": 0.2,
   "groundStability": { "torque": 13500, "damping": 3000 },
   "selfRighting": {
     "tiltDegrees": 70, "maxSpeed": 3, "holdSeconds": 0.2,
-    "angularAcceleration": 45, "angularSpeed": 3.5, "response": 12
+    "angularAcceleration": 60, "angularSpeed": 3.5, "response": 16
   }
 }

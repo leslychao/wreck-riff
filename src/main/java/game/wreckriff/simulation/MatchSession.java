@@ -3,6 +3,7 @@ package game.wreckriff.simulation;
 import game.wreckriff.arena.ArenaDefinition;
 import game.wreckriff.combat.CombatRules;
 import game.wreckriff.config.Configs;
+import game.wreckriff.config.VehicleDefinition;
 import java.util.*;
 
 /** Match data. MatchRuntime owns phase/outcome transitions and all native mutations. */
@@ -42,7 +43,10 @@ public final class MatchSession {
         this(seed,arena,mode,rules,sessionId,false,0);
     }
     public MatchSession(long seed,ArenaDefinition arena,Mode mode,CombatRules rules,UUID sessionId,boolean bossCheckpoint,int liveryId) {
-        this(seed,arena.id(),mode,mode==Mode.BOSS_DUEL||bossCheckpoint?0:arena.metadata().normalEnemies(),arena.metadata().durationSeconds(),rules,sessionId,liveryId);
+        this(seed,arena,mode,rules,sessionId,bossCheckpoint,liveryId,"rivet");
+    }
+    public MatchSession(long seed,ArenaDefinition arena,Mode mode,CombatRules rules,UUID sessionId,boolean bossCheckpoint,int liveryId,String profileId) {
+        this(seed,arena.id(),mode,mode==Mode.BOSS_DUEL||bossCheckpoint?0:arena.metadata().normalEnemies(),arena.metadata().durationSeconds(),rules,sessionId,liveryId,profileId);
         if((mode==Mode.LEGACY)!=arena.bosses().isEmpty())throw new IllegalArgumentException("Arena/mode mismatch");
         if(bossCheckpoint) {
             if(mode!=Mode.CAMPAIGN&&mode!=Mode.ARENA)throw new IllegalArgumentException("This mode cannot restore a boss checkpoint");
@@ -50,18 +54,35 @@ public final class MatchSession {
         }
     }
     private MatchSession(long seed,String arenaId,Mode mode,int enemies,int durationSeconds,CombatRules rules,UUID sessionId) {
-        this(seed,arenaId,mode,enemies,durationSeconds,rules,sessionId,0);
+        this(seed,arenaId,mode,enemies,durationSeconds,rules,sessionId,0,"rivet");
     }
-    private MatchSession(long seed,String arenaId,Mode mode,int enemies,int durationSeconds,CombatRules rules,UUID sessionId,int liveryId) {
+    private MatchSession(long seed,String arenaId,Mode mode,int enemies,int durationSeconds,CombatRules rules,UUID sessionId,int liveryId,String profileId) {
         if(enemies<0||durationSeconds<0)throw new IllegalArgumentException("Invalid match settings");
         this.seed=seed;this.sessionId=Objects.requireNonNull(sessionId);this.arenaId=Objects.requireNonNull(arenaId);this.mode=Objects.requireNonNull(mode);
         combatRules=Objects.requireNonNull(rules);
         maximumTicks=durationSeconds==0?Long.MAX_VALUE:Math.multiplyExact((long)durationSeconds,TICKS_PER_SECOND);
-        participants.add(new VehicleState(0,"Rivet",true,"rivet",liveryId,false,rules.health().playerMaximumHp(),rules));
+        var selected=VehicleDefinition.forId(profileId);
+        participants.add(new VehicleState(0,selected.displayName(),true,selected.id(),liveryId,false,
+                selected.maximumHp()*rules.health().playerMaximumHp()/800f,rules));
         String[] names={"Static","Dent","Buzz","Fuse"};
-        for(int id=1;id<=enemies;id++)participants.add(new VehicleState(id,names[(id-1)%names.length]+(id>4?" "+id:""),false,rules));
+        for(int id=1;id<=enemies;id++) {
+            var definition=VehicleDefinition.values()[(id-1)%VehicleDefinition.values().length];
+            participants.add(new VehicleState(id,names[(id-1)%names.length]+(id>4?" "+id:""),false,
+                    definition.id(),Math.floorMod(id,5),false,definition.maximumHp()*rules.health().botMaximumHp()/800f,rules));
+        }
         vehicles=Collections.unmodifiableList(participants);
         phase=mode==Mode.LEGACY?Phase.ARENA_COMBAT:mode==Mode.BOSS_DUEL?Phase.BOSS_ENTRY:Phase.INTRO;
+    }
+    /** Equal chassis resources for deterministic balance scenarios; no player/bot health handicap. */
+    public static MatchSession balanced(long seed,List<String> profiles,CombatRules rules) {
+        if(profiles==null||profiles.size()<2||profiles.size()>10)throw new IllegalArgumentException("Balance roster requires 2..10 participants");
+        var match=new MatchSession(seed,"dead-air-yard",Mode.LEGACY,profiles.size()-1,360,rules,UUID.randomUUID(),0,profiles.getFirst());
+        match.participants.clear();
+        for(int id=0;id<profiles.size();id++) {
+            var definition=VehicleDefinition.forId(profiles.get(id));
+            match.participants.add(new VehicleState(id,definition.displayName(),id==0,definition.id(),id%5,false,definition.maximumHp(),rules));
+        }
+        return match;
     }
     VehicleState registerBoss(ArenaDefinition.Boss boss) {
         if(bossParticipantId>=0)throw new IllegalStateException("Boss already registered");

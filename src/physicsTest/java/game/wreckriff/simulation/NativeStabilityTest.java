@@ -8,15 +8,38 @@ import game.wreckriff.combat.AbilityId;
 import game.wreckriff.combat.CombatRules;
 import game.wreckriff.config.Configs;
 import game.wreckriff.config.VehicleRules;
+import game.wreckriff.config.VehicleProfile;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.vehicle.VehicleController;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Ordinary disturbances must retain real Bullet motion without tipping a car onto its hull. */
 class NativeStabilityTest {
+    @Test void oneSupportedWheelStillResistsAnOutwardRollThroughNativeTorque() {
+        float assisted=singleWheelRoll(true),unassisted=singleWheelRoll(false);
+        assertTrue(assisted<unassisted-.02f,"One wheel must retain roll resistance: assisted="+assisted+", unassisted="+unassisted);
+    }
+    private float singleWheelRoll(boolean assist) {
+        VehicleRules rules=VehicleRules.load();VehicleProfile profile=VehicleProfile.rivet(rules);
+        try(var world=new PhysicsWorld(rules)) {
+            Quaternion rotation=new Quaternion().fromAngleAxis(.4f,Vector3f.UNIT_Z);
+            Vector3f position=new Vector3f(0,2,0);
+            Vector3f down=rotation.mult(Vector3f.UNIT_Y).negateLocal();
+            Vector3f contact=position.add(rotation.mult(profile.wheelConnection(0)))
+                    .addLocal(down.mult(profile.suspensionRestLength()+profile.wheelRadius()-.08f));
+            world.addStatic(new BoxCollisionShape(new Vector3f(.25f,.1f,.25f)),contact.add(0,-.1f,0),new Quaternion());
+            world.addVehicle(0,position,rotation);
+            assertEquals(1,world.wheelContacts(0));assertEquals(1,world.supportedWheelContacts(0));
+            world.vehicle(0).setAngularVelocity(new Vector3f(0,0,1));
+            if(assist)new VehicleController(world,new VehicleState(0,"Single wheel",true,Configs.load("combat",CombatRules.class)),rules).drive(VehicleCommand.NONE);
+            world.step();
+            return world.vehicle(0).getAngularVelocity().z;
+        }
+    }
     private static VehicleCommand command(float throttle,float steer,boolean turbo) {
         return new VehicleCommand(throttle,0,steer,false,turbo,false,false,null,0,false,false,AbilityId.NONE);
     }
@@ -83,7 +106,7 @@ class NativeStabilityTest {
             // a car comes off a bump into the other car's side. Offset Z adds point torque.
             rig.world.teleport(1,new Vector3f(-direction*4.3f,targetStart.y+.25f,.8f),heading);
             VehicleController attacker=rig.driver(1);
-            rig.world.vehicle(1).setLinearVelocity(new Vector3f(direction*12,0,0));
+            rig.world.vehicle(1).setLinearVelocity(new Vector3f(direction*18,0,0));
             float minimumUp=1,peakTargetSpeed=0,maxClosingSpeed=0,peakDisplacement=0;
             boolean contacted=false;
             for(int tick=0;tick<480;tick++) {

@@ -33,9 +33,9 @@ class InputSystemTest {
     @Test void promptLabelsRespectKeyboardRemappingAndTheLoadedGamepadProfile() {
         var settings=new SettingsStore.Settings();settings.keys.put("Freeze",KeyInput.KEY_C);
         var defaults=GamepadProfile.bundled();
-        var custom=new GamepadProfile(3,2,4,5,-1,1,defaults.handbrake(),defaults.turbo(),defaults.rocket(),defaults.machineGun(),
+        var custom=new GamepadProfile(4,2,4,5,-1,1,defaults.handbrake(),defaults.turbo(),defaults.rocket(),defaults.machineGun(),
                 defaults.shield(),defaults.previousWeapon(),defaults.nextWeapon(),defaults.rearView(),defaults.recover(),defaults.pause(),
-                defaults.up(),defaults.down(),defaults.back(),defaults.freeze(),defaults.activate());
+                defaults.up(),defaults.down(),defaults.back(),defaults.freeze(),defaults.activate(),defaults.special());
         try(InputSystem input=new InputSystem(new InputManager(device(MouseInput.class),device(KeyInput.class),null,null),()->settings,custom)) {
             assertEquals("C",input.displayBinding("Freeze"));assertEquals("LMB",input.displayBinding("Machine gun"));
             var snapshot=GLFWGamepadState.create();snapshot.buttons(GLFW_GAMEPAD_BUTTON_A,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);

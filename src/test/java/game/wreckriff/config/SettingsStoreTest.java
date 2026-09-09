@@ -10,6 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SettingsStoreTest {
     @TempDir Path directory;
+    @Test void interfaceSettingsDefaultForExistingProfilesAndPersistWithBounds() throws Exception {
+        Files.writeString(directory.resolve("settings.json"),"{\"schemaVersion\":3,\"music\":0.35}");
+        var store=new SettingsStore(directory);
+        assertEquals(1,store.settings().uiScale);assertEquals(.6f,store.settings().flashes);assertTrue(store.settings().glow);assertTrue(store.settings().subtitles);
+        store.settings().uiScale=99;store.settings().flashes=-1;store.settings().subtitles=false;store.settings().glow=false;store.saveSettings();
+        var loaded=new SettingsStore(directory).settings();
+        assertEquals(1.5f,loaded.uiScale);assertEquals(0,loaded.flashes);assertFalse(loaded.subtitles);assertFalse(loaded.glow);assertEquals(.35f,loaded.music);
+    }
     @Test void v1MigrationPreservesVideoAudioAndAnExplicitBindingThatConflictsWithNewFreezeKey() throws Exception {
         String original="""
                 {"schemaVersion":1,"width":1600,"height":900,"fullscreen":false,"music":0.35,

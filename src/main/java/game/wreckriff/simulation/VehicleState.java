@@ -1,10 +1,12 @@
 package game.wreckriff.simulation;
 
 import game.wreckriff.combat.*;
+import com.jme3.math.Vector3f;
 import java.util.*;
 
 /** One authoritative resource state per participant; positions belong to PhysicsWorld. */
 public final class VehicleState {
+    public enum SpecialPhase { READY, PULSE_WINDUP, GRINDER_WINDUP, GRINDER_SEARCH, GRINDER_CONTACT, DASH }
     public final int id;
     public final String name;
     public final boolean player;
@@ -20,6 +22,10 @@ public final class VehicleState {
     public int machineGunCooldown;
     public int turboQuietTicks, recoveryCooldown, protectionTicks;
     public int frozenTicks,shieldTicks,controlImmunityTicks;
+    public SpecialPhase specialPhase=SpecialPhase.READY;
+    public int specialTicks,specialTargetId=-1,grabbedBy=-1;
+    public float specialDamage;
+    public final Vector3f dashDirection=new Vector3f();
     public int impactStabilizerTicks;
     public boolean heavyImpactPending;
     public WeaponType selectedWeapon=WeaponType.HOMING;
@@ -56,6 +62,13 @@ public final class VehicleState {
     public int abilityCooldown(AbilityId ability) { return abilityCooldowns.getOrDefault(ability,0); }
     public void abilityCooldown(AbilityId ability,int ticks) { abilityCooldowns.put(ability,Math.max(0,ticks)); }
     public void advanceAbilityCooldowns() { abilityCooldowns.replaceAll((ability,ticks)->Math.max(0,ticks-1)); }
-    public boolean controlled() { return frozenTicks>0; }
+    public boolean controlled() { return frozenTicks>0||grabbedBy>=0; }
+    public boolean grinding() { return specialPhase==SpecialPhase.GRINDER_CONTACT; }
+    public boolean dashing() { return specialPhase==SpecialPhase.DASH; }
+    public boolean specialActive() { return specialPhase!=SpecialPhase.READY; }
+    public int specialRemainingTicks() { return specialTicks; }
+    public void clearSpecial() {
+        specialPhase=SpecialPhase.READY;specialTicks=0;specialTargetId=-1;specialDamage=0;dashDirection.set(0,0,0);
+    }
     public boolean alive() { return hp > 0; }
 }

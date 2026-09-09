@@ -55,8 +55,9 @@ class NativeCampaignCheckpointTest {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
             if(checkpoint!=null)ArenaSystems.restoreGeometry(checkpoint.arena(),world,content.graph(),arena);
-            world.configureArena(arena);var profile=VehicleProfile.rivet(RULES);
+            world.configureArena(arena);
             for(var state:session.vehicles) {
+                var profile=VehicleDefinition.forId(state.profileId).profile(RULES);
                 var spawn=arena.spawns().get(state.id);
                 Vector3f position=spawn.position().vector().add(0,profile.roadOffset(),0);
                 float yaw=spawn.yawDegrees()*FastMath.DEG_TO_RAD;

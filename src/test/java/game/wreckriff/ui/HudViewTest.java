@@ -8,6 +8,7 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.VertexBuffer;
 import game.wreckriff.combat.AbilityId;
 import game.wreckriff.combat.WeaponType;
+import game.wreckriff.config.VehicleDefinition;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -36,6 +37,10 @@ class HudViewTest {
             assertEquals("0",((BitmapText)root.getChild("weapon-mine-ammo")).getText());
             assertEquals("1.2",((BitmapText)root.getChild("weapon-cannon-cooldown-text")).getText());
             assertNotEquals(Spatial.CullHint.Always,root.getChild("ability-shield-active").getCullHint());
+            view.setPickupHighlights(java.util.Set.of(WeaponType.NAPALM));
+            assertNotEquals(Spatial.CullHint.Always,root.getChild("weapon-napalm-pickup").getCullHint());
+            assertEquals(Spatial.CullHint.Always,root.getChild("weapon-napalm-selected").getCullHint());
+            assertNotEquals(Spatial.CullHint.Always,root.getChild("weapon-cannon-selected").getCullHint());
             Spatial plate=root.getChild("weapon-cannon-plate"),shade=root.getChild("weapon-cannon-cooldown-shade"),number=root.getChild("weapon-cannon-ammo");
             assertTrue(shade.getLocalTranslation().z>plate.getLocalTranslation().z);
             assertTrue(shade.getLocalTranslation().z<number.getLocalTranslation().z);
@@ -74,6 +79,28 @@ class HudViewTest {
             FloatBuffer data=(FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
             var values=new ArrayList<Float>();for(int i=0;i<data.limit();i++){float value=data.get(i);assertTrue(Float.isFinite(value));values.add(value);}
             assertTrue(signatures.add(values),"Repeated icon geometry: "+icon);assertSame(mesh,icons.mesh(icon));
+        }
+    }
+    @Test void eachPlayerSpecialHasItsOwnIconAndTenHelpRowsFitSmallWindowAtMaximumScale() {
+        try(var view=new HudView(ASSETS,new Node())) {
+            view.resize(640,480,1.5f);view.update(snapshot(false,List.of()));
+            var meshes=new HashSet<com.jme3.scene.Mesh>();
+            for(var definition:VehicleDefinition.values()) {
+                view.setSpecial(definition.id(),definition.specialName(),"D-pad Down");
+                assertTrue(meshes.add(((Geometry)view.root().getChild("ability-special-icon")).getMesh()));
+                assertEquals(definition.specialName()+"  [D-pad Down]",((BitmapText)view.root().getChild("special-binding")).getText());
+            }
+            var help=new ArrayList<HudView.HelpItem>();
+            for(int i=0;i<10;i++)help.add(new HudView.HelpItem("LB / RB","Пулемёт / выбранное оружие"));
+            view.setHelp(help);
+            Geometry panel=(Geometry)view.root().getChild("help-panel");
+            float bottom=panel.getLocalTranslation().y,top=bottom+panel.getLocalScale().y;
+            for(int i=0;i<10;i++) {
+                BitmapText row=(BitmapText)view.root().getChild("help-description-"+i);
+                assertTrue(row.getSize()>=14);
+                assertTrue(row.getLocalTranslation().y<=top);
+                assertTrue(row.getLocalTranslation().y-row.getBox().height>=bottom,"Help row "+i+" leaves panel");
+            }
         }
     }
 }

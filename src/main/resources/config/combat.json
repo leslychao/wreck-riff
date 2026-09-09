@@ -14,7 +14,7 @@
   "homing": {
     "directDamage": 32.0,
     "splashDamage": 24.0,
-    "cooldownSeconds": 0.8,
+    "cooldownSeconds": 0.5,
     "initialAmmo": 6,
     "maximumAmmo": 12,
     "speed": 40.0,
@@ -28,7 +28,7 @@
   "power": {
     "directDamage": 50.0,
     "splashDamage": 40.0,
-    "cooldownSeconds": 1.1,
+    "cooldownSeconds": 0.7,
     "initialAmmo": 4,
     "maximumAmmo": 8,
     "speed": 70.0,
@@ -57,7 +57,7 @@
     "maximumActive": 10,
     "initialAmmo": 3,
     "maximumAmmo": 6,
-    "cooldownSeconds": 1,
+    "cooldownSeconds": 0.7,
     "placementDistance": 3,
     "supportDepth": 3,
     "armSeconds": 0.6,
@@ -74,7 +74,7 @@
     "maximumZones": 6,
     "initialAmmo": 3,
     "maximumAmmo": 6,
-    "cooldownSeconds": 1.4,
+    "cooldownSeconds": 0.9,
     "speed": 28,
     "gravity": 18,
     "ttlSeconds": 3,
@@ -120,7 +120,7 @@
     "horizontalDeltaSpeed": 16, "upwardDeltaSpeed": 10, "angularDeltaSpeed": 6
   },
   "cannon": {
-    "initialAmmo": 3, "maximumAmmo": 6, "cooldownSeconds": 2.4,
+    "initialAmmo": 3, "maximumAmmo": 6, "cooldownSeconds": 1.4,
     "speed": 55, "radius": 0.25, "upwardSpeed": 2, "gravity": 18, "ttlSeconds": 4,
     "ricochets": 2, "normalRestitution": 0.70, "tangentRetention": 0.90, "minimumSpeed": 12,
     "directDamage": 65, "ricochetDamage": 22, "ricochetRadius": 3.5,
@@ -128,7 +128,7 @@
     "splashBlast": { "horizontalDeltaSpeed": 4, "upwardDeltaSpeed": 2 }
   },
   "ballistic": {
-    "initialAmmo": 2, "maximumAmmo": 4, "cooldownSeconds": 4.5,
+    "initialAmmo": 2, "maximumAmmo": 4, "cooldownSeconds": 3,
     "charges": 4, "releaseIntervalSeconds": 0.45, "minimumWarningSeconds": 0.5,
     "maximumRange": 70, "fallbackRange": 40,
     "carrierHeight": 22, "carrierSpeed": 45, "minimumCarrierSeconds": 0.7, "maximumCarrierSeconds": 1.6,

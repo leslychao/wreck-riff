@@ -23,9 +23,9 @@ public final class GeneratePickupModels {
     private SurfaceMaterials surfaces;
     private Material metal,black,accent,glass;
     public static void main(String[] args)throws Exception {
-        new GeneratePickupModels().generate(Path.of(args[0]),Path.of(args[1]));
+        new GeneratePickupModels().generate(Path.of(args[0]),Path.of(args[1]),Path.of(args[2]));
     }
-    private void generate(Path source,Path output)throws Exception {
+    private void generate(Path source,Path output,Path generatorSource)throws Exception {
         assets.registerLocator(source.toAbsolutePath().toString(),FileLocator.class);
         surfaces=new SurfaceMaterials(assets);
         Path directory=output.resolve("models/pickups");Files.createDirectories(directory);
@@ -38,6 +38,7 @@ public final class GeneratePickupModels {
         }
         Files.writeString(directory.resolve("provenance.json"),"{\n  \"origin\":\"original-java-procedural\",\n"+
                 "  \"generator\":\"src/tools/java/game/wreckriff/tools/GeneratePickupModels.java\",\n"+
+                "  \"generatorSha256\":\""+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(generatorSource)))+"\",\n"+
                 "  \"materials\":\"Existing locally licensed SurfaceMaterials; original Wreck Riff VectorIcons\",\n"+
                 "  \"models\":[\n"+String.join(",\n",records)+"\n  ]\n}\n",StandardCharsets.UTF_8);
         System.out.println("Exported eight original animated-pickup models to "+directory);
@@ -78,7 +79,7 @@ public final class GeneratePickupModels {
     }
     private void rocket(Node node,float x,float z,float radius,float height) {
         cylinder(node,"rocket-body",x,0,z,radius,height,metal);
-        Geometry tip=new Geometry("rocket-nose",new Cylinder(2,12,0,radius,height*.35f,true,false));
+        Geometry tip=new Geometry("rocket-nose",new Cylinder(2,12,.005f,radius,height*.35f,true,false));
         tip.rotate(FastMath.HALF_PI,0,0);tip.setLocalTranslation(x,height*.65f,z);tip.setMaterial(accent);node.attachChild(tip);
         for(int i=0;i<4;i++) {Node fin=new Node("stabilizer");fin.setLocalTranslation(x,-height*.36f,z);fin.rotate(0,FastMath.HALF_PI*i,0);
             box(fin,"fin",radius*1.05f,0,0,radius*.65f,height*.15f,.025f,accent);node.attachChild(fin);}

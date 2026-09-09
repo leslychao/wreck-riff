@@ -20,7 +20,7 @@ class ShadowBoundsTest {
             Geometry geometry=new Geometry(box.id(),SurfaceMesh.box(half.x,half.y,half.z,4));
             geometry.setMaterial(SurfaceMaterials.lit(assets,ColorRGBA.Gray,1,.1f));geometry.setLocalTranslation(box.center().vector());scene.attachChild(geometry);
         }
-        Node car=VehicleVisual.create(assets,0);car.setLocalTranslation(0,1,0);scene.attachChild(car);
+        Node car=VehicleVisual.create(assets,game.wreckriff.config.VehicleProfile.rivet(),0);car.setLocalTranslation(0,1,0);scene.attachChild(car);
         Camera view=new Camera(1280,720);ViewPort viewport=new ViewPort("shadow-test",view);viewport.attachScene(scene);
         Camera sun=new Camera(2048,2048);sun.setParallelProjection(true);sun.setFrustumFar(180);
         sun.lookAtDirection(new Vector3f(-.72f,-.7f,.38f).normalizeLocal(),Vector3f.UNIT_Y);

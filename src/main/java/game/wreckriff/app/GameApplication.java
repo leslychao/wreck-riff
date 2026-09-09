@@ -28,6 +28,7 @@ import game.wreckriff.ui.MatchHudPresenter;
 import game.wreckriff.ui.ProgressNotice;
 import game.wreckriff.ui.MenuView;
 import game.wreckriff.ui.UiFocusModel;
+import game.wreckriff.ui.PickupFeedback;
 import game.wreckriff.ui.EnemyHealthBars;
 import game.wreckriff.ui.EnemyHealthBarProjection;
 import game.wreckriff.vehicle.VehicleController;
@@ -74,6 +75,8 @@ public final class GameApplication extends SimpleApplication {
     private BotController bots;
     private CombatSystem combat;
     private CombatVisuals combatVisuals;
+    private PickupPresentation pickupPresentation;
+    private SceneLighting.Handle sceneLighting;
     private ChaseCamera chase;
     private DiagnosticCameraTour visualTour;
     private CombatShowcase showcase;
@@ -85,25 +88,27 @@ public final class GameApplication extends SimpleApplication {
     private ScreenshotAppState screenshots;
     private FileHandler fileLog;
     private Handler warningLog;
-    private BitmapText noticeText;
     private HudView hud;
+    private PickupFeedback pickupFeedback;
     private final MatchHudPresenter hudPresenter=new MatchHudPresenter();
     private double nextHudDiagnostics;
     private boolean hudUsesGamepad;
     private final ProgressNotice progressNotice=new ProgressNotice();
-    private String progressStatus="",displayedFooter="";
+    private String progressStatus="";
+    private int loadingUiPercent=-1;
+    private String loadingUiStage="";
     private boolean debug,navDebug,showHelp,smokeStarted;
     private Node navNode;
     private float noticeTime;
     private double elapsed,videoDeadline;
     private SettingsStore.Settings previousVideo;
     private String message="",error="",rebinding;
-    private int controlsPage;
+    private String requestedProfileId="rivet";
+    private Runnable vehicleSelectionAction;
     private Runnable confirmation;
     private String confirmationTitle;
     private boolean rearView;
     private int viewWidth,viewHeight;
-    private Screen renderedScreen;
     private final java.util.concurrent.CountDownLatch terminated=new java.util.concurrent.CountDownLatch(1);
     private final DiagnosticCompletion diagnosticCompletion=new DiagnosticCompletion();
     private DiagnosticEvidence diagnostic;
@@ -132,7 +137,8 @@ public final class GameApplication extends SimpleApplication {
         flyCam.setEnabled(false); setDisplayFps(false); setDisplayStatView(false);
         inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         viewPort.setBackgroundColor(new ColorRGBA(0.033f,0.045f,0.065f,1));
-        SceneLighting.install(assetManager,rootNode,viewPort);
+        sceneLighting=SceneLighting.install(assetManager,rootNode,viewPort);
+        sceneLighting.setSamples(store.settings().samples);
         rootNode.attachChild(menuNode); rootNode.attachChild(matchNode);
         try {
             matchRules=MatchRules.load(); vehicleRules=VehicleRules.load(); loop=new SimulationLoop(matchRules);
@@ -150,7 +156,7 @@ public final class GameApplication extends SimpleApplication {
                 diagnostic.put("msaaSamples",org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL13.GL_SAMPLES));
                 diagnostic.write(store.directory(),"RUNNING");
             }
-            ui=new GameUi(assetManager,guiNode); ui.resize(cam.getWidth(),cam.getHeight());
+            ui=new GameUi(assetManager,guiNode);
             menu=new MenuView(ui);
             enemyHealthBars=new EnemyHealthBars(assetManager,guiNode);
             enemyHealthBars.setVisible(false);
@@ -185,7 +191,7 @@ public final class GameApplication extends SimpleApplication {
     }
     private void createMenuScene() {
         menuNode.detachAllChildren();
-        Node hero=VehicleVisual.create(assetManager,0); hero.setLocalTranslation(2,1,0); hero.setLocalScale(1.35f); menuNode.attachChild(hero);
+        Node hero=VehicleVisual.create(assetManager,VehicleDefinition.forId(store.settings().selectedVehicleId).profile(vehicleRules),0); hero.setLocalTranslation(2,1,0); hero.setLocalScale(1.35f); menuNode.attachChild(hero);
         Geometry floor=new Geometry("show-floor",SurfaceMesh.box(30,0.1f,30,4));
         floor.setMaterial(new SurfaceMaterials(assetManager).material("concrete"));
         floor.setShadowMode(com.jme3.renderer.queue.RenderQueue.ShadowMode.Receive); menuNode.attachChild(floor);
@@ -193,23 +199,25 @@ public final class GameApplication extends SimpleApplication {
     private void continueCampaign() {
         var campaign=progress.snapshot().campaign();
         if(campaign.currentArenaId()==null)return;
-        startMatch(campaign.currentArenaId(),ProgressStore.Mode.CAMPAIGN,campaign.checkpoint());
+        String profile=session!=null&&session.mode==MatchSession.Mode.CAMPAIGN?session.vehicle(0).profileId:store.settings().selectedVehicleId;
+        startMatch(campaign.currentArenaId(),ProgressStore.Mode.CAMPAIGN,campaign.checkpoint(),profile);
     }
     private void newCampaign() {
-        progress.beginNewCampaign();continueCampaign();
+        progress.beginNewCampaign();startMatch(progress.snapshot().campaign().currentArenaId(),ProgressStore.Mode.CAMPAIGN,null,store.settings().selectedVehicleId);
     }
     private void startArena(String id,boolean bossDuel) {
-        startMatch(id,id.equals(ProgressStore.LEGACY_ARENA)?ProgressStore.Mode.LEGACY:
-                bossDuel?ProgressStore.Mode.BOSS_DUEL:ProgressStore.Mode.ARENA,null);
+        chooseVehicle(()->startMatch(id,id.equals(ProgressStore.LEGACY_ARENA)?ProgressStore.Mode.LEGACY:
+                bossDuel?ProgressStore.Mode.BOSS_DUEL:ProgressStore.Mode.ARENA,null,store.settings().selectedVehicleId));
     }
     private void startMatch() {
-        startMatch(requestedArena,requestedMode,retryCheckpoint);
+        startMatch(requestedArena,requestedMode,retryCheckpoint,requestedProfileId);
     }
-    private void startMatch(String arenaId,ProgressStore.Mode mode,ProgressStore.Checkpoint checkpoint) {
+    private void startMatch(String arenaId,ProgressStore.Mode mode,ProgressStore.Checkpoint checkpoint,String profileId) {
         if(flow.screen()==Screen.LOADING)return;
         ArenaDefinition selected=arenaRegistry.definition(arenaId);
         if(checkpoint!=null)MatchCheckpoint.validateReferences(arenaRegistry,checkpoint);
         requestedArena=arenaId;requestedMode=mode;retryCheckpoint=checkpoint;
+        requestedProfileId=checkpoint==null?profileId:checkpoint.profileId();
         loadingStarted=System.nanoTime();
         long seed=checkpoint!=null?checkpoint.seed():options.fixedSeed()?options.seed():System.nanoTime();
         boolean bossCheckpoint=checkpoint!=null&&checkpoint.stage()==ProgressStore.CheckpointStage.BOSS;
@@ -218,9 +226,10 @@ public final class GameApplication extends SimpleApplication {
         List<MatchLoading.Stage> stages=new ArrayList<>();
         stages.add(new MatchLoading.Stage("Подготовка арены",()->{
             cleanupMatch();arena=selected;
-            attempt=progress.beginAttempt(arenaId,mode,bossCheckpoint);
+            attempt=options.automated()?new ProgressStore.Attempt(1,UUID.randomUUID(),arenaId,mode,bossCheckpoint):
+                    progress.beginAttempt(arenaId,mode,bossCheckpoint);
             session=new MatchSession(seed,arena,MatchSession.Mode.valueOf(mode.name()),Configs.load("combat",CombatRules.class),
-                    attempt.id(),bossCheckpoint,checkpoint==null?0:checkpoint.liveryId());
+                    attempt.id(),bossCheckpoint,checkpoint==null?0:checkpoint.liveryId(),requestedProfileId);
             report=new SessionReport();world=new PhysicsWorld(vehicleRules);world.configureArena(arena);
         }));
         stages.add(new MatchLoading.Stage("Окружение",()->{
@@ -236,7 +245,7 @@ public final class GameApplication extends SimpleApplication {
             final int participant=id;
             stages.add(new MatchLoading.Stage("Машины: "+(id+1)+" / "+count,()->{
                 var state=session.vehicle(participant);var spawn=spawns.get(participant);
-                var profile=VehicleProfile.rivet(vehicleRules);
+                var profile=VehicleDefinition.forId(state.profileId).profile(vehicleRules);
                 Vector3f position=spawn.position().vector().add(0,profile.roadOffset(),0);
                 Quaternion rotation=new Quaternion().fromAngleAxis(spawn.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y);
                 if(participant==0&&checkpoint!=null) {
@@ -253,6 +262,9 @@ public final class GameApplication extends SimpleApplication {
             if(checkpoint!=null)runtime.restoreCheckpoint(checkpoint);
             ArenaPresentation.attach(assetManager,content.visual(),session,arena,arenaSystems);
             combatVisuals=new CombatVisuals(assetManager,matchNode,world);createNavigationLines();
+            pickupPresentation=new PickupPresentation(assetManager,content.visual(),session,arena,arenaSystems,combatVisuals::pickupBurst);
+            pickupFeedback=new PickupFeedback(session.sessionId,0);
+            sceneLighting.apply(arena.metadata().theme(),store.settings().glow);
         }));
         loading=new MatchLoading(stages,()->world.step(),()->{
             // Restoring resource timers after suspension warmup cannot spend a saved cooldown.
@@ -260,7 +272,7 @@ public final class GameApplication extends SimpleApplication {
             drivers.values().forEach(driver->driver.recordSafePose(session.tick));
             if(mode==ProgressStore.Mode.CAMPAIGN&&checkpoint==null) {
                 retryCheckpoint=runtime.checkpoint(ProgressStore.CheckpointStage.ARENA);
-                progress.saveCheckpoint(attempt,retryCheckpoint);
+                if(!options.automated())progress.saveCheckpoint(attempt,retryCheckpoint);
             }
             loop=new SimulationLoop(matchRules);chase.reset();
             audio.startMatch(arena.metadata().music(),arena.metadata().bossMusic());
@@ -319,7 +331,7 @@ public final class GameApplication extends SimpleApplication {
             boolean drawable=cam.getWidth()>0&&cam.getHeight()>0;
             if(drawable&&(cam.getWidth()!=viewWidth || cam.getHeight()!=viewHeight)) {
                 viewWidth=cam.getWidth();viewHeight=cam.getHeight();ui.usePixelCoordinates();resizeHud();
-                if(menu!=null)menu.resize(viewWidth,viewHeight,store.settings().uiScale);
+                if(menu!=null&&flow.screen()!=Screen.RUNNING)menu.resize(viewWidth,viewHeight,store.settings().uiScale);
             }
             if(!drawable) {undrawableSeconds+=dt;pause("Window minimized. Resume when ready.");}
             if(flow.screen()!=Screen.RUNNING)menu.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
@@ -366,7 +378,7 @@ public final class GameApplication extends SimpleApplication {
         if(session.checkpointRequested) {
             session.checkpointRequested=false;
             retryCheckpoint=runtime.checkpoint(ProgressStore.CheckpointStage.BOSS);
-            if(session.mode==MatchSession.Mode.CAMPAIGN)progress.saveCheckpoint(attempt,retryCheckpoint);
+            if(session.mode==MatchSession.Mode.CAMPAIGN&&!options.automated())progress.saveCheckpoint(attempt,retryCheckpoint);
             notice("Аварийный ремонт: "+Math.round(session.vehicle(0).hp)+" HP");
         }
         audio.bossMusic(session.phase==MatchSession.Phase.BOSS_ENTRY||session.phase==MatchSession.Phase.BOSS_COMBAT);
@@ -381,10 +393,12 @@ public final class GameApplication extends SimpleApplication {
                 chase.impact(Math.min(.7f,event.value()/40));
         }
         combatVisuals.accept(events);
+        pickupPresentation.accept(events);
+        pickupFeedback.accept(events,session.tick);
         if(session.outcome!=MatchSession.Outcome.NONE) {
             diagnosticResults++;
             var playerState=session.vehicle(0);
-            progress.record(new ProgressStore.Result(attempt,ProgressStore.Outcome.valueOf(session.outcome.name()),
+            if(!options.automated())progress.record(new ProgressStore.Result(attempt,ProgressStore.Outcome.valueOf(session.outcome.name()),
                     playerState.damageDealt,playerState.eliminations,session.activeTicks,
                     session.bossParticipantId>=0&&!session.vehicle(session.bossParticipantId).alive()));
             writeReport(); audio.stopMatch();
@@ -399,6 +413,7 @@ public final class GameApplication extends SimpleApplication {
         for(var state:session.vehicles) {
             Node model=vehicleModels.get(state.id);
             VehicleVisual.updateDamage(model,showcase==null?state.hp/state.maximumHp:showcase.displayHpFraction(state));
+            if(state.id==session.bossParticipantId)VehicleVisual.updateBossPhase(model,session.bossMode-1,state.alive()&&arenaSystems.bossVulnerable());
             VehicleVisual.updateEffects(model,!results&&state.alive()&&state.frozenTicks>0,!results&&state.alive()&&state.shieldTicks>0);
             if(world.containsVehicle(state.id)) {
                 var pose=world.interpolatedPose(state.id,alpha); model.setLocalTranslation(pose.position()); model.setLocalRotation(pose.rotation());
@@ -411,6 +426,7 @@ public final class GameApplication extends SimpleApplication {
             }
         }
         if(advancing) {
+            combatVisuals.setFlashIntensity(store.settings().flashes);
             combatVisuals.update(combat.projectiles(),combat.mines(),combat.fireZones(),combat.ballisticWarnings(),session,dt);
             var hazard=arenaSystems.hazardPhase();
             Vector3f hazardPosition=arena.hazards().stream().filter(h->arenaSystems.hazardPhase(h.id())!=ArenaSystems.HazardPhase.OFF)
@@ -421,10 +437,10 @@ public final class GameApplication extends SimpleApplication {
             combatVisuals.update(List.of(),List.of(),List.of(),List.of(),null,dt);
             audio.updateTail(dt);
         }
-        for(var pickup:arena.pickups()) {
-            Spatial visual=content.visual().getChild("pickup-"+pickup.id());
-            if(visual!=null) visual.setCullHint(arenaSystems.active(pickup.id())?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
-        }
+        sceneLighting.apply(arena.metadata().theme(),store.settings().glow);
+        sceneLighting.setSamples(store.settings().samples);
+        pickupPresentation.setGlow(store.settings().glow);
+        if(advancing)pickupPresentation.update(alpha);
         chase.update(world,0,alpha,dt,rearView,drivers.get(0).turboActive(),store.settings().shake);
         updateHud();
     }
@@ -467,12 +483,13 @@ public final class GameApplication extends SimpleApplication {
         loop.resetAccumulator(); redraw();
     }
     private void redraw() {
-        renderedScreen=flow.screen();ui.clear();ui.usePixelCoordinates();showcaseText=null;
+        ui.clear();ui.usePixelCoordinates();showcaseText=null;
         if(hud!=null)hud.setVisible(false);
-        menu.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
+        if(flow.screen()!=Screen.RUNNING)menu.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
         switch(flow.screen()) {
             case MENU -> drawMainMenu();
             case MAPS -> drawMaps();
+            case VEHICLES -> drawVehicles();
             case STATISTICS -> drawStatistics();
             case LOADING -> drawLoading();
             case RUNNING -> createHud();
@@ -501,15 +518,16 @@ public final class GameApplication extends SimpleApplication {
     }
     private void drawMainMenu() {
         var campaign=progress.snapshot().campaign();var rows=new ArrayList<MenuView.Row>();
-        if(campaign.checkpoint()!=null)rows.add(new MenuView.Action("continue","ПРОДОЛЖИТЬ",arenaRegistry.definition(campaign.currentArenaId()).metadata().title(),true,this::continueCampaign));
+        boolean canContinue=campaign.currentArenaId()!=null&&(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty());
+        if(canContinue)rows.add(new MenuView.Action("continue","ПРОДОЛЖИТЬ",arenaRegistry.definition(campaign.currentArenaId()).metadata().title(),true,this::continueCampaign));
         rows.add(new MenuView.Action("new","НОВАЯ КАМПАНИЯ",()->{
-            if(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty())confirm("Начать кампанию заново? Открытые карты и статистика сохранятся.",this::newCampaign);
-            else newCampaign();}));
+            if(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty())confirm("Начать кампанию заново? Открытые карты и статистика сохранятся.",()->chooseVehicle(this::newCampaign));
+            else chooseVehicle(this::newCampaign);}));
         rows.add(new MenuView.Action("maps","ОТДЕЛЬНЫЙ БОЙ",flow::maps));
         rows.add(new MenuView.Action("stats","СТАТИСТИКА",flow::statistics));
         rows.add(new MenuView.Action("settings","НАСТРОЙКИ",()->flow.open(Screen.SETTINGS)));
         rows.add(new MenuView.Action("credits","АВТОРЫ И ЛИЦЕНЗИИ",()->flow.open(Screen.CREDITS)));
-        menu.show("main","WRECK RIFF","Тяжёлый металл. Последняя машина.",List.of(),rows,List.of(new MenuView.Action("quit","ВЫХОД",this::stop)),campaign.checkpoint()!=null?"continue":"new");
+        menu.show("main","WRECK RIFF","Тяжёлый металл. Последняя машина.",List.of(),rows,List.of(new MenuView.Action("quit","ВЫХОД",this::stop)),canContinue?"continue":"new");
     }
     private void drawMaps() {
         var campaign=progress.snapshot().campaign();boolean duels=campaign.completedArenaIds().size()==ProgressStore.CAMPAIGN_ARENAS.size();
@@ -552,6 +570,9 @@ public final class GameApplication extends SimpleApplication {
     private void drawLoading() {
         String title=arenaRegistry.definition(requestedArena).metadata().title();
         float fraction=loading==null?0:loading.fraction();String stage=loading==null?"Подготовка":loading.title();
+        int percentage=Math.round(fraction*100);
+        if(menu.pageId().equals("loading")&&loadingUiPercent==percentage&&loadingUiStage.equals(stage))return;
+        loadingUiPercent=percentage;loadingUiStage=stage;
         menu.show("loading","ЗАГРУЗКА",title,List.of(),List.of(new MenuView.Text("loading-stage",stage),
                 new MenuView.Metrics("loading-progress",List.of(new MenuView.Metric("Готово",Math.round(fraction*100)+"%")))),List.of(),null);
     }
@@ -569,11 +590,31 @@ public final class GameApplication extends SimpleApplication {
         return String.format(Locale.ROOT,"%02d:%02d",seconds/60,seconds%60);
     }
     private void createHud() {
-        if(showcase!=null)showcaseText=ui.text("",90,1020,28,GameUi.PAPER);
+        if(showcase!=null)showcaseText=ui.text("",18,cam.getHeight()-18,Math.max(14,22*store.settings().uiScale),GameUi.PAPER);
         if(hud==null)hud=new HudView(assetManager,guiNode);
         resizeHud();hud.setVisible(true);nextHudDiagnostics=0;
         hudUsesGamepad=input.usingGamepad();
         hud.setHelp(showHelp?hudHelp():List.of());updateHud();
+    }
+    private void chooseVehicle(Runnable action) {
+        vehicleSelectionAction=action;createMenuScene();flow.open(Screen.VEHICLES);
+    }
+    private void drawVehicles() {
+        VehicleDefinition selected=VehicleDefinition.forId(store.settings().selectedVehicleId);
+        var rows=new ArrayList<MenuView.Row>();
+        for(var definition:VehicleDefinition.values()) {
+            var profile=definition.profile(vehicleRules);
+            String detail=String.format(Locale.ROOT,"%.0f HP  /  %.0f м/с  /  %s",definition.maximumHp(),vehicleRules.maxSpeed()*profile.speedMultiplier(),definition.specialName());
+            rows.add(new MenuView.VehicleCard("vehicle:"+definition.id(),definition.displayName(),detail,definition==selected,
+                    ()->VehicleVisual.create(assetManager,profile,0),()->{
+                store.settings().selectedVehicleId=definition.id();store.saveSettings();createMenuScene();redraw();
+            }));
+        }
+        rows.add(new MenuView.Text("vehicle-description",selected.specialName()+": "+selected.description()));
+        rows.add(new MenuView.Text("vehicle-control","Личный спешл: "+input.displayBinding("Special")+". Заморозка и щит доступны каждой машине."));
+        menu.show("vehicles","ВЫБОР МАШИНЫ","Все три машины доступны сразу. Повтор сохраняет ваш выбор.",List.of(),rows,
+                List.of(new MenuView.Action("back","НАЗАД",()->{vehicleSelectionAction=null;flow.back();}),
+                        new MenuView.Action("start","В БОЙ",()->{Runnable action=vehicleSelectionAction;vehicleSelectionAction=null;flow.back();if(action!=null)action.run();})),"vehicle:"+selected.id());
     }
     private void resizeHud() {
         if(hud!=null&&cam.getWidth()>=320&&cam.getHeight()>=240)hud.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
@@ -585,6 +626,7 @@ public final class GameApplication extends SimpleApplication {
                 new HudView.HelpItem(input.displayBinding("Machine gun")+" / "+input.displayBinding("Selected weapon"),"Machine gun / selected weapon"),
                 new HudView.HelpItem(input.displayBinding("Previous weapon")+" / "+input.displayBinding("Next weapon"),"Cycle six weapons"),
                 new HudView.HelpItem(input.displayBinding("Freeze")+" / "+input.displayBinding("Shield"),"Freeze / shield"),
+                new HudView.HelpItem(input.displayBinding("Special"),VehicleDefinition.forId(session.vehicle(0).profileId).specialName()),
                 new HudView.HelpItem(input.displayBinding("Rear view"),"Rear view"),
                 new HudView.HelpItem(input.displayBinding("Recover"),"Hold to recover"),
                 new HudView.HelpItem(input.displayBinding("Pause"),"Pause"));
@@ -594,8 +636,12 @@ public final class GameApplication extends SimpleApplication {
         var player=session.vehicle(0);
         if(hudUsesGamepad!=input.usingGamepad()) {hudUsesGamepad=input.usingGamepad();if(showHelp)hud.setHelp(hudHelp());}
         int lock=combat.lockTarget(0);
+        String receipt=pickupFeedback==null?"":pickupFeedback.text(session.tick);
+        hud.setPickupHighlights(pickupFeedback==null?Set.of():pickupFeedback.highlighted(session.tick));
+        var definition=VehicleDefinition.forId(session.vehicle(0).profileId);
+        hud.setSpecial(definition.id(),definition.specialName(),input.displayBinding("Special"));
         hud.update(hudPresenter.snapshot(session,world,new MatchHudPresenter.Targeting(lock,combat.napalmAssistTarget(0),combat.ballisticTarget(0)),
-                input.displayBinding("Selected weapon"),noticeTime>0?message:progressStatus,elapsed));
+                input.displayBinding("Selected weapon"),noticeTime>0?message:!progressStatus.isBlank()?progressStatus:receipt,elapsed));
         if((debug||navDebug)&&elapsed>=nextHudDiagnostics) {
             StringBuilder diagnostics=new StringBuilder(String.format(Locale.ROOT,"%.0f FPS | tick %d | %.1f m/s | wheels %d | %s\nHP %.1f energy %.1f | target %d | projectiles %d | voices %d\ndropped %.4fs | bodies %d\n%s",1/Math.max(0.0001f,timer.getTimePerFrame()),session.tick,world.velocity(0).length(),world.wheelContacts(0),drivers.get(0).reversing()?"REVERSE":"FORWARD",player.hp,player.turbo,lock,combat.projectiles().size(),audio.voiceCount(),loop.droppedSimulationTime(),world.bodyCount(),input.diagnostics()));
             if(navDebug)for(var state:session.vehicles)if(!state.player&&state.alive())diagnostics.append("\n").append(state.name).append(" ").append(bots.state(state.id)).append(" -> ").append(bots.targetId(state.id));
@@ -630,6 +676,7 @@ public final class GameApplication extends SimpleApplication {
             case 2 -> {
                 rows.add(slider("ui-scale","Масштаб интерфейса",s.uiScale,.8f,1.5f,.1f,percent(s.uiScale),value->{s.uiScale=(float)value;resizeHud();}));
                 rows.add(slider("flashes","Интенсивность вспышек",s.flashes,0,1,.1f,percent(s.flashes),value->s.flashes=(float)value));
+                rows.add(new MenuView.Action("glow","Свечение: "+(s.glow?"вкл.":"выкл."),()->{s.glow=!s.glow;settingsChanged();}));
                 rows.add(slider("shake","Тряска камеры",s.shake,0,1,.1f,percent(s.shake),value->s.shake=(float)value));
                 rows.add(new MenuView.Action("subtitles","Субтитры: "+(s.subtitles?"вкл.":"выкл."),()->{s.subtitles=!s.subtitles;settingsChanged();}));
             }
@@ -654,7 +701,7 @@ public final class GameApplication extends SimpleApplication {
         var rows=new ArrayList<MenuView.Row>();
         if(controlsGamepad) {
             rows.add(new MenuView.Text("pad-name",input.padName()));
-            for(String action:List.of("Throttle","Brake / reverse","Steer","Handbrake","Turbo","Machine gun","Selected weapon","Previous weapon","Next weapon","Freeze","Shield","Rear view","Recover","Pause"))
+            for(String action:List.of("Throttle","Brake / reverse","Steer","Handbrake","Turbo","Machine gun","Selected weapon","Previous weapon","Next weapon","Freeze","Shield","Special","Rear view","Recover","Pause"))
                 rows.add(new MenuView.Text("pad:"+action,controlName(action)+"   "+input.displayBinding(action,true)));
         } else {
             rows.add(new MenuView.Text("mouse","Мышь: LMB — пулемёт, RMB — выбранное оружие."));
@@ -670,7 +717,7 @@ public final class GameApplication extends SimpleApplication {
         return switch(action) {
             case "Throttle"->"Газ";case "Brake / reverse"->"Тормоз / задний ход";case "Steer"->"Руль";case "Steer left"->"Руль влево";case "Steer right"->"Руль вправо";
             case "Handbrake"->"Ручник";case "Turbo"->"Турбо";case "Machine gun"->"Пулемёт";case "Selected weapon"->"Выстрел";
-            case "Previous weapon"->"Предыдущее оружие";case "Next weapon"->"Следующее оружие";case "Freeze"->"Заморозка";case "Shield"->"Щит";
+            case "Previous weapon"->"Предыдущее оружие";case "Next weapon"->"Следующее оружие";case "Freeze"->"Заморозка";case "Shield"->"Щит";case "Special"->"Личный спешл";
             case "Rear view"->"Вид назад";case "Recover"->"Восстановление";case "Pause"->"Пауза";
             default->action.startsWith("Select ")?"Выбрать "+action.substring(7):action;
         };
@@ -701,6 +748,9 @@ public final class GameApplication extends SimpleApplication {
     }
     private void key(int code) {
         if(options.automated()) return;
+        if(flow.screen()==Screen.RUNNING&&session!=null&&session.phase==MatchSession.Phase.INTRO&&(code==KeyInput.KEY_RETURN||code==KeyInput.KEY_SPACE)) {
+            runtime.skipIntro();input.clear();return;
+        }
         if(rebinding!=null) {
             if(code==KeyInput.KEY_ESCAPE) {rebinding=null;redraw();return;}
             String action=rebinding;
@@ -709,7 +759,9 @@ public final class GameApplication extends SimpleApplication {
             store.settings().keys.put(action,code);store.saveSettings();rebinding=null;redraw();return;
         }
         if(code==KeyInput.KEY_ESCAPE) uiAction("back");
-        else if(code==KeyInput.KEY_UP) uiAction("up"); else if(code==KeyInput.KEY_DOWN) uiAction("down");
+        else if(code==KeyInput.KEY_UP)uiAction("up");else if(code==KeyInput.KEY_DOWN)uiAction("down");
+        else if(code==KeyInput.KEY_LEFT)uiAction("left");else if(code==KeyInput.KEY_RIGHT)uiAction("right");
+        else if(code==KeyInput.KEY_TAB&&flow.screen()!=Screen.RUNNING)menu.cycle(input.shiftHeld());
         else if(code==KeyInput.KEY_RETURN || code==KeyInput.KEY_NUMPADENTER) { if(flow.screen()!=Screen.RUNNING) uiAction("activate"); }
         else if(code==KeyInput.KEY_F1) {showHelp=!showHelp;if(flow.screen()==Screen.RUNNING)redraw();}
         else if(code==KeyInput.KEY_F3) {debug=!debug;}
@@ -719,17 +771,25 @@ public final class GameApplication extends SimpleApplication {
     private void uiAction(String action) {
         if(options.automated()) return;
         boolean driving=flow.screen()==Screen.RUNNING;
+        if(driving&&action.equals("accept")&&session.phase==MatchSession.Phase.INTRO){runtime.skipIntro();input.clear();return;}
         if(action.equals("back") || action.equals("pause")) {
             if(driving) pause(""); else if(flow.screen()==Screen.PAUSED) flow.resume();
-            else if(flow.screen()==Screen.SETTINGS||flow.screen()==Screen.CONTROLS||flow.screen()==Screen.CREDITS||flow.screen()==Screen.CONFIRM) {rebinding=null;if(previousVideo!=null)restoreVideo();flow.back();}
+            else if(flow.screen()==Screen.SETTINGS||flow.screen()==Screen.CONTROLS||flow.screen()==Screen.CREDITS||flow.screen()==Screen.CONFIRM||flow.screen()==Screen.VEHICLES) {rebinding=null;vehicleSelectionAction=null;flushSettings();if(previousVideo!=null)restoreVideo();flow.back();}
+            else if(flow.screen()==Screen.MAPS||flow.screen()==Screen.STATISTICS)flow.menu();
             return;
         }
         if(driving) return;
         switch(action) {
-            case "up","left" -> {ui.move(-1);audio.ui(false);}
-            case "down","right" -> {ui.move(1);audio.ui(false);}
-            case "activate" -> {audio.ui(true);ui.activate();}
-            case "click" -> {audio.ui(true);ui.click(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);}
+            case "up" -> {menu.move(UiFocusModel.Direction.UP);audio.ui(false);}
+            case "down" -> {menu.move(UiFocusModel.Direction.DOWN);audio.ui(false);}
+            case "left" -> {menu.move(UiFocusModel.Direction.LEFT);audio.ui(false);}
+            case "right" -> {menu.move(UiFocusModel.Direction.RIGHT);audio.ui(false);}
+            case "activate" -> {audio.ui(true);menu.activate();}
+            case "click" -> {audio.ui(true);menu.click(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);}
+            case "pointer-move" -> menu.drag(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
+            case "release" -> {menu.release();flushSettings();}
+            case "scroll-up" -> menu.scroll(-64*store.settings().uiScale);
+            case "scroll-down" -> menu.scroll(64*store.settings().uiScale);
             default -> {}
         }
     }
@@ -737,7 +797,7 @@ public final class GameApplication extends SimpleApplication {
     @Override public void loseFocus() { super.loseFocus(); enqueue(()->{pause("Focus lost. Resume when ready.");return null;}); }
     private void confirm(String title,Runnable action) { confirmationTitle=title;confirmation=action;flow.open(Screen.CONFIRM); }
     private void returnToMenu() { cleanupMatch();flow.menu(); }
-    private void notice(String text) {message=text;noticeTime=5;if(noticeText!=null)noticeText.setText(text);}
+    private void notice(String text) {message=text;noticeTime=5;if(menu!=null&&flow.screen()!=Screen.RUNNING)menu.setStatus(text);}
     private void pollProgressStatus() {
         var status=progressNotice.update(progress.warning(),progress.savePending(),progress.writable(),elapsed);
         progressStatus=status.indicator();
@@ -761,6 +821,8 @@ public final class GameApplication extends SimpleApplication {
         catch(IOException e) {Logger.getLogger(getClass().getName()).warning("Cannot write report: "+e.getMessage());}
     }
     private void cleanupMatch() {
+        if(pickupPresentation!=null){pickupPresentation.close();pickupPresentation=null;}
+        pickupFeedback=null;
         if(hud!=null){hud.close();hud=null;}
         if(enemyHealthBars!=null){enemyHealthBars.clear();enemyHealthBars.setVisible(false);}
         enemyHealthMarkers.clear();
@@ -786,6 +848,7 @@ public final class GameApplication extends SimpleApplication {
     }
     @Override public void destroy() {
         try {
+            flushSettings();
             if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
             writeReport();cleanupMatch();if(audio!=null)audio.close();if(input!=null)input.close();
             if(enemyHealthBars!=null)enemyHealthBars.close();
@@ -898,6 +961,4 @@ public final class GameApplication extends SimpleApplication {
         }
     }
     private static String percent(float value) {return Math.round(value*100)+"%";}
-    private static float nextLevel(float value) {return value>=0.99f?0:Math.min(1,value+0.1f);}
-    private static String wrap(String input,int width) {StringBuilder out=new StringBuilder();int column=0;for(String word:input.split(" ")){if(column+word.length()>width){out.append('\n');column=0;}out.append(word).append(' ');column+=word.length()+1;}return out.toString();}
 }

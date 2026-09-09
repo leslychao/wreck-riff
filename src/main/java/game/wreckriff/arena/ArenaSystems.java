@@ -1,6 +1,7 @@
 package game.wreckriff.arena;
 import game.wreckriff.combat.WeaponType;
 import game.wreckriff.config.ProgressStore;
+import game.wreckriff.config.VehicleProfile;
 
 import com.jme3.math.Vector3f;
 import game.wreckriff.simulation.*;
@@ -10,6 +11,7 @@ import java.util.*;
 /** Tick-driven hazard and atomic, surface-aware resource collection. */
 public final class ArenaSystems {
     public enum HazardPhase { OFF, WARNING, ACTIVE }
+    public enum BossAction { HEAVY_STRIKE, PROTOCOL, RITE, RAM_MISSED, LANDED }
     @FunctionalInterface public interface DamageSink {
         void damage(int targetId,float amount,String cause,long eventId);
     }
@@ -19,6 +21,8 @@ public final class ArenaSystems {
     private final Map<String,Long> returnsAt=new HashMap<>();
     private final Map<String,ProgressStore.ObjectState> objects=new LinkedHashMap<>();
     private long hazardTicks;
+    private long bossVulnerableUntil;
+    private VehicleProfile bossProfile;
     private final Map<String,Map<Integer,Integer>> hazardExposure=new HashMap<>();
     private final List<GameEvent> events=new ArrayList<>();
     private long lastHazardTick=Long.MIN_VALUE,lastPickupTick=Long.MIN_VALUE;
@@ -29,6 +33,35 @@ public final class ArenaSystems {
         definition.destructibles().forEach(object->objects.put(object.id(),new ProgressStore.ObjectState(object.maximumHp(),false,false)));
     }
     public ArenaLaunches launches() { return launches; }
+    public void configureBoss(VehicleProfile profile) {bossProfile=profile;}
+    public boolean bossVulnerable() {
+        return session.phase==MatchSession.Phase.BOSS_COMBAT&&session.bossParticipantId>=0
+                &&session.vehicle(session.bossParticipantId).alive()&&session.tick<bossVulnerableUntil;
+    }
+    public void completeBossAction(BossAction action) {
+        if(bossProfile==null||session.phase!=MatchSession.Phase.BOSS_COMBAT)return;
+        float seconds=switch(bossProfile.id()) {
+            case "boss_foreman" -> action==BossAction.RAM_MISSED?2:0;
+            case "boss_prefect" -> action==BossAction.PROTOCOL?1.8f:0;
+            case "boss_emcee" -> action==BossAction.RAM_MISSED||action==BossAction.LANDED?1.6f:0;
+            case "boss_ash_shepherd" -> action==BossAction.RITE?2:0;
+            case "boss_director" -> action==BossAction.RAM_MISSED?2.2f:0;
+            default -> 0;
+        };
+        if(seconds>0)bossVulnerableUntil=Math.max(bossVulnerableUntil,session.tick+Math.round(seconds*MatchSession.TICKS_PER_SECOND));
+    }
+    /** Receives a genuine local collision point. Splash and fire never call this method. */
+    public float directHitMultiplier(int targetId,Vector3f localPoint) {
+        if(targetId!=session.bossParticipantId||!bossVulnerable()||localPoint==null)return 1;
+        var hull=bossProfile.hullBoxes().getFirst();
+        boolean height=localPoint.y>=hull.y()-hull.halfHeight()&&localPoint.y<=hull.y()+hull.halfHeight();
+        boolean panel=bossProfile.id().equals("boss_prefect")?
+                Math.abs(localPoint.x)>=hull.halfWidth()-.3f&&Math.abs(localPoint.x)<=hull.halfWidth()+.08f
+                        &&Math.abs(localPoint.z)<=bossProfile.length()*.22f:
+                Math.abs(localPoint.x)<=hull.halfWidth()*.8f&&localPoint.z<=-hull.halfLength()+.3f
+                        &&localPoint.z>=-hull.halfLength()-.08f;
+        return height&&panel?1.25f:1;
+    }
     public void beforePhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.beforePhysics(world,drivers); }
     public void afterPhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.afterPhysics(world,drivers); }
     public HazardPhase hazardPhase() {

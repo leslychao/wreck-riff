@@ -12,6 +12,8 @@ import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.simulation.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -20,6 +22,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Pure combat rules. Fake geometry is intentional here; real sweeps have physicsTest coverage. */
 class CombatSystemTest {
+    @Test void localMultiplierUsesActualHitscanPointAndNeverGenericDamage() {
+        createSession();world.positions[1].set(0,0,10);Vector3f local=new Vector3f(.2f,.4f,-2);
+        world.rayHit=new WorldQuery.Hit(1,world.position(1).add(local),new Vector3f(0,0,-1),.5f);
+        int[] calls={0};combat.directDamageMultiplier((target,point)->{assertEquals(1,target);assertEquals(local,point);calls[0]++;return 1.25f;});
+        step(machineGun());assertEquals(200-rules.machineGun().damage()*1.25f,session.vehicle(1).hp,.001f);
+        assertEquals(1,calls[0]);combat.queueDamage(1,0,10,"hazard",91234);combat.resolveDamage(world);
+        assertEquals(200-rules.machineGun().damage()*1.25f-10,session.vehicle(1).hp,.001f);assertEquals(1,calls[0]);
+    }
+    @Test void explosionOnlyMultipliesTheDirectTargetNotSyntheticSplashContactPoints() {
+        createSession();world.positions[1].set(0,0,10);world.positions[2].set(1,0,10);
+        world.nextSweep=new WorldQuery.Hit(1,new Vector3f(0,0,9),new Vector3f(0,0,-1),.5f);
+        List<Integer> targets=new ArrayList<>();combat.directDamageMultiplier((target,point)->{targets.add(target);return 1.25f;});
+        step(rocket());assertEquals(List.of(1),targets);assertTrue(session.vehicle(2).hp<200,"Actual splash fixture must also take damage");
+    }
     private MatchSession session;
     private CombatRules rules;
     private CombatSystem combat;
@@ -74,14 +90,51 @@ class CombatSystemTest {
         assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
     }
 
-    @Test void heldRocketRepeatsExactlyAtItsCooldownBoundary() {
+    @ParameterizedTest
+    @CsvSource({"HOMING,60", "POWER,84", "MINE,84", "NAPALM,108", "CANNON,168", "BALLISTIC,360"})
+    void heldWeaponRepeatsExactlyAtItsCooldownBoundary(WeaponType type, int intervalTicks) {
+        session.vehicle(0).selectedWeapon = type;
+        WeaponSlot slot = session.vehicle(0).weapon(type);
+        int initialAmmo = slot.ammo;
+        world.flatSupport = true;
         step(rocket());
-        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
-        for (int i = 0; i < 95; i++) step(rocket());
-        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+        assertEquals(initialAmmo - 1, slot.ammo, "Ready weapon fires on the first tick");
+        assertEquals(1, weaponLaunches(combat.drainEvents(), type));
+        // A second mine needs free supported ground, away from the first placement.
+        world.positions[0].x += 10;
+        for (int i = 1; i < intervalTicks; i++) {
+            step(rocket());
+            assertEquals(initialAmmo - 1, slot.ammo, "No early shot at tick " + i);
+        }
+        assertEquals(0, weaponLaunches(combat.drainEvents(), type));
         step(rocket());
-        assertEquals(4, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
-        assertEquals(96, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
+        assertEquals(initialAmmo - 2, slot.ammo);
+        assertEquals(1, weaponLaunches(combat.drainEvents(), type));
+        assertEquals(intervalTicks, slot.cooldownTicks);
+    }
+
+    private static long weaponLaunches(List<GameEvent> events, WeaponType type) {
+        return events.stream().filter(event -> event.kind().equals(type.id())
+                && event.type() == (type == WeaponType.MINE ? GameEvent.Type.MINE_PLACED : GameEvent.Type.SHOT)).count();
+    }
+
+    @Test void restoredReloadFinishesBeforeTheNextShotUsesTheNewInterval() {
+        var player = session.vehicle(0);
+        player.selectedWeapon = WeaponType.BALLISTIC;
+        var slot = player.weapon(WeaponType.BALLISTIC);
+        slot.cooldownTicks = 540; // A checkpoint from the previous 4.5-second balance.
+        var saved = MatchCheckpoint.player(player);
+        slot.cooldownTicks = 0;
+        MatchCheckpoint.restorePlayer(player, saved);
+        assertEquals(540, slot.cooldownTicks);
+        int ammo = slot.ammo;
+        for (int i = 0; i < 539; i++) step(rocket());
+        assertEquals(ammo, slot.ammo);
+        assertEquals(0, weaponLaunches(combat.drainEvents(), WeaponType.BALLISTIC));
+        step(rocket());
+        assertEquals(ammo - 1, slot.ammo);
+        assertEquals(1, weaponLaunches(combat.drainEvents(), WeaponType.BALLISTIC));
+        assertEquals(360, slot.cooldownTicks);
     }
 
     @Test void powerRocketUsesItsOwnAmmoAndDirectDamage() {
@@ -92,7 +145,7 @@ class CombatSystemTest {
         assertEquals(150, session.vehicle(1).hp);
         assertEquals(3, session.vehicle(0).weapon(WeaponType.POWER).ammo);
         assertEquals(6, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
-        assertEquals(132, session.vehicle(0).weapon(WeaponType.POWER).cooldownTicks);
+        assertEquals(84, session.vehicle(0).weapon(WeaponType.POWER).cooldownTicks);
         assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
     }
 
@@ -445,7 +498,7 @@ class CombatSystemTest {
         final Set<Integer> hidden = new HashSet<>();
         final List<Vector3f> shotDirections = new ArrayList<>();
         Hit nextSweep, muzzleBlock, rayHit;
-        boolean onlyLastSampleVisible;
+        boolean onlyLastSampleVisible, flatSupport;
         int lastIgnoredVehicle = -1;
         @Override public Vector3f position(int id) { return positions[id].clone(); }
         @Override public Vector3f velocity(int id) { return new Vector3f(); }
@@ -464,6 +517,11 @@ class CombatSystemTest {
             return hit;
         }
         @Override public Hit staticSweep(Vector3f from,Vector3f to,float radius) {return null;}
+        @Override public Support support(Vector3f from, float depth) {
+            return flatSupport && from.y >= 0 && from.y <= depth
+                    ? new Support(0, new Vector3f(from.x, 0, from.z), Vector3f.UNIT_Y)
+                    : WorldQuery.super.support(from, depth);
+        }
         @Override public boolean visible(Vector3f from, Vector3f to, int id) {
             return !hidden.contains(id) && (!onlyLastSampleVisible || to.z < positions[id].z);
         }

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /** Read-only presentation of a match snapshot. No simulation objects, timers or input mutations live here. */
 public final class HudView implements AutoCloseable {
@@ -68,8 +69,10 @@ public final class HudView implements AutoCloseable {
     private HudLayout layout;
     private Snapshot lastSnapshot;
     private Geometry healthBar,turboBar,bossBar,effectIcon,targetBracket,noticePanel;
-    private TextValue healthValue,objectiveValue,bossValue,hintValue,noticeValue,diagnosticsValue;
+    private TextValue healthValue,objectiveValue,bossValue,hintValue,noticeValue,diagnosticsValue,specialValue;
+    private String specialProfile="rivet",specialName="Отбойник",specialBinding="C";
     private List<HelpItem> helpItems=List.of();
+    private Set<WeaponType> pickupHighlights=Set.of();
     private int previousHealth=-1,previousMaximumHealth=-1;
 
     public HudView(AssetManager assets,Node guiNode) {
@@ -84,7 +87,18 @@ public final class HudView implements AutoCloseable {
     public Node root() {return root;}
     public HudLayout layout() {return layout;}
     public int radarMarkerCount() {return radarMarkers.size();}
+    public void setPickupHighlights(Set<WeaponType> types) {
+        if(pickupHighlights.equals(types))return;pickupHighlights=Set.copyOf(types);
+        weaponSlots.forEach((type,slot)->slot.pickup(pickupHighlights.contains(type)));
+    }
     public void setDiagnostics(String text) {if(diagnosticsValue!=null)diagnosticsValue.set(text);}
+    public void setSpecial(String profileId,String name,String binding) {
+        if(specialProfile.equals(profileId)&&specialName.equals(name)&&specialBinding.equals(binding))return;
+        boolean changedProfile=!specialProfile.equals(profileId);
+        specialProfile=profileId;specialName=name;specialBinding=binding;
+        if(specialValue!=null)specialValue.set(name+"  ["+binding+"]");
+        Slot slot=abilitySlots.get(AbilityId.SPECIAL);if(changedProfile&&slot!=null)slot.icon.setMesh(icons.mesh(VectorIcons.special(profileId)));
+    }
     public void setHelp(List<HelpItem> items) {
         List<HelpItem> next=List.copyOf(items);if(next.equals(helpItems))return;helpItems=next;
         if(layout!=null)buildHelp();
@@ -143,8 +157,12 @@ public final class HudView implements AutoCloseable {
         turboBar=bar(root,"turbo-fill",new UiBounds(health.x()+34*s,health.y()+16*s,health.width()-pad-34*s,6*s),Paint.BLUE);
         effectIcon=icon(root,"effect",VectorIcons.Icon.FREEZE,health.right()-27*s,health.top()+5*s,22*s,Paint.BLUE);show(effectIcon,false);
         int i=0;for(WeaponType type:WeaponType.values())weaponSlots.put(type,new Slot("weapon-"+type.id(),layout.weaponSlots().get(i++),VectorIcons.weapon(type)));
+        weaponSlots.forEach((type,slot)->slot.pickup(pickupHighlights.contains(type)));
         abilitySlots.put(AbilityId.FREEZE,new Slot("ability-freeze",layout.abilitySlots().get(0),VectorIcons.Icon.FREEZE));
         abilitySlots.put(AbilityId.SHIELD,new Slot("ability-shield",layout.abilitySlots().get(1),VectorIcons.Icon.SHIELD));
+        abilitySlots.put(AbilityId.SPECIAL,new Slot("ability-special",layout.abilitySlots().get(2),VectorIcons.special(specialProfile)));
+        specialValue=text(root,"special-binding",new UiBounds(layout.abilities().x(),layout.abilities().top()+5*s,layout.abilities().width(),28*s),Math.max(14,14*s),Paint.ACCENT);
+        specialValue.set(specialName+"  ["+specialBinding+"]");
         panel("objective-panel",layout.objective());
         objectiveValue=text(root,"objective",inset(layout.objective(),pad),layout.fontSize(),Paint.INK);
         bossValue=text(root,"boss-name",new UiBounds(layout.objective().x()+pad,layout.objective().y()+15*s,layout.objective().width()-pad*2,28*s),layout.fontSize(),Paint.INK);
@@ -222,7 +240,7 @@ public final class HudView implements AutoCloseable {
         }
     }
     private final class Slot {
-        private final Geometry plate,selection,icon,cooldown,active,shade;
+        private final Geometry plate,selection,icon,cooldown,active,shade,pickup;
         private final float shadeWidth,shadeHeight;
         private final TextValue amount,time;
         private int previousAmmo=Integer.MIN_VALUE,previousTenths=-1;
@@ -237,7 +255,9 @@ public final class HudView implements AutoCloseable {
             time=text(root,id+"-cooldown-text",new UiBounds(bounds.x()+bounds.width()/2-1*s,bounds.y()+3*s,bounds.width()/2,21*s),Math.max(14,14*s),Paint.INK);
             cooldown=bar(root,id+"-cooldown",new UiBounds(bounds.x()+3*s,bounds.y()+2*s,bounds.width()-6*s,3*s),Paint.BLUE);
             active=icon(root,id+"-active",VectorIcons.Icon.DIAMOND,bounds.right()-11*s,bounds.top()-11*s,8*s,Paint.GREEN);show(active,false);
+            pickup=quad(root,id+"-pickup",new UiBounds(bounds.x(),bounds.y(),3*s,bounds.height()),Paint.GREEN,5);show(pickup,false);
         }
+        void pickup(boolean visible) {show(pickup,visible);}
         void update(int ammo,float seconds,float duration,boolean selected,boolean activeNow) {
             plate.setMaterial(materials.get(selected?Paint.SELECTED:Paint.SLOT));show(selection,selected);show(active,activeNow);
             icon.setMaterial(materials.get(activeNow?Paint.GREEN:ammo==0||seconds>0?Paint.MUTED:Paint.INK));
@@ -251,7 +271,7 @@ public final class HudView implements AutoCloseable {
     }
     private void buildHelp() {
         help.detachAllChildren();help.removeFromParent();if(helpItems.isEmpty())return;
-        float s=layout.scale(),fontSize=Math.max(14,18*s),rowHeight=fontSize*2.15f;
+        float s=layout.scale(),fontSize=Math.max(14,Math.min(18*s,(layout.height()-32-68*s)/(helpItems.size()*2.15f))),rowHeight=fontSize*2.15f;
         float width=Math.min(layout.width()-32,760*s),height=Math.min(layout.height()-32,helpItems.size()*rowHeight+68*s);
         UiBounds bounds=new UiBounds((layout.width()-width)/2,(layout.height()-height)/2,width,height);
         root.attachChild(help);help.setLocalTranslation(0,0,20);

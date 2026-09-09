@@ -16,8 +16,12 @@ class CombatRulesTest {
         assertEquals(64, rules.maximumProjectiles());
         assertEquals(3, rules.machineGun().damage());
         assertEquals(12, rules.machineGun().cooldownTicks());
-        assertEquals(96, CombatRules.ticks(rules.homing().cooldownSeconds()));
-        assertEquals(132, CombatRules.ticks(rules.power().cooldownSeconds()));
+        assertEquals(60, CombatRules.ticks(rules.homing().cooldownSeconds()));
+        assertEquals(84, CombatRules.ticks(rules.power().cooldownSeconds()));
+        assertEquals(84, CombatRules.ticks(rules.mine().cooldownSeconds()));
+        assertEquals(108, CombatRules.ticks(rules.napalm().cooldownSeconds()));
+        assertEquals(168, CombatRules.ticks(rules.cannon().cooldownSeconds()));
+        assertEquals(360, CombatRules.ticks(rules.ballistic().cooldownSeconds()));
         assertEquals(18, CombatRules.ticks(rules.targeting().acquisitionSeconds()));
         assertEquals(36, CombatRules.ticks(rules.targeting().occlusionGraceSeconds()));
         assertEquals(72, CombatRules.ticks(rules.ram().cooldownSeconds()));
