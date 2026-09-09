@@ -19,7 +19,7 @@ class CombatVisualsTest {
                     event(GameEvent.Type.EXPLOSION,i,"power",6),event(GameEvent.Type.PULSE,i,"pulse",14),
                     event(GameEvent.Type.SHOT,i,"machine-gun",8)));
             assertTrue(visuals.effectCount()<=CombatVisuals.PARTICLE_LIMIT+CombatVisuals.RING_LIMIT+64);
-            visuals.update(List.of(),session,.016f);
+            visuals.update(List.of(),List.of(),List.of(),session,.016f);
             int[] draws={0};
             scene.depthFirstTraversal(s->{if(s instanceof Geometry geometry) {
                 draws[0]++;
@@ -37,8 +37,8 @@ class CombatVisualsTest {
                     }
                 }
             }});
-            assertEquals(3,draws[0]);
-            for(int frame=0;frame<200;frame++)visuals.update(List.of(),session,.02f);
+            assertEquals(4,draws[0]);
+            for(int frame=0;frame<200;frame++)visuals.update(List.of(),List.of(),List.of(),session,.02f);
             assertEquals(0,visuals.effectCount());
         }
         assertEquals(0,scene.getQuantity());
@@ -47,10 +47,10 @@ class CombatVisualsTest {
         Node scene=new Node();MatchSession session=new MatchSession(1,180);session.vehicle(0).hp=59;
         for(int retry=0;retry<20;retry++) {
             try(CombatVisuals visuals=new CombatVisuals(new DesktopAssetManager(true),scene,world())) {
-                session.vehicle(0).hp=59;visuals.update(List.of(),session,.016f);
+                session.vehicle(0).hp=59;visuals.update(List.of(),List.of(),List.of(),session,.016f);
                 assertTrue(visuals.effectCount()>0);
                 session.vehicle(0).hp=0;
-                for(int frame=0;frame<80;frame++)visuals.update(List.of(),session,.02f);
+                for(int frame=0;frame<80;frame++)visuals.update(List.of(),List.of(),List.of(),session,.02f);
                 assertEquals(0,visuals.effectCount());
             }
             assertEquals(0,scene.getQuantity());
@@ -59,7 +59,7 @@ class CombatVisualsTest {
     @Test void damagedCarSmokeUsesSingleSoftSpriteWithBoundedRadiusAndOpacity() {
         Node scene=new Node();MatchSession session=new MatchSession(1,180);session.vehicle(0).hp=40;
         try(CombatVisuals visuals=new CombatVisuals(new DesktopAssetManager(true),scene,world())) {
-            for(int frame=0;frame<90;frame++)visuals.update(List.of(),session,1f/60);
+            for(int frame=0;frame<90;frame++)visuals.update(List.of(),List.of(),List.of(),session,1f/60);
             Geometry geometry=(Geometry)((Node)scene.getChild("combat-visuals")).getChild("particles-and-tracers");
             Mesh mesh=geometry.getMesh();
             var positions=(java.nio.FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
@@ -83,7 +83,7 @@ class CombatVisualsTest {
         try(CombatVisuals visuals=new CombatVisuals(new DesktopAssetManager(true),scene,world())) {
             visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,1,0,0,new Vector3f(0,1,4),"power",6),
                     new GameEvent(GameEvent.Type.EXPLOSION,2,0,0,new Vector3f(0,1,18),"power",6)));
-            visuals.update(List.of(),new MatchSession(1,180),.016f);
+            visuals.update(List.of(),List.of(),List.of(),new MatchSession(1,180),.016f);
             Geometry geometry=(Geometry)((Node)scene.getChild("combat-visuals")).getChild("particles-and-tracers");
             Camera camera=new Camera(1280,720);camera.setLocation(new Vector3f(0,2,0));
             for(Vector3f look:List.of(new Vector3f(0,2,20),new Vector3f(0,2,-20))) {
@@ -97,6 +97,41 @@ class CombatVisualsTest {
                     assertTrue(depth<=previous+.00001f,"Sprites must be ordered from back to front");previous=depth;
                 }
             }
+        }
+    }
+    @Test void persistentFireUsesOnlyAuthoritativeSupportedPointsAndClearsOnRemoval() {
+        Node scene=new Node();MatchSession session=new MatchSession(1,180);
+        var fire=new game.wreckriff.combat.CombatSystem.FireZoneView(1,0,new Vector3f(0,6,0),Vector3f.UNIT_Y,5,240,
+                List.of(new Vector3f(2,6,2),new Vector3f(3,6,2)));
+        var mine=new game.wreckriff.combat.CombatSystem.MineView(2,0,new Vector3f(2,6,2),Vector3f.UNIT_Y,true,3);
+        try(CombatVisuals visuals=new CombatVisuals(new DesktopAssetManager(true),scene,world())) {
+            visuals.update(List.of(),List.of(mine),List.of(fire),session,.016f);
+            Node root=(Node)scene.getChild("combat-visuals");
+            Geometry fields=(Geometry)root.getChild("control-and-fire-fields");
+            var positions=(java.nio.FloatBuffer)fields.getMesh().getBuffer(VertexBuffer.Type.Position).getData();
+            assertEquals(48,fields.getMesh().getVertexCount());
+            for(int i=0;i<positions.limit();i+=3) {
+                assertEquals(6.028f,positions.get(i+1),.0001f,"Scorch stays on the supported floor");
+                assertTrue(positions.get(i)>=1.44f && positions.get(i)<=3.56f,"No whole-radius disc through unsupported walls or edges");
+            }
+            assertTrue(((Geometry)root.getChild("rocket-models")).getMesh().getVertexCount()>0,"Persistent mine is visible");
+            visuals.update(List.of(),List.of(),List.of(),session,.016f);
+            assertEquals(0,fields.getMesh().getVertexCount());
+            assertEquals(0,((Geometry)root.getChild("rocket-models")).getMesh().getVertexCount());
+        }
+    }
+    @Test void controlAndShieldVisualsFollowStateAndDoNotRemainAfterStatusEnds() {
+        Node scene=new Node();MatchSession session=new MatchSession(1,180);
+        session.vehicle(0).frozenTicks=120;session.vehicle(1).stunnedTicks=60;session.vehicle(2).shieldTicks=120;
+        try(CombatVisuals visuals=new CombatVisuals(new DesktopAssetManager(true),scene,world())) {
+            visuals.update(List.of(),List.of(),List.of(),session,.016f);
+            Geometry fields=(Geometry)((Node)scene.getChild("combat-visuals")).getChild("control-and-fire-fields");
+            assertTrue(fields.getMesh().getVertexCount()>0);
+            var positions=(java.nio.FloatBuffer)fields.getMesh().getBuffer(VertexBuffer.Type.Position).getData();
+            for(int i=0;i<positions.limit();i++)assertTrue(Float.isFinite(positions.get(i)));
+            session.vehicle(0).frozenTicks=0;session.vehicle(1).stunnedTicks=0;session.vehicle(2).shieldTicks=0;
+            visuals.update(List.of(),List.of(),List.of(),session,.016f);
+            assertEquals(0,fields.getMesh().getVertexCount());
         }
     }
     private static GameEvent event(GameEvent.Type type,long id,String kind,float value) {

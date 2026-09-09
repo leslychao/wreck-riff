@@ -31,6 +31,13 @@ function Assert-BuildChild([string]$Candidate) {
     return $absolute
 }
 
+function Get-Sha256([string]$LiteralPath) {
+    $stream=[IO.File]::OpenRead($LiteralPath)
+    $algorithm=[Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
+    finally { $stream.Dispose();$algorithm.Dispose() }
+}
+
 $inputLib = Assert-BuildChild (Join-Path $buildRoot 'install/wreck-riff/lib')
 $assetReportRoot = Assert-BuildChild (Join-Path $buildRoot 'reports/assets')
 $assetReport = Get-Content -LiteralPath (Join-Path $assetReportRoot 'verification.json') -Raw | ConvertFrom-Json
@@ -58,6 +65,7 @@ $jpackageArgs = @(
     '--vendor', 'Wreck Riff', '--description', 'Wreck Riff single-player vehicular combat MVP',
     '--input', $inputStage, '--dest', $imageStage, '--main-jar', $mainJarName,
     '--main-class', 'game.wreckriff.Main',
+    '--java-options', '-Xms128m', '--java-options', '-Xmx768m',
     '--add-modules', 'java.base,java.desktop,java.logging,java.management,jdk.unsupported,jdk.crypto.ec',
     '--jlink-options', '--strip-debug --no-man-pages --no-header-files'
 )
@@ -79,7 +87,7 @@ $requiredNatives = @(
 $foundNatives = @()
 $jarHashes = @()
 foreach ($jar in (Get-ChildItem -LiteralPath (Join-Path $image 'app') -Filter '*.jar' -File)) {
-    $jarHashes += [ordered]@{ file=$jar.Name; sha256=(Get-FileHash -LiteralPath $jar.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
+    $jarHashes += [ordered]@{ file=$jar.Name; sha256=(Get-Sha256 $jar.FullName) }
     $archive = [IO.Compression.ZipFile]::OpenRead($jar.FullName)
     try {
         foreach ($entry in $archive.Entries) {
@@ -103,6 +111,7 @@ $reports = Join-Path $image 'reports'
 [IO.Directory]::CreateDirectory($reports) | Out-Null
 Copy-Item -Path (Join-Path $assetReportRoot 'third-party/*') -Destination $licenses -Recurse
 Copy-Item -LiteralPath (Join-Path $assetReportRoot 'manifest.json') -Destination $reports
+Copy-Item -LiteralPath (Join-Path $assetReportRoot 'asset-register.csv') -Destination $reports
 Copy-Item -LiteralPath (Join-Path $assetReportRoot 'verification.json') -Destination $reports
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs/THIRD_PARTY_NOTICES.md') -Destination $licenses
 $notice = @"
@@ -142,7 +151,7 @@ $stagedZip = Join-Path $staging $zipName
 [IO.Compression.ZipFile]::CreateFromDirectory($image, $stagedZip, [IO.Compression.CompressionLevel]::Optimal, $true)
 $zipTarget = Assert-BuildChild (Join-Path $distributionRoot $zipName)
 Move-Item -LiteralPath $stagedZip -Destination $zipTarget -Force
-$checksum = (Get-FileHash -LiteralPath $zipTarget -Algorithm SHA256).Hash.ToLowerInvariant()
+$checksum = Get-Sha256 $zipTarget
 [IO.File]::WriteAllText(($zipTarget + '.sha256'), "$checksum  $zipName`n", [Text.UTF8Encoding]::new($false))
 $imageTarget = Assert-BuildChild (Join-Path $distributionRoot 'WreckRiff')
 if (Test-Path -LiteralPath $imageTarget) { Remove-Item -LiteralPath $imageTarget -Recurse -Force }

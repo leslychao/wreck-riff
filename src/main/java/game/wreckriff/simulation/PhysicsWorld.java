@@ -1,6 +1,9 @@
 package game.wreckriff.simulation;
 
 import com.jme3.bullet.PhysicsSpace;
+import com.jme3.bullet.RotationOrder;
+import com.jme3.bullet.joints.New6Dof;
+import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.collision.shapes.*;
 import com.jme3.bullet.objects.*;
@@ -16,6 +19,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final PhysicsSpace space;
     private final VehicleRules rules;
     private final Map<Integer,PhysicsVehicle> vehicles=new LinkedHashMap<>();
+    private final Map<Integer,Integer> wheelContactCounts=new HashMap<>();
     private final Map<PhysicsCollisionObject,Integer> identities=new IdentityHashMap<>();
     private final Map<Integer,Pose> previous=new HashMap<>();
     private final Map<Integer,Pose[]> previousWheels=new HashMap<>();
@@ -23,6 +27,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<Long,Ram> rams=new LinkedHashMap<>();
     private final Map<Float,SphereCollisionShape> sweepShapes=new HashMap<>();
     private final List<PhysicsRigidBody> statics=new ArrayList<>();
+    private final Map<Integer,New6Dof> immobilizers=new HashMap<>();
     private final PhysicsGhostObject recoveryProbe;
     private final PhysicsCollisionListener contactListener=this::contact;
     private boolean closed;
@@ -68,7 +73,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.addCollisionObject(body);
         body.getController().setCoordinateSystem(0,1,2);
         vehicles.put(id,body); identities.put(body,id);
-        body.updateWheels(); resetInterpolation(id);
+        body.updateWheels(); refreshWheelContacts(id,body); resetInterpolation(id);
         return body;
     }
     private CompoundCollisionShape chassisShape(float extra) {
@@ -80,8 +85,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public PhysicsVehicle vehicle(int id) { return vehicles.get(id); }
     public boolean containsVehicle(int id) { return vehicles.containsKey(id); }
     public void removeVehicle(int id) {
+        immobilize(id,false);
         PhysicsVehicle body=vehicles.remove(id);
-        if (body!=null) { space.removeCollisionObject(body); identities.remove(body); }
+        if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id); }
     }
     public void step() {
         rams.clear();
@@ -93,7 +99,21 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         }
         space.update(MatchSession.DT,0);
         space.distributeEvents();
-        vehicles.values().forEach(PhysicsVehicle::updateWheels);
+        vehicles.values().forEach(this::synchronizeWheels);
+        vehicles.forEach(this::refreshWheelContacts);
+    }
+    private void synchronizeWheels(PhysicsVehicle body) {
+        // Libbulletjme 22.0.3 addWheel reads an uninitialized previous location.
+        // Its first contact can produce a NaN roll angle, which then corrupts
+        // the friction axle on the NEXT native step. Contain that native output
+        // before either presentation or physics consumes the wheel transform.
+        // An airborne wheel can retain a NaN delta until its next contact, so
+        // this must run after every step, not just the first one.
+        for (int i=0;i<body.getNumWheels();i++) {
+            var wheel=body.getWheel(i);
+            if (!Float.isFinite(wheel.getRotationAngle())) wheel.setRotationAngle(0);
+        }
+        body.updateWheels();
     }
     private Pose[] wheelPoses(PhysicsVehicle body) {
         Pose[] poses=new Pose[4];
@@ -140,11 +160,14 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     @Override public float mass(int id) { return rules.mass(); }
     @Override public boolean grounded(int id) { return wheelContacts(id)>0; }
     public int wheelContacts(int id) {
-        PhysicsVehicle body=vehicle(id);
-        if (body==null) return 0;
+        return wheelContactCounts.getOrDefault(id,0);
+    }
+    private void refreshWheelContacts(int id,PhysicsVehicle body) {
+        // castRay updates Bullet wheel/suspension state. Keep it in the physics
+        // owner; HUD, AI, recovery and repeated diagnostics only read this snapshot.
         int count=0;
         for (int i=0;i<4;i++) if (body.castRay(i)>=0) count++;
-        return count;
+        wheelContactCounts.put(id,count);
     }
     @Override public Hit ray(Vector3f from,Vector3f to,int ignoredVehicle) {
         Hit nearest=null;
@@ -157,6 +180,36 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         return nearest;
     }
     public Hit staticSweep(Vector3f from,Vector3f to,float radius) { return nativeSweep(from,to,radius,-1,true); }
+    @Override public Support support(Vector3f from,float depth) {
+        if(!Float.isFinite(depth)||depth<=0)throw new IllegalArgumentException("Invalid support depth");
+        PhysicsRayTestResult nearest=null;
+        for(var hit:space.rayTest(from,from.add(0,-depth,0))) {
+            if(!statics.contains(hit.getCollisionObject()))continue;
+            if(nearest==null||hit.getHitFraction()<nearest.getHitFraction())nearest=hit;
+        }
+        if(nearest==null)return null;
+        return new Support(statics.indexOf(nearest.getCollisionObject()),from.add(0,-depth*nearest.getHitFraction(),0),nearest.getHitNormalLocal());
+    }
+    @Override public void immobilize(int id,boolean frozen) {
+        New6Dof previous=immobilizers.get(id);
+        if(!frozen) {
+            if(previous!=null) { space.removeJoint(previous); previous.destroy(); immobilizers.remove(id); }
+            return;
+        }
+        PhysicsVehicle body=vehicles.get(id);
+        if(previous!=null||body==null)return;
+        Vector3f velocity=body.getLinearVelocity(); velocity.x=0;velocity.z=0;
+        body.setLinearVelocity(velocity);body.setAngularVelocity(Vector3f.ZERO);
+        // World-aligned frame at the current pose: XZ and rotation locked, Y free.
+        New6Dof joint=new New6Dof(body,Vector3f.ZERO,body.getPhysicsLocation(),
+                body.getPhysicsRotation().inverse().toRotationMatrix(),new Matrix3f(),RotationOrder.XYZ);
+        for(int axis=0;axis<6;axis++) {
+            joint.set(MotorParam.LowerLimit,axis,axis==1?1:0);
+            joint.set(MotorParam.UpperLimit,axis,axis==1?-1:0);
+        }
+        space.addJoint(joint);immobilizers.put(id,joint);
+    }
+    public int immobilizerCount() { return immobilizers.size(); }
     private Hit nativeSweep(Vector3f from,Vector3f to,float radius,int onlyVehicle,boolean onlyStatics) {
         SphereCollisionShape shape=sweepShapes.computeIfAbsent(radius,SphereCollisionShape::new);
         Hit nearest=null;
@@ -223,18 +276,20 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         return !blocked[0];
     }
     public void teleport(int id,Vector3f position,Quaternion rotation) {
+        immobilize(id,false);
         PhysicsVehicle body=vehicle(id); body.setPhysicsLocation(position); body.setPhysicsRotation(rotation);
         body.setLinearVelocity(Vector3f.ZERO); body.setAngularVelocity(Vector3f.ZERO); body.clearForces();
-        body.resetSuspension(); body.updateWheels(); resetInterpolation(id);
+        body.resetSuspension(); body.updateWheels(); refreshWheelContacts(id,body); resetInterpolation(id);
     }
     public int bodyCount() { return space.countCollisionObjects(); }
     @Override public void close() {
         if (closed) return; closed=true;
+        for(int id:List.copyOf(immobilizers.keySet()))immobilize(id,false);
         space.removeCollisionListener(contactListener);
         space.removeOngoingCollisionListener(contactListener);
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
         for (PhysicsRigidBody body:statics) space.removeCollisionObject(body);
-        vehicles.clear(); identities.clear(); previous.clear(); previousWheels.clear(); statics.clear(); rams.clear(); sweepShapes.clear();
+        vehicles.clear(); wheelContactCounts.clear(); identities.clear(); previous.clear(); previousWheels.clear(); statics.clear(); rams.clear(); sweepShapes.clear();
         space.destroy();
     }
 }

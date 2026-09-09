@@ -28,6 +28,7 @@ public final class MatchRuntime implements AutoCloseable {
         arenaSystems=new ArenaSystems(session,arena);
         bots=new BotController(session,arena,graph,AiRules.load(),arenaSystems::activePickups);
         combat=new CombatSystem(session,Configs.load("combat",CombatRules.class));
+        bots.observeProjectiles(combat::projectiles);
     }
     public List<GameEvent> tick(VehicleCommand player,boolean aiPlayer) {
         if (closed) throw new IllegalStateException("Match runtime is closed");
@@ -39,11 +40,20 @@ public final class MatchRuntime implements AutoCloseable {
             if (!state.alive()) continue;
             VehicleCommand command=commands.getOrDefault(state.id,VehicleCommand.NONE);
             var recovery=drivers.get(state.id).prepare(command,session.tick);
+            if(recovery.recovered()||recovery.fatal())combat.endControl(state,world);
             if (recovery.recovered() || recovery.fatal()) combat.queueDamage(state.id,-1,recovery.cost(),recovery.cause(),
                     Long.MIN_VALUE/2+session.tick*16+state.id);
             if (state.protectionTicks>0 || recovery.fatal()) commands.put(state.id,command.withoutAttacks());
         }
         combat.beginTick(commands,world);
+        for(var state:session.vehicles) {
+            if(!state.controlled())continue;
+            VehicleCommand command=commands.getOrDefault(state.id,VehicleCommand.NONE);
+            boolean stunned=state.stunnedTicks>0;
+            commands.put(state.id,new VehicleCommand(0,0,0,false,false,!stunned&&command.machineGun(),
+                    !stunned&&command.selectedWeapon(),!stunned&&command.special(),stunned?0:command.weaponDelta(),
+                    command.rearView(),false,command.ability()));
+        }
         for (var state:session.vehicles) if (state.alive()) drivers.get(state.id).drive(commands.getOrDefault(state.id,VehicleCommand.NONE));
         world.step();
         combat.advanceProjectiles(world);

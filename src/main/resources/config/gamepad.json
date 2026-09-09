@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1, "steerAxis": 0, "throttleAxis": 5, "brakeAxis": 4,
+  "schemaVersion": 2, "steerAxis": 0, "throttleAxis": 5, "brakeAxis": 4,
   "triggerMinimum": -1, "triggerMaximum": 1,
   "handbrake": 2, "turbo": 1, "machineGun": 4, "rocket": 5, "pulse": 0,
   "previousWeapon": 14, "nextWeapon": 12, "rearView": 3, "recover": 6,
-  "pause": 7, "up": 11, "down": 13, "back": 1
+  "pause": 7, "up": 11, "down": 13, "back": 1, "abilityModifier": 10
 }

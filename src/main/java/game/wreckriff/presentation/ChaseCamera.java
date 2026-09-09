@@ -16,6 +16,7 @@ public final class ChaseCamera {
     public void reset() { initialized=false; }
     public void impact(float magnitude) { shake=Math.min(1,shake+magnitude); }
     public void update(PhysicsWorld world,int id,float alpha,float dt,boolean rear,boolean turbo,float intensity) {
+        if(camera.getWidth()<=0 || camera.getHeight()<=0) return;
         var pose=world.interpolatedPose(id,alpha);
         Vector3f heading=pose.rotation().mult(Vector3f.UNIT_Z); heading.y=0;
         if(heading.lengthSquared()<0.01f) heading.set(Vector3f.UNIT_Z); else heading.normalizeLocal();

@@ -16,13 +16,14 @@ public final class GameUi {
     private record Button(float x,float y,float width,float height,Node node,Runnable action) {}
     private final AssetManager assets;
     private final BitmapFont font;
+    private final BitmapFont boldFont;
     private final Node root=new Node("ui-grid");
     private final List<Button> buttons=new ArrayList<>();
     private int selected;
     private float scale=1,offsetX,offsetY;
     private float previousMouseX=Float.NaN,previousMouseY=Float.NaN;
     public GameUi(AssetManager assets,Node gui) {
-        this.assets=assets; font=assets.loadFont("fonts/wreck.fnt"); gui.attachChild(root);
+        this.assets=assets; font=assets.loadFont("fonts/wreck.fnt"); boldFont=assets.loadFont("fonts/wreck-bold.fnt"); gui.attachChild(root);
     }
     public Node root() { return root; }
     public void resize(int width,int height) {
@@ -40,7 +41,7 @@ public final class GameUi {
         geometry.setMaterial(material); geometry.setLocalTranslation(x,y,depth); root.attachChild(geometry); return geometry;
     }
     public BitmapText text(String value,float x,float top,float size,ColorRGBA color) {
-        BitmapText text=new BitmapText(font); text.setText(value); text.setSize(size); text.setColor(color);
+        BitmapText text=new BitmapText(size>=27?boldFont:font); text.setText(value); text.setSize(size); text.setColor(color);
         text.setLocalTranslation(x,top,5); root.attachChild(text); return text;
     }
     public void title(String title,String subtitle) {

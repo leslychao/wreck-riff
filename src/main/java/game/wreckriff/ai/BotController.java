@@ -1,5 +1,10 @@
 package game.wreckriff.ai;
 
+import game.wreckriff.combat.AbilityId;
+import game.wreckriff.combat.ProjectileState;
+
+import game.wreckriff.combat.WeaponType;
+
 import com.jme3.math.Vector3f;
 import game.wreckriff.arena.*;
 import game.wreckriff.input.VehicleCommand;
@@ -25,10 +30,10 @@ public final class BotController {
                 progressWindowStart,aliveTicks,stationaryTicks,maximumStationaryTicks;
         float progress;
         List<Integer> path=List.of();
-        Vector3f destination,lastPosition,passingDestination,progressDirection=new Vector3f();
-        long passingUntil;
+        Vector3f destination,lastPosition,passingDestination,lastDrivingTarget,progressDirection=new Vector3f();
+        long passingUntil,nextPassAttempt;
         String pickup;
-        boolean healing,requiredMovement;
+        boolean healing,requiredMovement,backingToRoute;
         Brain(long seed) { random=new Random(seed); }
     }
     private final MatchSession session;
@@ -36,6 +41,7 @@ public final class BotController {
     private final NavGraph graph;
     private final AiRules rules;
     private final Supplier<List<ArenaDefinition.Pickup>> activePickups;
+    private Supplier<List<ProjectileState>> observedProjectiles=List::of;
     private final Brain[] brains=new Brain[5];
     private long lastCommandTick=Long.MIN_VALUE;
     private Map<Integer,VehicleCommand> cached=Map.of();
@@ -68,14 +74,39 @@ public final class BotController {
             }
             brain.aliveTicks++;
             Vector3f position=world.position(vehicle.id);
-            trackProgress(vehicle,brain,position);
+            trackProgress(vehicle,brain,position,world);
             if (session.tick%rules.decisionTicks()==0 || brain.destination==null) {
                 observe(vehicle,brain,world,active);
                 decide(vehicle,brain,world);
             }
-            result.put(vehicle.id,drive(vehicle,brain,world));
+            VehicleCommand command=drive(vehicle,brain,world);
+            AbilityId ability=chooseAbility(vehicle,brain,world);
+            result.put(vehicle.id,new VehicleCommand(command.throttle(),command.brakeReverse(),command.steer(),command.handbrake(),
+                    command.turbo(),command.machineGun(),command.selectedWeapon(),command.special(),command.weaponDelta(),
+                    command.rearView(),command.recover(),ability));
         }
         cached=Collections.unmodifiableMap(result); return cached;
+    }
+    public void observeProjectiles(Supplier<List<ProjectileState>> projectiles) { observedProjectiles=Objects.requireNonNull(projectiles); }
+    private AbilityId chooseAbility(VehicleState self,Brain brain,WorldQuery world) {
+        if(session.tick<brain.reactionUntil)return AbilityId.NONE;
+        Vector3f position=world.position(self.id),forward=world.forward(self.id);
+        if(self.abilityCooldown(AbilityId.SHIELD)==0)for(ProjectileState projectile:observedProjectiles.get()) {
+            Vector3f offset=projectile.position().subtract(position);
+            if(projectile.ownerId()==self.id||offset.length()>35||angleDegrees(forward,offset)>rules.sightHalfAngleDegrees())continue;
+            if(projectile.direction().dot(offset.negate().normalizeLocal())<.85f)continue;
+            WorldQuery.Hit blocked=world.ray(position.add(0,.6f,0),projectile.position(),self.id);
+            if(blocked==null||blocked.fraction()>=.99f)return AbilityId.SHIELD;
+        }
+        if(self.stunnedTicks>0||self.protectionTicks>0)return AbilityId.NONE;
+        for(var target:brain.observation.visible()) {
+            Vector3f offset=target.position().subtract(position);
+            if(!lineOfSight(world,position.add(0,.6f,0),target.position(),self.id,target.id()))continue;
+            float distance=offset.length(),angle=angleDegrees(forward,offset);
+            if(distance<=14&&angle<=30&&self.abilityCooldown(AbilityId.STUN)==0)return AbilityId.STUN;
+            if(distance>=18&&distance<=50&&angle<=5&&self.abilityCooldown(AbilityId.FREEZE)==0)return AbilityId.FREEZE;
+        }
+        return AbilityId.NONE;
     }
     private void observe(VehicleState self,Brain brain,WorldQuery world,Set<String> active) {
         Vector3f eye=world.position(self.id).add(0,.6f,0),forward=world.forward(self.id);
@@ -107,18 +138,20 @@ public final class BotController {
             brain.state=State.EVADE_HAZARD; brain.pickup=null;
             int escape=graph.nodes().stream().filter(n->!arena.hazard().contains(n.position().vector()))
                     .min(Comparator.comparingDouble(n->n.position().vector().distanceSquared(position))).orElseThrow().id();
-            route(brain,position,graph.position(escape),true); return;
+            route(brain,position,graph.position(escape),true,world,self.id); return;
         }
-        if (self.hp<200*rules.repairThreshold()) brain.healing=true;
-        else if (self.hp>=200*rules.repairReleaseThreshold()) brain.healing=false;
+        if (self.hp<self.maximumHp*rules.repairThreshold()) brain.healing=true;
+        else if (self.hp>=self.maximumHp*rules.repairReleaseThreshold()) brain.healing=false;
         ArenaDefinition.PickupType wanted=brain.healing ? ArenaDefinition.PickupType.REPAIR
-                : self.homingAmmo<2 ? ArenaDefinition.PickupType.HOMING_AMMO
-                : self.powerAmmo<1 ? ArenaDefinition.PickupType.POWER_AMMO : null;
+                : self.weapon(WeaponType.HOMING).ammo<Math.min(2,self.weapon(WeaponType.HOMING).maximumAmmo) ? ArenaDefinition.PickupType.HOMING_AMMO
+                : self.weapon(WeaponType.POWER).ammo<Math.min(1,self.weapon(WeaponType.POWER).maximumAmmo) ? ArenaDefinition.PickupType.POWER_AMMO
+                : self.turbo<rules.turboSeekThreshold() || continuingTurboRun(brain,self)
+                    ? ArenaDefinition.PickupType.TURBO_CELL : null;
         if (wanted!=null) {
-            ArenaDefinition.Pickup selected=choosePickup(brain,position,wanted,hazardActive);
+            ArenaDefinition.Pickup selected=choosePickup(brain,position,wanted,hazardActive,world,self.id);
             if (selected!=null) {
                 brain.state=State.SEEK_PICKUP; brain.pickup=selected.id();
-                route(brain,position,selected.position().vector(),hazardActive);
+                route(brain,position,selected.position().vector(),hazardActive,world,self.id);
                 chooseTarget(self,brain,world); return;
             }
         }
@@ -133,13 +166,13 @@ public final class BotController {
             if (sameFloor && (obstacle==null || obstacle.vehicleId()==target.id())
                     && !(hazardActive && graph.crossesHazard(position,destination))) {
                 brain.destination=destination.clone(); brain.path=List.of(); brain.goalNode=-1;
-            } else route(brain,position,destination,hazardActive);
+            } else route(brain,position,destination,hazardActive,world,self.id);
             return;
         }
         brain.state=State.SEEK_TARGET;
         var remembered=brain.observation.known(brain.target);
         if (remembered!=null && position.distance(remembered.position())>5) {
-            route(brain,position,remembered.position(),hazardActive); return;
+            route(brain,position,remembered.position(),hazardActive,world,self.id); return;
         }
         if (brain.destination==null || horizontalDistance(position,brain.destination)<6 || brain.path.isEmpty()) {
             List<ArenaDefinition.NavNode> nodes=new ArrayList<>(graph.nodes());
@@ -147,8 +180,8 @@ public final class BotController {
             int index=brain.random.nextInt(nodes.size());
             int goal=nodes.get(index).id();
             if (goal==current) goal=nodes.get((index+1)%nodes.size()).id();
-            route(brain,position,graph.position(goal),hazardActive);
-        } else if (session.tick>=brain.replanAt) route(brain,position,brain.destination,hazardActive);
+            route(brain,position,graph.position(goal),hazardActive,world,self.id);
+        } else if (session.tick>=brain.replanAt) route(brain,position,brain.destination,hazardActive,world,self.id);
     }
     private void chooseTarget(VehicleState self,Brain brain,WorldQuery world) {
         boolean hasVisible=brain.observation.visible(brain.target)!=null;
@@ -170,9 +203,16 @@ public final class BotController {
                     +brain.random.nextInt(rules.reactionMaxTicks()-rules.reactionMinTicks()+1);
         }
     }
-    private ArenaDefinition.Pickup choosePickup(Brain brain,Vector3f position,ArenaDefinition.PickupType type,boolean activeHazard) {
+    private boolean continuingTurboRun(Brain brain,VehicleState self) {
+        // Passive regeneration crossing 20 must not cancel an already selected useful route.
+        return brain.pickup!=null && self.turbo<100
+                && session.tick>=brain.pickupUnavailableUntil.getOrDefault(brain.pickup,0L)
+                && arena.pickups().stream().anyMatch(p->p.id().equals(brain.pickup) && p.type()==ArenaDefinition.PickupType.TURBO_CELL);
+    }
+    private ArenaDefinition.Pickup choosePickup(Brain brain,Vector3f position,ArenaDefinition.PickupType type,boolean activeHazard,
+            WorldQuery world,int vehicleId) {
         ArenaDefinition.Pickup result=null; float best=Float.POSITIVE_INFINITY;
-        int start=graph.nearest(position);
+        int start=navigationStart(position,world,vehicleId);
         for (var pickup:arena.pickups()) {
             if (pickup.type()!=type || session.tick<brain.pickupUnavailableUntil.getOrDefault(pickup.id(),0L)
                     || (activeHazard && arena.hazard().contains(pickup.position().vector()))) continue;
@@ -186,13 +226,23 @@ public final class BotController {
         }
         return result;
     }
-    private void route(Brain brain,Vector3f position,Vector3f destination,boolean hazardActive) {
+    private void route(Brain brain,Vector3f position,Vector3f destination,boolean hazardActive,WorldQuery world,int vehicleId) {
+        // The final connector belongs to the route too. A nearby visible goal must not cause
+        // a replan back to its nearest graph node after the car has already left that node.
+        if (horizontalDistance(position,destination)<12 && Math.abs(position.y-.45f-destination.y)<1.5f
+                && !(hazardActive && graph.crossesHazard(position,destination))) {
+            WorldQuery.Hit blocker=world.sweep(position.add(0,1.2f,0),destination.add(0,1.65f,0),1.05f,vehicleId);
+            if ((blocker==null || drivableRampHit(blocker))
+                    && supportedRoadConnection(vehicleId,position,destination.add(0,.45f,0),world)) {
+                brain.destination=destination.clone();brain.path=List.of();brain.goalNode=-1;return;
+            }
+        }
         int goal=graph.nearest(destination);
         if (goal==brain.goalNode && !brain.path.isEmpty() && session.tick<brain.replanAt) {
             brain.destination=destination.clone(); return;
         }
         brain.destination=destination.clone(); brain.goalNode=goal;
-        brain.path=graph.path(graph.nearest(position),goal,hazardActive,rules.turnPenalty(),rules.activeHazardPenalty());
+        brain.path=graph.path(navigationStart(position,world,vehicleId),goal,hazardActive,rules.turnPenalty(),rules.activeHazardPenalty());
         brain.pathIndex=0;
         if (brain.path.size()>1) {
             Vector3f start=graph.position(brain.path.getFirst()),next=graph.position(brain.path.get(1));
@@ -202,8 +252,33 @@ public final class BotController {
             float width=graph.links(brain.path.getFirst()).stream().filter(l->l.to()==brain.path.get(1)).findFirst().orElseThrow().width();
             // Replanning must not turn a moving car back toward a node it has already passed.
             if (horizontalDistance(position,start)<3 || (projection>0 && distance<Math.max(3,width*.4f))) brain.pathIndex=1;
+            else {
+                Vector3f heading=world.forward(vehicleId);
+                float startAngle=Math.abs(signedAngle(heading,start.subtract(position)));
+                float nextAngle=Math.abs(signedAngle(heading,next.subtract(position)));
+                if (startAngle>1.2f && nextAngle+.35f<startAngle && nextAngle<1.2f
+                        && Math.abs(next.y-(position.y-.45f))<.75f
+                        && !(hazardActive && graph.crossesHazard(position,next))
+                        && world.sweep(position.add(0,1.2f,0),next.add(0,1.65f,0),1.2f,vehicleId)==null
+                        && supportedRoadConnection(vehicleId,position,next.add(0,.45f,0),world)) brain.pathIndex=1;
+            }
         }
         brain.replanAt=session.tick+120;
+    }
+    private int navigationStart(Vector3f position,WorldQuery world,int vehicleId) {
+        Vector3f surface=position.add(0,-.45f,0);
+        List<ArenaDefinition.NavNode> candidates=graph.nodes().stream()
+                .filter(n->Math.abs(n.position().y()-surface.y)<2.2f)
+                .sorted(Comparator.comparingDouble((ArenaDefinition.NavNode n)->n.position().vector().distanceSquared(surface))
+                        .thenComparingInt(ArenaDefinition.NavNode::id)).toList();
+        for (var node:candidates) {
+            Vector3f endpoint=node.position().vector().add(0,.45f,0);
+            if (position.distanceSquared(endpoint)<.1f) return node.id();
+            WorldQuery.Hit blocker=world.sweep(position.add(0,1.2f,0),endpoint.add(0,1.2f,0),1.05f,vehicleId);
+            if ((blocker==null || drivableRampHit(blocker)) && supportedRoadConnection(vehicleId,position,endpoint,world)) return node.id();
+        }
+        // A temporarily surrounded car keeps its route and uses the normal reverse/recovery rules.
+        return graph.nearest(position);
     }
     private VehicleCommand drive(VehicleState self,Brain brain,WorldQuery world) {
         Vector3f position=world.position(self.id),velocity=world.velocity(self.id),forward=world.forward(self.id);
@@ -212,44 +287,74 @@ public final class BotController {
             brain.state=State.RECOVER; brain.requiredMovement=false;
             float longitudinal=velocity.dot(forward);
             return new VehicleCommand(longitudinal<-.5f?1:0,longitudinal>.5f?1:0,0,false,false,
-                    false,false,false,0,false,true);
+                    false,false,false,0,false,true,AbilityId.NONE);
         }
         if (session.tick<brain.reverseUntil) {
             brain.state=State.RECOVER; brain.requiredMovement=false;
             float steer=brain.progressDirection.lengthSquared()>0 ? signedAngle(forward,brain.progressDirection) : .7f;
-            return new VehicleCommand(0,.8f,-Math.signum(steer),false,false,false,false,false,0,false,false);
+            // A confined elevated road cannot use the open-floor turning circle:
+            // keep an established reverse approach aligned with that road.
+            float reverseSteer=brain.backingToRoute && position.y>.8f
+                    ? Math.clamp(-signedAngle(forward.negate(),brain.progressDirection)*rules.steeringGain(),-1,1)
+                    : -Math.signum(steer);
+            float support=supportedDistance(self.id,position,forward.negate(),world);
+            if (support<4) {
+                // The timed attempt keeps its duration, but must brake before an edge.
+                return new VehicleCommand(velocity.dot(forward)<-.5f?1:0,0,reverseSteer,
+                        false,false,false,false,false,0,false,false,AbilityId.NONE);
+            }
+            return new VehicleCommand(0,.8f,reverseSteer,false,false,false,false,false,0,false,false,AbilityId.NONE);
         }
         Vector3f destination=steeringTarget(brain,position,speed);
         if (brain.passingDestination!=null && (session.tick>=brain.passingUntil
                 || horizontalDistance(position,brain.passingDestination)<4)) brain.passingDestination=null;
         var closeOpponent=brain.observation.visible().stream().min(Comparator.comparingDouble(e->e.position().distanceSquared(position))).orElse(null);
-        if (brain.passingDestination==null && closeOpponent!=null
+        if (brain.passingDestination==null && session.tick>=brain.nextPassAttempt && closeOpponent!=null
                 && closeOpponent.position().distance(position)<rules.passDistance()
                 && Math.abs(closeOpponent.position().y-position.y)<1.5f) {
-            brain.passingDestination=passingDestination(self.id,position,forward,world);
+            brain.passingDestination=passingDestination(self.id,position,forward,closeOpponent.position(),world);
             brain.passingUntil=session.tick+rules.passHoldTicks();
+            brain.nextPassAttempt=session.tick+rules.decisionTicks();
         }
         if (brain.passingDestination!=null) destination=brain.passingDestination;
+        ArenaDefinition.Ramp ramp=rampAt(position);
+        if (ramp!=null && (position.x<ramp.minX()+1.1f || position.x>ramp.maxX()-1.1f)) ramp=null;
+        if (ramp!=null) {
+            // The ramp is a 12 m road without side barriers. Close combat still follows
+            // its longitudinal corridor, with two passing lanes, rather than chasing a
+            // moving enemy over its side and leaving the chassis suspended on the edge.
+            float along=destination.z-position.z;
+            float travel=Math.abs(along)>4?Math.signum(along):(forward.z>=0?1:-1);
+            float laneOffset=closeOpponent!=null && closeOpponent.position().distance(position)<rules.passDistance()?travel*2:0;
+            destination=new Vector3f((ramp.minX()+ramp.maxX())*.5f+laneOffset,destination.y,
+                    Math.clamp(position.z+travel*12,ramp.minZ()-4,ramp.maxZ()+4));
+        }
+        brain.lastDrivingTarget=destination.clone();
         Vector3f direction=destination.subtract(position); direction.y=0;
         if (direction.lengthSquared()<.01f) direction=forward.clone();
         brain.progressDirection=direction.normalize();
         float error=signedAngle(forward,direction);
+        VehicleCommand backing=backTowardRoute(self,brain,world,position,forward,velocity,direction,error);
+        if (backing!=null) return backing;
         float steer=Math.clamp(error*rules.steeringGain(),-1,1);
         float desiredSpeed=rules.cruiseSpeed()*(1-.75f*Math.min(1,Math.abs(error)/1.5f));
         if (Math.abs(error)>2) desiredSpeed=6;
         if (brain.state==State.ATTACK && direction.length()<rules.attackDistance()) desiredSpeed=Math.min(desiredSpeed,12);
         if (brain.state==State.SEEK_PICKUP && horizontalDistance(position,brain.destination)<8) desiredSpeed=Math.min(desiredSpeed,7);
+        if (ramp!=null) desiredSpeed=Math.min(desiredSpeed,12);
         // Three hull-width probes; only static blockers and other cars affect avoidance.
         float probeLength=Math.clamp(4+speed*.38f,4,14);
         Vector3f origin=position.add(0,.85f,0);
-        Vector3f right=new Vector3f(forward.z,0,-forward.x).normalizeLocal();
+        Vector3f right=new Vector3f(-forward.z,0,forward.x).normalizeLocal();
         WorldQuery.Hit center=world.sweep(origin,origin.add(forward.mult(probeLength)),.8f,self.id);
         WorldQuery.Hit left=world.sweep(origin.subtract(right.mult(1.1f)),origin.subtract(right.mult(1.1f)).add(forward.mult(probeLength)),.45f,self.id);
         WorldQuery.Hit rightHit=world.sweep(origin.add(right.mult(1.1f)),origin.add(right.mult(1.1f)).add(forward.mult(probeLength)),.45f,self.id);
         // Ignore only the individual drivable surface hit, not a wall on another probe.
-        if (center!=null && center.normal().y>.65f) center=null;
-        if (left!=null && left.normal().y>.65f) left=null;
-        if (rightHit!=null && rightHit.normal().y>.65f) rightHit=null;
+        if (drivableRampHit(center)) center=null;
+        if (drivableRampHit(left)) left=null;
+        if (drivableRampHit(rightHit)) rightHit=null;
+        if (center!=null && center.vehicleId()>=0 && center.fraction()*probeLength<4
+                && beginLocalTrafficEscape(brain,self.id,position,forward,center.point(),world)) return VehicleCommand.NONE;
         float clearance=center==null?1:center.fraction();
         if (clearance<1 || left!=null || rightHit!=null) {
             float leftClear=left==null?1:left.fraction(),rightClear=rightHit==null?1:rightHit.fraction();
@@ -275,18 +380,96 @@ public final class BotController {
             Vector3f toTarget=target.position().subtract(world.muzzle(self.id));
             float distance=toTarget.length(),angle=angleDegrees(forward,toTarget);
             boolean visible=lineOfSight(world,world.muzzle(self.id),target.position(),self.id,target.id());
-            machineGun=visible && distance<=rules.machineGunRange() && angle<=rules.machineGunAngleDegrees() && !self.overheated;
+            machineGun=visible && distance<=rules.machineGunRange() && angle<=rules.machineGunAngleDegrees();
             if (visible && distance<=70 && angle<=18) brain.lockTicks++; else brain.lockTicks=0;
             boolean safePower=visible && distance>10 && distance<65 && angle<=rules.powerAngleDegrees()
                     && world.sweep(world.muzzle(self.id),world.muzzle(self.id).add(forward.mult(9)),.2f,self.id)==null;
-            int selected=safePower && self.powerAmmo>0 ? 1 : 0;
-            if (selected!=self.selectedWeapon) weaponDelta=selected>self.selectedWeapon?1:-1;
-            rocket=selected==1 ? safePower && self.powerAmmo>0 : brain.lockTicks>=18 && self.homingAmmo>0;
-            pulse=visible && distance<=8 && self.pulseCooldown==0;
+            WeaponType selected=safePower && self.weapon(WeaponType.POWER).ammo>0 ? WeaponType.POWER:WeaponType.HOMING;
+            rocket=selected==WeaponType.POWER?safePower&&self.weapon(selected).ammo>0:brain.lockTicks>=18&&self.weapon(selected).ammo>0;
+            Vector3f lead=target.position().add(target.velocity().mult(1.1f)).subtract(world.muzzle(self.id));
+            if(visible&&world.grounded(target.id())&&lead.length()>=24&&lead.length()<=38
+                    &&angleDegrees(forward,lead)<7&&self.weapon(WeaponType.NAPALM).ammo>0) {
+                selected=WeaponType.NAPALM;rocket=true;
+            }
+            for(var pursuer:brain.observation.visible()) {
+                Vector3f behind=pursuer.position().subtract(position);
+                if(behind.length()<=16&&angleDegrees(forward,behind)>=120&&self.weapon(WeaponType.MINE).ammo>0
+                        &&pursuer.velocity().dot(behind.negate())>0) {selected=WeaponType.MINE;rocket=true;break;}
+            }
+            if(selected!=self.selectedWeapon)weaponDelta=Math.floorMod(selected.ordinal()-self.selectedWeapon.ordinal(),WeaponType.values().length)<=2?1:-1;
+            rocket&=self.selectedWeapon.cycle(weaponDelta)==selected;
+            pulse=visible && distance<=10 && self.pulseCooldown==0;
         } else brain.lockTicks=0;
         // Braking forever in front of a blocker is still a failed request to follow a route.
         brain.requiredMovement=horizontalDistance(position,brain.destination)>2;
-        return new VehicleCommand(throttle,braking,steer,handbrake,turbo,machineGun,rocket,pulse,weaponDelta,false,false);
+        return new VehicleCommand(throttle,braking,steer,handbrake,turbo,machineGun,rocket,pulse,weaponDelta,false,false,AbilityId.NONE);
+    }
+    private VehicleCommand backTowardRoute(VehicleState self,Brain brain,WorldQuery world,Vector3f position,
+            Vector3f forward,Vector3f velocity,Vector3f direction,float error) {
+        // A waypoint behind a slow car requires room for a turning circle. Track it in reverse
+        // through a clear rear corridor instead of repeatedly driving the nose into the same wall.
+        // This is ordinary route driving; the separate timed stuck/recovery policy stays unchanged.
+        if (!brain.backingToRoute) {
+            if (velocity.length()>6 || !world.grounded(self.id) || Math.abs(error)<1.3f) return null;
+            if (Math.abs(error)<1.8f) {
+                WorldQuery.Hit front=world.sweep(position.add(0,.85f,0),position.add(0,.85f,0).add(forward.mult(5)),.8f,self.id);
+                if (front==null || drivableRampHit(front) || front.fraction()*5>3.5f) return null;
+            }
+        }
+        Vector3f backward=forward.negate();
+        Vector3f origin=position.add(0,.85f,0);
+        WorldQuery.Hit rear=world.sweep(origin,origin.add(backward.mult(6)),1.0f,self.id);
+        float clearance=rear==null || drivableRampHit(rear)?6:rear.fraction()*6;
+        float support=supportedDistance(self.id,position,backward,world);
+        // On a ramp a shorter reverse corridor calls for a slower turn, not a
+        // passing target uphill that reverses the chosen longitudinal route.
+        if (support<4 && rampAt(position)==null && beginLocalTrafficEscape(brain,self.id,position,forward,position.add(backward.mult(4)),world)) {
+            brain.backingToRoute=false;return VehicleCommand.NONE;
+        }
+        clearance=Math.min(clearance,support);
+        if (rear!=null && rear.vehicleId()>=0 && clearance<3.5f
+                && beginLocalTrafficEscape(brain,self.id,position,forward,rear.point(),world)) {
+            brain.backingToRoute=false;return VehicleCommand.NONE;
+        }
+        if (Math.abs(error)<1.2f || direction.length()<.75f || clearance<2.5f) {
+            brain.backingToRoute=false; return null;
+        }
+        brain.backingToRoute=true;
+        float rearError=signedAngle(backward,direction);
+        float steer=Math.clamp(-rearError*rules.steeringGain(),-1,1);
+        float desired=Math.min(5,Math.max(1,Math.min(clearance-2,direction.length()*.7f)));
+        float rearSpeed=velocity.dot(backward);
+        float throttle=rearSpeed>desired+1?Math.clamp((rearSpeed-desired)*.3f,0,1):0;
+        float reverse=throttle>0?0:Math.clamp((desired-rearSpeed)*.35f+.25f,0,1);
+        brain.requiredMovement=true;
+        return new VehicleCommand(throttle,reverse,steer,false,false,false,false,false,0,false,false,AbilityId.NONE);
+    }
+    private boolean beginLocalTrafficEscape(Brain brain,int id,Vector3f position,Vector3f forward,
+            Vector3f contact,WorldQuery world) {
+        if (brain.passingDestination!=null || session.tick<brain.nextPassAttempt) return false;
+        brain.nextPassAttempt=session.tick+rules.decisionTicks();
+        brain.passingDestination=passingDestination(id,position,forward,contact,world);
+        brain.passingUntil=session.tick+rules.passHoldTicks();
+        return brain.passingDestination!=null;
+    }
+    private float supportedDistance(int id,Vector3f position,Vector3f direction,WorldQuery world) {
+        if (position.y<.8f && rampAt(position)==null) return 6;
+        Vector3f heading=new Vector3f(direction.x,0,direction.z).normalizeLocal();
+        Vector3f right=new Vector3f(-heading.z,0,heading.x);
+        float previous=position.y-.45f;
+        for (int distance=2;distance<=6;distance+=2) {
+            Vector3f center=position.add(heading.mult(distance));
+            float height=previous;
+            for (int side:new int[]{0,-1,1}) {
+                Vector3f point=center.add(right.mult(side*1.1f));point.y=previous+.45f;
+                WorldQuery.Hit surface=world.ray(point.add(0,1.5f,0),point.add(0,-2,0),id);
+                if (surface==null || surface.vehicleId()>=0 || surface.normal().y<.65f
+                        || !roadSurface(surface.point(),true) || Math.abs(surface.point().y-previous)>.8f) return distance-1;
+                if (side==0) height=surface.point().y;
+            }
+            previous=height;
+        }
+        return 6;
     }
     private Vector3f steeringTarget(Brain brain,Vector3f position,float speed) {
         if (brain.destination==null) return position.add(0,0,10);
@@ -312,12 +495,19 @@ public final class BotController {
         }
         return waypoint;
     }
-    private void trackProgress(VehicleState self,Brain brain,Vector3f position) {
+    private void trackProgress(VehicleState self,Brain brain,Vector3f position,WorldQuery world) {
+        if(self.controlled()) {
+            brain.lastPosition=position.clone();brain.progressWindowStart++;brain.stationaryTicks=0;
+            if(brain.stuckSince>=0)brain.stuckSince++;
+            if(brain.reverseUntil>session.tick)brain.reverseUntil++;
+            return;
+        }
         if (self.recoveries!=brain.recoveriesSeen) {
             brain.recoveriesSeen=self.recoveries; brain.reverseAttempts=0; brain.stuckSince=-1;
             brain.reverseUntil=0; brain.progress=0; brain.progressWindowStart=session.tick;
             brain.destination=null; brain.path=List.of(); brain.state=State.SEEK_TARGET;
             brain.passingDestination=null;
+            brain.backingToRoute=false;
         }
         if (brain.lastPosition!=null) {
             Vector3f displacement=position.subtract(brain.lastPosition); displacement.y=0;
@@ -334,7 +524,10 @@ public final class BotController {
             if (brain.stuckSince<0) brain.stuckSince=brain.progressWindowStart;
             brain.reverseAttempts++; brain.reverseUntil=session.tick+rules.reverseTicks();
             brain.state=State.RECOVER; brain.replanAt=0; brain.goalNode=-1;
-            LOG.warning("AI stuck id="+self.id+" tick="+session.tick+" position="+position+" destination="+brain.destination
+            LOG.warning("AI stuck seed="+session.seed+" id="+self.id+" tick="+session.tick+" position="+position+" destination="+brain.destination
+                    +" steeringTarget="+brain.lastDrivingTarget+" passingTarget="+brain.passingDestination
+                    +" path="+brain.path+" pathIndex="+brain.pathIndex
+                    +" forward="+world.forward(self.id)+" velocity="+world.velocity(self.id)+" backing="+brain.backingToRoute
                     +" target="+brain.target+" reverseAttempt="+brain.reverseAttempts);
         } else if (brain.progress>=rules.stuckMinimumProgress()) {
             brain.stuckSince=-1; brain.reverseAttempts=0;
@@ -344,25 +537,82 @@ public final class BotController {
     private boolean needsRecovery(Brain brain) {
         return brain.stuckSince>=0 && brain.reverseAttempts>=2 && session.tick-brain.stuckSince>rules.recoveryAfterTicks();
     }
-    private Vector3f passingDestination(int id,Vector3f position,Vector3f forward,WorldQuery world) {
+    private Vector3f passingDestination(int id,Vector3f position,Vector3f forward,Vector3f opponent,WorldQuery world) {
         Vector3f heading=new Vector3f(forward.x,0,forward.z).normalizeLocal();
-        Vector3f right=new Vector3f(heading.z,0,-heading.x);
+        Vector3f right=new Vector3f(-heading.z,0,heading.x);
         // Hold a clear drive-by corridor instead of braking nose-to-nose or continually
         // chasing a nearby opponent's moving center. Both drivers initially pass right.
-        for (int side:new int[]{1,-1}) {
-            Vector3f candidate=position.add(heading.mult(rules.passForwardDistance())).addLocal(right.mult(side*rules.passSideOffset()));
+        List<Vector3f> candidates=new ArrayList<>();
+        for (float length:new float[]{rules.passForwardDistance(),12,8}) for (int side:new int[]{1,-1}) {
+            float offset=length==rules.passForwardDistance()?rules.passSideOffset():4;
+            candidates.add(position.add(heading.mult(length)).addLocal(right.mult(side*offset)));
+        }
+        // At the end of a narrow platform a forward pass can be impossible. Open a gap
+        // along an observed clear route instead of repeatedly driving into the other hull.
+        Vector3f away=position.subtract(opponent);away.y=0;away.normalizeLocal();
+        for (float distance:new float[]{12,8}) candidates.add(position.add(away.mult(distance)));
+        for (Vector3f candidate:candidates) {
             var bounds=arena.bounds();
             if (candidate.x<bounds.minX()+3 || candidate.x>bounds.maxX()-3
                     || candidate.z<bounds.minZ()+3 || candidate.z>bounds.maxZ()-3) continue;
-            WorldQuery.Hit ground=world.ray(candidate.add(0,3,0),candidate.add(0,-4,0),id);
-            if (ground==null || ground.vehicleId()>=0 || ground.normal().y<.65f
-                    || Math.abs(ground.point().y-(position.y-.45f))>1.5f) continue;
-            WorldQuery.Hit obstacle=world.sweep(position.add(0,1.2f,0),candidate.add(0,1.2f,0),1.05f,id);
-            if (obstacle!=null && obstacle.normal().y<.65f) continue;
+            WorldQuery.Hit ground=world.ray(candidate.add(0,6,0),candidate.add(0,-7,0),id);
+            if (ground==null || ground.vehicleId()>=0 || ground.normal().y<.65f || !roadSurface(ground.point())) continue;
             candidate.y=ground.point().y+.45f;
+            WorldQuery.Hit obstacle=world.sweep(position.add(0,1.2f,0),candidate.add(0,1.2f,0),1.05f,id);
+            if (obstacle!=null && !drivableRampHit(obstacle)) continue;
+            if (!supportedRoadConnection(id,position,candidate,world)) continue;
             return candidate;
         }
         return null;
+    }
+    private boolean supportedRoadConnection(int id,Vector3f position,Vector3f candidate,WorldQuery world) {
+        int samples=(int)Math.ceil(position.distance(candidate)/4);
+        float previousHeight=position.y-.45f;
+        for (int step=1;step<=samples;step++) {
+            Vector3f point=position.clone().interpolateLocal(candidate,step/(float)samples);
+            WorldQuery.Hit surface=world.ray(point.add(0,2,0),point.add(0,-3,0),id);
+            if (surface==null || surface.vehicleId()>=0 || surface.normal().y<.65f
+                    || !roadSurface(surface.point()) || Math.abs(surface.point().y-previousHeight)>1.3f) return false;
+            previousHeight=surface.point().y;
+        }
+        return true;
+    }
+    private boolean drivableRampHit(WorldQuery.Hit hit) {
+        if (hit==null || hit.vehicleId()>=0 || hit.normal().y<.65f) return false;
+        // An upward normal also occurs on the top edge of a low guardrail. Only the
+        // authored ramp corridor may rise into an elevated driving probe.
+        Vector3f point=hit.point();
+        return arena.ramps().stream().anyMatch(r->point.x>r.minX()-.4f && point.x<r.maxX()+.4f
+                && point.z>=r.minZ()-1.2f && point.z<=r.maxZ()+1.2f);
+    }
+    private ArenaDefinition.Ramp rampAt(Vector3f position) {
+        for (var ramp:arena.ramps()) if (position.x>=ramp.minX()-.5f && position.x<=ramp.maxX()+.5f
+                && position.z>=ramp.minZ() && position.z<=ramp.maxZ()) {
+            float height=ramp.startY()+(ramp.endY()-ramp.startY())*(position.z-ramp.minZ())/(ramp.maxZ()-ramp.minZ());
+            if (Math.abs(position.y-height-.45f)<.8f) return ramp;
+        }
+        return null;
+    }
+    private boolean roadSurface(Vector3f point) {
+        return roadSurface(point,false);
+    }
+    private boolean roadSurface(Vector3f point,boolean hullEdgeSample) {
+        // Lateral hull probes already include the body width. Applying the centerline
+        // clearance to them again would falsely block reverse exits beside a railing.
+        float rampMargin=1.2f,deckMargin=hullEdgeSample?.2f:2.5f;
+        if (Math.abs(point.y)<.15f) return true;
+        for (var ramp:arena.ramps()) if (point.x>=ramp.minX()+rampMargin && point.x<=ramp.maxX()-rampMargin
+                && point.z>=ramp.minZ() && point.z<=ramp.maxZ()) {
+            float height=ramp.startY()+(ramp.endY()-ramp.startY())*(point.z-ramp.minZ())/(ramp.maxZ()-ramp.minZ());
+            if (Math.abs(height-point.y)<.15f) return true;
+        }
+        var deck=arena.boxes().stream().filter(b->b.id().equals("upper-deck")).findFirst().orElseThrow();
+        boolean rampOpening=arena.ramps().stream().anyMatch(r->point.x>=r.minX()+rampMargin && point.x<=r.maxX()-rampMargin
+                && (Math.abs(r.minZ()-point.z)<3 || Math.abs(r.maxZ()-point.z)<3));
+        return Math.abs(point.y-(deck.center().y()+deck.size().y()/2))<.15f
+                && Math.abs(point.x-deck.center().x())<deck.size().x()/2-deckMargin
+                && (Math.abs(point.z-deck.center().z())<deck.size().z()/2-deckMargin
+                    || rampOpening && Math.abs(point.z-deck.center().z())<=deck.size().z()/2);
     }
     private boolean visibleActiveHazard(int vehicleId,WorldQuery world) {
         var hazard=arena.hazard();
@@ -389,7 +639,7 @@ public final class BotController {
         return hit==null || hit.vehicleId()==target || hit.fraction()>=.999f;
     }
     private static float signedAngle(Vector3f forward,Vector3f target) {
-        return (float)Math.atan2(forward.z*target.x-forward.x*target.z,forward.x*target.x+forward.z*target.z);
+        return (float)Math.atan2(forward.x*target.z-forward.z*target.x,forward.x*target.x+forward.z*target.z);
     }
     private static float angleDegrees(Vector3f a,Vector3f b) {
         float denominator=a.length()*b.length();

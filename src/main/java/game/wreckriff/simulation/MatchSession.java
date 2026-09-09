@@ -20,6 +20,8 @@ public final class MatchSession {
         maximumTicks=(long) durationSeconds*TICKS_PER_SECOND;
         vehicles=List.of(new VehicleState(0,"Rivet",true), new VehicleState(1,"Static",false),
                 new VehicleState(2,"Dent",false),new VehicleState(3,"Buzz",false),new VehicleState(4,"Fuse",false));
+        var combatRules=game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class);
+        vehicles.forEach(vehicle->vehicle.initializeArsenal(combatRules));
     }
     public VehicleState vehicle(int id) { return vehicles.get(id); }
     public void finishTick() {

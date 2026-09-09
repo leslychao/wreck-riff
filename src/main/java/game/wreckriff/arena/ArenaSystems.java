@@ -1,4 +1,5 @@
 package game.wreckriff.arena;
+import game.wreckriff.combat.WeaponType;
 
 import com.jme3.math.Vector3f;
 import game.wreckriff.simulation.*;
@@ -69,17 +70,21 @@ public final class ArenaSystems {
     }
     private static float apply(VehicleState vehicle,ArenaDefinition.PickupType type) {
         return switch (type) {
-            case REPAIR -> { float old=vehicle.hp; vehicle.hp=Math.min(200,vehicle.hp+50); yield vehicle.hp-old; }
-            case HOMING_AMMO -> { int old=vehicle.homingAmmo; vehicle.homingAmmo=Math.min(12,vehicle.homingAmmo+3); yield vehicle.homingAmmo-old; }
-            case POWER_AMMO -> { int old=vehicle.powerAmmo; vehicle.powerAmmo=Math.min(8,vehicle.powerAmmo+2); yield vehicle.powerAmmo-old; }
+            case REPAIR -> { float old=vehicle.hp; vehicle.hp=Math.min(vehicle.maximumHp,vehicle.hp+vehicle.maximumHp*.25f); yield vehicle.hp-old; }
+            case HOMING_AMMO -> vehicle.weapon(WeaponType.HOMING).refill(3);
+            case POWER_AMMO -> vehicle.weapon(WeaponType.POWER).refill(2);
+            case MINE_AMMO -> vehicle.weapon(WeaponType.MINE).refill(2);
+            case NAPALM_AMMO -> vehicle.weapon(WeaponType.NAPALM).refill(2);
             case TURBO_CELL -> { float old=vehicle.turbo; vehicle.turbo=Math.min(100,vehicle.turbo+50); yield vehicle.turbo-old; }
         };
     }
     public static boolean needs(VehicleState vehicle,ArenaDefinition.PickupType type) {
         return switch (type) {
-            case REPAIR -> vehicle.hp<200;
-            case HOMING_AMMO -> vehicle.homingAmmo<12;
-            case POWER_AMMO -> vehicle.powerAmmo<8;
+            case REPAIR -> vehicle.hp<vehicle.maximumHp;
+            case HOMING_AMMO -> vehicle.weapon(WeaponType.HOMING).ammo<vehicle.weapon(WeaponType.HOMING).maximumAmmo;
+            case POWER_AMMO -> vehicle.weapon(WeaponType.POWER).ammo<vehicle.weapon(WeaponType.POWER).maximumAmmo;
+            case MINE_AMMO -> vehicle.weapon(WeaponType.MINE).ammo<vehicle.weapon(WeaponType.MINE).maximumAmmo;
+            case NAPALM_AMMO -> vehicle.weapon(WeaponType.NAPALM).ammo<vehicle.weapon(WeaponType.NAPALM).maximumAmmo;
             case TURBO_CELL -> vehicle.turbo<100;
         };
     }
@@ -89,6 +94,8 @@ public final class ArenaSystems {
             case REPAIR -> "repair";
             case HOMING_AMMO -> "homing-ammo";
             case POWER_AMMO -> "power-ammo";
+            case MINE_AMMO -> "mine-ammo";
+            case NAPALM_AMMO -> "napalm-ammo";
             case TURBO_CELL -> "turbo";
         };
     }

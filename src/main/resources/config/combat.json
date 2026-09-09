@@ -10,12 +10,7 @@
     "damage": 3.0,
     "shotsPerSecond": 10.0,
     "range": 75.0,
-    "spreadDegrees": 1.0,
-    "heatPerSecond": 20.0,
-    "maximumHeat": 100.0,
-    "resumeHeat": 35.0,
-    "coolingPerSecond": 30.0,
-    "coolingDelaySeconds": 0.2
+    "spreadDegrees": 1.0
   },
   "homing": {
     "directDamage": 32.0,
@@ -40,10 +35,10 @@
     "maximumDeltaSpeed": 3.0
   },
   "pulse": {
-    "damage": 20.0,
-    "radius": 10.0,
-    "cooldownSeconds": 14.0,
-    "initialDelaySeconds": 4.0,
+    "damage": 90,
+    "radius": 12,
+    "cooldownSeconds": 12,
+    "initialDelaySeconds": 0,
     "maximumDeltaSpeed": 4.0
   },
   "targeting": {
@@ -59,5 +54,49 @@
     "damagePerExcessSpeed": 2.0,
     "maximumDamage": 25.0,
     "cooldownSeconds": 0.6
+  },
+  "mine": {
+    "maximumActive": 10,
+    "initialAmmo": 3,
+    "maximumAmmo": 6,
+    "cooldownSeconds": 1,
+    "placementDistance": 3,
+    "supportDepth": 3,
+    "armSeconds": 0.6,
+    "triggerRadius": 3,
+    "explosionRadius": 6,
+    "damage": 70,
+    "lifetimeSeconds": 25
+  },
+  "napalm": {
+    "maximumZones": 6,
+    "initialAmmo": 3,
+    "maximumAmmo": 6,
+    "cooldownSeconds": 1.4,
+    "speed": 28,
+    "upwardSpeed": 10,
+    "gravity": 18,
+    "ttlSeconds": 3,
+    "impactDamage": 20,
+    "radius": 5,
+    "durationSeconds": 4,
+    "damagePerSecond": 30,
+    "intervalSeconds": 0.25,
+    "supportDepth": 4
+  },
+  "control": {
+    "freezeSeconds": 2,
+    "freezeCooldownSeconds": 10,
+    "freezeSpeed": 50,
+    "freezeTtlSeconds": 1.2,
+    "freezeRadius": 0.3,
+    "stunSeconds": 1,
+    "stunCooldownSeconds": 12,
+    "stunRange": 16,
+    "stunHalfAngleDegrees": 35,
+    "shieldSeconds": 2.5,
+    "shieldCooldownSeconds": 16,
+    "shieldDamageMultiplier": 0.3,
+    "immunitySeconds": 3
   }
 }

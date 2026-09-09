@@ -27,5 +27,6 @@
   "passDistance":22,
   "passSideOffset":8,
   "passForwardDistance":24,
-  "passHoldTicks":180
+  "passHoldTicks":180,
+  "turboSeekThreshold":20
 }

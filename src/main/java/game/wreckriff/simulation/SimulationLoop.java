@@ -16,6 +16,7 @@ public final class SimulationLoop {
         if (!running) { accumulator=0; return 0; }
         double accepted=Math.min(frameSeconds,rules.maxFrameSeconds());
         droppedSimulationTime += frameSeconds-accepted;
+        if(frameSeconds>accepted)Logger.getLogger(getClass().getName()).warning("Frame exceeded simulation catch-up limit; dropped "+(frameSeconds-accepted)+" seconds");
         accumulator+=accepted;
         int count=0;
         while (accumulator+1e-12>=STEP && count<rules.maxSteps()) {

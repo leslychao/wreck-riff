@@ -6,7 +6,7 @@
   "rollInfluence": 0.15, "engineForce": 8500, "brakeForce": 40,
   "maxSpeed": 28, "turboSpeed": 40, "reverseSpeed": 11,
   "lowSpeedSteering": 32, "highSpeedSteering": 15, "steeringResponse": 12,
-  "handbrakeTorque": 11000, "stabilizingTorque": 9000, "gripReturnSeconds": 0.25,
+  "handbrakeTorque": 5000, "handbrakeYawDamping": 6500, "stabilizingTorque": 9000, "gripReturnSeconds": 0.25,
   "turboDrain": 40, "turboRegen": 15, "turboRegenDelay": 1,
   "recoveryCost": 15, "recoveryHold": 1, "recoveryCooldown": 5, "recoveryProtection": 0.35
 }

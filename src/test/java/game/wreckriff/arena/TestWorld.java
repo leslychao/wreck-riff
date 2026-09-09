@@ -20,6 +20,10 @@ public final class TestWorld implements WorldQuery {
     public float mass(int id) { return 1100; }
     public boolean grounded(int id) { return true; }
     public Hit ray(Vector3f from,Vector3f to,int ignored) {
+        if(from.y>0 && to.y<=0 && Math.abs(from.x-to.x)<.001f && Math.abs(from.z-to.z)<.001f) {
+            float fraction=from.y/(from.y-to.y);
+            return new Hit(-1,from.clone().interpolateLocal(to,fraction),Vector3f.UNIT_Y.clone(),fraction);
+        }
         for (int id:hidden) if (positions[id].distanceSquared(to)<.01f)
             return new Hit(-1,from.clone().interpolateLocal(to,.5f),new Vector3f(0,0,-1),.5f);
         return wall?new Hit(-1,from.clone().interpolateLocal(to,.5f),new Vector3f(0,0,-1),.5f):null;

@@ -11,7 +11,7 @@ import java.util.*;
 
 public final class SettingsStore {
     public static final class Settings {
-        public int schemaVersion=1, width=1280,height=720;
+        public int schemaVersion=2, width=1280,height=720, samples=4;
         public boolean fullscreen=false,vsync=true;
         public float master=0.8f,music=0.8f,sfx=0.9f,shake=0.6f,sensitivity=1,deadZone=0.15f;
         public Map<String,Integer> keys=defaultKeys();
@@ -24,6 +24,8 @@ public final class SettingsStore {
     }
     private final Path directory;
     private boolean settingsWritable=true,statsWritable=true;
+    private final boolean firstRun;
+    private boolean migrateSettings;
     private final Set<UUID> recorded=new HashSet<>();
     private String warning="";
     private Settings settings;
@@ -31,29 +33,49 @@ public final class SettingsStore {
     public SettingsStore() { this(defaultDirectory()); }
     public SettingsStore(Path directory) {
         this.directory=directory;
+        firstRun=!Files.exists(directory.resolve("settings.json"));
         try { Files.createDirectories(directory); }
         catch(IOException | SecurityException e) { warn("Data directory unavailable; settings stay in memory."); settingsWritable=false; statsWritable=false; }
         settings=load("settings.json",Settings.class,new Settings());
         stats=load("stats.json",Stats.class,new Stats());
         normalize(settings);
+        if(migrateSettings && settingsWritable) {
+            try {
+                Path original=directory.resolve("settings.json"), backup=directory.resolve("settings.json.v1.bak");
+                if(!Files.exists(backup)) Files.copy(original,backup);
+                write("settings.json",settings);
+            } catch(IOException|SecurityException e) { warn("Settings migration stays in memory; original file preserved."); }
+        }
     }
     public static Path defaultDirectory() {
         String local=System.getenv("LOCALAPPDATA");
         return local!=null&&!local.isBlank()?Path.of(local,"WreckRiff"):Path.of(System.getProperty("user.home"),".wreckriff");
     }
     public Path directory() { return directory; }
+    public boolean firstRun() { return firstRun; }
     public Settings settings() { return settings; }
     public Stats stats() { return stats; }
     public String warning() { return warning; }
+    public String bindingWarning() {
+        List<String> unbound=settings.keys.entrySet().stream().filter(e->e.getValue()==0).map(Map.Entry::getKey).toList();
+        return unbound.isEmpty()?"":"Unbound actions: "+String.join(", ",unbound)+". Set a free key in Controls.";
+    }
     private void warn(String text) { warning=text; System.err.println(text); }
     private <T> T load(String name,Class<T> type,T fallback) {
         Path path=directory.resolve(name);
         if (!Files.exists(path)) return fallback;
         try(Reader reader=Files.newBufferedReader(path,StandardCharsets.UTF_8)) {
             JsonObject tree=JsonParser.parseReader(reader).getAsJsonObject();
-            if (!tree.has("schemaVersion") || tree.get("schemaVersion").getAsInt()!=1) {
+            int version=tree.has("schemaVersion")?tree.get("schemaVersion").getAsInt():-1;
+            boolean supported=name.equals("settings.json")?(version==1||version==2):version==1;
+            if (!supported) {
                 if (name.equals("settings.json")) settingsWritable=false; else statsWritable=false;
                 warn("Unsupported "+name+" version; original file preserved."); return fallback;
+            }
+            if(name.equals("settings.json") && version==1) {
+                // Keep explicit v1 video preferences and bindings; only add new defaults.
+                tree.addProperty("schemaVersion",2);
+                migrateSettings=true;
             }
             T loaded=Configs.gson().fromJson(tree,type);
             if(loaded instanceof Settings user) normalize(user);
@@ -99,15 +121,27 @@ public final class SettingsStore {
         } catch(IOException | SecurityException e) { warn("Could not save "+name+"; this session continues in memory."); }
     }
     private static void normalize(Settings value) {
+        value.schemaVersion=2;
         if(value.width<640 || value.width>7680 || value.height<480 || value.height>4320) { value.width=1280; value.height=720; value.fullscreen=false; }
+        if(value.samples!=0&&value.samples!=2&&value.samples!=4&&value.samples!=8) value.samples=4;
         value.master=unit(value.master,0.8f); value.music=unit(value.music,0.8f); value.sfx=unit(value.sfx,0.9f); value.shake=unit(value.shake,0.6f);
         value.deadZone=Math.clamp(Float.isFinite(value.deadZone)?value.deadZone:0.15f,0,0.45f);
         value.sensitivity=Math.clamp(Float.isFinite(value.sensitivity)?value.sensitivity:1,0.25f,2);
-        if(value.keys==null) value.keys=defaultKeys();
-        for(var entry:defaultKeys().entrySet()) value.keys.putIfAbsent(entry.getKey(),entry.getValue());
-        value.keys.entrySet().removeIf(e->!defaultKeys().containsKey(e.getKey()) || e.getValue()==null || e.getValue()<1 || e.getValue()>255 || e.getValue()==KeyInput.KEY_ESCAPE);
-        for(var entry:defaultKeys().entrySet()) value.keys.putIfAbsent(entry.getKey(),entry.getValue());
-        if(new HashSet<>(value.keys.values()).size()!=value.keys.size()) throw new IllegalArgumentException("Conflicting keyboard bindings");
+        Map<String,Integer> defaults=defaultKeys();
+        Map<String,Integer> supplied=value.keys==null?Map.of():value.keys;
+        LinkedHashMap<String,Integer> normalized=new LinkedHashMap<>();
+        Set<Integer> used=new HashSet<>();
+        // Explicit, valid user choices take precedence over every newly inserted default.
+        for(var entry:supplied.entrySet()) {
+            Integer key=entry.getValue();
+            if(!defaults.containsKey(entry.getKey())||key==null||key<0||key>255||key==KeyInput.KEY_ESCAPE) continue;
+            normalized.put(entry.getKey(),key==0||used.add(key)?key:0);
+        }
+        for(var entry:defaults.entrySet()) if(!normalized.containsKey(entry.getKey())) {
+            int key=entry.getValue(); normalized.put(entry.getKey(),used.add(key)?key:0);
+        }
+        value.keys=new LinkedHashMap<>();
+        for(String action:defaults.keySet()) value.keys.put(action,normalized.get(action));
     }
     private static float unit(float n,float fallback) { return Math.clamp(Float.isFinite(n)?n:fallback,0,1); }
     public static LinkedHashMap<String,Integer> defaultKeys() {
@@ -117,6 +151,7 @@ public final class SettingsStore {
         keys.put("Handbrake",KeyInput.KEY_SPACE); keys.put("Turbo",KeyInput.KEY_LSHIFT);
         keys.put("Previous weapon",KeyInput.KEY_Q); keys.put("Next weapon",KeyInput.KEY_E);
         keys.put("Feedback Pulse",KeyInput.KEY_F); keys.put("Rear view",KeyInput.KEY_V); keys.put("Recover",KeyInput.KEY_R);
+        keys.put("Ability modifier",KeyInput.KEY_LCONTROL);
         return keys;
     }
 }

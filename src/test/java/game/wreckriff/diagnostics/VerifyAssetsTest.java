@@ -7,6 +7,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,6 +60,42 @@ class VerifyAssetsTest {
         String invalid = new String(fnt, StandardCharsets.UTF_8).replaceFirst("char id=32 x=\\d+", "char id=32 x=999");
         assertThrows(IOException.class, () -> VerifyAssets.verifyFontBytes(invalid.getBytes(StandardCharsets.UTF_8), png));
         assertThrows(IOException.class, () -> VerifyAssets.verifyFontBytes(fnt, new byte[]{0, 1, 2}));
+    }
+
+    @Test void A01_registryDistinguishesActualPackagedBytesFromRuntimeGeometryRecipes() {
+        String hash = "a".repeat(64);
+        var mesh = new VerifyAssets.Asset("src/main/java/game/wreckriff/presentation/VehicleVisual.java", "procedural-source", 100, hash,
+                "Original project source recipe", "SOURCE_PRESENT", null, null, null, null);
+        var audio = new VerifyAssets.Asset("audio/music.wav", "music", 100, hash,
+                "GenerateAudio.java; fixed score/seed", "ORIGINAL_GENERATED", 2, 10L, 0.5, 0.2);
+        var records = VerifyAssets.registerEntries(List.of(mesh, audio), "0.1.0");
+        var runtime = records.getFirst();
+        assertEquals("runtime/VehicleVisual", runtime.assetId());
+        assertEquals("", runtime.packagedPath(), "Runtime geometry has no packaged mesh file");
+        assertEquals(mesh.path(), runtime.sourceOrigin());
+        assertEquals(hash, runtime.sha256());
+        assertTrue(runtime.hashScope().startsWith("SOURCE_GENERATOR_BYTES"));
+        assertTrue(runtime.hashScope().contains("NOT_RUNTIME_MESH"));
+        assertTrue(runtime.artifactForm().startsWith("RUNTIME_GEOMETRY_NOT_PACKAGED"));
+        assertEquals("", runtime.licenseTextPath(), "No invented license is assigned to original project content");
+        assertTrue(runtime.licensePermission().contains("no distribution license assigned"));
+        assertEquals("OWNER_REVIEW_REQUIRED", runtime.attributionRequired());
+        var resource = records.getLast();
+        assertEquals("app/wreck-riff-0.1.0.jar!/audio/music.wav", resource.packagedPath());
+        assertEquals("PACKAGED_RESOURCE_BYTES", resource.hashScope());
+        assertEquals("PACKAGED_RESOURCE", resource.artifactForm());
+    }
+
+    @Test void A01_registryRetainsDependencyAuthorshipLicenseAndAttributionEvidence() {
+        var material = new VerifyAssets.Asset("Common/MatDefs/Light/Lighting.j3md", "engine-material", 100, "b".repeat(64),
+                "org.jmonkeyengine:jme3-core:3.8.1-stable", "DEPENDENCY_RESOURCE_PRESENT", null, null, null, null);
+        var record = VerifyAssets.registerEntries(List.of(material), "0.1.0").getFirst();
+        assertEquals("app/jme3-core-3.8.1-stable.jar!/Common/MatDefs/Light/Lighting.j3md", record.packagedPath());
+        assertEquals("licenses/jme-BSD3.txt", record.licenseTextPath());
+        assertTrue(record.author().contains("jMonkeyEngine"));
+        assertTrue(record.licensePermission().contains("BSD-3-Clause"));
+        assertEquals("RETAIN_COPYRIGHT_AND_LICENSE_NOTICE", record.attributionRequired());
+        assertTrue(record.verificationStatus().contains("DISTRIBUTION_REVIEW_REQUIRED"));
     }
 
     private Path wav(String name, int channels, short[] samples) throws IOException {

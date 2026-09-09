@@ -1,5 +1,9 @@
 package game.wreckriff.combat;
 
+import game.wreckriff.combat.AbilityId;
+
+import game.wreckriff.combat.WeaponType;
+
 import com.google.gson.JsonObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
@@ -29,10 +33,10 @@ class CombatSystemTest {
     }
 
     @Test void T02_emptyAmmoDoesNotSpendCooldownOrCreateProjectile() {
-        session.vehicle(0).homingAmmo = 0;
+        session.vehicle(0).weapon(WeaponType.HOMING).ammo = 0;
         step(rocket());
-        assertEquals(0, session.vehicle(0).homingCooldown);
-        assertEquals(0, session.vehicle(0).homingAmmo);
+        assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
+        assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
         assertTrue(combat.projectiles().isEmpty());
         assertEquals(0, count(combat.drainEvents(), GameEvent.Type.SHOT));
     }
@@ -40,13 +44,13 @@ class CombatSystemTest {
     @Test void T02_limitRejectsAtomicallyButAllowsHitscanAndPulse() {
         configure(json -> json.addProperty("maximumProjectiles", 1));
         step(rocket());
-        session.vehicle(0).homingCooldown = 0;
+        session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks = 0;
         session.vehicle(0).pulseCooldown = 0;
-        var attack = new VehicleCommand(0, 0, 0, false, false, true, true, true, 0, false, false);
+        var attack = new VehicleCommand(0, 0, 0, false, false, true, true, true, 0, false, false,AbilityId.NONE);
         combat.drainEvents();
         step(attack);
-        assertEquals(5, session.vehicle(0).homingAmmo);
-        assertEquals(0, session.vehicle(0).homingCooldown);
+        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+        assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
         assertEquals(1, combat.projectiles().size());
         List<GameEvent> events = combat.drainEvents();
         assertTrue(events.stream().anyMatch(e -> e.type() == GameEvent.Type.SHOT && e.kind().equals("machine-gun")));
@@ -79,42 +83,42 @@ class CombatSystemTest {
 
     @Test void T04_weaponSwitchPreservesCooldownAndDoesNotFire() {
         step(rocket());
-        int cooldown = session.vehicle(0).homingCooldown;
+        int cooldown = session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks;
         combat.drainEvents();
         step(switchWeapon());
         step(switchWeapon());
         assertEquals(0, session.vehicle(0).selectedWeapon);
-        assertEquals(cooldown - 2, session.vehicle(0).homingCooldown);
+        assertEquals(cooldown - 2, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
         assertEquals(0, count(combat.drainEvents(), GameEvent.Type.SHOT));
         step(rocket());
-        assertEquals(5, session.vehicle(0).homingAmmo);
+        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
     }
 
     @Test void heldRocketRepeatsExactlyAtItsCooldownBoundary() {
         step(rocket());
-        assertEquals(5, session.vehicle(0).homingAmmo);
+        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
         for (int i = 0; i < 95; i++) step(rocket());
-        assertEquals(5, session.vehicle(0).homingAmmo);
+        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
         step(rocket());
-        assertEquals(4, session.vehicle(0).homingAmmo);
-        assertEquals(96, session.vehicle(0).homingCooldown);
+        assertEquals(4, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+        assertEquals(96, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
     }
 
     @Test void powerRocketUsesItsOwnAmmoAndDirectDamage() {
-        session.vehicle(0).selectedWeapon = 1;
+        session.vehicle(0).selectedWeapon = WeaponType.POWER;
         world.positions[1].set(0, 0.55f, 6);
         world.nextSweep = new WorldQuery.Hit(1, new Vector3f(0, 0.55f, 5), new Vector3f(0, 0, -1), 0.5f);
         step(rocket());
         assertEquals(150, session.vehicle(1).hp);
-        assertEquals(3, session.vehicle(0).powerAmmo);
-        assertEquals(6, session.vehicle(0).homingAmmo);
-        assertEquals(132, session.vehicle(0).powerCooldown);
-        assertEquals(0, session.vehicle(0).homingCooldown);
+        assertEquals(3, session.vehicle(0).weapon(WeaponType.POWER).ammo);
+        assertEquals(6, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+        assertEquals(132, session.vehicle(0).weapon(WeaponType.POWER).cooldownTicks);
+        assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
     }
 
     @Test void T05_edgesConsumedAcrossPhysicsStepsDoNotRepeatPulseOrSwitch() {
         session.vehicle(0).pulseCooldown = 0;
-        VehicleCommand command = new VehicleCommand(0, 0, 0, false, false, false, false, true, 1, false, false);
+        VehicleCommand command = new VehicleCommand(0, 0, 0, false, false, false, false, true, 1, false, false,AbilityId.NONE);
         step(command);
         for (int i = 0; i < 11; i++) step(command.withoutEdges());
         assertEquals(1, session.vehicle(0).selectedWeapon);
@@ -264,7 +268,7 @@ class CombatSystemTest {
         combat.queueDamage(0, -1, 15, "recovery", 2);
         step(rocket());
         assertEquals(185, session.vehicle(0).hp);
-        assertEquals(6, session.vehicle(0).homingAmmo);
+        assertEquals(6, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
         assertTrue(combat.projectiles().isEmpty());
     }
 
@@ -286,7 +290,7 @@ class CombatSystemTest {
         assertTrue(combat.projectiles().isEmpty());
         GameEvent explosion = combat.drainEvents().stream().filter(e -> e.type() == GameEvent.Type.EXPLOSION).findFirst().orElseThrow();
         assertTrue(explosion.position().z <= 2);
-        assertEquals(5, session.vehicle(0).homingAmmo);
+        assertEquals(5, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
     }
 
     @Test void ttlAndCollisionInSameTickProduceOneExplosion() {
@@ -468,10 +472,10 @@ class CombatSystemTest {
         return events.stream().filter(e -> e.type() == type).count();
     }
 
-    private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, false, 0, false, false); }
-    private static VehicleCommand machineGun() { return new VehicleCommand(0, 0, 0, false, false, true, false, false, 0, false, false); }
-    private static VehicleCommand pulse() { return new VehicleCommand(0, 0, 0, false, false, false, false, true, 0, false, false); }
-    private static VehicleCommand switchWeapon() { return new VehicleCommand(0, 0, 0, false, false, false, false, false, 1, false, false); }
+    private static VehicleCommand rocket() { return new VehicleCommand(0, 0, 0, false, false, false, true, false, 0, false, false,AbilityId.NONE); }
+    private static VehicleCommand machineGun() { return new VehicleCommand(0, 0, 0, false, false, true, false, false, 0, false, false,AbilityId.NONE); }
+    private static VehicleCommand pulse() { return new VehicleCommand(0, 0, 0, false, false, false, false, true, 0, false, false,AbilityId.NONE); }
+    private static VehicleCommand switchWeapon() { return new VehicleCommand(0, 0, 0, false, false, false, false, false, 1, false, false,AbilityId.NONE); }
 
     private static final class FakeWorld implements WorldQuery {
         final Vector3f[] positions = {new Vector3f(), new Vector3f(100, 0, 100), new Vector3f(120, 0, 100), new Vector3f(140, 0, 100), new Vector3f(160, 0, 100)};

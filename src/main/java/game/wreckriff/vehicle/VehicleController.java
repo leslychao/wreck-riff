@@ -32,7 +32,7 @@ public final class VehicleController {
         if (state.protectionTicks>0) state.protectionTicks--;
         Vector3f p=world.position(state.id);
         boolean emergency=p.y < -8 || Math.abs(p.x)>82 || Math.abs(p.z)>72;
-        boolean requested=command.recover() && world.velocity(state.id).length()<2;
+        boolean requested=command.recover() && !state.controlled() && world.velocity(state.id).length()<2;
         recoveryHold=requested?recoveryHold+1:0;
         if (!emergency && (recoveryHold<seconds(rules.recoveryHold()) || state.recoveryCooldown>0)) return Recovery.NONE;
         if (emergency || requested) {
@@ -94,7 +94,8 @@ public final class VehicleController {
         body.accelerate(force/4);
         body.brake(brake*rules.brakeForce());
         float angle=FastMath.interpolateLinear(Math.clamp(speed/rules.maxSpeed(),0,1),rules.lowSpeedSteering(),rules.highSpeedSteering())*FastMath.DEG_TO_RAD;
-        steering += (command.steer()*angle-steering)*(1-(float)Math.exp(-rules.steeringResponse()*dt));
+        float nativeSteer=-command.steer();
+        steering += (nativeSteer*angle-steering)*(1-(float)Math.exp(-rules.steeringResponse()*dt));
         body.steer(steering);
         float gripTarget=command.handbrake()?rules.handbrakeFriction():rules.frictionSlip();
         float gripBlend=command.handbrake()?0.3f:Math.min(1,dt/rules.gripReturnSeconds()*3);
@@ -104,7 +105,8 @@ public final class VehicleController {
             body.brake(2,rules.brakeForce()*0.12f); body.brake(3,rules.brakeForce()*0.12f);
             if (speed>2 && grounded>=2) {
                 float upright=Math.max(0,world.rotation(state.id).mult(Vector3f.UNIT_Y).y);
-                body.applyTorque(new Vector3f(0,command.steer()*rules.handbrakeTorque()*upright*Math.min(1,speed/12),0));
+                float assist=nativeSteer*rules.handbrakeTorque()*upright*Math.min(1,speed/12);
+                body.applyTorque(new Vector3f(0,assist-body.getAngularVelocity().y*rules.handbrakeYawDamping(),0));
             }
         }
         if (grounded>=2) {
@@ -118,7 +120,8 @@ public final class VehicleController {
         }
     }
     public void recordSafePose(long tick) {
-        if (!state.alive() || tick%12!=0 || world.wheelContacts(state.id)<2) return;
+        // A chassis hanging over an edge is not a safe recovery destination.
+        if (!state.alive() || tick%12!=0 || world.wheelContacts(state.id)<4) return;
         Vector3f position=world.position(state.id);
         if (Math.abs(position.x)>76 || Math.abs(position.z)>66 || world.rotation(state.id).mult(Vector3f.UNIT_Y).y<0.9f) return;
         if (!world.freePose(state.id,position,world.rotation(state.id))) return;

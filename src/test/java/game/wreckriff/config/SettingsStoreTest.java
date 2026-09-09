@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SettingsStoreTest {
     @TempDir Path directory;
     @Test void newerSchemaIsPreservedEvenAfterAttemptedSave() throws Exception {
-        Path path=directory.resolve("settings.json");String future="{\"schemaVersion\":2,\"newOption\":\"preserve\"}";
+        Path path=directory.resolve("settings.json");String future="{\"schemaVersion\":99,\"newOption\":\"preserve\"}";
         Files.writeString(path,future);
         SettingsStore store=new SettingsStore(directory);store.settings().master=.1f;store.saveSettings();
         assertEquals(future,Files.readString(path));assertTrue(store.warning().contains("preserved"));
@@ -37,7 +37,7 @@ class SettingsStoreTest {
         assertEquals(1280,settings.width);assertEquals(720,settings.height);assertEquals(1,settings.master);
         assertEquals(.25f,settings.sensitivity);assertEquals(.45f,settings.deadZone);
         assertEquals(SettingsStore.defaultKeys().keySet(),settings.keys.keySet());
-        assertEquals(KeyInput.KEY_W,settings.keys.get("Throttle"));assertEquals(KeyInput.KEY_R,settings.keys.get("Recover"));
+        assertEquals(0,settings.keys.get("Throttle"));assertEquals(KeyInput.KEY_R,settings.keys.get("Recover"));
     }
     @Test void partiallyEditedBindingFileCannotCreateConflictingActions() throws Exception {
         Files.writeString(directory.resolve("settings.json"),"{\"schemaVersion\":1,\"keys\":{\"Throttle\":"+KeyInput.KEY_A+"}}");

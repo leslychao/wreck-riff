@@ -1,10 +1,13 @@
+import java.security.MessageDigest
+import java.util.HexFormat
+
 plugins {
     id 'java'
     id 'application'
 }
 
 group = 'game.wreckriff'
-version = '0.1.0'
+version = '0.2.0'
 
 repositories { mavenCentral() }
 
@@ -20,6 +23,7 @@ dependencies {
     implementation "org.jmonkeyengine:jme3-core:$jmeVersion"
     implementation "org.jmonkeyengine:jme3-desktop:$jmeVersion"
     implementation "org.jmonkeyengine:jme3-lwjgl3:$jmeVersion"
+    implementation "org.jmonkeyengine:jme3-effects:$jmeVersion"
     implementation 'com.github.stephengold:Minie:9.0.3'
     implementation 'com.google.code.gson:gson:2.13.1'
     testImplementation platform('org.junit:junit-bom:5.12.2')
@@ -53,7 +57,11 @@ configurations {
     physicsTestRuntimeOnly.extendsFrom testRuntimeOnly, runtimeOnly
 }
 
-application { mainClass = 'game.wreckriff.Main' }
+application {
+    mainClass = 'game.wreckriff.Main'
+    applicationDefaultJvmArgs = ['-Xms128m', '-Xmx768m']
+}
+tasks.withType(JavaExec).configureEach { minHeapSize='128m';maxHeapSize='768m' }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
@@ -69,6 +77,8 @@ tasks.register('generateAudio', JavaExec) {
     classpath = sourceSets.tools.runtimeClasspath
     mainClass = 'game.wreckriff.tools.GenerateAudio'
     args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    args file('src/tools/assets/audio').absolutePath
+    inputs.dir('src/tools/assets/audio')
     inputs.files(sourceSets.tools.allSource)
     outputs.dir(layout.buildDirectory.dir('generated-resources/audio'))
 }
@@ -77,6 +87,8 @@ tasks.register('generateFont', JavaExec) {
     classpath = sourceSets.tools.runtimeClasspath
     mainClass = 'game.wreckriff.tools.GenerateFont'
     args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    args file('src/tools/assets/fonts').absolutePath
+    inputs.dir('src/tools/assets/fonts')
     inputs.files(sourceSets.tools.allSource)
     outputs.dir(layout.buildDirectory.dir('generated-resources/fonts'))
 }
@@ -87,8 +99,16 @@ tasks.register('generateBuildInfo') {
     doLast {
         def git = providers.exec { commandLine 'git', 'rev-parse', '--verify', 'HEAD'; ignoreExitValue = true }
         def commit = git.result.get().exitValue == 0 ? git.standardOutput.asText.get().trim() : 'uncommitted'
+        def sourceDigest = MessageDigest.getInstance('SHA-256')
+        def sources = files(fileTree('src/main'), fileTree('src/tools'), 'build.gradle', 'settings.gradle', 'gradle.lockfile').files.findAll { it.isFile() }
+        sources.sort { relativePath(it) }.each { source ->
+            sourceDigest.update(relativePath(source).replace('\\', '/').getBytes('UTF-8'))
+            sourceDigest.update((byte) 0)
+            sourceDigest.update(source.bytes)
+        }
+        def sourceHash = HexFormat.of().formatHex(sourceDigest.digest())
         output.get().asFile.parentFile.mkdirs()
-        output.get().asFile.text = "version=${project.version}\ncommit=${commit}\n"
+        output.get().asFile.text = "version=${project.version}\ncommit=${commit}\nsourceSha256=${sourceHash}\n"
     }
 }
 sourceSets.main.resources.srcDir layout.buildDirectory.dir('generated-resources')
@@ -110,7 +130,7 @@ tasks.register('smokeTest', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = application.mainClass
-    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=45'
+    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=120'
 }
 tasks.register('packageWindows', Exec) {
     dependsOn tasks.named('installDist'), tasks.named('verifyAssets')

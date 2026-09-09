@@ -22,7 +22,7 @@ public final class Configs {
             throw new IllegalArgumentException("Invalid config " + name + ": " + e.getMessage(), e);
         }
     }
-    private static Reader open(String name) throws IOException {
+    public static Reader open(String name) throws IOException {
         if (!name.matches("[a-z][a-z0-9-]*")) throw new IllegalArgumentException("Invalid config name");
         if (override != null) return Files.newBufferedReader(override.resolve(name+".json"), StandardCharsets.UTF_8);
         InputStream stream=Configs.class.getResourceAsStream("/config/"+name+".json");
@@ -52,6 +52,13 @@ public final class Configs {
         } else if (cls.isPrimitive() || Number.class.isAssignableFrom(cls)) {
             if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber() || !Double.isFinite(value.getAsDouble())) throw new IllegalArgumentException(path+" must be finite numeric");
             if ((cls==int.class || cls==long.class) && value.getAsDouble()!=Math.rint(value.getAsDouble())) throw new IllegalArgumentException(path+" must be integer");
+            if ((cls==float.class || cls==Float.class) && !Float.isFinite(value.getAsFloat())) throw new IllegalArgumentException(path+" exceeds float range");
+            if (cls==int.class || cls==Integer.class || cls==long.class || cls==Long.class) {
+                try {
+                    if(cls==int.class||cls==Integer.class)value.getAsBigDecimal().intValueExact();
+                    else value.getAsBigDecimal().longValueExact();
+                } catch(ArithmeticException e) {throw new IllegalArgumentException(path+" exceeds integer range",e);}
+            }
         }
     }
     public static Gson gson() { return GSON; }

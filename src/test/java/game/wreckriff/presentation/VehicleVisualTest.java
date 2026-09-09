@@ -21,6 +21,16 @@ class VehicleVisualTest {
                 Mesh mesh=geometry.getMesh();triangles[0]+=mesh.getTriangleCount();draws[0]++;
                 FloatBuffer positions=(FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
                 for(int i=0;i<positions.limit();i++) assertTrue(Float.isFinite(positions.get(i)));
+                for(var type:List.of(VertexBuffer.Type.Normal,VertexBuffer.Type.TexCoord,VertexBuffer.Type.Tangent)) {
+                    assertNotNull(mesh.getBuffer(type),"Textured vehicle mesh requires "+type);
+                    FloatBuffer data=(FloatBuffer)mesh.getBuffer(type).getData();
+                    for(int i=0;i<data.limit();i++)assertTrue(Float.isFinite(data.get(i)),"Finite normal-map basis required");
+                }
+                if(geometry.getName().equals("paint")) {
+                    assertNotNull(geometry.getMaterial().getParam("DiffuseMap"));
+                    assertNotNull(geometry.getMaterial().getParam("NormalMap"));
+                    assertNotNull(geometry.getMaterial().getParam("SpecularMap"));
+                }
             }});
             assertTrue(triangles[0]>800,"Complete detailed authored car required");
             assertTrue(triangles[0]<=8000,"Per-vehicle triangle budget: "+triangles[0]);

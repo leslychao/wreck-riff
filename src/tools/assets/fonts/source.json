@@ -1,0 +1,11 @@
+{
+  "sourceUrl": "https://github.com/googlefonts/roboto-classic/releases/download/v3.008/Roboto_v3.008.zip",
+  "sourceCommit": "8aa699a9a715be7ecf6be41171e2851a580f0fb8",
+  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotocondensed/OFL.txt",
+  "acquired": "2026-09-09",
+  "archiveSha256": "64c51d5d69c36c9a71dca214cd80b699e637a57d1c19744ef46a23f91347bd24",
+  "files": {
+    "RobotoCondensed-Bold.ttf": "dbdb744bb15be1c65a491d05753c8717dde034ae3c37c590a6b0c53ff3458a33",
+    "RobotoCondensed-Regular.ttf": "5d4b57bbd49d25520cbd6f9be56053be85a050149e4f41f5ba47cb1463314086"
+  }
+}

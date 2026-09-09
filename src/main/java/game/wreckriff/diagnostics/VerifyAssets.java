@@ -6,6 +6,7 @@ import game.wreckriff.arena.ArenaDefinition;
 import game.wreckriff.audio.*;
 import game.wreckriff.combat.CombatRules;
 import game.wreckriff.config.*;
+import game.wreckriff.input.GamepadProfile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -29,11 +30,15 @@ public final class VerifyAssets {
             List<Asset> assets, List<Dependency> dependencies, List<String> windowsX64Natives,
             List<String> errors, List<String> reviewItems) {}
     public record WaveMetrics(long frames, int channels, int rate, int bits, double peak, double rms, long bytes, String sha256) {}
+    record RegisterEntry(String assetId, String packagedPath, String sourceOrigin, String author,
+            String licensePermission, String licenseTextPath, String sha256, String hashScope,
+            String verificationStatus, String attributionRequired, String artifactForm) {}
     private record LicenseSource(String file, String source, List<String> components, String sha256) {}
     private record LicenseIndex(int schemaVersion, String description, List<LicenseSource> sources) {}
     private static final Map<String, Class<?>> CONFIGS = Map.of(
             "ai", AiRules.class, "arena", ArenaDefinition.class, "audio", AudioConfig.class,
-            "camera", CameraRules.class, "combat", CombatRules.class, "match", MatchRules.class, "vehicle", VehicleRules.class);
+            "camera", CameraRules.class, "combat", CombatRules.class, "gamepad", GamepadProfile.class,
+            "match", MatchRules.class, "vehicle", VehicleRules.class);
     private static final Set<String> REQUIRED_NATIVE_ENTRIES = Set.of(
             "windows/x64/org/lwjgl/lwjgl.dll", "windows/x64/org/lwjgl/glfw/glfw.dll",
             "windows/x64/org/lwjgl/openal/OpenAL.dll", "native/windows/x86_64/bulletjme.dll");
@@ -74,9 +79,17 @@ public final class VerifyAssets {
                 assets.add(asset(path, "engine-material", resource(path), "org.jmonkeyengine:jme3-core:3.8.1-stable; jme-BSD3.txt", "DEPENDENCY_RESOURCE_PRESENT"));
             }
         });
+        attempt(errors, "project materials", () -> {
+            for (String path : List.of("materials/CombatParticles.j3md", "materials/CombatParticles.vert", "materials/CombatParticles.frag")) {
+                byte[] bytes = resource(path);
+                if (bytes.length == 0) throw new IOException("Empty project material " + path);
+                assets.add(asset(path, "project-material", bytes, "src/main/resources/" + path + "; original project source", "SOURCE_PRESENT"));
+            }
+        });
         attempt(errors, "procedural sources", () -> {
             for (String path : List.of("src/tools/java/game/wreckriff/tools/GenerateAudio.java", "src/tools/java/game/wreckriff/tools/GenerateFont.java",
-                    "src/main/java/game/wreckriff/presentation/VehicleVisual.java", "src/main/java/game/wreckriff/arena/ArenaFactory.java")) {
+                    "src/main/java/game/wreckriff/presentation/VehicleVisual.java", "src/main/java/game/wreckriff/arena/ArenaFactory.java",
+                    "src/main/java/game/wreckriff/presentation/CombatVisuals.java", "src/main/java/game/wreckriff/presentation/ArenaPresentation.java")) {
                 byte[] bytes = Files.readAllBytes(Path.of(path));
                 if (bytes.length == 0) throw new IOException("Empty generator " + path);
                 assets.add(asset(path, "procedural-source", bytes, "Original project source recipe", "SOURCE_PRESENT"));
@@ -93,7 +106,64 @@ public final class VerifyAssets {
                 "REVIEW_REQUIRED", List.copyOf(assets), List.copyOf(dependencies), List.copyOf(nativeEntries), List.copyOf(errors), List.copyOf(reviews));
         Files.writeString(output.resolve("verification.json"), Configs.gson().toJson(report), StandardCharsets.UTF_8);
         Files.writeString(output.resolve("manifest.json"), Configs.gson().toJson(assets), StandardCharsets.UTF_8);
+        Properties build = new Properties();
+        try (InputStream input = uniqueResource("build-info.properties").openStream()) { build.load(input); }
+        writeAssetRegister(output.resolve("asset-register.csv"), registerEntries(assets, build.getProperty("version")));
         return report;
+    }
+
+    /** A source checksum never purports to identify the in-memory mesh produced from that source. */
+    static List<RegisterEntry> registerEntries(List<Asset> assets, String version) {
+        if (version == null || !version.matches("[0-9]+\\.[0-9]+\\.[0-9]+")) throw new IllegalArgumentException("Missing/invalid build version for asset registry");
+        List<RegisterEntry> entries = new ArrayList<>();
+        for (Asset asset : assets) {
+            boolean source = asset.category.equals("procedural-source");
+            boolean runtimeGeometry = source && asset.path.startsWith("src/main/");
+            String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
+            String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
+            String origin = source ? asset.path : asset.source;
+            if (Set.of("music", "sound-effect", "audio-metrics", "score").contains(asset.category)) {
+                origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
+            } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
+                origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
+            }
+            String author = "Wreck Riff project contributors/tooling; ownership review pending";
+            String permission = "Original project content; no distribution license assigned; owner review required";
+            String license = "", attribution = "OWNER_REVIEW_REQUIRED";
+            if (asset.category.equals("engine-material")) {
+                packaged = "app/jme3-core-3.8.1-stable.jar!/" + asset.path;
+                author = "jMonkeyEngine contributors; see retained upstream notice";
+                permission = "BSD-3-Clause; subject to the retained upstream notice";
+                license = "licenses/jme-BSD3.txt";
+                attribution = "RETAIN_COPYRIGHT_AND_LICENSE_NOTICE";
+            } else if (asset.category.equals("third-party-license")) {
+                author = "Upstream rights holders identified in this notice";
+                permission = "Retained upstream license evidence; no new permission granted";
+                license = asset.path;
+                attribution = "SEE_UPSTREAM_NOTICE";
+            } else if (asset.category.equals("license-evidence-index")) {
+                permission = "Evidence index; component permissions remain in their original notices";
+                license = "licenses/THIRD_PARTY_NOTICES.md";
+                attribution = "SEE_COMPONENT_NOTICES";
+            }
+            String form = runtimeGeometry ? "RUNTIME_GEOMETRY_NOT_PACKAGED; generated by " + Path.of(asset.path).getFileName()
+                    : source ? "BUILD_GENERATOR_NOT_PACKAGED" : "PACKAGED_RESOURCE";
+            entries.add(new RegisterEntry(id, packaged, origin, author, permission, license, asset.sha256,
+                    source ? "SOURCE_GENERATOR_BYTES; NOT_RUNTIME_MESH_OR_COMPILED_CLASS_BYTES" : "PACKAGED_RESOURCE_BYTES",
+                    asset.status + "; DISTRIBUTION_REVIEW_REQUIRED", attribution, form));
+        }
+        return List.copyOf(entries);
+    }
+
+    private static void writeAssetRegister(Path output, List<RegisterEntry> entries) throws IOException {
+        StringBuilder csv = new StringBuilder("asset_id,packaged_path,source_origin,author,license_permission,license_text_path,sha256,hash_scope,verification_status,attribution_required,artifact_form\n");
+        for (RegisterEntry entry : entries) {
+            List<String> fields = List.of(entry.assetId, entry.packagedPath, entry.sourceOrigin, entry.author,
+                    entry.licensePermission, entry.licenseTextPath, entry.sha256, entry.hashScope,
+                    entry.verificationStatus, entry.attributionRequired, entry.artifactForm);
+            csv.append(String.join(",", fields.stream().map(value -> "\"" + value.replace("\"", "\"\"") + "\"").toList())).append('\n');
+        }
+        Files.writeString(output, csv, StandardCharsets.UTF_8);
     }
 
     private static void verifyAudio(List<Asset> assets) throws Exception {

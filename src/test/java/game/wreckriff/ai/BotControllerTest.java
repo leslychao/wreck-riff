@@ -80,4 +80,17 @@ class BotControllerTest {
         world.wall=false; session.tick=12; bots.commands(world);
         assertFalse(bots.route(0).contains(33),"A visibly unavailable upper repair must no longer be the destination");
     }
+    @Test void lowTurboSeeksCellsAfterRepairAndAmmoAndKeepsAnUsefulRouteDuringRegen() {
+        MatchSession session=new MatchSession(2,360);TestWorld world=new TestWorld();
+        world.positions[0]=new Vector3f(0,.8f,-36);session.vehicle(0).turbo=19;
+        BotController bots=new BotController(session,arena,rules);
+        bots.commands(world);
+        assertEquals(new Vector3f(0,0,-20),bots.metrics(0).destination());
+        session.vehicle(0).turbo=21;session.tick=12;bots.commands(world);
+        assertEquals(new Vector3f(0,0,-20),bots.metrics(0).destination());
+        session.vehicle(0).hp=60;session.tick=24;bots.commands(world);
+        assertEquals(BotController.State.SEEK_PICKUP,bots.state(0));
+        assertTrue(arena.pickups().stream().anyMatch(p->p.type()==ArenaDefinition.PickupType.REPAIR
+                && p.position().vector().equals(bots.metrics(0).destination())));
+    }
 }

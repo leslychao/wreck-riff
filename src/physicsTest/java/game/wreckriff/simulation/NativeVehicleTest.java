@@ -1,5 +1,7 @@
 package game.wreckriff.simulation;
 
+import game.wreckriff.combat.AbilityId;
+
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.math.*;
 import game.wreckriff.config.*;
@@ -9,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeVehicleTest {
-    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,false,0,false,false);
-    private static final VehicleCommand BRAKE=new VehicleCommand(0,1,0,false,false,false,false,false,0,false,false);
+    private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,false,0,false,false,AbilityId.NONE);
+    private static final VehicleCommand BRAKE=new VehicleCommand(0,1,0,false,false,false,false,false,0,false,false,AbilityId.NONE);
     private PhysicsWorld world() {
         PhysicsWorld world=new PhysicsWorld(VehicleRules.load());
         world.addStatic(new BoxCollisionShape(new Vector3f(300,0.5f,300)),new Vector3f(0,-0.5f,0),new Quaternion());
@@ -47,7 +49,7 @@ class NativeVehicleTest {
         try(PhysicsWorld world=world()) {
             VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true),VehicleRules.load());
             for(int i=0;i<120;i++) { controller.drive(GAS); world.step(); }
-            VehicleCommand turn=new VehicleCommand(1,0,0.7f,false,false,false,false,false,0,false,false);
+            VehicleCommand turn=new VehicleCommand(1,0,0.7f,false,false,false,false,false,0,false,false,AbilityId.NONE);
             for(int i=0;i<120;i++) { controller.drive(turn); world.step(); }
             System.out.printf("P02 steer result position=%s forward=%s%n",world.position(0),world.forward(0));
             assertTrue(world.position(0).x>1,"Positive steering must turn +X");

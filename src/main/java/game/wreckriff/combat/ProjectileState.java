@@ -10,6 +10,7 @@ public final class ProjectileState {
     final Vector3f position;
     final Vector3f previousPosition;
     final Vector3f direction;
+    final Vector3f velocity=new Vector3f();
     int remainingTicks;
     int targetId;
     int occludedTicks;
