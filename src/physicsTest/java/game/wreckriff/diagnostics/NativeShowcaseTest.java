@@ -22,6 +22,13 @@ class NativeShowcaseTest {
             for(int step=0;step<CombatShowcase.SECONDS*120;step++) {
                 assertEquals(MatchSession.Outcome.NONE,session.outcome,"Demo must retain a living player");
                 showcase.accept(runtime.tick(showcase.commands(),false));
+                if(session.tick==1980) {
+                    var target=session.vehicle(1);
+                    assertTrue(target.frozenTicks>0,"Freeze capture must show an active native freeze");
+                    assertEquals(target.maximumHp*.5f,target.hp,.001f,"Freeze must be shown over damaged panels");
+                }
+                if(session.tick==3481)assertTrue(world.position(0).distance(world.position(2))>6,
+                        "Cannon shooter must not overlap the earlier shield-test car");
             }
             assertTrue(showcase.complete());
             assertTrue(showcase.demonstrated(),()->showcase.evidence().toString());

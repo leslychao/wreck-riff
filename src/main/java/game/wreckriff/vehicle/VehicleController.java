@@ -13,15 +13,20 @@ public final class VehicleController {
         public static final Recovery NONE=new Recovery(false,false,0,"");
     }
     private record SafePose(long tick,Vector3f position,Quaternion rotation) {}
+    private record RetreatPoint(long tick,Vector3f point) {}
+    private static final int RETREAT_TICKS=10*MatchSession.TICKS_PER_SECOND;
     private final PhysicsWorld world;
     private final VehicleState state;
     private final VehicleRules rules;
     private final Deque<SafePose> safe=new ArrayDeque<>();
+    private final Deque<RetreatPoint> retreat=new ArrayDeque<>();
+    private long recordedTeleportGeneration;
     private float steering, rearGrip;
     private int reverseWait, forwardWait, recoveryHold;
     private boolean reversing, turboActive;
     public VehicleController(PhysicsWorld world,VehicleState state,VehicleRules rules) {
         this.world=world; this.state=state; this.rules=rules; rearGrip=rules.frictionSlip();
+        recordedTeleportGeneration=world.teleportGeneration(state.id);
         safe.add(new SafePose(-120,world.position(state.id),world.rotation(state.id)));
     }
     public boolean reversing() { return reversing; }
@@ -37,6 +42,7 @@ public final class VehicleController {
         if (!emergency && (recoveryHold<seconds(rules.recoveryHold()) || state.recoveryCooldown>0)) return Recovery.NONE;
         if (emergency || requested) {
             recoveryHold=0;
+            Map<Long,Vector3f> clearRetreat=null;
             Iterator<SafePose> candidates=safe.descendingIterator();
             while (candidates.hasNext()) {
                 SafePose pose=candidates.next();
@@ -45,8 +51,14 @@ public final class VehicleController {
                 if (ground==null || ground.vehicleId()>=0 || ground.normal().y<0.75f) continue;
                 // Historical recovery must not shortcut through a closed wall.
                 WorldQuery.Hit barrier=world.staticSweep(p.add(0,0.5f,0),pose.position().add(0,0.5f,0),0.2f);
-                if (barrier!=null && barrier.fraction()<0.98f) continue;
+                if (barrier!=null && barrier.fraction()<0.98f) {
+                    if(!emergency)continue;
+                    if(clearRetreat==null)clearRetreat=clearRecordedRetreat(p,tick);
+                    Vector3f visited=clearRetreat.get(pose.tick());
+                    if(visited==null||visited.distanceSquared(pose.position().add(0,.5f,0))>1e-8f)continue;
+                }
                 world.teleport(state.id,pose.position(),pose.rotation());
+                retreat.clear();recordedTeleportGeneration=world.teleportGeneration(state.id);
                 state.recoveryCooldown=seconds(rules.recoveryCooldown());
                 state.protectionTicks=seconds(rules.recoveryProtection());
                 state.recoveries++;
@@ -129,13 +141,32 @@ public final class VehicleController {
         return state.impactStabilizerTicks>returning?0:1-Math.max(0,state.impactStabilizerTicks-1)/(float)returning;
     }
     public void recordSafePose(long tick) {
+        if(!state.alive())return;
+        long generation=world.teleportGeneration(state.id);
+        if(generation!=recordedTeleportGeneration||(!retreat.isEmpty()&&retreat.getLast().tick()!=tick-1))retreat.clear();
+        recordedTeleportGeneration=generation;
+        retreat.addLast(new RetreatPoint(tick,world.position(state.id).add(0,.5f,0)));
+        while(retreat.size()>RETREAT_TICKS+1||retreat.getFirst().tick()<tick-RETREAT_TICKS)retreat.removeFirst();
         // A chassis hanging over an edge is not a safe recovery destination.
-        if (!state.alive() || tick%12!=0 || world.wheelContacts(state.id)<4) return;
+        if (tick%12!=0 || world.wheelContacts(state.id)<4) return;
         Vector3f position=world.position(state.id);
         if (Math.abs(position.x)>76 || Math.abs(position.z)>66 || world.rotation(state.id).mult(Vector3f.UNIT_Y).y<0.9f) return;
         if (!world.freePose(state.id,position,world.rotation(state.id))) return;
         safe.addLast(new SafePose(tick,position,world.rotation(state.id)));
         while (safe.size()>100) safe.removeFirst();
+    }
+    private Map<Long,Vector3f> clearRecordedRetreat(Vector3f from,long tick) {
+        if(world.teleportGeneration(state.id)!=recordedTeleportGeneration||retreat.isEmpty()
+                ||retreat.getLast().tick()!=tick-1)return Map.of();
+        Map<Long,Vector3f> reachable=new HashMap<>();Vector3f cursor=from.add(0,.5f,0);
+        for(var iterator=retreat.descendingIterator();iterator.hasNext();) {
+            RetreatPoint recorded=iterator.next();if(recorded.tick()<tick-RETREAT_TICKS)break;
+            // Every waypoint was actually occupied. Recheck the complete reverse path
+            // against today's static geometry; a newly closed passage breaks it.
+            if(cursor.distanceSquared(recorded.point())>1e-10f&&world.staticSweep(cursor,recorded.point(),.2f)!=null)break;
+            reachable.put(recorded.tick(),recorded.point());cursor=recorded.point();
+        }
+        return reachable;
     }
     private static int seconds(float duration) { return Math.round(duration*120); }
 }

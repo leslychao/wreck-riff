@@ -19,7 +19,7 @@ class MatchRuntimeTest {
     private record BattleResult(int seed,long ticks,String outcome,String reason,float seconds,int shotEvents,
             float externalDamage,int pickups,int maximumProjectiles,float firstEncounterSeconds,float firstShotSeconds,float firstExternalDamageSeconds,
             int fatalRecoveries,List<DriverResult> drivers) {}
-    private record RecoveryEpisode(int seed,int vehicleId,long tick,Vector3f before,Vector3f after,
+    private record RecoveryEpisode(int seed,int vehicleId,long tick,String cause,Vector3f before,Vector3f after,
             Vector3f forward,Vector3f velocity,float upright,Vector3f goal,List<Integer> path,
             long ticksSinceExternalDamage,String lastExternalDamage,CannonHistory lastDirectCannon) {}
     private record UpSample(long tick,String phase,float upright,int wheelContacts,Vector3f position,
@@ -111,7 +111,7 @@ class MatchRuntimeTest {
                         }
                     }
                     boolean[] recovered=new boolean[5];
-                    for(var event:events)if(event.type()==GameEvent.Type.DAMAGE&&event.kind().equals("recovery"))recovered[event.subjectId()]=true;
+                    for(var event:events)if(event.type()==GameEvent.Type.DAMAGE&&(event.kind().equals("recovery")||event.kind().equals("out-of-bounds")))recovered[event.subjectId()]=true;
                     for(int id=0;id<5;id++)if(cannonTraces[id]!=null) {
                         // Recovery teleports in prepare(), so its pre-step pose is the final
                         // physical sample; the upright replacement must not clear the chain.
@@ -132,9 +132,9 @@ class MatchRuntimeTest {
                             damage+=event.value();if (firstDamage<0 && event.value()>0) firstDamage=session.seconds();
                             lastExternalTick[event.subjectId()]=session.tick-1;lastExternalKind[event.subjectId()]=event.kind();
                         }
-                        if (event.type()==GameEvent.Type.DAMAGE && event.kind().equals("recovery")) {
+                        if (event.type()==GameEvent.Type.DAMAGE && (event.kind().equals("recovery")||event.kind().equals("out-of-bounds"))) {
                             int id=event.subjectId();
-                            recoveryEpisodes.add(new RecoveryEpisode(seed,id,session.tick-1,before[id],world.position(id),forward[id],velocity[id],
+                            recoveryEpisodes.add(new RecoveryEpisode(seed,id,session.tick-1,event.kind(),before[id],world.position(id),forward[id],velocity[id],
                                     upright[id],runtime.bots().metrics(id).destination(),runtime.bots().route(id),
                                     lastExternalTick[id]<0?-1:session.tick-1-lastExternalTick[id],lastExternalKind[id],
                                     cannonTraces[id]==null?null:cannonTraces[id].snapshot()));

@@ -47,9 +47,9 @@ class BotArsenalAndWarningsTest {
         assertFalse(napalmRequested(61,0,Vector3f.ZERO));
         assertFalse(napalmRequested(30,13,Vector3f.ZERO));
     }
-    @Test void ballisticNeedsVisibleRangeLockAndOpenCarrierClearance() {
+    @Test void ballisticUsesImmediateVisibleFrontSelectionAndOpenCarrierClearance() {
         assertTrue(ballisticRequested(35,false,false));
-        assertFalse(ballisticRequested(15,false,false));
+        assertTrue(ballisticRequested(15,false,false));
         assertFalse(ballisticRequested(72,false,false));
         assertFalse(ballisticRequested(35,true,false));
         assertFalse(ballisticRequested(35,false,true));

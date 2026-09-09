@@ -90,25 +90,6 @@ class NewArsenalTest {
         assertEquals(1,explosions.size());assertEquals("cannon-ricochet",explosions.getFirst().kind());
         assertEquals(3.5f,explosions.getFirst().value());assertEquals(1,combat.projectiles().getFirst().ricochets());
     }
-    @Test void ballisticCorrectionsAreBoundedAndStopPermanentlyWhenTheTargetDies() {
-        world.floor=true;world.positions[1].set(0,1,40);
-        for(int i=0;i<18;i++)tick(VehicleCommand.NONE);
-        tick(fire(WeaponType.BALLISTIC));world.positions[1].x=30;
-        Set<Long> ids=new HashSet<>();List<Vector3f> centers=new ArrayList<>();
-        for(int i=0;i<700;i++) {
-            for(var warning:combat.ballisticWarnings())if(ids.add(warning.id())) {
-                int index=centers.size();Vector3f offset=switch(index) {case 0->new Vector3f(-2,0,0);case 1->new Vector3f(0,0,2);case 2->new Vector3f(2,0,0);default->new Vector3f(0,0,-2);};
-                Vector3f center=warning.point().subtract(offset);centers.add(center);
-                assertTrue(center.distance(new Vector3f(0,0,40))<=6.001f);
-                if(index>0)assertTrue(center.distance(centers.get(index-1))<=3.001f);
-                if(index==1)session.vehicle(1).hp=0;
-            }
-            tick(VehicleCommand.NONE);
-        }
-        assertEquals(4,centers.size());assertEquals(3,centers.get(0).x,.01f);assertEquals(6,centers.get(1).x,.01f);
-        assertTrue(centers.get(1).distance(centers.get(2))<.0001f,"No correction after target death, within float precision");
-        assertTrue(centers.get(2).distance(centers.get(3))<.0001f,"The following charge retains the frozen centre");
-    }
     @Test void salvoReservesFiveSlotsAtomicallyAndFreesCancelledCarrierReservations() {
         for(var vehicle:session.vehicles)vehicle.initializeWeapon(WeaponType.HOMING,12,12);
         for(int i=0;i<12;i++) {

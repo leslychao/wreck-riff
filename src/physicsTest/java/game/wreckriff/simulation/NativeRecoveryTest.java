@@ -1,6 +1,8 @@
 package game.wreckriff.simulation;
 
 import game.wreckriff.combat.AbilityId;
+import game.wreckriff.combat.WeaponType;
+import game.wreckriff.arena.*;
 
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.math.Quaternion;
@@ -9,11 +11,57 @@ import game.wreckriff.config.VehicleRules;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.vehicle.VehicleController;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeRecoveryTest {
     private static final VehicleCommand RECOVER = new VehicleCommand(0, 0, 0, false, false, false, false, null, 0, false, true,AbilityId.NONE);
+
+    @ParameterizedTest @ValueSource(strings={"clear","closed","teleported","manual"})
+    void cannonArcCanRetreatOverAWallOnlyWhileItsRecordedNativePathRemainsValid(String route) {
+        VehicleRules rules=VehicleRules.load();MatchSession session=new MatchSession(42,360);
+        try(PhysicsWorld world=new PhysicsWorld(rules)) {
+            world.addStatic(new BoxCollisionShape(new Vector3f(100,.5f,100)),new Vector3f(0,-.5f,0),new Quaternion());
+            world.addStatic(new BoxCollisionShape(new Vector3f(.25f,.75f,30)),new Vector3f(79,.75f,0),new Quaternion());
+            world.addVehicle(0,new Vector3f(69,1,0),new Quaternion().fromAngleAxis((float)Math.PI/2,Vector3f.UNIT_Y));
+            world.addVehicle(1,new Vector3f(74,1,0),new Quaternion());
+            for(int id=2;id<5;id++)world.addVehicle(id,new Vector3f(-40,1,-40+id*10),new Quaternion());
+            for(int i=0;i<240;i++)world.step();
+            ArenaDefinition arena=ArenaDefinition.load();
+            try(MatchRuntime runtime=new MatchRuntime(session,world,arena,new NavGraph(arena),rules)) {
+                for(int i=0;i<120;i++)runtime.tick(Map.of(),false);
+                VehicleCommand cannon=new VehicleCommand(0,0,0,false,false,false,true,WeaponType.CANNON,0,false,false,AbilityId.NONE);
+                runtime.tick(Map.of(0,cannon),false);
+                boolean crossed=false,directBlocked=false,intervened=false,recovered=false,fatal=false;Vector3f emergencyPose=null;
+                for(int i=0;i<360;i++) {
+                    Vector3f before=world.position(1);
+                    if(before.x>81&&!intervened) {
+                        crossed=true;intervened=true;
+                        if(route.equals("closed"))world.addStatic(new BoxCollisionShape(new Vector3f(.25f,6,30)),new Vector3f(79,6,0),new Quaternion());
+                        if(route.equals("teleported")) {
+                            Vector3f linear=world.velocity(1),angular=world.vehicle(1).getAngularVelocity();
+                            world.teleport(1,before,world.rotation(1));world.vehicle(1).setLinearVelocity(linear);world.vehicle(1).setAngularVelocity(angular);
+                        }
+                        if(route.equals("manual")) {world.vehicle(1).setLinearVelocity(Vector3f.ZERO);world.vehicle(1).setAngularVelocity(Vector3f.ZERO);}
+                    }
+                    if(before.x>82||(route.equals("manual")&&crossed)) {emergencyPose=before;directBlocked|=world.staticSweep(before.add(0,.5f,0),new Vector3f(74,.929f,0),.2f)!=null;}
+                    Map<Integer,VehicleCommand> commands=route.equals("manual")&&crossed?Map.of(1,RECOVER):Map.of();
+                    for(var event:runtime.tick(commands,false))if(event.type()==GameEvent.Type.DAMAGE&&event.subjectId()==1) {
+                        recovered|=event.kind().equals("recovery");fatal|=event.kind().equals("out-of-bounds");
+                    }
+                    if(recovered||fatal)break;
+                }
+                assertTrue(crossed,"Real Cannon must carry the chassis over the wall; final="+world.position(1));
+                assertTrue(directBlocked,"The direct recovery segment must be blocked by the wall; emergency="+emergencyPose+" final="+world.position(1));
+                assertEquals(route.equals("clear"),recovered,"Only continuous, clear native history authorizes retreat");
+                assertEquals(route.equals("closed")||route.equals("teleported"),fatal);
+                if(recovered) {assertEquals(1,session.vehicle(1).recoveries);assertTrue(world.position(1).x<76);assertEquals(4,world.wheelContacts(1));}
+            }
+        }
+    }
 
     @Test void recoveryRejectsNewerTwoWheelEdgePoseAndUsesFullySupportedHistory() {
         VehicleRules rules = VehicleRules.load();

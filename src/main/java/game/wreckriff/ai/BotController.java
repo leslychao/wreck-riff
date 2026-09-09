@@ -238,7 +238,7 @@ public final class BotController {
             var assist=combat.napalm().assist();
             // CombatSystem owns the 0.25s/5m lead and guided arc; the driver uses its actual assist envelope.
             if(distance>=assist.minimumRange()&&distance<=assist.maximumRange()&&angle<=assist.coneDegrees())eligible.add(WeaponType.NAPALM);
-            if(locked&&distance>=combat.ballistic().minimumRange()&&distance<=combat.ballistic().maximumRange()
+            if(CombatSystem.selectBallisticTarget(session,self.id,world)>=0
                     &&world.staticSweep(muzzle,muzzle.add(0,combat.ballistic().carrierHeight(),0),.25f)==null)eligible.add(WeaponType.BALLISTIC);
             Vector3f cannonLead=target.position().add(target.velocity().mult(distance/combat.cannon().speed())).subtract(muzzle);
             if(distance>combat.cannon().splashRadius()+4&&distance<=Math.min(rules.machineGunRange(),combat.cannon().speed())
@@ -672,7 +672,9 @@ public final class BotController {
             var bounds=arena.bounds();
             if (candidate.x<bounds.minX()+3 || candidate.x>bounds.maxX()-3
                     || candidate.z<bounds.minZ()+3 || candidate.z>bounds.maxZ()-3) continue;
-            WorldQuery.Hit ground=world.ray(candidate.add(0,6,0),candidate.add(0,-7,0),id);
+            // Sample the current driving level. A ray above the garage roof would
+            // see its non-drivable top and reject the clear passing floor below it.
+            WorldQuery.Hit ground=world.ray(candidate.add(0,2,0),candidate.add(0,-3,0),id);
             if (ground==null || ground.vehicleId()>=0 || ground.normal().y<.65f || !roadSurface(ground.point())) continue;
             candidate.y=ground.point().y+.45f;
             WorldQuery.Hit obstacle=world.sweep(position.add(0,1.2f,0),candidate.add(0,1.2f,0),1.05f,id);

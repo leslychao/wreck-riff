@@ -23,17 +23,28 @@ public final class CombatSystem {
     }
     private static final class Salvo {
         final ProjectileState carrier;
-        final Vector3f initialArea,area,station;
+        final Vector3f area,station;
         final int arrivalTicks;
         int targetId,planned,released;
         long nextPlanTick=Long.MAX_VALUE;
         Salvo(ProjectileState carrier,Vector3f area,int arrivalTicks) {
-            this.carrier=carrier;initialArea=area.clone();this.area=area.clone();station=new Vector3f();
+            this.carrier=carrier;this.area=area.clone();station=new Vector3f();
             this.arrivalTicks=arrivalTicks;targetId=carrier.targetId;
         }
     }
-    private record FallingCharge(long id,int ownerId,long carrierId,Vector3f origin,Vector3f velocity,
-            Vector3f point,Vector3f normal,long releaseTick,long impactTick,int lifeTicks) {}
+    private static final class FallingCharge {
+        final long id,carrierId,releaseTick;
+        final int ownerId,targetId,lifeTicks;
+        final Vector3f origin,velocity,offset,point,normal;
+        long impactTick;
+        FallingCharge(long id,int ownerId,long carrierId,int targetId,Vector3f origin,Vector3f velocity,
+                Vector3f offset,Prediction prediction,long releaseTick,int lifeTicks) {
+            this.id=id;this.ownerId=ownerId;this.carrierId=carrierId;this.targetId=targetId;
+            this.origin=origin;this.velocity=velocity;this.offset=offset;
+            this.point=prediction.hit.point().clone();this.normal=prediction.hit.normal().clone();
+            this.releaseTick=releaseTick;this.impactTick=releaseTick+prediction.ticks;this.lifeTicks=lifeTicks;
+        }
+    }
     public record MineView(long id,int ownerId,Vector3f position,Vector3f normal,boolean armed,float radius) {
         public MineView { position=position.clone();normal=normal.clone(); }
     }
@@ -167,7 +178,7 @@ public final class CombatSystem {
         }
         int target=switch(type) {
             case HOMING->lockTarget(vehicle.id);case NAPALM->napalmAssistTarget(vehicle.id);
-            case BALLISTIC->ballisticTarget(vehicle.id,world);default->-1;
+            case BALLISTIC->selectBallisticTarget(session,vehicle.id,world);default->-1;
         };
         intents.add(new ShotIntent(nextShotId++,vehicle.id,type.id(),target,0,0,0));
         slot.ammo--;
@@ -254,7 +265,7 @@ public final class CombatSystem {
                 if (projectile.remainingTicks <= 0) explode(projectile, null, world);
             }
         }
-        releaseCharges();
+        releaseCharges(world);
         projectiles.removeIf(projectile -> projectile.exploded);
         advanceMines(world);
         advanceFire(world);
@@ -466,10 +477,22 @@ public final class CombatSystem {
         }
         return best;
     }
-    private int ballisticTarget(int owner,WorldQuery world) {
-        int id=lockTarget(owner);if(id<0)return -1;
-        float distance=world.muzzle(owner).distance(world.position(id));
-        return distance>=rules.ballistic().minimumRange()&&distance<=rules.ballistic().maximumRange()?id:-1;
+    public int ballisticTarget(int owner) {
+        return lastWorld==null||!session.vehicle(owner).alive()?-1:selectBallisticTarget(session,owner,lastWorld);
+    }
+    /** Shared immediate selection for shot acceptance, HUD and AI; no Homing lock timer. */
+    public static int selectBallisticTarget(MatchSession session,int owner,WorldQuery world) {
+        Vector3f origin=world.position(owner),muzzle=world.muzzle(owner),forward=forwardXZ(owner,world);
+        float bestDistance=Float.POSITIVE_INFINITY,range=session.combatRules.ballistic().maximumRange();int best=-1;
+        for(var target:session.vehicles) {
+            if(!target.alive()||target.id==owner)continue;
+            Vector3f position=world.position(target.id),delta=position.subtract(origin);float distance=delta.lengthSquared();
+            if(distance>range*range||forward.dot(delta)<=0||!world.visible(muzzle,position,target.id))continue;
+            if(distance<bestDistance||(Float.compare(distance,bestDistance)==0&&(best<0||target.id<best))) {
+                best=target.id;bestDistance=distance;
+            }
+        }
+        return best;
     }
     private static Vector3f horizontal(Vector3f value) {Vector3f result=value.clone();result.y=0;return result;}
     private static Vector3f forwardXZ(int owner,WorldQuery world) {
@@ -646,13 +669,7 @@ public final class CombatSystem {
         var ballistic=rules.ballistic();
         if(salvo.targetId>=0) {
             if(!session.vehicle(salvo.targetId).alive()||!world.visible(salvo.carrier.position,world.position(salvo.targetId),salvo.targetId))salvo.targetId=-1;
-            else {
-                Vector3f correction=horizontal(world.position(salvo.targetId).subtract(salvo.area));
-                if(correction.length()>ballistic.correctionDistance())correction.normalizeLocal().multLocal(ballistic.correctionDistance());
-                Vector3f updated=salvo.area.add(correction),total=horizontal(updated.subtract(salvo.initialArea));
-                if(total.length()>ballistic.maximumCorrection())total.normalizeLocal().multLocal(ballistic.maximumCorrection());
-                salvo.area.set(groundPoint(salvo.initialArea.add(total),world));
-            }
+            else salvo.area.set(groundPoint(world.position(salvo.targetId),world));
         }
         float spread=ballistic.spread();Vector3f offset=switch(salvo.planned) {
             case 0->new Vector3f(-spread,0,0);case 1->new Vector3f(0,0,spread);
@@ -665,28 +682,33 @@ public final class CombatSystem {
         Prediction prediction=predictCharge(origin,velocity,lifeTicks,world);
         if(prediction==null) {reservedCharges--;salvo.released++;return;}
         long id=nextShotId++,release=session.tick+ticks(ballistic.minimumWarningSeconds());
-        FallingCharge charge=new FallingCharge(id,salvo.carrier.ownerId(),salvo.carrier.id(),origin,velocity,
-                prediction.hit.point().clone(),prediction.hit.normal().clone(),release,release+prediction.ticks,lifeTicks);
+        FallingCharge charge=new FallingCharge(id,salvo.carrier.ownerId(),salvo.carrier.id(),salvo.targetId,
+                origin,velocity,offset,prediction,release,lifeTicks);
         pendingCharges.add(charge);warnings.put(id,charge);
     }
     private record Prediction(WorldQuery.Hit hit,int ticks) {}
     private Prediction predictCharge(Vector3f origin,Vector3f initialVelocity,int lifeTicks,WorldQuery world) {
         Vector3f position=origin.clone(),velocity=initialVelocity.clone();
-        for(int tick=1;tick<=lifeTicks;tick++) {
-            Vector3f end=position.add(velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
+        // Preview the current ballistic path, not a promise of a fixed impact point.
+        // Six-tick sweeps bound preview cost; real contacts still sweep every native step.
+        for(int tick=0;tick<lifeTicks;) {
+            int steps=Math.min(6,lifeTicks-tick);float dt=steps*MatchSession.DT;
+            Vector3f end=position.add(velocity.mult(dt)).addLocal(0,-.5f*rules.ballistic().gravity()*dt*dt,0);
             WorldQuery.Hit hit=world.staticSweep(position,end,rules.projectileRadius());
-            if(hit!=null)return new Prediction(hit,tick);
-            position.set(end);velocity.y-=rules.ballistic().gravity()*MatchSession.DT;
+            if(hit!=null)return new Prediction(hit,tick+Math.max(1,Math.round(steps*hit.fraction())));
+            position.set(end);velocity.y-=rules.ballistic().gravity()*dt;tick+=steps;
         }
         return null;
     }
-    private void releaseCharges() {
+    private void releaseCharges(WorldQuery world) {
         for(var iterator=pendingCharges.iterator();iterator.hasNext();) {
             FallingCharge charge=iterator.next();if(session.tick<charge.releaseTick)continue;
             Salvo salvo=salvos.get(charge.carrierId);
             if(salvo==null)throw new IllegalStateException("Orphaned ballistic reservation");
+            int target=salvo.targetId<0?-1:charge.targetId;
+            if(target>=0&&(!session.vehicle(target).alive()||!world.visible(charge.origin,world.position(target),target)))target=-1;
             ProjectileState projectile=new ProjectileState(charge.id,charge.ownerId,"ballistic-fall",charge.origin,
-                    charge.velocity,charge.lifeTicks,-1);
+                    charge.velocity,charge.lifeTicks,target);
             projectile.velocity.set(charge.velocity);projectiles.add(projectile);
             events.add(new GameEvent(GameEvent.Type.SHOT,charge.id,charge.ownerId,charge.ownerId,charge.origin,
                     "ballistic-fall",0,charge.origin,Vector3f.ZERO));
@@ -695,6 +717,8 @@ public final class CombatSystem {
         }
     }
     private void advanceCharge(ProjectileState charge,WorldQuery world) {
+        FallingCharge warning=warnings.get(charge.id());
+        guideCharge(charge,warning.offset,world);
         Vector3f end=charge.position.add(charge.velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
         WorldQuery.Hit hit=world.sweep(charge.position,end,rules.projectileRadius(),charge.ownerId());
         charge.remainingTicks--;charge.ageTicks++;charge.velocity.y-=rules.ballistic().gravity()*MatchSession.DT;
@@ -703,6 +727,33 @@ public final class CombatSystem {
         else {
             charge.position.set(end);
             if(charge.remainingTicks<=0) {charge.exploded=true;warnings.remove(charge.id());}
+            else if(charge.ageTicks%12==1||warning.impactTick-session.tick<=12) {
+                Prediction prediction=predictCharge(charge.position,charge.velocity,charge.remainingTicks,world);
+                if(prediction!=null) {
+                    warning.point.set(prediction.hit.point());warning.normal.set(prediction.hit.normal());
+                    warning.impactTick=session.tick+1+prediction.ticks;
+                } else warning.impactTick=session.tick;
+            }
+        }
+    }
+    private void guideCharge(ProjectileState charge,Vector3f offset,WorldQuery world) {
+        if(charge.targetId<0)return;
+        int target=charge.targetId;
+        if(!session.vehicle(target).alive()||!world.visible(charge.position,world.position(target),target)) {
+            charge.targetId=-1;return;
+        }
+        Vector3f aim=world.position(target).add(offset);
+        // It remains a falling charge: no climbing back to a target that has jumped over it.
+        aim.y=Math.min(aim.y,charge.position.y-.1f);
+        Vector3f desired=aim.subtract(charge.position).normalizeLocal();
+        float speed=charge.velocity.length();if(speed<.0001f)return;
+        Vector3f direction=charge.velocity.divide(speed);
+        float angle=(float)Math.acos(Math.clamp(direction.dot(desired),-1,1));
+        float permitted=radians(rules.ballistic().turnDegreesPerSecond())*MatchSession.DT;
+        if(angle<=permitted)charge.velocity.set(desired).multLocal(speed);
+        else {
+            Vector3f axis=direction.cross(desired).normalizeLocal();
+            if(axis.lengthSquared()>0)new Quaternion().fromAngleAxis(permitted,axis).mult(charge.velocity,charge.velocity);
         }
     }
     private void ballisticImpact(ProjectileState projectile,WorldQuery.Hit hit,WorldQuery world) {
@@ -718,7 +769,8 @@ public final class CombatSystem {
                 rules.ballistic().radius(),rules.ballistic().damage(),rules.ballistic().blast(),hit.normal(),world);
     }
     public List<BallisticWarningView> ballisticWarnings() {
-        return warnings.values().stream().map(warning->new BallisticWarningView(warning.id,warning.ownerId,warning.point,warning.normal,
+        return warnings.values().stream().filter(warning->warning.impactTick>session.tick)
+                .map(warning->new BallisticWarningView(warning.id,warning.ownerId,warning.point,warning.normal,
                 rules.ballistic().radius(),(int)Math.max(0,warning.impactTick-session.tick))).toList();
     }
     public int reservedBallisticCharges() {return reservedCharges;}

@@ -26,6 +26,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<Integer,Integer> wheelContactCounts=new HashMap<>();
     private final Map<PhysicsCollisionObject,Integer> identities=new IdentityHashMap<>();
     private final Map<Integer,Pose> previous=new HashMap<>();
+    private final Map<Integer,Long> teleportGenerations=new HashMap<>();
     private final Map<Integer,Pose[]> previousWheels=new HashMap<>();
     private final Map<Integer,Vector3f> preStepVelocity=new HashMap<>();
     private final Map<Long,Ram> rams=new LinkedHashMap<>();
@@ -79,6 +80,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.addCollisionObject(body);
         body.getController().setCoordinateSystem(0,1,2);
         vehicles.put(id,body); identities.put(body,id);
+        teleportGenerations.put(id,0L);
         body.updateWheels(); refreshWheelContacts(id,body); resetInterpolation(id);
         return body;
     }
@@ -90,8 +92,10 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     public PhysicsVehicle vehicle(int id) { return vehicles.get(id); }
     public boolean containsVehicle(int id) { return vehicles.containsKey(id); }
+    public long teleportGeneration(int id) {return teleportGenerations.getOrDefault(id,0L);}
     public void removeVehicle(int id) {
         immobilize(id,false);
+        teleportGenerations.remove(id);
         if(vehicles.containsKey(id))resetInterpolation(id);
         PhysicsVehicle body=vehicles.remove(id);
         if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id); }
@@ -324,6 +328,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     public void teleport(int id,Vector3f position,Quaternion rotation) {
         immobilize(id,false);
+        teleportGenerations.merge(id,1L,Long::sum);
         PhysicsVehicle body=vehicle(id); body.setPhysicsLocation(position); body.setPhysicsRotation(rotation);
         body.setLinearVelocity(Vector3f.ZERO); body.setAngularVelocity(Vector3f.ZERO); body.clearForces();
         body.resetSuspension(); body.updateWheels(); refreshWheelContacts(id,body); resetInterpolation(id);
@@ -336,7 +341,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.removeOngoingCollisionListener(contactListener);
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
         for (PhysicsRigidBody body:statics) space.removeCollisionObject(body);
-        vehicles.clear(); wheelContactCounts.clear(); identities.clear(); previous.clear(); previousWheels.clear(); statics.clear(); rams.clear(); sweepShapes.clear();
+        vehicles.clear(); wheelContactCounts.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear(); statics.clear(); rams.clear(); sweepShapes.clear();
         space.destroy();
     }
 }

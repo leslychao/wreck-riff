@@ -438,8 +438,11 @@ public final class GameApplication extends SimpleApplication {
             card.ammo().setText(slot.ammo+" / "+slot.maximumAmmo+(slot.cooldownTicks>0?"  "+cooldown(slot.cooldownTicks):""));
         }
         int assisted=combat.napalmAssistTarget(0);
+        int ballisticTarget=combat.ballisticTarget(0);
         String targeting=player.selectedWeapon==WeaponType.NAPALM
                 ?(assisted>=0?"NAPALM ASSIST: "+session.vehicle(assisted).name:"NAPALM: FREE ARC")
+                :player.selectedWeapon==WeaponType.BALLISTIC
+                ?(ballisticTarget>=0?"BALLISTIC TARGET: "+session.vehicle(ballisticTarget).name:"BALLISTIC: FORWARD SALVO")
                 :lock>=0?"LOCK: "+session.vehicle(lock).name:bindingName("Previous weapon")+" / "+bindingName("Next weapon")+": CYCLE";
         weaponText.setText("LMB: MACHINE GUN    |    "+targeting);
         abilitiesText.setText("FREEZE ["+bindingName("Freeze")+"]  "+cooldown(player.abilityCooldown(AbilityId.FREEZE))+
