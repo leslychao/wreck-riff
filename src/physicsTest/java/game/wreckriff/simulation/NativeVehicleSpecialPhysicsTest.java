@@ -109,18 +109,25 @@ class NativeVehicleSpecialPhysicsTest {
             assertEquals(1,world.grabCount());assertEquals(1,world.space().countJoints());
             assertTrue(((New6Dof)world.space().getJointList().iterator().next()).isCollisionBetweenLinkedBodies(),
                     "Capture cannot disable physical contacts between the vehicles");
+            world.vehicle(0).setLinearVelocity(new Vector3f(0,0,24));
+            world.vehicle(1).setLinearVelocity(new Vector3f(0,0,24));
             float initialDistance=world.position(0).distance(world.position(1));float turbo=owner.turbo;
-            for(int tick=0;tick<120;tick++) {
+            for(int tick=0;tick<180;tick++) {
                 driver.drive(TURBO);world.step();
                 assertTrue(world.grabIntact(0,1),"Native capture must remain at intake, tick "+tick);
+                assertTrue(world.touchingVehicles(0,1),"Grinding requires a persistent native contact, tick "+tick);
                 assertEquals(initialDistance,world.position(0).distance(world.position(1)),.15f);
-                assertTrue(world.velocity(0).clone().setY(0).length()<12.1f);
+                assertTrue(world.velocity(0).clone().setY(0).length()<12.1f,"Capture speed at tick "+tick+": "+world.velocity(0));
             }
             assertFalse(driver.turboActive());assertEquals(turbo,owner.turbo);
             world.endGrab(0);assertEquals(0,world.space().countJoints());
-            world.impulse(1,new Vector3f(11000,0,0),Vector3f.ZERO,2);
+            float gap=world.position(1).z-world.position(0).z;
+            Vector3f ownerVelocity=world.velocity(0),targetVelocity=world.velocity(1);
+            world.impulse(1,new Vector3f(0,0,11000),Vector3f.ZERO,2);
+            assertEquals(ownerVelocity,world.velocity(0),"Released target impulse must not alter the former owner");
+            assertEquals(targetVelocity.z+10,world.velocity(1).z,.001f);
             for(int tick=0;tick<60;tick++)world.step();
-            assertTrue(world.position(1).x-world.position(0).x>1,"Released target moves independently");
+            assertTrue(world.position(1).z-world.position(0).z>gap+1,"Released target rolls independently on its wheels");
         }
     }
 

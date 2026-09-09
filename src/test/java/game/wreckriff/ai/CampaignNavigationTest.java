@@ -23,7 +23,7 @@ class CampaignNavigationTest {
             var bots=new BotController(session,arena,AiRules.load());var mobility=bots.mobility(boss.id,world);
             var envelope=world.profile(boss.id).fullBounds();
             assertEquals(envelope.maxX()-envelope.minX(),mobility.width(),.001);
-            assertEquals(envelope.maxY()-envelope.minY(),mobility.height(),.001);
+            assertEquals(world.profile(boss.id).roadOffset()+envelope.maxY(),mobility.height(),.001);
             assertEquals(boss.profileId.equals("boss_emcee"),mobility.launch());
             assertEquals(Set.copyOf(arena.bosses().getFirst().launchPadIds()),mobility.launchPadIds());
             var graph=new NavGraph(arena);
@@ -48,11 +48,17 @@ class CampaignNavigationTest {
     }
 
     @Test void healingBotsReserveDifferentReachablePickupsForThreeSeconds() {
-        var arena=arenas.definition("construction_17");var session=new MatchSession(2,arena,MatchSession.Mode.ARENA,combat);
-        var world=new RoadWorld(arena);var start=arena.spawns().getFirst().position().vector();
+        var source=arenas.definition("construction_17");var pickups=new ArrayList<>(source.pickups().stream()
+                .filter(p->p.type()!=ArenaDefinition.PickupType.REPAIR).toList());
+        for(int nodeId:List.of(12,13)) {
+            var node=source.nodes().stream().filter(n->n.id()==nodeId).findFirst().orElseThrow();
+            pickups.add(new ArenaDefinition.Pickup("lease-"+nodeId,ArenaDefinition.PickupType.REPAIR,node.position(),4800));
+        }
+        var arena=source.withPickups(pickups);var session=new MatchSession(2,arena,MatchSession.Mode.ARENA,combat);
+        var world=new RoadWorld(arena);var start=new Vector3f(13,0,88);
         for(var state:session.vehicles) {state.hp=state.maximumHp*.1f;world.positions.put(state.id,start.add(state.id,world.profile(state.id).roadOffset(),0));}
         var bots=new BotController(session,arena,AiRules.load());bots.commands(world);
-        var reservations=bots.pickupReservations();assertFalse(reservations.isEmpty());
+        var reservations=bots.pickupReservations();assertEquals(2,reservations.size());
         assertEquals(reservations.size(),reservations.stream().map(BotController.PickupReservation::pickupId).distinct().count());
         assertTrue(reservations.stream().allMatch(r->r.untilTick()==360));
         for(var state:session.vehicles)state.hp=0;
@@ -108,6 +114,25 @@ class CampaignNavigationTest {
                 for(var weapon:WeaponType.values())assertEquals(0,boss.weapon(weapon).ammo);
             }
         }
+    }
+
+    @Test void prefectRequestsOnlyAuthoredProtocolTargetsAtTheFourteenSecondLimit() {
+        var arena=arenas.definition("neon_zero");var session=new MatchSession(2,arena,MatchSession.Mode.BOSS_DUEL,combat);
+        var boss=session.registerBoss(arena.bosses().getFirst());session.phase=MatchSession.Phase.BOSS_COMBAT;session.bossMode=2;
+        var world=new RoadWorld(arena);world.profiles.put(boss.id,VehicleProfile.boss(boss.profileId,vehicleRules));
+        world.positions.put(boss.id,new Vector3f(40,world.profile(boss.id).roadOffset(),40));world.positions.put(0,new Vector3f(40,.51f,80));
+        var bots=new BotController(session,arena,AiRules.load());session.tick=720;bots.commands(world);
+        var first=bots.drainBossCommands();assertEquals(1,first.size());
+        assertTrue(arena.barriers().stream().anyMatch(b->b.id().equals(first.getFirst().targetId())));
+        // Demonstrated movement keeps this timing test separate from the stationary recovery policy.
+        Vector3f movement=bots.metrics(boss.id).destination().subtract(world.position(boss.id)).setY(0).normalizeLocal().multLocal(3);
+        world.positions.put(boss.id,world.position(boss.id).add(movement));
+        session.tick=2388;bots.commands(world);assertTrue(bots.drainBossCommands().isEmpty());
+        session.tick=2400;bots.commands(world);var second=bots.drainBossCommands();assertEquals(1,second.size());
+        assertTrue(arena.hazards().stream().anyMatch(h->h.id().equals(second.getFirst().targetId())));
+        assertEquals(BotController.BossCommandStage.BEGIN,second.getFirst().stage());
+        assertEquals(new ArenaDefinition.Vec3(40,.51f,80),second.getFirst().observedTarget());
+        assertTrue(bots.drainBossCommands().isEmpty(),"Each command is drained once");
     }
 
     static final class RoadWorld implements WorldQuery {

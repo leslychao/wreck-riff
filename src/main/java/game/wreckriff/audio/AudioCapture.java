@@ -62,7 +62,7 @@ public final class AudioCapture implements AutoCloseable {
         if(closed)return;
         double now=time();
         if(now>=duration)return;
-        if(!asset.matches("audio/[a-z0-9-]+\\.wav")||!Float.isFinite(volume)||volume<0||volume>1
+        if(asset==null||!asset.matches("audio/(?:[a-z0-9-]+|campaign/[a-z0-9_-]+-(?:normal|boss))\\.wav")||!Float.isFinite(volume)||volume<0||volume>1
                 ||!Float.isFinite(pitch)||pitch<.5f||pitch>2||!Double.isFinite(playbackOffset)||playbackOffset<0)
             throw new IllegalArgumentException("Invalid captured voice");
         Track track=active.get(identity);

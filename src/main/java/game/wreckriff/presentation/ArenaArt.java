@@ -15,7 +15,7 @@ import java.util.*;
 /** Loads local authored scenery. Layout/randomisation belongs to the offline authoring source. */
 public final class ArenaArt {
     public enum Motion { STATIC, ROTATE_Z, SWAY_Z, STEAM, PULSE, SCREEN }
-    public enum Shape { BOX, CYLINDER, SPHERE }
+    public enum Shape { BOX, CYLINDER, SPHERE, PATCH }
     public record Group(String id,ArenaDefinition.Vec3 position,Motion motion,float period,float phase) {
         public Group {Objects.requireNonNull(position);Objects.requireNonNull(motion);
             if(id==null||id.isBlank()||!Float.isFinite(period)||period<=0||!Float.isFinite(phase))throw new IllegalArgumentException("Invalid art group");}
@@ -60,9 +60,10 @@ public final class ArenaArt {
                 case BOX -> SurfaceMesh.box(size.x()/2,size.y()/2,size.z()/2,4);
                 case CYLINDER -> new Cylinder(2,12,.5f,1,true);
                 case SPHERE -> new Sphere(6,10,.5f);
+                case PATCH -> patchMesh(size);
             });
             Geometry visual=new Geometry(part.id(),mesh);
-            if(part.shape()!=Shape.BOX)visual.setLocalScale(size.vector());
+            if(part.shape()==Shape.CYLINDER||part.shape()==Shape.SPHERE)visual.setLocalScale(size.vector());
             visual.setLocalTranslation(part.position().vector());
             visual.setLocalRotation(new Quaternion().fromAngles(part.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)));
             Material material;
@@ -87,5 +88,18 @@ public final class ArenaArt {
         }
         for(var cell:cells.values()) {cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);art.attachChild(cell);}
         root.attachChild(art);
+    }
+    private static Mesh patchMesh(ArenaDefinition.Vec3 size) {
+        // Flush saw-cut repair, with clipped and imperfect edges rather than a floating rectangular plate.
+        float[][] outline={{-.50f,-.34f},{-.37f,-.50f},{.28f,-.50f},{.48f,-.29f},{.50f,.27f},
+                {.33f,.50f},{-.30f,.47f},{-.48f,.28f}};
+        List<Vector3f> triangles=new ArrayList<>();Vector3f center=new Vector3f(0,size.y()*.5f,0);
+        for(int i=0;i<outline.length;i++) {
+            var a=outline[i];var b=outline[(i+1)%outline.length];
+            // Top-facing winding; no side walls and no collision owner for a painted/tar surface.
+            Collections.addAll(triangles,center,new Vector3f(b[0]*size.x(),center.y,b[1]*size.z()),
+                    new Vector3f(a[0]*size.x(),center.y,a[1]*size.z()));
+        }
+        return SurfaceMesh.triangles(triangles,4);
     }
 }

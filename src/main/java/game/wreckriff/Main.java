@@ -7,10 +7,10 @@ import java.nio.file.Path;
 
 public final class Main {
     public record Options(boolean dev,long seed,boolean fixedSeed,boolean noAudio,boolean aiPlayer,int smokeSeconds,Path configDir,int benchmarkSeconds,boolean showcase,
-                          String arenaId,boolean artShowcase,int resolutionHeight,boolean noGlow) {
+                          String arenaId,boolean artShowcase,int resolutionHeight,boolean noGlow,boolean profile) {
         public boolean automated() { return smokeSeconds>0 || benchmarkSeconds>0 || showcase || artShowcase; }
         public static Options parse(String[] args) {
-            boolean dev=false,fixed=false,mute=false,ai=false,showcase=false,art=false,noGlow=false,arenaSpecified=false;
+            boolean dev=false,fixed=false,mute=false,ai=false,showcase=false,art=false,noGlow=false,arenaSpecified=false,profile=false;
             long seed=System.nanoTime();int smoke=0,benchmark=0,resolution=0;Path config=null;String arena="dead-air-yard";
             for(String arg:args) {
                 if(arg.equals("--dev")) dev=true;
@@ -20,6 +20,7 @@ public final class Main {
                 else if(arg.equals("--showcase")) showcase=true;
                 else if(arg.equals("--art-showcase")) art=true;
                 else if(arg.equals("--no-glow")) noGlow=true;
+                else if(arg.equals("--profile"))profile=true;
                 else if(arg.startsWith("--arena=")) {
                     arena=arg.substring(8);arenaSpecified=true;
                     if(!arena.matches("[a-z][a-z0-9_-]*"))throw new IllegalArgumentException("Arena must be a stable arena ID");
@@ -33,10 +34,10 @@ public final class Main {
                 else if(arg.startsWith("--benchmark-seconds=")) { benchmark=Integer.parseInt(arg.substring(20)); if(benchmark<1||benchmark>3600) throw new IllegalArgumentException("Benchmark duration must be 1..3600 seconds after 30s warmup"); }
                 else throw new IllegalArgumentException("Unknown option "+arg);
             }
-            if(!dev && (fixed||mute||ai||smoke>0||benchmark>0||showcase||art||arenaSpecified||resolution>0||noGlow||config!=null)) throw new IllegalArgumentException("Diagnostic options require --dev");
+            if(!dev && (fixed||mute||ai||smoke>0||benchmark>0||showcase||art||arenaSpecified||resolution>0||noGlow||profile||config!=null)) throw new IllegalArgumentException("Diagnostic options require --dev");
             if((smoke>0?1:0)+(benchmark>0?1:0)+(showcase?1:0)+(art?1:0)>1) throw new IllegalArgumentException("Choose one diagnostic mode");
             if(showcase&&!arena.equals("dead-air-yard"))throw new IllegalArgumentException("Combat showcase uses dead-air-yard; use --art-showcase for other arenas");
-            return new Options(dev,seed,fixed,mute,ai,smoke,config,benchmark,showcase,arena,art,resolution,noGlow);
+            return new Options(dev,seed,fixed,mute,ai,smoke,config,benchmark,showcase,arena,art,resolution,noGlow,profile);
         }
     }
     public static void main(String[] args) {
@@ -51,7 +52,7 @@ public final class Main {
             if(store.firstRun() && !options.automated()) InitialVideo.apply(user);
             // Fullscreen prevents the desktop work area/title bar from silently
             // shrinking the requested 1080p client surface on a 1080p monitor.
-            if(options.benchmarkSeconds()>0) { user.width=1920;user.height=1080;user.vsync=false;user.fullscreen=true; }
+            if(options.benchmarkSeconds()>0) { user.width=1920;user.height=1080;user.samples=4;user.vsync=false;user.fullscreen=true; }
             if(options.showcase()) { user.width=1600;user.height=900;user.vsync=false;user.fullscreen=false; }
             if(options.artShowcase()) {user.width=1280;user.height=720;user.vsync=false;user.fullscreen=false;}
             if(options.resolutionHeight()>0) {

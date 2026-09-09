@@ -17,7 +17,7 @@ class GamepadProfileTest {
         old.addProperty("rocket",11);old.addProperty("triggerMinimum",0);old.addProperty("triggerMaximum",1);
         String original=Configs.gson().toJson(old);Files.writeString(directory.resolve("gamepad.json"),original);
         GamepadProfile profile=GamepadProfile.load(directory);
-        assertEquals(3,profile.schemaVersion());assertEquals(11,profile.rocket());assertEquals(-1,profile.freeze());
+        assertEquals(4,profile.schemaVersion());assertEquals(11,profile.rocket());assertEquals(-1,profile.freeze());
         assertEquals(.5f,profile.trigger(.5f));assertTrue(profile.warning().contains("Freeze"));
         assertEquals(original,Files.readString(directory.resolve("gamepad.json.v1.bak")));
         assertEquals(profile,GamepadProfile.load(directory));
@@ -27,6 +27,14 @@ class GamepadProfileTest {
         JsonObject old=legacy(1);
         Files.writeString(directory.resolve("gamepad.json"),Configs.gson().toJson(old));
         assertEquals(GamepadProfile.bundled(),GamepadProfile.load(directory));
+    }
+    @Test void v3AddsSpecialOnlyOnAFreeButtonAndPreservesExplicitWeaponBinding() throws Exception {
+        JsonObject old=defaults();old.addProperty("schemaVersion",3);old.remove("special");old.addProperty("rocket",13);
+        String original=Configs.gson().toJson(old);Files.writeString(directory.resolve("gamepad.json"),original);
+        var profile=GamepadProfile.load(directory);
+        assertEquals(4,profile.schemaVersion());assertEquals(13,profile.rocket());assertEquals(-1,profile.special());
+        assertTrue(profile.warning().contains("Special"));assertEquals(original,Files.readString(directory.resolve("gamepad.json.v3.bak")));
+        assertEquals(profile,GamepadProfile.load(directory));
     }
     @Test void v2TransfersCustomSpecialToShieldAndMenuAndPreservesOriginal() throws Exception {
         JsonObject old=legacy(2);old.addProperty("pulse",8);old.addProperty("up",9);
@@ -124,13 +132,13 @@ class GamepadProfileTest {
     private JsonObject defaults() { return Configs.gson().toJsonTree(GamepadProfile.bundled()).getAsJsonObject(); }
     private JsonObject legacy(int version) {
         JsonObject old=defaults();old.addProperty("schemaVersion",version);
-        old.add("pulse",old.remove("shield"));old.remove("freeze");old.remove("activate");
+        old.add("pulse",old.remove("shield"));old.remove("freeze");old.remove("activate");old.remove("special");
         if(version==2)old.addProperty("abilityModifier",10);
         return old;
     }
 
     private GamepadProfile withTriggerRange(float minimum,float maximum) {
-        return new GamepadProfile(3,0,5,4,minimum,maximum,2,1,4,5,0,14,12,3,6,7,11,13,1,11,0);
+        return new GamepadProfile(4,0,5,4,minimum,maximum,2,1,4,5,0,14,12,3,6,7,11,13,1,11,0,13);
     }
 
     private void assertRejectedWithoutMutation(String original) throws Exception {

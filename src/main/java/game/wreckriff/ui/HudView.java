@@ -69,7 +69,8 @@ public final class HudView implements AutoCloseable {
     private HudLayout layout;
     private Snapshot lastSnapshot;
     private Geometry healthBar,turboBar,bossBar,effectIcon,targetBracket,noticePanel;
-    private TextValue healthValue,objectiveValue,bossValue,hintValue,noticeValue,diagnosticsValue,specialValue;
+    private TextValue healthValue,objectiveValue,bossValue,hintValue,noticeValue,receiptValue,diagnosticsValue,specialValue;
+    private String pickupReceipt="";
     private String specialProfile="rivet",specialName="Отбойник",specialBinding="C";
     private List<HelpItem> helpItems=List.of();
     private Set<WeaponType> pickupHighlights=Set.of();
@@ -87,6 +88,11 @@ public final class HudView implements AutoCloseable {
     public Node root() {return root;}
     public HudLayout layout() {return layout;}
     public int radarMarkerCount() {return radarMarkers.size();}
+    public void setPickupReceipt(String text) {
+        if(pickupReceipt.equals(text))return;pickupReceipt=text;
+        if(receiptValue!=null)receiptValue.set(text);
+        if(noticePanel!=null)show(noticePanel,!text.isBlank()||lastSnapshot!=null&&!lastSnapshot.notification.isBlank());
+    }
     public void setPickupHighlights(Set<WeaponType> types) {
         if(pickupHighlights.equals(types))return;pickupHighlights=Set.copyOf(types);
         weaponSlots.forEach((type,slot)->slot.pickup(pickupHighlights.contains(type)));
@@ -139,7 +145,7 @@ public final class HudView implements AutoCloseable {
         float reticleSize=(snapshot.locked?28:18)*layout.scale();
         targetBracket.setLocalScale(reticleSize,reticleSize,1);targetBracket.setLocalTranslation(-reticleSize/2,-reticleSize/2,0);
         hintValue.set(snapshot.selectionHint);noticeValue.set(snapshot.notification);
-        show(noticePanel,!snapshot.notification.isBlank());
+        show(noticePanel,!snapshot.notification.isBlank()||!pickupReceipt.isBlank());
         updateRadar(snapshot.observer,snapshot.radarTargets);
     }
 
@@ -173,7 +179,9 @@ public final class HudView implements AutoCloseable {
         reticleCenter.setLocalTranslation(layout.width()/2f,layout.height()/2f,4);
         targetBracket.setLocalTranslation(-9*s,-9*s,0);
         UiBounds notice=layout.notification();noticePanel=panel("notice-panel",notice);show(noticePanel,false);
-        noticeValue=text(root,"notification",inset(notice,pad),layout.fontSize(),Paint.ACCENT);
+        noticeValue=text(root,"notification",new UiBounds(notice.x()+pad,notice.y()+29*s,notice.width()-pad*2,notice.height()-29*s-pad),layout.fontSize(),Paint.ACCENT);
+        receiptValue=text(root,"pickup-receipt",new UiBounds(notice.x()+pad,notice.y()+5*s,notice.width()-pad*2,24*s),Math.max(14,16*s),Paint.GREEN);
+        receiptValue.set(pickupReceipt);
         hintValue=text(root,"selection-hint",new UiBounds(layout.weapons().x(),layout.weapons().top()+8*s,layout.weapons().width(),29*s),layout.fontSize(),Paint.INK);
         diagnosticsValue=text(root,"diagnostics",new UiBounds(16*s,layout.height()/2f,Math.max(280,layout.radar().x()-32*s),layout.height()/2f-20*s),Math.max(14,14*s),Paint.INK);
         buildRadar();

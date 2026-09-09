@@ -7,7 +7,7 @@
   "maxSpeed": 34, "turboSpeed": 46, "reverseSpeed": 18,
   "reverseForceMultiplier": 1.3, "directionChangeDelaySeconds": 0.05,
   "lowSpeedSteering": 50, "highSpeedSteering": 18, "steeringResponse": 30,
-  "handbrakeTorque": 6500, "handbrakeYawDamping": 6500, "stabilizingTorque": 9000, "gripReturnSeconds": 0.16,
+  "handbrakeTorque": 12500, "handbrakeYawDamping": 6500, "stabilizingTorque": 9000, "gripReturnSeconds": 0.16,
   "turboDrain": 40, "turboRegen": 15, "turboRegenDelay": 1,
   "recoveryCost": 15, "recoveryHold": 1, "recoveryCooldown": 5, "recoveryProtection": 0.35,
   "carPairRestitution": 0.20, "impactStabilizerOffSeconds": 0.2, "impactStabilizerReturnSeconds": 0.2,

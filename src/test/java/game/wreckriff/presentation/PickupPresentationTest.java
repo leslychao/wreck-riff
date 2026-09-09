@@ -13,6 +13,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Real exported models and clock-driven presentation; this does not certify an OpenGL frame. */
 class PickupPresentationTest {
+    @Test void powerWarheadNarrowsAtTheUpperTipInsteadOfLookingLikeAnInvertedCone() {
+        Spatial model=PresentationTestAssets.shared().loadModel(PickupStyle.POWER.model());model.updateGeometricState();
+        float top=((BoundingBox)model.getWorldBound()).getMax(null).y;
+        List<Float> topXs=new ArrayList<>();
+        model.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
+            var positions=geometry.getMesh().getFloatBuffer(VertexBuffer.Type.Position);
+            for(int vertex=0;vertex<positions.limit()/3;vertex++) {
+                Vector3f point=geometry.localToWorld(new Vector3f(positions.get(vertex*3),positions.get(vertex*3+1),positions.get(vertex*3+2)),null);
+                if(point.y>=top-.015f)topXs.add(point.x);
+            }
+        }});
+        assertFalse(topXs.isEmpty());
+        assertTrue(Collections.max(topXs)-Collections.min(topXs)<.05f,"The upward-facing warhead must end in a narrow tip");
+    }
+
     @Test void eightRealModelsAreDistinctFiniteSmallMeshesWithRegisteredIdentities()throws Exception {
         Set<String> hashes=new HashSet<>();
         for(PickupStyle style:PickupStyle.values()) {
@@ -22,6 +37,7 @@ class PickupPresentationTest {
             Spatial model=PresentationTestAssets.shared().loadModel(style.model());model.updateGeometricState();
             assertEquals("original-java-procedural",model.getUserData("assetOrigin"));assertEquals(style.kind(),model.getUserData("pickupKind"));
             BoundingBox bounds=assertInstanceOf(BoundingBox.class,model.getWorldBound());
+            assertEquals(0,bounds.getCenter().length(),.00001f,style+" animation must position the actual visual centre");
             Vector3f min=bounds.getMin(null),max=bounds.getMax(null);
             assertTrue(Vector3f.isValidVector(min)&&Vector3f.isValidVector(max),style.name());
             assertTrue(max.x-min.x>.2f&&max.z-min.z>.2f&&max.y-min.y>.1f,style+" is not a volume");
@@ -61,6 +77,21 @@ class PickupPresentationTest {
             assertEquals(initial.yaw(),f.visual.frame(first).yaw(),.00001f);
             assertEquals(initial.height(),f.visual.frame(first).height(),.00001f);
             assertTrue(f.bursts.isEmpty());assertTrue(f.systems.drainEvents().isEmpty());
+        }
+    }
+
+    @Test void everyNormalMappedPadAndModelHasTangentDataForTheLightingShader() {
+        try(Fixture f=new Fixture()) {
+            int[] mapped={0};
+            f.visual.root().depthFirstTraversal(spatial->{
+                if(spatial instanceof Geometry geometry&&geometry.getMaterial().getParam("NormalMap")!=null) {
+                    mapped[0]++;var tangents=geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent);
+                    assertNotNull(tangents,geometry.getName()+" uses a normal map without a tangent frame");
+                    assertEquals(4,tangents.getNumComponents());
+                    assertEquals(geometry.getMesh().getVertexCount(),tangents.getNumElements());
+                }
+            });
+            assertTrue(mapped[0]>=f.arena.pickups().size(),"At least each pickup pad uses its mapped black material");
         }
     }
 

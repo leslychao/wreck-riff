@@ -74,12 +74,17 @@ public final class GeneratePickupModels {
         node.depthFirstTraversal(s->{if(s instanceof Geometry g&&g.getMaterial().getParam("NormalMap")!=null)
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(g.getMesh());});
         node.updateGeometricState();GeometryBatchFactory.optimize(node,false);
+        // Presentation positions the visual centre 1.1m above the pad. Recenter exported
+        // contents, not the model root whose transform is owned by the pickup animation.
+        node.updateGeometricState();Vector3f centre=node.getWorldBound().getCenter().clone();
+        for(Spatial child:node.getChildren())child.move(centre.negate());
+        node.updateGeometricState();
         node.setUserData("assetOrigin","original-java-procedural");node.setUserData("pickupKind",style.kind());
         return node;
     }
     private void rocket(Node node,float x,float z,float radius,float height) {
         cylinder(node,"rocket-body",x,0,z,radius,height,metal);
-        Geometry tip=new Geometry("rocket-nose",new Cylinder(2,12,.005f,radius,height*.35f,true,false));
+        Geometry tip=new Geometry("rocket-nose",new Cylinder(2,12,radius,.005f,height*.35f,true,false));
         tip.rotate(FastMath.HALF_PI,0,0);tip.setLocalTranslation(x,height*.65f,z);tip.setMaterial(accent);node.attachChild(tip);
         for(int i=0;i<4;i++) {Node fin=new Node("stabilizer");fin.setLocalTranslation(x,-height*.36f,z);fin.rotate(0,FastMath.HALF_PI*i,0);
             box(fin,"fin",radius*1.05f,0,0,radius*.65f,height*.15f,.025f,accent);node.attachChild(fin);}

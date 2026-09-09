@@ -274,7 +274,7 @@ class ProgressStoreTest {
     static Checkpoint checkpoint(String arenaId) {
         Map<String,WeaponResource> weapons=new LinkedHashMap<>();
         for(WeaponType type:WeaponType.values()) weapons.put(type.id(),new WeaponResource(2,17));
-        PlayerResources player=new PlayerResources(520,38,"homing",weapons,Map.of("freeze",401L,"shield",61L),
+        PlayerResources player=new PlayerResources(520,38,"homing",weapons,Map.of("freeze",401L,"shield",61L,"special",0L),
                 new ResourceTimers(3,5,7,9,11,13,15,17));
         return new Checkpoint(arenaId,"rivet",2,812,"normal",CheckpointStage.BOSS,player,
                 new SafePose(12,1.25,14,.2,"lower-road","player-spawn"),

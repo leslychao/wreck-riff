@@ -12,6 +12,18 @@ import java.lang.reflect.Proxy;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InputSystemTest {
+    @Test void playerSpecialNeedsAFreshOwnKeyOrPadButtonAndClearsAcrossPause() {
+        try(InputSystem input=input()) {
+            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_C,true));
+            assertEquals(AbilityId.SPECIAL,input.consume().ability());assertEquals(AbilityId.NONE,input.consume().ability());
+            input.clear();input.setGameplay(false);input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_C,true));
+            assertEquals(AbilityId.NONE,input.consume().ability());input.onKeyEvent(key(KeyInput.KEY_C,false));
+            var snapshot=GLFWGamepadState.create();snapshot.buttons(GLFW_GAMEPAD_BUTTON_DPAD_DOWN,(byte)GLFW_PRESS);
+            input.acceptGamepadState(snapshot);assertEquals(AbilityId.SPECIAL,input.consume().ability());
+            assertEquals("D-PAD DOWN",input.displayBinding("Special"));input.acceptGamepadState(snapshot);
+            assertEquals(AbilityId.NONE,input.consume().ability());
+        }
+    }
     @Test void hudPromptsFollowActualInputAndIdleConnectedPadCannotStealThemBack() {
         try(InputSystem input=input()) {
             var snapshot=GLFWGamepadState.create();
@@ -68,16 +80,16 @@ class InputSystemTest {
         }
     }
     @Test void abilitiesFollowTheirOwnBindingsAndCannotSurvivePause() {
-        var settings=new SettingsStore.Settings();settings.keys.put("Freeze",KeyInput.KEY_C);
+        var settings=new SettingsStore.Settings();settings.keys.put("Freeze",KeyInput.KEY_T);
         try(InputSystem input=input(settings)) {
             input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_Z,true));
             assertEquals(AbilityId.NONE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_C,true));assertEquals(AbilityId.FREEZE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_C,false));input.onKeyEvent(key(KeyInput.KEY_C,true));
+            input.onKeyEvent(key(KeyInput.KEY_T,true));assertEquals(AbilityId.FREEZE,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_T,false));input.onKeyEvent(key(KeyInput.KEY_T,true));
             input.clear();input.setGameplay(false);input.setGameplay(true);
             assertEquals(AbilityId.NONE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_C,true));assertEquals(AbilityId.NONE,input.consume().ability());
-            input.onKeyEvent(key(KeyInput.KEY_C,false));input.onKeyEvent(key(KeyInput.KEY_C,true));
+            input.onKeyEvent(key(KeyInput.KEY_T,true));assertEquals(AbilityId.NONE,input.consume().ability());
+            input.onKeyEvent(key(KeyInput.KEY_T,false));input.onKeyEvent(key(KeyInput.KEY_T,true));
             assertEquals(AbilityId.FREEZE,input.consume().ability());
         }
     }

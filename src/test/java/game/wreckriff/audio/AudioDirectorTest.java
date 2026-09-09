@@ -14,12 +14,46 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Pure orchestration tests. A stub renderer cannot certify an audio device or audible output. */
 class AudioDirectorTest {
+    private static final UUID SESSION_ID=new UUID(0,101);
+    private static final String MUSIC="audio/metalmania.wav";
+    @Test void explicitSessionBindingRejectsOldOrUnboundPickupsBeforeTheyCanPoisonDedupe() {
+        Node scene=new Node();UUID foreign=new UUID(0,202);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
+            var stale=new GameEvent(GameEvent.Type.PICKUP,77,0,0,Vector3f.ZERO,"cannon-ammo",1).inSession(foreign);
+            var unbound=new GameEvent(GameEvent.Type.PICKUP,77,0,0,Vector3f.ZERO,"cannon-ammo",1);
+            director.accept(List.of(stale,unbound));assertEquals(1,director.voiceCount());
+            var oldSession=new MatchSession(42,180,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class),foreign);
+            director.update(oldSession,world(Vector3f.ZERO),.1f);
+            assertEquals(1,director.voiceCount(),"A stale render/update cannot silently replace the authoritative session");
+            var current=event(GameEvent.Type.PICKUP,77,0,0,"cannon-ammo",1);
+            director.accept(List.of(current,current));assertEquals(2,director.voiceCount());
+            assertNotNull(find(scene,"sound-pickup-cannon"));
+        }
+    }
+
+    @Test void retryRebindsSessionAndOnlyThatSessionsTerminalTailMayPlayAfterStop() {
+        Node scene=new Node();UUID retry=new UUID(0,303);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
+            var original=event(GameEvent.Type.PICKUP,8,0,0,"power-ammo",1);director.accept(List.of(original));
+            director.startMatch(retry,MUSIC,MUSIC);director.accept(List.of(original));assertEquals(1,director.voiceCount());
+            var newPickup=new GameEvent(GameEvent.Type.PICKUP,8,0,0,Vector3f.ZERO,"power-ammo",1).inSession(retry);
+            director.accept(List.of(newPickup));assertEquals(2,director.voiceCount());
+            director.stopMatch();
+            var oldResult=event(GameEvent.Type.MATCH_FINISHED,9,0,-1,"victory",0);
+            var currentResult=new GameEvent(GameEvent.Type.MATCH_FINISHED,9,0,-1,Vector3f.ZERO,"victory",0).inSession(retry);
+            director.accept(List.of(oldResult,newPickup,currentResult,currentResult));
+            assertEquals(1,director.voiceCount());assertNotNull(find(scene,"sound-victory"));assertNull(find(scene,"sound-pickup-power"));
+        }
+    }
+
     @Test void everyPickupUsesItsExactCueAndOnlyConfirmsAPositiveGrant() {
         Node scene=new Node();
         Map<String,String> cues=Map.of("homing-ammo","homing","power-ammo","power","mine-ammo","mine",
                 "napalm-ammo","napalm","ballistic-ammo","ballistic","cannon-ammo","cannon","repair","repair","turbo","turbo");
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();assertEquals(1,director.voiceCount(),"Available pickups have no idle sound");
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);assertEquals(1,director.voiceCount(),"Available pickups have no idle sound");
             long id=1;
             for(var cue:cues.entrySet()) {
                 GameEvent pickup=event(GameEvent.Type.PICKUP,id++,0,0,cue.getKey(),1);
@@ -43,7 +77,7 @@ class AudioDirectorTest {
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             long id=1;
             for(String kind:List.of("homing","power","mine","napalm","ballistic","cannon")) {
-                director.startMatch();AudioData prior=null;
+                director.startMatch(SESSION_ID,MUSIC,MUSIC);AudioData prior=null;
                 Set<AudioData> heard=Collections.newSetFromMap(new IdentityHashMap<>());
                 for(int take=0;take<9;take++) {
                     director.accept(List.of(event(GameEvent.Type.PICKUP,id++,0,0,kind+"-ammo",1)));
@@ -59,16 +93,16 @@ class AudioDirectorTest {
     @Test void enemyPickupIsQuieterPositionalAndCulledBeyondTheAudibleRange() {
         Node scene=new Node();Listener listener=new Listener();listener.setLocation(Vector3f.ZERO);
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),listener,scene)) {
-            director.startMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
             Vector3f upperRoad=new Vector3f(14,8,6);
-            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,1,0,0,upperRoad,"cannon-ammo",1)));
+            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,1,0,0,upperRoad,"cannon-ammo",1).inSession(SESSION_ID)));
             AudioNode own=find(scene,"sound-pickup-cannon");
-            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,2,3,3,upperRoad,"cannon-ammo",1)));
+            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,2,3,3,upperRoad,"cannon-ammo",1).inSession(SESSION_ID)));
             AudioNode enemy=find(scene,"sound-pickup-cannon");
             assertNotSame(own,enemy);assertTrue(enemy.isPositional());assertFalse(own.isPositional());
             assertEquals(upperRoad,enemy.getLocalTranslation());assertEquals(8,enemy.getRefDistance());
             assertEquals(120,enemy.getMaxDistance());assertTrue(enemy.getVolume()<own.getVolume()*.5f);
-            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,3,4,4,new Vector3f(121,0,0),"cannon-ammo",1)));
+            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,3,4,4,new Vector3f(121,0,0),"cannon-ammo",1).inSession(SESSION_ID)));
             assertEquals(3,director.voiceCount(),"Far enemy pickup must not allocate a source");
             assertSame(enemy,find(scene,"sound-pickup-cannon"));
         }
@@ -77,7 +111,7 @@ class AudioDirectorTest {
     @Test void pickupFloodCannotEvictDangerCuesAndDoesNotQueueSoundsAcrossPauseRetryOrExit() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();director.hazard(true,true,Vector3f.ZERO);
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.hazard(true,true,Vector3f.ZERO);
             AudioNode warning=find(scene,"sound-hazard-warning"),danger=find(scene,"sound-hazard-active");
             List<GameEvent> flood=new ArrayList<>();
             for(int i=0;i<200;i++)flood.add(event(GameEvent.Type.PICKUP,i,0,0,"homing-ammo",1));
@@ -85,7 +119,7 @@ class AudioDirectorTest {
             assertSame(warning,find(scene,"sound-hazard-warning"));assertSame(danger,find(scene,"sound-hazard-active"));
             double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
             assertTrue(total[0]<=1.000001,"Pickup rush respects the shared mix ceiling");
-            director.startMatch();assertEquals(1,director.voiceCount());
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);assertEquals(1,director.voiceCount());
             director.pause();director.accept(List.of(event(GameEvent.Type.PICKUP,800,0,0,"power-ammo",1)));
             director.resume();director.updateTail(.1f);assertNull(find(scene,"sound-pickup-power"));
             director.accept(List.of(flood.getFirst()));assertEquals(2,director.voiceCount(),"Retry clears pickup dedupe");
@@ -97,9 +131,9 @@ class AudioDirectorTest {
     }
 
     @Test void campaignCrossfadeUsesTwoSynchronizedSourcesAndDoesNotRestartOnRepeatedPhaseUpdates() {
-        Node scene=new Node();MatchSession session=new MatchSession(1,180);
+        Node scene=new Node();MatchSession session=match(1,180);
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch("audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
+            director.startMatch(SESSION_ID,"audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
             AudioNode normal=find(scene,"music-normal"),boss=find(scene,"music-boss");
             assertEquals(1,director.musicSourceCount());assertEquals(AudioSource.Status.Stopped,boss.getStatus());
             director.bossMusic(true);
@@ -121,11 +155,11 @@ class AudioDirectorTest {
     @Test void crossfadeIncludesBothMusicSourcesInTheHardGlobalSourceAndGainBudget() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch("audio/campaign/neon_zero-normal.wav","audio/campaign/neon_zero-boss.wav");
+            director.startMatch(SESSION_ID,"audio/campaign/neon_zero-normal.wav","audio/campaign/neon_zero-boss.wav");
             for(int i=0;i<60;i++)director.accept(List.of(event(GameEvent.Type.DAMAGE,i,1,2,"metal",2)));
             assertEquals(32,director.voiceCount());
             director.bossMusic(true);assertEquals(32,director.voiceCount());assertEquals(2,director.musicSourceCount());
-            director.update(new MatchSession(1,180),world(Vector3f.ZERO),.1f);
+            director.update(match(1,180),world(Vector3f.ZERO),.1f);
             director.hazard(true,false,Vector3f.ZERO);
             double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
             assertTrue(total[0]<=1.000001,"Both music gains are counted by mix headroom");
@@ -137,14 +171,14 @@ class AudioDirectorTest {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             for(String arena:List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena")) {
-                director.startMatch("audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
+                director.startMatch(SESSION_ID,"audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
                 assertEquals(2,((Node)scene.getChild("match-audio")).getQuantity());
                 AudioNode original=find(scene,"music-normal");
-                director.startMatch("audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
+                director.startMatch(SESSION_ID,"audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
                 assertSame(original,find(scene,"music-normal"));assertEquals(1,director.voiceCount());
                 director.bossMusic(true);director.stopMatch();assertEquals(0,director.voiceCount());
             }
-            director.startMatch();assertNotNull(find(scene,"music-metalmania"));
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);assertNotNull(find(scene,"music-metalmania"));
             assertEquals(1,((Node)scene.getChild("match-audio")).getQuantity());
         }
         assertEquals(0,scene.getQuantity());
@@ -175,7 +209,7 @@ class AudioDirectorTest {
         try(AudioDirector director=new AudioDirector(holder[0],renderer(),new Listener(),new Node())) {
             assertEquals(1,open[0]);
             for(String arena:List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena")) {
-                director.startMatch("audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
+                director.startMatch(SESSION_ID,"audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
                 assertEquals(2,open[0]);director.bossMusic(true);director.stopMatch();assertEquals(2,open[0]);
             }
         }
@@ -185,7 +219,7 @@ class AudioDirectorTest {
     @Test void pausedPhaseChangeDoesNotAllocateOrAdvanceMusicUntilResumed() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch("audio/campaign/euphoria_park-normal.wav","audio/campaign/euphoria_park-boss.wav");
+            director.startMatch(SESSION_ID,"audio/campaign/euphoria_park-normal.wav","audio/campaign/euphoria_park-boss.wav");
             director.pause();director.bossMusic(true);assertEquals(1,director.musicSourceCount());
             director.resume();assertEquals(2,director.musicSourceCount());
             director.stopMatch();director.bossMusic(true);assertEquals(0,director.voiceCount());
@@ -197,8 +231,8 @@ class AudioDirectorTest {
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             AudioNode music=find(scene,"music-metalmania");
             for(int retry=0;retry<20;retry++) {
-                director.startMatch();
-                MatchSession session=new MatchSession(retry,180);
+                director.startMatch(SESSION_ID,MUSIC,MUSIC);
+                MatchSession session=match(retry,180);
                 director.update(session,world(new Vector3f(0,0,12)),1f/60);
                 int original=director.voiceCount();
                 assertTrue(original>1);
@@ -219,7 +253,7 @@ class AudioDirectorTest {
     @Test void a03ThreatAndPlayerShotSurviveDecorativeSaturationAndMixRemainsBounded() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
             for(int i=0;i<80;i++) director.accept(List.of(event(GameEvent.Type.DAMAGE,i,1,2,"metal",2)));
             assertTrue(director.voiceCount()<=32);
             director.accept(List.of(event(GameEvent.Type.SHOT,100,0,0,"power",0)));
@@ -236,7 +270,7 @@ class AudioDirectorTest {
     @Test void tyreSoundFollowsLateralMotionAndGroundContact() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();MatchSession session=new MatchSession(42,180);
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);MatchSession session=match(42,180);
             director.update(session,world(new Vector3f(0,0,20)),1f/60);
             assertNull(find(scene,"sound-tyre-slip"));
             director.update(session,world(new Vector3f(7,0,20)),1f/60);
@@ -249,15 +283,15 @@ class AudioDirectorTest {
     @Test void disabledBackendHasZeroSourcesAndCanCloseTwice() {
         Node scene=new Node();
         AudioDirector director=new AudioDirector(null,null,null,scene);
-        director.startMatch();director.pause();director.resume();director.accept(List.of());
-        director.update(new MatchSession(1,180),world(Vector3f.ZERO),.02f);
+        director.startMatch(SESSION_ID,MUSIC,MUSIC);director.pause();director.resume();director.accept(List.of());
+        director.update(match(1,180),world(Vector3f.ZERO),.02f);
         assertEquals(0,director.voiceCount());director.close();director.close();
         assertEquals(0,scene.getQuantity());
     }
     @Test void resultStingerPlaysAfterMatchCleanupWithoutRestartingMusic() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();director.stopMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.stopMatch();
             director.accept(List.of(event(GameEvent.Type.MATCH_FINISHED,1,0,-1,"victory",0)));
             assertNotNull(find(scene,"sound-victory"));assertEquals(1,director.voiceCount());
             assertEquals(AudioSource.Status.Stopped,find(scene,"music-metalmania").getStatus());
@@ -266,7 +300,7 @@ class AudioDirectorTest {
     @Test void finalDeathAndResultPlayExactlyOnceThenTailPrunesWithoutRecreatingMatchAudio() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();director.stopMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.stopMatch();
             List<GameEvent> finalEvents=List.of(event(GameEvent.Type.DESTROYED,1,1,0,"destroyed",1),
                     event(GameEvent.Type.MATCH_FINISHED,1,0,-1,"victory",0),
                     event(GameEvent.Type.SHOT,2,0,0,"machine-gun",6),
@@ -290,7 +324,7 @@ class AudioDirectorTest {
     @Test void fireZoneAudioHasOneTrackedLoopPerZoneAndStopsOnItsExpiry() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
             director.accept(List.of(event(GameEvent.Type.FIRE_STARTED,41,0,0,"napalm-fire",5),
                     event(GameEvent.Type.FIRE_STARTED,42,1,1,"napalm-fire",5)));
             assertEquals(3,director.voiceCount());
@@ -307,7 +341,7 @@ class AudioDirectorTest {
     @Test void lowHealthAlertTracksQuarterOfPlayerMaximumInsteadOfTheOldAbsoluteThreshold() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();MatchSession session=new MatchSession(42,180);
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);MatchSession session=match(42,180);
             session.vehicles.getFirst().hp=201;
             director.update(session,world(Vector3f.ZERO),.02f);
             assertNull(find(scene,"sound-low-hp"));
@@ -319,7 +353,7 @@ class AudioDirectorTest {
     @Test void newWeaponsAndControlsUseTheirOwnCues() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
             director.accept(List.of(event(GameEvent.Type.SHOT,1,0,0,"napalm",0),
                     event(GameEvent.Type.MINE_PLACED,2,0,0,"mine",0),
                     event(GameEvent.Type.EXPLOSION,3,1,0,"mine",70),
@@ -336,7 +370,7 @@ class AudioDirectorTest {
     @Test void recordedTakesNeverRepeatImmediatelyAndUseAtLeastThreeActualBuffers() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
             for(String cue:List.of("machine-gun","metal-hit","explosion")) {
                 Set<AudioData> heard=Collections.newSetFromMap(new IdentityHashMap<>());
                 AudioData prior=null;
@@ -364,7 +398,7 @@ class AudioDirectorTest {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             for(Cue cue:cues) {
-                director.startMatch();
+                director.startMatch(SESSION_ID,MUSIC,MUSIC);
                 Set<AudioData> samples=Collections.newSetFromMap(new IdentityHashMap<>());AudioData prior=null;
                 for(int i=0;i<6;i++) {
                     List<GameEvent> batch=new ArrayList<>();
@@ -389,7 +423,7 @@ class AudioDirectorTest {
     @Test void ramCrushGainFollowsAuthoritativeClosingSpeed() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();director.accept(List.of(event(GameEvent.Type.RAM,1,1,0,"ram",5)));
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.accept(List.of(event(GameEvent.Type.RAM,1,1,0,"ram",5)));
             AudioNode mild=find(scene,"sound-ram-hit");
             assertTrue(mild.isPositional());assertEquals(16,mild.getRefDistance(),.001f,"Player contact stays audible from chase camera distance");
             director.accept(List.of(event(GameEvent.Type.RAM,2,1,0,"ram",20)));
@@ -404,13 +438,13 @@ class AudioDirectorTest {
     @Test void sharedEventIdsKeepDifferentTypesAndSubjectsButDuplicateDeliveryIsIgnored() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();
-            MatchSession session=new MatchSession(42,180);
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
+            MatchSession session=match(42,180);
             director.update(session,world(Vector3f.ZERO),.01f);
             int baseline=director.voiceCount();
             Vector3f muzzle=new Vector3f(3,2,4),contact=new Vector3f(8,2,9);
-            List<GameEvent> events=List.of(new GameEvent(GameEvent.Type.SHOT,71,0,0,contact,"machine-gun",6,muzzle,Vector3f.ZERO),
-                    new GameEvent(GameEvent.Type.IMPACT,71,1,0,contact,"machine-gun",6,muzzle,Vector3f.UNIT_Y),
+            List<GameEvent> events=List.of(new GameEvent(GameEvent.Type.SHOT,71,0,0,contact,"machine-gun",6,muzzle,Vector3f.ZERO).inSession(SESSION_ID),
+                    new GameEvent(GameEvent.Type.IMPACT,71,1,0,contact,"machine-gun",6,muzzle,Vector3f.UNIT_Y).inSession(SESSION_ID),
                     event(GameEvent.Type.SHIELD_HIT,71,1,0,"machine-gun",6),
                     event(GameEvent.Type.SHIELD_HIT,71,2,0,"machine-gun",6));
             director.accept(events);
@@ -421,16 +455,16 @@ class AudioDirectorTest {
             assertEquals(muzzle,find(scene,"sound-machine-gun").getLocalTranslation());
             assertEquals(contact,find(scene,"sound-metal-hit").getLocalTranslation());
             director.accept(events);assertEquals(baseline+4,director.voiceCount());
-            director.startMatch();director.update(session,world(Vector3f.ZERO),.01f);director.accept(events);
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.update(session,world(Vector3f.ZERO),.01f);director.accept(events);
             director.update(session,world(Vector3f.ZERO),.05f);
             assertEquals(baseline+4,director.voiceCount(),"Retry clears event dedupe state");
         }
     }
     @Test void bulletContactDelayIsSharedBoundedPausedAndClearedByDeathOrRetry() {
-        Node scene=new Node();MatchSession session=new MatchSession(42,180);
+        Node scene=new Node();MatchSession session=match(42,180);
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            director.startMatch();director.update(session,world(Vector3f.ZERO),.01f);
-            GameEvent hit=new GameEvent(GameEvent.Type.IMPACT,901,1,0,new Vector3f(18,0,0),"machine-gun",6,Vector3f.ZERO,Vector3f.UNIT_Y);
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.update(session,world(Vector3f.ZERO),.01f);
+            GameEvent hit=new GameEvent(GameEvent.Type.IMPACT,901,1,0,new Vector3f(18,0,0),"machine-gun",6,Vector3f.ZERO,Vector3f.UNIT_Y).inSession(SESSION_ID);
             assertEquals(.1f,hit.cosmeticImpactDelaySeconds(),1e-6);
             director.accept(List.of(hit));assertNull(find(scene,"sound-metal-hit"));
             director.pause();director.update(session,world(Vector3f.ZERO),.1f);
@@ -439,16 +473,19 @@ class AudioDirectorTest {
             assertNull(find(scene,"sound-metal-hit"));director.update(session,world(Vector3f.ZERO),.051f);
             assertNotNull(find(scene,"sound-metal-hit"));assertEquals(0,director.pendingImpactCount());
             List<GameEvent> flood=new ArrayList<>();
-            for(int i=0;i<160;i++)flood.add(new GameEvent(GameEvent.Type.SHIELD_HIT,1000+i,1,0,new Vector3f(18,0,0),"machine-gun",6));
+            for(int i=0;i<160;i++)flood.add(new GameEvent(GameEvent.Type.SHIELD_HIT,1000+i,1,0,new Vector3f(18,0,0),"machine-gun",6).inSession(SESSION_ID));
             director.accept(flood);assertEquals(128,director.pendingImpactCount());
             director.accept(List.of(event(GameEvent.Type.DESTROYED,2000,1,0,"destroyed",1)));
             assertEquals(0,director.pendingImpactCount());
-            director.accept(List.of(new GameEvent(GameEvent.Type.IMPACT,3000,-1,0,new Vector3f(18,0,0),"machine-gun",6)));
-            assertEquals(1,director.pendingImpactCount());director.startMatch();assertEquals(0,director.pendingImpactCount());
+            director.accept(List.of(new GameEvent(GameEvent.Type.IMPACT,3000,-1,0,new Vector3f(18,0,0),"machine-gun",6).inSession(SESSION_ID)));
+            assertEquals(1,director.pendingImpactCount());director.startMatch(SESSION_ID,MUSIC,MUSIC);assertEquals(0,director.pendingImpactCount());
         }
     }
+    private static MatchSession match(long seed,int seconds) {
+        return new MatchSession(seed,seconds,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class),SESSION_ID);
+    }
     private static GameEvent event(GameEvent.Type type,long id,int subject,int source,String kind,float value) {
-        return new GameEvent(type,id,subject,source,Vector3f.ZERO,kind,value);
+        return new GameEvent(type,id,subject,source,Vector3f.ZERO,kind,value).inSession(SESSION_ID);
     }
     private static AudioNode find(Node root,String name) {
         AudioNode[] found={null};root.depthFirstTraversal(s->{if(s instanceof AudioNode audio&&name.equals(audio.getName()))found[0]=audio;});

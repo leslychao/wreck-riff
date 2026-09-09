@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory=$true)][int]$ProcessId,
     [Parameter(Mandatory=$true)][string]$Output,
-    [ValidateRange(1,3700)][int]$MaximumSeconds=700
+    [ValidateRange(1,7200)][int]$MaximumSeconds=700
 )
 $ErrorActionPreference='Stop'
 $samples=[Collections.Generic.List[object]]::new()

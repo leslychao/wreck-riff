@@ -277,12 +277,12 @@ public final class CombatSystem {
                     } else if(--owner.specialTicks==0)cancelSpecial(owner,world);
                 }
                 case GRINDER_CONTACT->grind(owner,world);
-                case DASH->{if(--owner.specialTicks==0||!world.grounded(owner.id))cancelSpecial(owner,world);}
+                case DASH->{if(--owner.specialTicks==0||!world.grounded(owner.id)||!world.dashActive(owner.id))cancelSpecial(owner,world);}
                 case READY->{ }
             }
         }
         for(var iterator=specialBombs.iterator();iterator.hasNext();) {
-            var bomb=iterator.next();if(session.tick<bomb.explodeAt)continue;
+            var bomb=iterator.next();if(session.tick+1<bomb.explodeAt)continue;
             Vector3f center=bomb.support.point().add(bomb.support.normal().mult(.08f));
             events.add(new GameEvent(GameEvent.Type.EXPLOSION,bomb.id,-1,bomb.ownerId,center,"special-bomb",SpecialRules.BOMB_RADIUS,
                     center,bomb.support.normal()));
@@ -465,7 +465,8 @@ public final class CombatSystem {
         boolean aimedIntoGrinder=owner.grinding()&&owner.specialTargetId>=0
                 &&session.vehicle(owner.specialTargetId).grabbedBy==owner.id;
         if(aimedIntoGrinder) {
-            Vector3f point=world.closestHullPoint(owner.specialTargetId,muzzle);
+            int targetId=owner.specialTargetId;
+            Vector3f point=world.position(targetId).add(world.rotation(targetId).mult(world.profile(targetId).hullBoxes().getFirst().center()));
             forward=point.subtract(muzzle).normalizeLocal();
         }
         if (intent.kind.equals("machine-gun")) {
@@ -1229,7 +1230,7 @@ public final class CombatSystem {
         controlHits.clear();
     }
     public void endControl(VehicleState target,WorldQuery world) { releaseControl(target,world,true); }
-    public void cancelControl(VehicleState target,WorldQuery world) { releaseControl(target,world,false); }
+    public void cancelControl(VehicleState target,WorldQuery world) { releaseControl(target,world,false);cancelSpecial(target,world); }
     private void releaseControl(VehicleState target,WorldQuery world,boolean feedback) {
         if(target.grabbedBy>=0)cancelSpecial(session.vehicle(target.grabbedBy),world);
         if(target.frozenTicks>0) {

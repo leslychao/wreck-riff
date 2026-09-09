@@ -53,7 +53,12 @@ class NativeCampaignBotNavigationTest {
     void emceeApproachesAndFiresBothPlatformsThroughOrdinaryCommandsThenReallyLands(int padIndex) {
         var arena=REGISTRY.definition("euphoria_park");var pad=arena.launchPads().get(padIndex);
         var goal=pad.target();var pickup=new ArenaDefinition.Pickup("ai-route-repair",ArenaDefinition.PickupType.REPAIR,goal,3600);
-        Vector3f start=pad.source().vector().subtract(pad.direction().mult(14));
+        var graph=new NavGraph(arena);
+        int launchSource=arena.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.LAUNCH&&e.objectId().equals(pad.id()))
+                .findFirst().orElseThrow().from();
+        Vector3f start=arena.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.ROAD&&e.to()==launchSource)
+                .map(e->graph.position(e.from())).filter(p->p.subtract(pad.source().vector()).dot(pad.direction())<0)
+                .findFirst().orElseThrow();
         try(var rig=new Rig(repairFixture(arena,pickup),-1,true,start,pad.direction())) {
             for(int tick=0;tick<7200&&rig.events.stream().noneMatch(e->e.type()==GameEvent.Type.LANDED);tick++)rig.tick();
             var launches=rig.events.stream().filter(e->e.type()==GameEvent.Type.LAUNCHED&&e.subjectId()==rig.id).toList();
@@ -82,7 +87,7 @@ class NativeCampaignBotNavigationTest {
             var profile=boss?VehicleProfile.boss(session.vehicle(id).profileId,RULES):VehicleProfile.rivet(RULES);
             world.addVehicle(id,start.add(0,profile.roadOffset()+.3f,0),new Quaternion().fromAngleAxis((float)Math.atan2(direction.x,direction.z),Vector3f.UNIT_Y),profile);
             for(int tick=0;tick<360;tick++)world.step();
-            driver=new VehicleController(world,session.vehicle(id),RULES);driver.recordSafePose(0);
+            driver=new VehicleController(world,session.vehicle(id),RULES,arena.bounds(),arena.metadata().recoveryCost());driver.recordSafePose(0);
             systems=new ArenaSystems(session,arena);bots=new BotController(session,arena,content.graph(),AiRules.load(),systems::activePickups);
         }
         void tick() {

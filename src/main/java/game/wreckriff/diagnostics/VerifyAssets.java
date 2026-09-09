@@ -159,7 +159,7 @@ public final class VerifyAssets {
             String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
             String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
             String origin = source ? asset.path : asset.source;
-            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
+            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "special-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
@@ -240,6 +240,7 @@ public final class VerifyAssets {
         }
         Map<String,String> recorded = verifyRecordedEffects(config,assets);
         Map<String,String> pickups = verifyPickupEffects(config,assets);
+        Map<String,String> specials = verifySpecialEffects(config,assets);
         byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
         JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
         JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -288,7 +289,7 @@ public final class VerifyAssets {
             }
             assets.add(new Asset(path, channels == 2 ? "licensed-music" : results.containsKey(path)?"licensed-result":recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
                     channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
-                            : results.getOrDefault(path,recorded.getOrDefault(path,pickups.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"))),
+                            : results.getOrDefault(path,recorded.getOrDefault(path,pickups.getOrDefault(path,specials.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples")))),
                     channels == 2 || recorded.containsKey(path)||results.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
@@ -321,6 +322,7 @@ public final class VerifyAssets {
                 throw new IOException("Pickup model identity mismatch: "+path);
             if(!(model.getWorldBound() instanceof com.jme3.bounding.BoundingBox bound)
                     ||!com.jme3.math.Vector3f.isValidVector(bound.getCenter())
+                    ||bound.getCenter().length()>.00001f
                     ||!Float.isFinite(bound.getXExtent())||!Float.isFinite(bound.getYExtent())||!Float.isFinite(bound.getZExtent())
                     ||bound.getXExtent()<=.1f||bound.getZExtent()<=.1f||bound.getYExtent()<=.05f
                     ||bound.getXExtent()>1.05f||bound.getZExtent()>1.05f||bound.getYExtent()>1.05f)
@@ -389,6 +391,50 @@ public final class VerifyAssets {
         }
         if(!required.isEmpty())throw new IOException("Missing pickup take provenance: "+required);
         assets.add(asset(path,"pickup-provenance",bytes,generator+"; original synthesized pickup cue recipes and exact output hashes","VERIFIED"));
+        return Map.copyOf(origins);
+    }
+
+    private static Map<String,String> verifySpecialEffects(AudioConfig config,List<Asset> assets)throws Exception {
+        String path="audio/special-provenance.json",generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        byte[] bytes=resource(path);
+        JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()
+                ||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
+                ||!generator.equals(evidence.get("generator").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(generator))).equals(evidence.get("generatorSha256").getAsString())
+                ||!"0x5249464657415645".equals(evidence.get("seed").getAsString())
+                ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString())
+                ||evidence.get("sampleRate").getAsInt()!=48000||evidence.get("channels").getAsInt()!=1||evidence.get("bits").getAsInt()!=16)
+            throw new IOException("Special synthesis source/provenance mismatch");
+        Map<String,Integer> expected=Map.of("special-pulse-charge",14400,"special-pulse-hit",14400,
+                "special-grinder-start",28800,"special-grinder-loop",24000,"special-dash",10560,"special-bomb-warning",33600);
+        Set<String> required=new HashSet<>();expected.keySet().forEach(id->required.add("audio/"+id+".wav"));
+        Map<String,String> origins=new HashMap<>();Set<String> hashes=new HashSet<>();
+        for(JsonElement entry:evidence.getAsJsonArray("assets")) {
+            JsonObject item=entry.getAsJsonObject();String audio=item.get("path").getAsString();
+            if(!required.remove(audio))throw new IOException("Unexpected/duplicate special cue: "+audio);
+            String cue=audio.substring(6,audio.length()-4);boolean loop=cue.equals("special-grinder-loop");
+            if(!config.effects().contains(cue)||!List.of(cue).equals(config.cueBanks().get(cue)))
+                throw new IOException("Special cue must resolve to its single authored sample: "+cue);
+            WaveMetrics metrics=inspectWave(uniqueResource(audio));
+            if(metrics.frames!=expected.get(cue)||metrics.frames!=item.get("frames").getAsLong()
+                    ||metrics.channels!=1||metrics.bits!=16||metrics.rate!=48000
+                    ||!metrics.sha256.equals(item.get("sha256").getAsString())||!hashes.add(metrics.sha256)
+                    ||item.get("loop").getAsBoolean()!=loop||metrics.peak>.82004||metrics.rms<.04
+                    ||item.get("recipe").getAsString().isBlank())
+                throw new IOException("Invalid special cue timing/hash/signal: "+audio);
+            if(loop) {
+                try(InputStream input=uniqueResource(audio).openStream()) {
+                    PcmWave.Header header=PcmWave.header(input);byte[] pcm=input.readNBytes((int)header.dataBytes());
+                    short first=(short)((pcm[0]&255)|(pcm[1]<<8));
+                    short last=(short)((pcm[pcm.length-2]&255)|(pcm[pcm.length-1]<<8));
+                    if(Math.abs(first-last)>32768*.04)throw new IOException("Discontinuous grinder loop boundary");
+                }
+            }
+            origins.put(audio,"Original local synthesis; "+item.get("recipe").getAsString()+"; audio/special-provenance.json");
+        }
+        if(!required.isEmpty())throw new IOException("Missing special cue provenance: "+required);
+        assets.add(asset(path,"special-provenance",bytes,generator+"; original special cue recipes and exact output hashes","VERIFIED"));
         return Map.copyOf(origins);
     }
 

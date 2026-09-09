@@ -25,7 +25,7 @@ class SettingsStoreTest {
                 """;
         Path file=directory.resolve("settings.json");Files.writeString(file,original);
         SettingsStore store=new SettingsStore(directory);
-        assertFalse(store.firstRun());assertEquals(3,store.settings().schemaVersion);
+        assertFalse(store.firstRun());assertEquals(4,store.settings().schemaVersion);
         assertEquals(1600,store.settings().width);assertEquals(900,store.settings().height);
         assertFalse(store.settings().fullscreen);assertEquals(.35f,store.settings().music);
         assertEquals(KeyInput.KEY_Z,store.settings().keys.get("Throttle"));
@@ -58,7 +58,7 @@ class SettingsStoreTest {
                  "keys":{"Recover":6,"Shield":33,"Freeze":44,"Rear view":0}}
                 """);
         var store=new SettingsStore(directory);var settings=store.settings();
-        assertEquals(3,settings.schemaVersion);assertEquals(1600,settings.width);assertEquals(.35f,settings.music);
+        assertEquals(4,settings.schemaVersion);assertEquals(1600,settings.width);assertEquals(.35f,settings.music);
         assertEquals(KeyInput.KEY_5,settings.keys.get("Recover"));assertEquals(0,settings.keys.get("Select Ballistic"));
         assertEquals(KeyInput.KEY_6,settings.keys.get("Select Cannon"));assertEquals(0,settings.keys.get("Rear view"));
         assertEquals(KeyInput.KEY_F,settings.keys.get("Shield"));assertEquals(KeyInput.KEY_Z,settings.keys.get("Freeze"));
@@ -69,6 +69,14 @@ class SettingsStoreTest {
         assertTrue(new SettingsStore(directory).firstRun());
         Files.writeString(directory.resolve("settings.json"),"{bad");
         assertFalse(new SettingsStore(directory).firstRun(),"A broken preference file is not authorization to change display mode");
+    }
+    @Test void schemaThreeKeepsAnExplicitCBindingAndLeavesNewSpecialUnbound() throws Exception {
+        String original="{\"schemaVersion\":3,\"keys\":{\"Recover\":"+KeyInput.KEY_C+"}}";
+        Files.writeString(directory.resolve("settings.json"),original);
+        var store=new SettingsStore(directory);
+        assertEquals(KeyInput.KEY_C,store.settings().keys.get("Recover"));assertEquals(0,store.settings().keys.get("Special"));
+        assertTrue(store.bindingWarning().contains("Special"));assertEquals("rivet",store.settings().selectedVehicleId);
+        assertEquals(original,Files.readString(directory.resolve("settings.json.v3.bak")));
     }
     @Test void newerSchemaIsPreservedEvenAfterAttemptedSave() throws Exception {
         Path path=directory.resolve("settings.json");String future="{\"schemaVersion\":99,\"newOption\":\"preserve\"}";

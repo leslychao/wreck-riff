@@ -30,7 +30,7 @@ final class VehicleDamageVisual extends AbstractControl {
     private VehicleDamageVisual(AssetManager assets,Node root,VehicleProfile profile) {
         IdentityHashMap<Material,Material[]> materials=new IdentityHashMap<>();
         for(Spatial child:List.copyOf(root.getChildren())) {
-            if(child.getName().startsWith("wheel-")||child.getName().startsWith("exhaust-"))continue;
+            if(child.getName().startsWith("wheel-")||child.getName().startsWith("exhaust-")||child.getName().startsWith("grinder-roller-"))continue;
             child.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
                 boolean lamp=geometry.getName().equals("headlights")||geometry.getName().equals("taillights");
                 Mesh[] meshes=new Mesh[STAGES];meshes[0]=lamp?geometry.getMesh().deepClone():geometry.getMesh();
@@ -100,10 +100,12 @@ final class VehicleDamageVisual extends AbstractControl {
     }
     private static void lampColors(Mesh mesh,int stage) {
         FloatBuffer points=mesh.getFloatBuffer(VertexBuffer.Type.Position);float[] colors=new float[mesh.getVertexCount()*4];
+        FloatBuffer originalColors=mesh.getFloatBuffer(VertexBuffer.Type.Color);
         for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
             boolean left=points.get(vertex*3)<0;
             float brightness=switch(stage){case 0,1->1;case 2->left?.025f:1;case 3->left?.015f:.075f;default->.015f;};
-            colors[vertex*4]=brightness;colors[vertex*4+1]=brightness;colors[vertex*4+2]=brightness;colors[vertex*4+3]=1;
+            for(int channel=0;channel<3;channel++)colors[vertex*4+channel]=brightness*(originalColors==null?1:originalColors.get(vertex*4+channel));
+            colors[vertex*4+3]=1;
         }
         mesh.setBuffer(VertexBuffer.Type.Color,4,BufferUtils.createFloatBuffer(colors));
     }

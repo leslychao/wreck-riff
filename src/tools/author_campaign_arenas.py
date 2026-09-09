@@ -6,10 +6,90 @@ The output is deterministic local JSON and contains no downloaded resources.
 """
 import json
 import math
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "src" / "main" / "resources" / "config"
+
+
+def _clip_rect(polygon, min_x, max_x, min_z, max_z):
+    """Exact convex corridor/axis-aligned collider overlap in the road plane."""
+    for axis, limit, sign in ((0, min_x, 1), (0, max_x, -1), (1, min_z, 1), (1, max_z, -1)):
+        result = []
+        for index, current in enumerate(polygon):
+            previous = polygon[index-1]
+            a, b = sign*(previous[axis]-limit), sign*(current[axis]-limit)
+            if (a >= 0) != (b >= 0):
+                t = a/(a-b)
+                result.append(tuple(previous[i]+(current[i]-previous[i])*t for i in (0, 1)))
+            if b >= 0:
+                result.append(current)
+        polygon = result
+        if not polygon:
+            break
+    area = abs(sum(polygon[i-1][0]*p[1]-p[0]*polygon[i-1][1] for i, p in enumerate(polygon)))/2
+    return polygon if area > 1e-5 else []
+
+
+def ground_edge_clearance(data, edge):
+    """Vertical gap over the full authored corridor, using actual solid undersides.
+
+    ROAD/RAMP/OPENABLE nodes are road points. LAUNCH/DROP have separately tested
+    ballistic corridors and retain their authored 30m air clearance.
+    """
+    if edge["type"] in ("LAUNCH", "DROP"):
+        return 30, []
+    nodes = {n["id"]: n["position"] for n in data["nodes"]}
+    a, b = nodes[edge["from"]], nodes[edge["to"]]
+    dx, dz = b["x"]-a["x"], b["z"]-a["z"]
+    length = math.hypot(dx, dz)
+    if length < 1e-6:
+        # Separate spawn/pickup identities can deliberately share one road point.
+        half=edge["width"]/2
+        corridor=[(a["x"]-half,a["z"]-half),(a["x"]+half,a["z"]-half),
+                  (a["x"]+half,a["z"]+half),(a["x"]-half,a["z"]+half)]
+        dx,dz,length=1,0,1
+    else:
+        nx, nz = -dz/length*edge["width"]/2, dx/length*edge["width"]/2
+        corridor = [(a["x"]+nx, a["z"]+nz), (a["x"]-nx, a["z"]-nz),
+                    (b["x"]-nx, b["z"]-nz), (b["x"]+nx, b["z"]+nz)]
+    ignored = {item["geometryId"] for item in data["destructibles"]+data.get("barriers", [])
+               if edge["type"] == "OPENABLE" and item["id"] == edge["objectId"]}
+    result, limiting = 30, []
+    for box in data["boxes"]:
+        if not box["collision"] or box["id"] in ignored:
+            continue
+        c, s = box["center"], box["size"]
+        overlap = _clip_rect(corridor, c["x"]-s["x"]/2, c["x"]+s["x"]/2,
+                             c["z"]-s["z"]/2, c["z"]+s["z"]/2)
+        if not overlap:
+            continue
+        heights = [a["y"]+(b["y"]-a["y"])*max(0, min(1, ((x-a["x"])*dx+(z-a["z"])*dz)/(length*length))) for x, z in overlap]
+        bottom, top = c["y"]-s["y"]/2, c["y"]+s["y"]/2
+        if top <= min(heights)+.05:
+            continue  # Supporting floor, including the top of a ramp exit.
+        gap = bottom-max(heights)
+        if gap <= 0:
+            raise ValueError(f'{data["id"]}: corridor {edge["id"]} crosses solid {box["id"]}')
+        if gap < result-1e-5:
+            result, limiting = gap, [box["id"]]
+        elif abs(gap-result) <= 1e-5:
+            limiting.append(box["id"])
+    # Only a genuinely elevated wedge can be a ceiling. Grounded ramp side
+    # traversability belongs to road_clear/native routing, not headroom metadata.
+    for ramp in data["ramps"]:
+        if edge["type"] == "RAMP" and edge["objectId"] == ramp["id"]:
+            continue
+        overlap = _clip_rect(corridor, ramp["minX"], ramp["maxX"], ramp["minZ"], ramp["maxZ"])
+        for x, z in overlap:
+            t = ((x-a["x"])*dx+(z-a["z"])*dz)/(length*length)
+            road = a["y"]+(b["y"]-a["y"])*max(0, min(1, t))
+            r = (x-ramp["minX"])/(ramp["maxX"]-ramp["minX"]) if ramp["axis"] == "X" else (z-ramp["minZ"])/(ramp["maxZ"]-ramp["minZ"])
+            top = ramp["startY"]+(ramp["endY"]-ramp["startY"])*r
+            if top > road+.05 and ramp["bottomY"] > road and ramp["bottomY"]-road < result:
+                result, limiting = ramp["bottomY"]-road, [ramp["id"]]
+    return round(result, 4), limiting
 
 
 def vec(p):
@@ -150,7 +230,7 @@ class Arena:
         self.data["nodes"].append(dict(id=identity, position=vec(p), surfaceId=self.surface(vec(p))))
         return identity
 
-    def edge(self, a, b, width=24, kind="ROAD", obj="", bidirectional=True, clearance=7.35):
+    def edge(self, a, b, width=24, kind="ROAD", obj="", bidirectional=True, clearance=30):
         i, j=self.node_ids[a], self.node_ids[b]
         key=(min(i,j), max(i,j), kind)
         if key in self.edge_pairs: return
@@ -233,9 +313,9 @@ class Arena:
         self.attach("secret-exit-road",(exit["x"],exit["z"]+8,0),width=6)
         self.node("secret-entry-inside",(entry["x"],entry["z"]+8,0))
         self.node("secret-exit-inside",(exit["x"],exit["z"]-8,0))
-        self.edge("secret-entry-road","secret-entry-inside",12,"OPENABLE","secret-gate",clearance=6.7)
-        self.edge("secret-entry-inside","secret-exit-inside",12,clearance=6.7)
-        self.edge("secret-exit-inside","secret-exit-road",12,clearance=6.7)
+        self.edge("secret-entry-road","secret-entry-inside",12,"OPENABLE","secret-gate")
+        self.edge("secret-entry-inside","secret-exit-inside",12)
+        self.edge("secret-exit-inside","secret-exit-road",12)
         for pickup in self.data["pickups"]:
             p=pickup["position"]
             if p["y"]<0: continue
@@ -254,6 +334,8 @@ class Arena:
         self.edge(name+"-before",name+"-after",width,"OPENABLE",name)
 
     def finish(self):
+        for edge in self.data["edges"]:
+            edge["clearance"] = ground_edge_clearance(self.data, edge)[0]
         # Exact coordinates must resolve to genuine surfaces, including the pit.
         for item in self.data["spawns"]+self.data["pickups"]:
             self.surface(item["position"])
@@ -460,11 +542,35 @@ def doomsday():
     at=next(i for i,v in enumerate(ground) if v[0]=="north-mid")
     ground[at:at]=[("north-shield-east",(204,208,0)),("north-shield-west",(156,208,0))]
     a.network(ground,upper,[[n for n,_ in upper]+[upper[0][0]]])
-    a.opening("short-cut",(78,94))
+    # The fixed shield panel begins at z97. Around this z94 route the actual
+    # symmetric free corridor is 6m, although the destructible gate is wider.
+    a.opening("short-cut",(78,94),width=6)
     return a
 
 
 if __name__ == "__main__":
+    if "--audit-clearance" in sys.argv or "--update-clearance" in sys.argv:
+        report = []
+        registry = json.loads((OUT/"arenas.json").read_text(encoding="utf-8"))
+        for entry in registry["entries"]:
+            if not entry["campaign"]:
+                continue
+            path = OUT/(entry["resourceKey"]+".json")
+            data = json.loads(path.read_text(encoding="utf-8"))
+            changes = []
+            for edge in data["edges"]:
+                clearance, limiting = ground_edge_clearance(data, edge)
+                if abs(edge["clearance"]-clearance) > 1e-5:
+                    changes.append(dict(edgeId=edge["id"], previous=edge["clearance"], clearance=clearance,
+                                        limitingGeometry=limiting or ["open-sky"]))
+                    edge["clearance"] = clearance
+            report.append(dict(arenaId=data["id"], changes=changes))
+            if "--update-clearance" in sys.argv:
+                path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+            print(f'{data["id"]}: {len(changes)} clearance corrections')
+        report_path = ROOT/"build"/"nav-clearance-report.json"
+        report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+        sys.exit(0)
     arenas=[construction(),neon(),carnival(),necropolis(),doomsday()]
     for arena in arenas:arena.finish()
     entries=[dict(id="dead-air-yard",resourceKey="arena",campaign=False)]+[

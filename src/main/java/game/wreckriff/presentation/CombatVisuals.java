@@ -298,7 +298,8 @@ public final class CombatVisuals implements AutoCloseable {
                 for(int emitted=0;emitter.smokeClock<=0&&emitted<2;emitted++,emitter.smokeClock+=.05f) {
                     var profile=world.profile(id);
                     Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(
-                            (visualRandom.nextFloat()-.5f)*.06f,profile.id().equals("rivet")?.72f:profile.hullBounds().maxY()*.6f,
+                            (visualRandom.nextFloat()-.5f)*.06f,profile.id().equals("rivet")?.72f:profile.id().equals("grinder")?
+                                    profile.hullBounds().maxY()+.12f:profile.hullBounds().maxY()*.6f,
                             profile.length()*.228f+(visualRandom.nextFloat()-.5f)*.06f)));
                     Vector3f rise=new Vector3f((visualRandom.nextFloat()-.5f)*.14f,1.10f,(visualRandom.nextFloat()-.5f)*.10f);
                     emit(bonnet,rise.addLocal(world.velocity(id).mult(.12f)),CRITICAL_SMOKE,1.8f,.18f,.25f,0);

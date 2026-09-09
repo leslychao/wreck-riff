@@ -23,7 +23,22 @@ class PlayerVehicleVisualTest {
                 assertEquals(profile.wheelConnection(wheel).add(0,-profile.suspensionRestLength(),0),node.getLocalTranslation());
                 assertEquals(profile.wheelRadius()/.38f,node.getLocalScale().x);
             }
-            if(id.equals("grinder"))assertEquals(profile.grinderIntake(),model.getChild("grinder-intake").getLocalTranslation());
+            if(id.equals("grinder")) {
+                assertEquals(profile.grinderIntake(),model.getChild("grinder-intake").getLocalTranslation());
+                Node left=(Node)model.getChild("grinder-roller-left"),right=(Node)model.getChild("grinder-roller-right");
+                assertNotNull(left);assertNotNull(right);assertEquals(1,left.getQuantity());assertEquals(1,right.getQuantity());
+                var bodyPose=model.getLocalTransform().clone();var rightPose=right.getLocalTransform().clone();
+                left.rotate(.8f,0,0);assertNotEquals(right.getLocalRotation(),left.getLocalRotation());
+                assertEquals(rightPose,right.getLocalTransform());assertEquals(bodyPose,model.getLocalTransform());
+                var turningPose=left.getLocalTransform().clone();VehicleVisual.updateDamage(model,.25f);
+                assertEquals(turningPose,left.getLocalTransform(),"Damage never rewrites the special owner's rotating shaft");
+                VehicleVisual.updateDamage(model,1);left.setLocalRotation(com.jme3.math.Quaternion.IDENTITY);
+            } else {
+                assertNotNull(model.getChild("spark-nozzle-left"));assertNotNull(model.getChild("spark-nozzle-right"));
+                assertNotNull(model.getChild("spark-smoke-ejector"));
+                var paint=(Geometry)model.getChild("paint");var color=(com.jme3.math.ColorRGBA)paint.getMaterial().getParam("Diffuse").getValue();
+                assertTrue(color.g>color.r&&color.g>color.b,"Spark's approved base paint is lime");
+            }
             var mesh=((Geometry)model.getChild("paint")).getMesh();shapes.add(Arrays.hashCode(points(mesh)));
             model.updateGeometricState();var bounds=profile.fullBounds();
             model.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry&&visible(geometry)) {

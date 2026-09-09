@@ -89,10 +89,23 @@ class ArenaArtTest {
         Set<ColorRGBA> skies=new HashSet<>();
         for(var theme:ArenaDefinition.Theme.values()) {
             var profile=SceneLighting.profile(theme);skies.add(profile.sky());
-            assertTrue(profile.ambient().r>=.28f&&profile.ambient().g>=.29f&&profile.ambient().b>=.38f);
+            assertTrue(profile.ambient().r>=.20f&&profile.ambient().g>=.25f&&profile.ambient().b>=.33f);
+            assertTrue(profile.ambient().g+profile.key().g+profile.rim().g>=1.1f,"Night fill must retain visible road detail");
             assertTrue(profile.glow()>0&&profile.glow()<1);
         }
         assertEquals(6,skies.size());
+    }
+    @Test void roadRepairsUseDarkTexturedTarAndUpperDeckJointsRemainFlush() {
+        var material=new SurfaceMaterials(PresentationTestAssets.shared()).material("road-patch");
+        assertNotNull(material.getParam("DiffuseMap"));
+        ColorRGBA tint=(ColorRGBA)material.getParam("Diffuse").getValue();
+        assertTrue(tint.r<=.20f&&tint.g<=.21f&&tint.b<=.22f);
+        var arena=ArenaRegistry.load().definition("construction_17");var art=ArenaArt.load(arena);
+        assertTrue(art.parts().stream().filter(part->part.id().startsWith("asphalt-repair"))
+                .allMatch(part->part.shape()==ArenaArt.Shape.PATCH&&part.size().y()<=.008f));
+        assertTrue(art.parts().stream().anyMatch(part->part.id().startsWith("roof-expansion-joint")));
+        assertTrue(art.parts().stream().filter(part->part.id().startsWith("roof-expansion-joint"))
+                .allMatch(part->part.size().y()<=.004f&&part.anchor().equals("parking-deck")));
     }
 
     private static Node scene(ArenaDefinition arena) {
@@ -102,8 +115,8 @@ class ArenaArtTest {
     private static Vector3f rotatedHalf(ArenaArt.Part part) {
         Vector3f size=part.size().vector().mult(.5f);
         var rotation=new Quaternion().fromAngles(part.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)).toRotationMatrix();
-        return new Vector3f(Math.abs(rotation.m00)*size.x+Math.abs(rotation.m01)*size.y+Math.abs(rotation.m02)*size.z,
-                Math.abs(rotation.m10)*size.x+Math.abs(rotation.m11)*size.y+Math.abs(rotation.m12)*size.z,
-                Math.abs(rotation.m20)*size.x+Math.abs(rotation.m21)*size.y+Math.abs(rotation.m22)*size.z);
+        return new Vector3f(Math.abs(rotation.get(0,0))*size.x+Math.abs(rotation.get(0,1))*size.y+Math.abs(rotation.get(0,2))*size.z,
+                Math.abs(rotation.get(1,0))*size.x+Math.abs(rotation.get(1,1))*size.y+Math.abs(rotation.get(1,2))*size.z,
+                Math.abs(rotation.get(2,0))*size.x+Math.abs(rotation.get(2,1))*size.y+Math.abs(rotation.get(2,2))*size.z);
     }
 }

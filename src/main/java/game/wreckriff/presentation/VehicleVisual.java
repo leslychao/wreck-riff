@@ -15,7 +15,7 @@ import java.util.*;
 /** Authored Rivet coupe, built from local parameterized surfaces; +Z front, +X right. */
 public final class VehicleVisual {
     private static final ColorRGBA[] PAINT = {
-        new ColorRGBA(.85f,.19f,.065f,1), new ColorRGBA(.62f,.54f,.84f,1),
+        new ColorRGBA(.19f,.22f,.24f,1), new ColorRGBA(.62f,.54f,.84f,1),
         new ColorRGBA(.92f,.65f,.11f,1), new ColorRGBA(.11f,.69f,.7f,1),
         new ColorRGBA(.35f,.77f,.19f,1)
     };
@@ -43,7 +43,7 @@ public final class VehicleVisual {
         Material paint=surfaces.paint(PAINT[livery]), steel=surfaces.material("steel");
         Material dark=surfaces.rubber();
         Material glass=SurfaceMaterials.lit(assets,new ColorRGBA(.018f,.055f,.085f,1),110,.24f);
-        Material markings=SurfaceMaterials.lit(assets,new ColorRGBA(.88f,.84f,.72f,1),15,.08f);
+        Material markings=SurfaceMaterials.lit(assets,livery==0?new ColorRGBA(.98f,.35f,.055f,1):new ColorRGBA(.88f,.84f,.72f,1),15,.08f);
         Material lamps=unlit(assets,new ColorRGBA(1,.77f,.33f,1));
         Material tail=unlit(assets,new ColorRGBA(.95f,.09f,.025f,1));
         Builder body=new Builder(), metal=new Builder(), black=new Builder(), windows=new Builder(), ink=new Builder();
@@ -93,6 +93,11 @@ public final class VehicleVisual {
         metal.bumper(-2.32f,.075f);
         black.box(0,.065f,2.305f,.27f,.055f,.015f);
         for (int i=-3;i<=3;i++) metal.box(i*.071f,.065f,2.324f,.01f,.05f,.008f);
+        // The original impulse device is integrated into the grille, with an exposed mechanical resonator.
+        metal.cylinderZ(0,.065f,2.352f,.12f,.050f,12);
+        black.cylinderZ(0,.065f,2.383f,.085f,.012f,12);
+        metal.cylinderZ(0,.065f,2.395f,.031f,.012f,10);
+        Node impulse=new Node("rivet-impulse-emitter");impulse.setLocalTranslation(0,.065f,2.405f);root.attachChild(impulse);
         // Rear amplifier pack: two speakers in a braced cabinet, cooling fins and a carrying rail.
         black.box(0,.52f,-1.79f,.55f,.22f,.27f);
         metal.box(0,.76f,-1.80f,.58f,.025f,.29f);

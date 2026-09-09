@@ -7,6 +7,8 @@ import java.util.List;
 public record BotObservation(long tick, List<Opponent> visible, List<Opponent> remembered) {
     public record Opponent(int id, Vector3f position, Vector3f velocity, long observedTick) {
         public Opponent { position=position.clone(); velocity=velocity.clone(); }
+        @Override public Vector3f position() {return position.clone();}
+        @Override public Vector3f velocity() {return velocity.clone();}
     }
     public BotObservation { visible=List.copyOf(visible); remembered=List.copyOf(remembered); }
     public Opponent visible(int id) { return visible.stream().filter(e->e.id==id).findFirst().orElse(null); }

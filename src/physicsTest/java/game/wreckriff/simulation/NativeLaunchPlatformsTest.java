@@ -25,7 +25,7 @@ class NativeLaunchPlatformsTest {
 
     static Stream<Arguments> launches() {
         List<Arguments> rows=new ArrayList<>();
-        for(String arena:REGISTRY.campaignIds())for(int pad=0;pad<2;pad++)for(int speed:new int[]{2,14,28})
+        for(String arena:REGISTRY.campaignIds())for(int pad=0;pad<2;pad++)for(float speed:new float[]{2,RULES.maxSpeed()/2,RULES.maxSpeed(),RULES.turboSpeed()})
             for(int angle:new int[]{0,-25,25,-50,50})rows.add(Arguments.of(arena,pad,speed,angle));
         return rows.stream();
     }
@@ -34,7 +34,7 @@ class NativeLaunchPlatformsTest {
     }
 
     @ParameterizedTest(name="{0} pad={1} speed={2} angle={3}") @MethodSource("launches")
-    void allPlatformsDeliverTheCompleteOrdinaryChassis(String arenaId,int padIndex,int speed,int angle) {
+    void allPlatformsDeliverTheCompleteOrdinaryChassis(String arenaId,int padIndex,float speed,int angle) {
         try(var rig=new Rig(REGISTRY.definition(arenaId),false)) {
             rig.place(0,padIndex,speed,angle);
             assertEquals(4,rig.world.wheelContacts(0));

@@ -19,6 +19,8 @@ import game.wreckriff.diagnostics.SessionReport;
 import game.wreckriff.diagnostics.DiagnosticEvidence;
 import game.wreckriff.diagnostics.DiagnosticCompletion;
 import game.wreckriff.diagnostics.CombatShowcase;
+import game.wreckriff.diagnostics.ArtShowcase;
+import game.wreckriff.diagnostics.FrameSample;
 import game.wreckriff.input.*;
 import game.wreckriff.presentation.*;
 import game.wreckriff.simulation.*;
@@ -75,11 +77,13 @@ public final class GameApplication extends SimpleApplication {
     private BotController bots;
     private CombatSystem combat;
     private CombatVisuals combatVisuals;
+    private SpecialPresentation specialPresentation;
     private PickupPresentation pickupPresentation;
     private SceneLighting.Handle sceneLighting;
     private ChaseCamera chase;
     private DiagnosticCameraTour visualTour;
     private CombatShowcase showcase;
+    private ArtShowcase artShowcase;
     private VideoRecorderAppState videoRecorder;
     private AudioCapture audioCapture;
     private BitmapText showcaseText;
@@ -112,6 +116,10 @@ public final class GameApplication extends SimpleApplication {
     private final java.util.concurrent.CountDownLatch terminated=new java.util.concurrent.CountDownLatch(1);
     private final DiagnosticCompletion diagnosticCompletion=new DiagnosticCompletion();
     private DiagnosticEvidence diagnostic;
+    private FrameSample pendingFrame;
+    private SessionReport pendingFrameReport;
+    private long renderedFrame;
+    private long previousFrameNanos;
     private double screenSince,diagnosticPausedAt,undrawableSeconds;
     private long loadingStarted;
     private int diagnosticRetries,diagnosticResults,baselineBodies,baselineListeners;
@@ -121,6 +129,8 @@ public final class GameApplication extends SimpleApplication {
 
     public GameApplication(Main.Options options,SettingsStore store) {
         this.options=options;this.store=store;
+        requestedArena=options.arenaId();
+        requestedMode=requestedArena.equals(ProgressStore.LEGACY_ARENA)?ProgressStore.Mode.LEGACY:ProgressStore.Mode.ARENA;
         Path progressDirectory=options.dev()&&!options.automated()
                 ?store.directory().resolve("diagnostics").resolve("interactive-progress"):store.directory();
         progress=new ProgressStore(progressDirectory,checkpoint->MatchCheckpoint.validateReferences(arenaRegistry,checkpoint));
@@ -144,8 +154,10 @@ public final class GameApplication extends SimpleApplication {
             matchRules=MatchRules.load(); vehicleRules=VehicleRules.load(); loop=new SimulationLoop(matchRules);
             initializeLogging();
             if(options.automated()) {
-                diagnostic=new DiagnosticEvidence(options.benchmarkSeconds()>0,options.showcase()?CombatShowcase.SECONDS:options.benchmarkSeconds()>0?options.benchmarkSeconds():options.smokeSeconds());
+                diagnostic=new DiagnosticEvidence(options.benchmarkSeconds()>0,options.artShowcase()?ArtShowcase.SECONDS:options.showcase()?CombatShowcase.SECONDS:options.benchmarkSeconds()>0?options.benchmarkSeconds():options.smokeSeconds());
                 if(options.showcase())diagnostic.put("mode","showcase");
+                if(options.artShowcase())diagnostic.put("mode","art-showcase");
+                diagnostic.put("arenaId",requestedArena);diagnostic.put("glow",store.settings().glow);
                 diagnostic.put("gpu",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_RENDERER));
                 diagnostic.put("graphicsVersionDriver",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_VERSION));
                 diagnostic.put("width",cam.getWidth());diagnostic.put("height",cam.getHeight());
@@ -234,7 +246,7 @@ public final class GameApplication extends SimpleApplication {
         }));
         stages.add(new MatchLoading.Stage("Окружение",()->{
             content=new ArenaFactory(assetManager).build(arena);matchNode.attachChild(content.visual());
-            if(options.automated()&&!options.showcase())visualTour=new DiagnosticCameraTour(arena);
+            if(options.automated()&&!options.showcase()&&!options.artShowcase())visualTour=new DiagnosticCameraTour(arena);
         }));
         stages.add(new MatchLoading.Stage("Дорожные опоры",()->{
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
@@ -262,6 +274,8 @@ public final class GameApplication extends SimpleApplication {
             if(checkpoint!=null)runtime.restoreCheckpoint(checkpoint);
             ArenaPresentation.attach(assetManager,content.visual(),session,arena,arenaSystems);
             combatVisuals=new CombatVisuals(assetManager,matchNode,world);createNavigationLines();
+            specialPresentation=new SpecialPresentation(assetManager,matchNode,world);
+            specialPresentation.bindModels(vehicleModels);
             pickupPresentation=new PickupPresentation(assetManager,content.visual(),session,arena,arenaSystems,combatVisuals::pickupBurst);
             pickupFeedback=new PickupFeedback(session.sessionId,0);
             sceneLighting.apply(arena.metadata().theme(),store.settings().glow);
@@ -275,7 +289,7 @@ public final class GameApplication extends SimpleApplication {
                 if(!options.automated())progress.saveCheckpoint(attempt,retryCheckpoint);
             }
             loop=new SimulationLoop(matchRules);chase.reset();
-            audio.startMatch(arena.metadata().music(),arena.metadata().bossMusic());
+            audio.startMatch(session.sessionId,arena.metadata().music(),arena.metadata().bossMusic());
             audio.bossMusic(session.phase==MatchSession.Phase.BOSS_ENTRY);
             input.clear();flow.running();finishLoading();
         });
@@ -319,16 +333,37 @@ public final class GameApplication extends SimpleApplication {
             stateManager.attach(videoRecorder);
             showcaseText=ui.text("",90,1020,28,GameUi.PAPER);
         }
+        if(options.artShowcase()) {
+            artShowcase=new ArtShowcase(session,world,runtime,arena);
+            audioCapture=new AudioCapture(store.directory(),artShowcase::seconds,ArtShowcase.SECONDS);
+            audio.setCapture(audioCapture);
+            videoRecorder=new VideoRecorderAppState(store.directory().resolve("art-showcase.avi").toFile(),.85f,30);
+            stateManager.attach(videoRecorder);
+            showcaseText=ui.text("",24,cam.getHeight()-52,16,GameUi.PAPER);
+        }
 
     }
     @Override public void simpleUpdate(float dt) {
         elapsed+=dt;
         if(ui==null || input==null) return;
         try {
+            observePreviousFrame();
+            FrameSample.Phase startingPhase=framePhase();
+            SessionReport startingReport=report;
+            SimulationLoop startingLoop=loop;
+            double startingDropped=loop.droppedSimulationTime();
             input.pollGamepad();
             if(settingsDirty&&elapsed>=settingsSaveAt){store.saveSettings();settingsDirty=false;}
             pollProgressStatus();
             boolean drawable=cam.getWidth()>0&&cam.getHeight()>0;
+            boolean diagnosticDrawable=drawable;
+            if(diagnostic!=null) {
+                long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+                boolean visible=drawable&&window!=0&&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_VISIBLE)!=0
+                        &&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_ICONIFIED)==0;
+                diagnostic.observeWindow(cam.getWidth(),cam.getHeight(),visible);
+                diagnosticDrawable=visible;
+            }
             if(drawable&&(cam.getWidth()!=viewWidth || cam.getHeight()!=viewHeight)) {
                 viewWidth=cam.getWidth();viewHeight=cam.getHeight();ui.usePixelCoordinates();resizeHud();
                 if(menu!=null&&flow.screen()!=Screen.RUNNING)menu.resize(viewWidth,viewHeight,store.settings().uiScale);
@@ -337,11 +372,12 @@ public final class GameApplication extends SimpleApplication {
             if(flow.screen()!=Screen.RUNNING)menu.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
             if(previousVideo!=null && elapsed>=videoDeadline) restoreVideo();
             var volume=store.settings(); audio.setVolumes(volume.master,volume.music,volume.sfx);
+            sceneLighting.apply(world==null?ArenaDefinition.Theme.INDUSTRIAL_YARD:arena.metadata().theme(),volume.glow);
+            sceneLighting.setSamples(volume.samples);
             if(options.automated() && !smokeStarted && elapsed>0.5) { smokeStarted=true; startMatch(); }
             if(flow.screen()==Screen.LOADING&&loading!=null)loading.advance();
             if(flow.screen()==Screen.RUNNING) {
-                loop.advance(dt,true,this::fixedTick); report.frame(dt);
-                if(diagnostic!=null&&options.benchmarkSeconds()>0&&elapsed>=30&&drawable)diagnostic.frames.add(dt);
+                loop.advance(dt,true,this::fixedTick);
             } else if(flow.screen()==Screen.RESULTS&&runtime!=null&&runtime.hasWrecks()) {
                 loop.advance(dt,true,runtime::tickPhysicsTail);
             } else loop.resetAccumulator();
@@ -363,16 +399,59 @@ public final class GameApplication extends SimpleApplication {
                 if(showcaseText!=null)showcaseText.setText(showcase.label());
                 if(shot!=null)capture(shot);
             }
+            if(artShowcase!=null&&world!=null&&drawable) {
+                String shot=artShowcase.frame(cam);
+                if(showcaseText!=null)showcaseText.setText(artShowcase.label());
+                if(shot!=null)capture(shot);
+            }
             updateEnemyHealthBars(drawable);
+            if(options.dev()) {
+                FrameSample.Phase phase=startingPhase==framePhase()&&startingReport==report?startingPhase:FrameSample.Phase.TRANSITION;
+                pendingFrame=new FrameSample(renderedFrame++,session==null?0:session.tick,session==null?requestedArena:session.arenaId,phase,0,
+                        session==null?0:session.vehicles.size(),world==null?0:world.bodyCount(),combat==null?0:combat.projectiles().size(),
+                        audio.voiceCount(),combatVisuals==null?0:combatVisuals.effectCount(),launchingVehicles(),diagnosticDrawable,
+                        startingLoop==loop?Math.max(0,loop.droppedSimulationTime()-startingDropped):loop.droppedSimulationTime());
+                pendingFrameReport=report;
+            }
             if(options.automated()) advanceDiagnostic(drawable);
         } catch(Exception e) { fail(e); }
+    }
+    private void observePreviousFrame() {
+        long now=System.nanoTime(),previous=previousFrameNanos;previousFrameNanos=now;
+        if(pendingFrame==null||previous==0)return;
+        double seconds=(now-previous)/1_000_000_000.0;
+        var old=pendingFrame;
+        var sample=new FrameSample(old.frame(),old.tick(),old.arenaId(),old.phase(),seconds,old.participants(),old.bodies(),
+                old.projectiles(),old.sfxVoices(),old.effects(),old.launchingVehicles(),old.drawable(),old.droppedSimulationSeconds());
+        if(diagnostic!=null)diagnostic.frame(sample);
+        if(pendingFrameReport!=null)pendingFrameReport.frame(sample);
+        pendingFrame=null;pendingFrameReport=null;
+    }
+    private int launchingVehicles() {
+        if(session==null||world==null)return 0;int count=0;
+        for(var state:session.vehicles)if(state.alive()&&world.roadContext(state.id).motion()==RoadContext.Motion.LAUNCH)count++;
+        return count;
+    }
+    private FrameSample.Phase framePhase() {
+        return switch(flow.screen()) {
+            case LOADING->FrameSample.Phase.LOADING;case PAUSED->FrameSample.Phase.PAUSED;
+            case RESULTS->FrameSample.Phase.RESULTS;case ERROR->FrameSample.Phase.ERROR;
+            case RUNNING->session==null?FrameSample.Phase.TRANSITION:switch(session.phase) {
+                case INTRO->FrameSample.Phase.INTRO;case ARENA_COMBAT->FrameSample.Phase.ARENA_COMBAT;
+                case BOSS_ENTRY->FrameSample.Phase.BOSS_ENTRY;case BOSS_COMBAT->FrameSample.Phase.BOSS_COMBAT;
+                case RESULT->FrameSample.Phase.RESULTS;case ERROR->FrameSample.Phase.ERROR;
+            };
+            default->FrameSample.Phase.MENU;
+        };
     }
     private void fixedTick() {
         if(session.outcome!=MatchSession.Outcome.NONE || flow.screen()!=Screen.RUNNING) return;
         VehicleCommand player=input.consume(); rearView=player.rearView();
         int recoveries=session.vehicle(0).recoveries;
-        List<GameEvent> events=showcase==null?runtime.tick(player,options.aiPlayer()||options.automated()):runtime.tick(showcase.commands(),false);
+        List<GameEvent> events=artShowcase!=null?runtime.tick(artShowcase.commands(),false):
+                showcase==null?runtime.tick(player,options.aiPlayer()||options.automated()):runtime.tick(showcase.commands(),false);
         if(showcase!=null)showcase.accept(events);
+        if(artShowcase!=null)artShowcase.accept(events);
         for(var state:session.vehicles)if(world.containsVehicle(state.id))attachVehicleModel(state);
         drivers.putAll(runtime.drivers());
         if(session.checkpointRequested) {
@@ -393,6 +472,7 @@ public final class GameApplication extends SimpleApplication {
                 chase.impact(Math.min(.7f,event.value()/40));
         }
         combatVisuals.accept(events);
+        specialPresentation.accept(events);
         pickupPresentation.accept(events);
         pickupFeedback.accept(events,session.tick);
         if(session.outcome!=MatchSession.Outcome.NONE) {
@@ -437,8 +517,8 @@ public final class GameApplication extends SimpleApplication {
             combatVisuals.update(List.of(),List.of(),List.of(),List.of(),null,dt);
             audio.updateTail(dt);
         }
-        sceneLighting.apply(arena.metadata().theme(),store.settings().glow);
-        sceneLighting.setSamples(store.settings().samples);
+        specialPresentation.setFlashIntensity(store.settings().flashes);
+        specialPresentation.update(session,combat.specialBombs(),alpha);
         pickupPresentation.setGlow(store.settings().glow);
         if(advancing)pickupPresentation.update(alpha);
         chase.update(world,0,alpha,dt,rearView,drivers.get(0).turboActive(),store.settings().shake);
@@ -491,7 +571,7 @@ public final class GameApplication extends SimpleApplication {
             case MAPS -> drawMaps();
             case VEHICLES -> drawVehicles();
             case STATISTICS -> drawStatistics();
-            case LOADING -> drawLoading();
+            case LOADING -> {loadingUiPercent=-1;drawLoading();}
             case RUNNING -> createHud();
             case PAUSED -> menu.show("pause","ПАУЗА",arena==null?"":arena.metadata().title(),List.of(),List.of(
                     new MenuView.Action("resume","ПРОДОЛЖИТЬ",flow::resume),
@@ -637,11 +717,12 @@ public final class GameApplication extends SimpleApplication {
         if(hudUsesGamepad!=input.usingGamepad()) {hudUsesGamepad=input.usingGamepad();if(showHelp)hud.setHelp(hudHelp());}
         int lock=combat.lockTarget(0);
         String receipt=pickupFeedback==null?"":pickupFeedback.text(session.tick);
+        hud.setPickupReceipt(receipt);
         hud.setPickupHighlights(pickupFeedback==null?Set.of():pickupFeedback.highlighted(session.tick));
         var definition=VehicleDefinition.forId(session.vehicle(0).profileId);
         hud.setSpecial(definition.id(),definition.specialName(),input.displayBinding("Special"));
         hud.update(hudPresenter.snapshot(session,world,new MatchHudPresenter.Targeting(lock,combat.napalmAssistTarget(0),combat.ballisticTarget(0)),
-                input.displayBinding("Selected weapon"),noticeTime>0?message:!progressStatus.isBlank()?progressStatus:receipt,elapsed));
+                input.displayBinding("Selected weapon"),noticeTime>0?message:progressStatus,elapsed));
         if((debug||navDebug)&&elapsed>=nextHudDiagnostics) {
             StringBuilder diagnostics=new StringBuilder(String.format(Locale.ROOT,"%.0f FPS | tick %d | %.1f m/s | wheels %d | %s\nHP %.1f energy %.1f | target %d | projectiles %d | voices %d\ndropped %.4fs | bodies %d\n%s",1/Math.max(0.0001f,timer.getTimePerFrame()),session.tick,world.velocity(0).length(),world.wheelContacts(0),drivers.get(0).reversing()?"REVERSE":"FORWARD",player.hp,player.turbo,lock,combat.projectiles().size(),audio.voiceCount(),loop.droppedSimulationTime(),world.bodyCount(),input.diagnostics()));
             if(navDebug)for(var state:session.vehicles)if(!state.player&&state.alive())diagnostics.append("\n").append(state.name).append(" ").append(bots.state(state.id)).append(" -> ").append(bots.targetId(state.id));
@@ -727,8 +808,9 @@ public final class GameApplication extends SimpleApplication {
         var modes=org.lwjgl.glfw.GLFW.glfwGetVideoModes(org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor());
         if(modes!=null) for(int i=0;i<modes.limit();i++) {
             var mode=modes.get(i); int width=mode.width(),height=mode.height();
-            if(width>=1280 && height>=720 && sizes.stream().noneMatch(a->a[0]==width&&a[1]==height)) sizes.add(new int[]{width,height});
+            if(width>=640 && height>=480 && sizes.stream().noneMatch(a->a[0]==width&&a[1]==height)) sizes.add(new int[]{width,height});
         }
+        if(!store.settings().fullscreen&&sizes.stream().noneMatch(a->a[0]==640&&a[1]==480))sizes.add(new int[]{640,480});
         if(sizes.isEmpty()) sizes.add(new int[]{1280,720});
         sizes.sort(Comparator.comparingInt(a->a[0]*a[1]));
         var s=store.settings(); int index=-1;
@@ -803,6 +885,7 @@ public final class GameApplication extends SimpleApplication {
         progressStatus=status.indicator();
         if(!status.detailToLog().isEmpty())Logger.getLogger(getClass().getName()).warning(status.detailToLog());
         if(!status.announcement().isEmpty())notice(status.announcement());
+        if(menu!=null&&flow.screen()!=Screen.RUNNING)menu.setStatus(noticeTime>0?message:progressStatus);
     }
     private void capture() {
         capture("manual");
@@ -821,6 +904,7 @@ public final class GameApplication extends SimpleApplication {
         catch(IOException e) {Logger.getLogger(getClass().getName()).warning("Cannot write report: "+e.getMessage());}
     }
     private void cleanupMatch() {
+        if(specialPresentation!=null){specialPresentation.close();specialPresentation=null;}
         if(pickupPresentation!=null){pickupPresentation.close();pickupPresentation=null;}
         pickupFeedback=null;
         if(hud!=null){hud.close();hud=null;}
@@ -831,7 +915,7 @@ public final class GameApplication extends SimpleApplication {
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
         else if(world!=null){world.close();world=null;}
         matchNode.detachAllChildren();vehicleModels.clear();wheels.clear();drivers.clear();
-        session=null;arenaSystems=null;bots=null;content=null;navNode=null;visualTour=null;showcase=null;showcaseText=null;
+        session=null;arenaSystems=null;bots=null;content=null;navNode=null;visualTour=null;showcase=null;artShowcase=null;showcaseText=null;
     }
     private void fail(Exception exception) {
         Logger.getLogger(getClass().getName()).log(Level.SEVERE,"Game failure",exception);
@@ -867,8 +951,9 @@ public final class GameApplication extends SimpleApplication {
             if(fileLog!=null){Logger.getLogger("").removeHandler(fileLog);fileLog.close();}
             if(warningLog!=null)Logger.getLogger("").removeHandler(warningLog);
             if(options.automated()) {
-                writeDiagnostic(diagnosticCompletion.passed()?"PASS":"FAIL");
-                System.out.println(diagnosticCompletion.passed()?"GRAPHICS_DIAGNOSTIC_PASS":"GRAPHICS_DIAGNOSTIC_FAIL");
+                String status=diagnostic==null?"FAIL":diagnostic.completionStatus(diagnosticCompletion.passed());
+                writeDiagnostic(status);
+                System.out.println("GRAPHICS_DIAGNOSTIC_"+status);
             }
             terminated.countDown();
         }
@@ -881,12 +966,21 @@ public final class GameApplication extends SimpleApplication {
         } else super.handleError(message,failure);
     }
     public boolean awaitDiagnostic() throws InterruptedException {
-        int timeout=options.showcase()?240:options.benchmarkSeconds()>0?options.benchmarkSeconds()+90:options.smokeSeconds()+60;
+        int timeout=options.showcase()||options.artShowcase()?240:options.benchmarkSeconds()>0?30+options.benchmarkSeconds()+Math.max(120,options.benchmarkSeconds()/2):options.smokeSeconds()+60;
         if(!terminated.await(timeout,java.util.concurrent.TimeUnit.SECONDS)) {System.err.println("Diagnostic shutdown timed out");diagnosticCompletion.shutdownFailed();stop();return false;}
         return diagnosticCompletion.passed();
     }
     private void advanceDiagnostic(boolean drawable) {
         if(diagnosticEnding)return;
+        if(options.artShowcase()) {
+            if(flow.screen()==Screen.PAUSED&&drawable)flow.resume();
+            if(artShowcase!=null&&artShowcase.complete()) {
+                diagnostic.put("artShowcase",artShowcase.evidence());
+                if(!artShowcase.demonstrated())diagnostic.error("Art showcase missed required real pickup events");
+                finishDiagnostic(artShowcase.demonstrated()&&audioRenderer!=null&&undrawableSeconds==0);
+            }
+            return;
+        }
         if(options.showcase()) {
             if(flow.screen()==Screen.PAUSED&&drawable)flow.resume();
             if(showcase!=null&&showcase.complete()) {
@@ -897,9 +991,9 @@ public final class GameApplication extends SimpleApplication {
             return;
         }
         boolean benchmark=options.benchmarkSeconds()>0;
-        if(benchmark&&elapsed>=30+options.benchmarkSeconds()) {
-            diagnostic.put("warmupSeconds",30);diagnostic.put("renderTargetMet",diagnostic.frames.withinTarget());
-            finishDiagnostic(diagnosticResults>0&&diagnostic.frames.withinTarget()&&undrawableSeconds==0);return;
+        if(benchmark&&diagnostic.measuredActiveSeconds()>=options.benchmarkSeconds()) {
+            // Completion is evidence, not release approval; the strict gate also requires external process memory.
+            finishDiagnostic(undrawableSeconds==0);return;
         }
         if(!benchmark&&elapsed>=options.smokeSeconds()) {
             diagnostic.error("Time limit reached before complete match and 20 restarts");finishDiagnostic(false);return;

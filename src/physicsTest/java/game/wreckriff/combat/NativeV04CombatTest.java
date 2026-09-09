@@ -1,6 +1,8 @@
 package game.wreckriff.combat;
 
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.PhysicsSpace;
+import com.jme3.bullet.PhysicsTickListener;
 import com.jme3.math.*;
 import game.wreckriff.arena.*;
 import game.wreckriff.config.*;
@@ -29,6 +31,13 @@ class NativeV04CombatTest {
     @ParameterizedTest @ValueSource(booleans={false,true})
     void realSideCannonFlipsRivetAndLethalWreckKeepsItsMomentumForExactlyThreeSeconds(boolean lethal) {
         try(Scene scene=scene(new Vector3f(-10,1,0),new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y),new Vector3f(0,1,0),lethal?1:360)) {
+            Vector3f[] beforeBlast = {null};
+            scene.world.space().addTickListener(new PhysicsTickListener() {
+                @Override public void prePhysicsTick(PhysicsSpace space,float timeStep) {}
+                @Override public void physicsTick(PhysicsSpace space,float timeStep) {
+                    if(scene.world.containsVehicle(1))beforeBlast[0]=scene.world.vehicle(1).getAngularVelocity().clone();
+                }
+            });
             if(lethal)scene.session.vehicle(1).hp=40;
             List<GameEvent> events=new ArrayList<>(scene.runtime.tick(Map.of(0,fire(WeaponType.CANNON)),false));
             int elapsed=0;
@@ -37,7 +46,12 @@ class NativeV04CombatTest {
             assertTrue(scene.world.velocity(1).x>11,"The target must receive real horizontal momentum");
             assertTrue(scene.world.velocity(1).y>7,"The target must receive real lift");
             assertTrue(scene.world.vehicle(1).getAngularVelocity().length()>4);
-            assertTrue(scene.world.vehicle(1).getAngularVelocity().length()<=6.001f);
+            // BlastLimits caps the added angular velocity, preserving native
+            // rotation that was already present after this step's integration.
+            assertNotNull(beforeBlast[0]);
+            float angularDelta=scene.world.vehicle(1).getAngularVelocity().subtract(beforeBlast[0]).length();
+            assertTrue(angularDelta>4,"The blast must add a real angular impulse");
+            assertTrue(angularDelta<=6.001f,"The added angular speed must respect the blast limit: "+angularDelta);
             long deathTick=scene.session.tick;
             if(lethal)assertEquals(360,scene.runtime.wreckRemainingTicks(1));
             float minimumUp=1;

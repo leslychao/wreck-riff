@@ -1,0 +1,4051 @@
+{
+  "contract": "Ground corridor uses exact collider underside minus road Y; open sky 30m; air transitions remain 30m.",
+  "scope": "Only edge clearance in five existing arenas and the one measured secondary shortcut width. Coordinates, art fields, audio paths, surfaces, spawns and geometry unchanged.",
+  "widthCorrection": {
+    "arenaId": "doomsday_arena",
+    "edgeId": "openable-short-cut-before-short-cut-after",
+    "previousWidth": 16,
+    "width": 6,
+    "evidence": "Edge centre Z=94; control-shield-south-panel has X=85.5..86.5 and Z=97..99, so symmetric free width is 2*(97-94)=6m."
+  },
+  "arenas": [
+    {
+      "arenaId": "construction_17",
+      "changes": [
+        {
+          "edgeId": "road-south-west-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-mid-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-east-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-0-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-1-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-2-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-north-east-north-mid",
+          "previous": 7.35,
+          "clearance": 8.0,
+          "limitingGeometry": [
+            "parking-north-0"
+          ]
+        },
+        {
+          "edgeId": "road-north-mid-north-west",
+          "previous": 7.35,
+          "clearance": 8.0,
+          "limitingGeometry": [
+            "parking-north-0"
+          ]
+        },
+        {
+          "edgeId": "road-north-west-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-3-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-2-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-1-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-south-u-mid-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-mid-south-u-east-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-east-south-u-east-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-east-mid-u-east-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-east-north-u-mid-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-mid-north-u-west-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-north-u-west-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-mid-south-u-mid-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-west-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-mid-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-east-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-mid-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-approach-ramp-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-0-ramp-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-1-ramp-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-2-ramp-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-3-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-u-mid-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-4-ramp-exit",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-u-east-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "parking-deck"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-north-west",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "parking-deck"
+          ]
+        },
+        {
+          "edgeId": "openable-secret-entry-road-secret-entry-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-inside-secret-exit-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-inside-secret-exit-road",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-ramp-approach",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-west-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-mid-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-u-mid-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-u-mid-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-pickup-W3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-ramp-approach",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-ramp-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-entry-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-pickup-R2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-pickup-W4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-pickup-W5",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-pickup-R1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-0-pit-west-top",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-pit-west-top-pit-west-bottom",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pit-west-bottom-pickup-W1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-pit-east-bottom",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-pit-east-bottom-pit-east-top",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pit-east-road-pit-east-top",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pit-east-road-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-pickup-M1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-east-3",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "parking-deck"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-spawn-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "openable-short-cut-before-short-cut-after",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        }
+      ]
+    },
+    {
+      "arenaId": "neon_zero",
+      "changes": [
+        {
+          "edgeId": "road-south-west-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-mid-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-east-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-0-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-1-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-2-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-north-east-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-north-mid-north-west",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-north-west-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-3-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-2-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-1-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-sw-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-sm-u-se",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-se-u-east-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-east-mid-u-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-ne-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-nm-u-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-nw-u-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-east-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-approach-ramp-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-0-ramp-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-1-ramp-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-2-ramp-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-3-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-4-ramp-exit",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-u-east-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-drop-lower",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "openable-secret-entry-road-secret-entry-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-inside-secret-exit-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-inside-secret-exit-road",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-ramp-approach",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-secret-entry-road",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-secret-exit-road",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-launch-b-source",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-launch-b-landing",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-pickup-W3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-secret-entry-road",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-pickup-W3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-entry-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-pickup-W1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-pickup-R2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-secret-entry-road",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-pickup-W5",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-pickup-R1",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-pickup-R1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-7-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-7-pickup-W1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-spawn-7",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-pickup-W2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-pickup-W6",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "openable-short-cut-before-short-cut-after",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-west-before-short-cut-after",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-west-before-short-cut-before",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-west-after-city-barrier-west-before",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-west-after-short-cut-after",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "openable-city-barrier-west-before-city-barrier-west-after",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-east-before-city-barrier-west-after",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-east-before-pickup-M1",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-east-after-city-barrier-east-before",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "road-city-barrier-east-after-pickup-M1",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        },
+        {
+          "edgeId": "openable-city-barrier-east-before-city-barrier-east-after",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "transport-plaza"
+          ]
+        }
+      ]
+    },
+    {
+      "arenaId": "euphoria_park",
+      "changes": [
+        {
+          "edgeId": "road-south-west-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-mid-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-east-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-0-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-1-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-2-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-north-east-north-mid",
+          "previous": 7.35,
+          "clearance": 8.0,
+          "limitingGeometry": [
+            "east-roof-north-0"
+          ]
+        },
+        {
+          "edgeId": "road-north-mid-north-west",
+          "previous": 7.35,
+          "clearance": 8.0,
+          "limitingGeometry": [
+            "west-roof-north-0"
+          ]
+        },
+        {
+          "edgeId": "road-north-west-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-3-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-2-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-1-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof"
+          ]
+        },
+        {
+          "edgeId": "road-west-secret-north-west-secret-south",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof"
+          ]
+        },
+        {
+          "edgeId": "road-west-secret-south-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-south-u-south-bridge",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-south-bridge-u-east-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-east-south-u-east-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-east-north-u-north-bridge",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-north-bridge-u-west-inner",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-inner-u-west-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-ne-u-west-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-nw-u-west-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-sw-u-west-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-west-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-west-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-east-north",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-east-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-approach-ramp-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-0-ramp-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-1-ramp-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-2-ramp-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-3-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-u-east-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-4-ramp-exit",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-launch-a-landing",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-u-west-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-west-secret-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-west-secret-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-west-1",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof"
+          ]
+        },
+        {
+          "edgeId": "openable-secret-entry-road-secret-entry-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-inside-secret-exit-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-inside-secret-exit-road",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-ramp-approach",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-west-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-west-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-u-east-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-ramp-exit",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-drop-lower",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-entry-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-pickup-W1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-pickup-R2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-pickup-W3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-pickup-W5",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-pickup-W5",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-pickup-R1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-7-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-7-secret-entry-road",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-pickup-M1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-drop-lower",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "west-roof",
+            "south-gallery"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-drop-lower",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "south-gallery"
+          ]
+        },
+        {
+          "edgeId": "openable-short-cut-before-short-cut-after",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "south-gallery"
+          ]
+        }
+      ]
+    },
+    {
+      "arenaId": "ash_necropolis",
+      "changes": [
+        {
+          "edgeId": "road-south-west-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-mid-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-east-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-0-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-1-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-2-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-north-east-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "mausoleum-court"
+          ]
+        },
+        {
+          "edgeId": "road-north-mid-north-west",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "mausoleum-court"
+          ]
+        },
+        {
+          "edgeId": "road-north-west-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-3-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-2-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-1-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "mausoleum-court"
+          ]
+        },
+        {
+          "edgeId": "road-west-secret-north-west-secret-south",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "mausoleum-court"
+          ]
+        },
+        {
+          "edgeId": "road-west-secret-south-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-sw-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-sm-u-se",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-se-u-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-ne-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-nm-u-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-nw-u-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-approach-ramp-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-0-ramp-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-1-ramp-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-2-ramp-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-3-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-4-ramp-exit",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-west-secret-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-west-secret-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "mausoleum-court"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "openable-secret-entry-road-secret-entry-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-inside-secret-exit-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-inside-secret-exit-road",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-ramp-approach",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-pickup-W4",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "mausoleum-court"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-drop-upper",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-pickup-W7",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-entry-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-pickup-R2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-east-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-pickup-W3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-pickup-W4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-5-pickup-W5",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-north-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-6-pickup-W5",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-7-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-7-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-8-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-8-secret-entry-road",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-pickup-M1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-pickup-R2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-pickup-W3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-spawn-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "openable-short-cut-before-short-cut-after",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        }
+      ]
+    },
+    {
+      "arenaId": "doomsday_arena",
+      "changes": [
+        {
+          "edgeId": "road-south-west-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-mid-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-south-east-east-secret-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-secret-south-east-inner-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-inner-south-east-inner-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east"
+          ]
+        },
+        {
+          "edgeId": "road-east-inner-north-east-1",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east"
+          ]
+        },
+        {
+          "edgeId": "road-east-1-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-2-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-east-3-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-north-east-north-shield-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-north-shield-east-north-shield-west",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east"
+          ]
+        },
+        {
+          "edgeId": "road-north-shield-west-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east",
+            "ring-north"
+          ]
+        },
+        {
+          "edgeId": "road-north-mid-north-west",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-west",
+            "ring-north"
+          ]
+        },
+        {
+          "edgeId": "road-north-west-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-3-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-2-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-1-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-west-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-sw-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-sm-u-se",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-se-u-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-ne-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-nm-u-nw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-nw-u-west-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-u-west-mid-u-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-entry-launch-a-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-sw",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-a-landing-u-west-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-entry-launch-b-source",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-ne",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-launch-b-landing-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-approach-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-approach-ramp-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-0-ramp-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-1-ramp-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-2-ramp-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-3-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-ramp-exit-ramp-4",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "ramp-ramp-4-ramp-exit",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-upper-u-west-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-west-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-drop-lower-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-east-inner-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-road-east-secret-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-east-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-road-east-inner-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east"
+          ]
+        },
+        {
+          "edgeId": "openable-secret-entry-road-secret-entry-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-entry-inside-secret-exit-inside",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-secret-exit-inside-secret-exit-road",
+          "previous": 6.7,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W1-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-east-inner-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W2-south-mid",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W3-secret-entry-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W4-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-mid",
+          "previous": 7.35,
+          "clearance": 8.0,
+          "limitingGeometry": [
+            "ring-outer-north-0"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W5-north-shield-west",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east",
+            "ring-north"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W6-west-1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-se",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W7-u-sm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-u-nm",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-W8-launch-b-landing",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R1-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-R2-east-secret-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-east-inner-south",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-M1-east-inner-north",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-east"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-pickup-W3",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-pickup-S1-secret-exit-inside",
+          "previous": 7.35,
+          "clearance": 6.8,
+          "limitingGeometry": [
+            "secret-canopy"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-south-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-0-pickup-W1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-south-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-1-pickup-R2",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-north-east",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-2-east-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-north-west",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-3-west-3",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-north"
+          ]
+        },
+        {
+          "edgeId": "road-spawn-4-pickup-W5",
+          "previous": 7.35,
+          "clearance": 8.0,
+          "limitingGeometry": [
+            "ring-outer-north-0"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-west-0",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-before-pickup-W6",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-pickup-W1",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        },
+        {
+          "edgeId": "road-short-cut-after-north-mid",
+          "previous": 7.35,
+          "clearance": 7.4,
+          "limitingGeometry": [
+            "ring-south",
+            "ring-north"
+          ]
+        },
+        {
+          "edgeId": "openable-short-cut-before-short-cut-after",
+          "previous": 7.35,
+          "clearance": 30,
+          "limitingGeometry": [
+            "open-sky"
+          ]
+        }
+      ]
+    }
+  ]
+}

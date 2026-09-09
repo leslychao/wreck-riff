@@ -52,6 +52,8 @@ class Scene:
                   (thickness, thickness, length), material, "CYLINDER", (pitch, yaw, 0))
 
     def group(self, name, position, motion="STATIC", period=12, phase=0):
+        if any(group["id"] == name for group in self.groups):
+            raise ValueError(f"Duplicate motion group in {self.arena['id']}: {name}")
         self.groups.append(dict(id=name, position=vec(position), motion=motion, period=period, phase=phase))
         self.active_group = name
 
@@ -155,15 +157,23 @@ class Scene:
                 top = y + h/2
                 # Lower floor beneath a deck must not receive a decal up on an unrelated plane.
                 self.part("asphalt-repair", (px, top+.012, pz), (rng.uniform(1.5,4), .008, rng.uniform(2,5)),
-                          "road-wet" if self.theme == "NEON" and n % 2 else "road-patch")
+                          "road-wet" if self.theme == "NEON" and n % 2 else "road-patch", "PATCH")
                 if n % 3 == 0:
                     for sign in (-1, 1):
                         self.part("tire-scar", (px+sign*.85, top+.02, pz), (.085, .004, 4.0), "black")
             if surface["level"] == 1:
+                # Broad concrete/steel decks need construction joints to communicate scale;
+                # these are flush strips, not walls, rails, curbs or new obstacles.
+                for n in range(1, int(w/12)):
+                    self.part("roof-expansion-joint", (x-w/2+n*12, y+h/2+.022, z),
+                              (.055,.004,d-2), "roof-seam")
+                for n in range(1, int(d/12)):
+                    self.part("roof-expansion-joint", (x, y+h/2+.022, z-d/2+n*12),
+                              (w-2,.004,.055), "roof-seam")
                 # Thin edge dashes preserve the exact open landing and ramp topology.
                 for n in range(int(w/7)):
                     self.part("upper-route-dash", (x-w/2+2+n*7, y+h/2+.025, z-d/2+2.3),
-                              (2.7, .01, .18), "ivory")
+                              (2.7, .01, .18), "lane-paint")
         self.anchor = "exterior"
 
     def save(self):
@@ -250,7 +260,7 @@ def neon():
                                     (315,177,42,45,81),(57,270,38,35,58),(162,279,50,52,77),(256,281,42,44,45))):
         accent="light-cyan" if i%2 else "light-magenta"
         s.backdrop_building("neon-tower",x,z,w,d,h,"dark-concrete",accent)
-        s.light("vertical-neon",(x-w*.32,h*.55,z-d/2-.08),(.6,h*.6,.1),accent,True,i*.17)
+        s.light("vertical-neon-"+str(i),(x-w*.32,h*.55,z-d/2-.08),(.6,h*.6,.1),accent,True,i*.17)
         s.part("billboard-case",(x,h*.72,z-d/2-.2),(w*.65,6,.25),"black")
         s.group("neon-advert-"+str(i),(x,h*.72,z-d/2-.37),"SCREEN",8,i*.2)
         for stripe in range(4):
@@ -271,11 +281,11 @@ def carnival():
         s.facade(identity,tint,"light-amber",False)
     s.anchor="stage-figure"
     # A theatrical mask is flush inside the existing figure, with asymmetrical lit eyes.
-    s.part("stage-mask-face",(76,12,168.97),(13,6,.03),"ivory")
+    s.part("stage-mask-face",(76,12,168.99),(13,6,.03),"ivory")
     for dx in (-3.2,3.2):
-        s.part("mask-eye",(76+dx,13,168.94),(2.4,1.1,.025),"black",rotation=(0,0,dx*3))
-        s.light("mask-eye-light",(76+dx,13,168.91),(1.2,.4,.025),"light-amber")
-    s.part("mask-grin",(76,10.6,168.94),(6,.6,.025),"faded-red")
+        s.part("mask-eye",(76+dx,13,168.97),(2.4,1.1,.02),"black",rotation=(0,0,dx*3))
+        s.light("mask-eye-light",(76+dx,13,168.95),(1.2,.4,.012),"light-amber")
+    s.part("mask-grin",(76,10.6,168.965),(6,.6,.018),"faded-red")
     s.anchor="exterior"
     cx,cy,cz=125,37,273
     for dx in (-19,19):
@@ -307,8 +317,8 @@ def necropolis():
     # Four pilasters, cornice and black recess define the existing solid mausoleum silhouette.
     for xx in (119.5,125.5,134.5,140.5):
         s.part("mausoleum-pilaster",(xx,12,153.97),(.65,7.8,.04),"dark-concrete")
-    s.part("mausoleum-dark-door",(130,11.2,153.94),(4.8,6.2,.035),"black")
-    s.light("ritual-portal",(130,14.7,153.91),(5.6,.25,.025),"light-amber")
+    s.part("mausoleum-dark-door",(130,11.2,153.975),(4.8,6.2,.02),"black")
+    s.light("ritual-portal",(130,14.7,153.955),(5.6,.25,.012),"light-amber")
     s.anchor="exterior"
     x,z=130,272
     for dx in (-10,10):

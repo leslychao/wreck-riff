@@ -5,6 +5,9 @@ import com.jme3.math.Vector3f;
 import game.wreckriff.arena.ArenaRegistry;
 import game.wreckriff.combat.CombatRules;
 import game.wreckriff.combat.WeaponType;
+import game.wreckriff.combat.AbilityId;
+import game.wreckriff.combat.SpecialRules;
+import game.wreckriff.simulation.VehicleState;
 import game.wreckriff.config.Configs;
 import game.wreckriff.simulation.MatchSession;
 import game.wreckriff.simulation.RoadContext;
@@ -16,6 +19,19 @@ import org.junit.jupiter.params.provider.CsvSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MatchHudPresenterTest {
+    @ParameterizedTest
+    @CsvSource({"rivet,14", "grinder,20", "spark,12"})
+    void playerSpecialReadsProfileCooldownAndActiveStateWithoutAdvancingEither(String profileId,float duration) {
+        var session=new MatchSession(12,ArenaRegistry.load().definition("construction_17"),MatchSession.Mode.ARENA,
+                Configs.load("combat",CombatRules.class),java.util.UUID.randomUUID(),false,0,profileId);
+        var player=session.vehicle(0);player.specialPhase=VehicleState.SpecialPhase.DASH;player.specialTicks=30;
+        player.abilityCooldown(AbilityId.SPECIAL,600);
+        var snapshot=new MatchHudPresenter().snapshot(session,observations(2),new MatchHudPresenter.Targeting(-1,-1,-1),"RMB","",0);
+        var special=snapshot.abilities().get(AbilityId.SPECIAL);
+        assertEquals(duration,SpecialRules.cooldownSeconds(profileId));assertEquals(duration,special.cooldownDurationSeconds());
+        assertEquals(.25f,special.activeSeconds());assertEquals(5,special.cooldownSeconds());
+        assertEquals(30,player.specialTicks);assertEquals(600,player.abilityCooldown(AbilityId.SPECIAL));
+    }
     @ParameterizedTest
     @CsvSource({"HOMING,60", "POWER,84", "MINE,84", "NAPALM,108", "CANNON,168", "BALLISTIC,360"})
     void weaponHudUsesApprovedDurationAndRemainingSimulationTicks(WeaponType type, int intervalTicks) {

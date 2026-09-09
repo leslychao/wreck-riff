@@ -11,7 +11,7 @@ import java.util.*;
 /** One render-thread audio owner. Never creates a device, never uses untracked playInstance voices. */
 public final class AudioDirector implements AutoCloseable {
     private enum Group { ENGINE, WEAPON, THREAT, UI }
-    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram");
+    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
     private record DelayedImpact(GameEvent event,double due) {}
     private static final class Voice {
@@ -73,17 +73,14 @@ public final class AudioDirector implements AutoCloseable {
         }
     }
 
-    public void startMatch() {
-        startMatch(config.musicAsset(),config.musicAsset());
-    }
-
     /** Called during loading. Both campaign streams are opened before combat; no asset is loaded on a boss transition. */
-    public void startMatch(String normalAsset,String intenseAsset) {
+    public void startMatch(UUID nextSessionId,String normalAsset,String intenseAsset) {
         if (closed) throw new IllegalStateException("AudioDirector is closed");
+        Objects.requireNonNull(nextSessionId,"Audio requires the authoritative match session");
         validateMusicPath(normalAsset);validateMusicPath(intenseAsset);
         stopMatch();
         prepareMusic(normalAsset,intenseAsset);
-        matchActive=true; paused=false;
+        sessionId=nextSessionId;matchActive=true; paused=false;
         if (music != null) {music.setTimeOffset(0);renderer.playSource(music);}
         applyVolumes();
     }
@@ -156,7 +153,9 @@ public final class AudioDirector implements AutoCloseable {
             if (bossTrack != null) { if(capture!=null)capture.stop(bossTrack);renderer.stopSource(bossTrack); }
             if (paused) renderer.resumeAll();
         }
-        sessionId=null; matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
+        // Keep the completed session identity for its final death/result tail. The next start
+        // replaces it explicitly before receiving any events; no event can bind audio itself.
+        matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
         nextTake.clear(); acceptedEvents.clear(); delayedImpacts.clear();impactClock=0;
         motion.clear();
     }
@@ -164,11 +163,7 @@ public final class AudioDirector implements AutoCloseable {
     public void update(MatchSession session, WorldQuery world, float dt) {
         if (closed || renderer == null) return;
         prune();
-        if (!matchActive || paused || session == null || world == null) return;
-        if (sessionId == null) sessionId=session.sessionId;
-        if (!sessionId.equals(session.sessionId)) {
-            startMatch(musicAsset,bossAsset); sessionId=session.sessionId;
-        }
+        if (!matchActive || paused || session == null || world == null || !session.sessionId.equals(sessionId)) return;
         dt=Math.max(0, Math.min(dt, .1f));
         advanceMusic(dt);
         impactClock+=dt;
@@ -183,9 +178,14 @@ public final class AudioDirector implements AutoCloseable {
             int id=vehicle.id;
             if (!vehicle.alive() || session.outcome != MatchSession.Outcome.NONE) {
                 stopLoop("idle-"+id); stopLoop("drive-"+id); stopLoop("slip-"+id); stopLoop("turbo-"+id);
+                stopLoop("special-grinder-"+id);
                 continue;
             }
             Vector3f velocity=world.velocity(id), position=world.position(id);
+            boolean grinding=vehicle.specialPhase==VehicleState.SpecialPhase.GRINDER_SEARCH
+                    ||vehicle.specialPhase==VehicleState.SpecialPhase.GRINDER_CONTACT;
+            loop("special-grinder-"+id,"special-grinder-loop",Group.THREAT,79,position,velocity,
+                    grinding?.65f:0,1);
             float speed=velocity.length();
             Motion previous=motion.computeIfAbsent(id,key->new Motion());
             float acceleration=dt > 0 ? Math.max(0, (speed-previous.priorSpeed)/dt) : 0;
@@ -228,6 +228,7 @@ public final class AudioDirector implements AutoCloseable {
         if (closed || renderer == null || paused) return;
         prune();
         for (GameEvent event : events) {
+            if(sessionId==null||!sessionId.equals(event.sessionId()))continue;
             // The composition root stops match loops before delivering the final death and result.
             if(!matchActive && event.type()!=GameEvent.Type.MATCH_FINISHED && event.type()!=GameEvent.Type.DESTROYED)continue;
             if(!acceptedEvents.add(new EventKey(event.type(),event.eventId(),event.subjectId())))continue;
@@ -249,11 +250,11 @@ public final class AudioDirector implements AutoCloseable {
                 case EXPLOSION -> {
                     String cue=switch(kind) {
                         case "cannon-ricochet" -> "cannon-ricochet";case "cannon" -> "cannon-hit";
-                        case "ballistic" -> "ballistic-explosion";case "mine" -> "mine-detonate";
+                        case "ballistic" -> "ballistic-explosion";case "mine", "special-bomb" -> "mine-detonate";
                         case "power" -> "power-explosion";case "napalm" -> "napalm-explosion";default -> "explosion";
                     };
                     shot(cue,Group.WEAPON,player?93:74,event.position(),kind.equals("cannon-ricochet")?.8f:.93f,1);
-                    if (event.value()>=35 || Set.of("power","mine","cannon","ballistic").contains(kind)) duck=config.musicDuckSeconds();
+                    if (event.value()>=35 || Set.of("power","mine","special-bomb","cannon","ballistic").contains(kind)) duck=config.musicDuckSeconds();
                 }
                 case RAM -> {
                     boolean involvesPlayer=event.subjectId()==0||player;
@@ -266,11 +267,26 @@ public final class AudioDirector implements AutoCloseable {
                         event.position(),clamp(event.value()/25f,.1f,.7f),1); }
                 case DESTROYED -> {
                     delayedImpacts.removeIf(impact->impact.event.subjectId()==event.subjectId());
+                    stopLoop("special-grinder-"+event.subjectId());
                     shot("destroyed",Group.WEAPON,94,event.position(),1,1);
                     duck=config.musicDuckSeconds();
                 }
                 case EMPTY -> { if (player || event.subjectId()==0) shot("empty",Group.UI,98,null,.62f,1); }
                 case MINE_PLACED -> shot("mine-place",Group.WEAPON,player?94:52,event.position(),.8f,1);
+                case SPECIAL_STARTED -> {
+                    String cue=switch(kind) {
+                        case "rivet" -> "special-pulse-charge";
+                        case "grinder" -> "special-grinder-start";
+                        case "spark" -> "special-dash";
+                        default -> null;
+                    };
+                    if(cue!=null)shot(cue,Group.THREAT,80,event.position(),.75f,1);
+                }
+                case SPECIAL_HIT -> {if(kind.equals("pulse"))shot("special-pulse-hit",Group.WEAPON,86,event.position(),.9f,1);}
+                case SPECIAL_ENDED -> stopLoop("special-grinder-"+event.subjectId());
+                // One authored timed cue, never a render-tick beep clock. Critical
+                // hazard sources (82/100) outrank it; engines remain below it.
+                case BOMB_PLACED -> shot("special-bomb-warning",Group.THREAT,81,event.position(),.8f,1);
                 case FIRE_STARTED -> loop("fire-"+event.eventId(),"napalm-fire",Group.WEAPON,64,
                         event.position(),Vector3f.ZERO,.55f,1);
                 case FIRE_ENDED -> stopLoop("fire-"+event.eventId());
@@ -299,6 +315,7 @@ public final class AudioDirector implements AutoCloseable {
                         shot(id,Group.UI,own?78:32,own?null:event.position(),own?.85f:.32f,1);
                 }
                 case MATCH_FINISHED -> {
+                    for(String loopKey:List.copyOf(loops.keySet()))if(loopKey.startsWith("special-grinder-"))stopLoop(loopKey);
                     String id=kind.contains("victory")?"victory":kind.contains("defeat")?"defeat":"draw";
                     shot(id,Group.UI,110,null,.95f,1);
                 }

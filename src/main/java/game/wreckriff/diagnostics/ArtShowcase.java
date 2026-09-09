@@ -24,6 +24,7 @@ public final class ArtShowcase {
     private final List<ArenaDefinition.Pickup> pickups;
     private final Set<String> captures=new LinkedHashSet<>(),eventIds=new HashSet<>();
     private final EnumSet<ArenaDefinition.PickupType> collected=EnumSet.noneOf(ArenaDefinition.PickupType.class);
+    private final EnumMap<ArenaDefinition.PickupType,Float> collectedAt=new EnumMap<>(ArenaDefinition.PickupType.class);
     private final List<Map<String,Object>> timeline=new ArrayList<>(),staging=new ArrayList<>();
     private final List<String> failures=new ArrayList<>();
     private final long startTick;
@@ -129,6 +130,7 @@ public final class ArtShowcase {
                 if(event.value()<=0)failures.add("Non-positive successful pickup: "+event.objectId());
                 if(selectedBefore!=null&&session.vehicle(0).selectedWeapon!=selectedBefore)failures.add("Pickup changed selected weapon");
                 collected.add(pickup.get().type());
+                collectedAt.put(pickup.get().type(),seconds());
                 timeline.add(Map.of("seconds",seconds(),"type",event.type().name(),"kind",event.kind(),
                         "pickupId",event.objectId(),"amount",event.value(),"eventId",event.eventId(),
                         "grounded",world.grounded(0),"position",world.position(0).toString()));
@@ -173,7 +175,8 @@ public final class ArtShowcase {
             camera.setLocation(target.add(offset));camera.lookAt(target,Vector3f.UNIT_Y);
             float within=seconds-INTRO_SECONDS-activeSlot*SLOT_SECONDS;String suffix=pickup.type().name().toLowerCase(Locale.ROOT);
             if(within>=.35f&&captures.add("pickup-available-"+suffix))return "pickup-available-"+suffix;
-            if(collected.contains(pickup.type())&&captures.add("pickup-collected-"+suffix))return "pickup-collected-"+suffix;
+            if(collected.contains(pickup.type())&&seconds>=collectedAt.get(pickup.type())+.12f
+                    &&captures.add("pickup-collected-"+suffix))return "pickup-collected-"+suffix;
         } else {
             target=world.position(0);offset=new Vector3f(10,7,-13);
             if(!arena.launchPads().isEmpty()) {

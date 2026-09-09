@@ -30,6 +30,7 @@ public final class GenerateAudio {
         prepareRecordedEffects(output,sources.resolve("recorded"));
         prepareResults(output,sources);
         preparePickups(output);
+        prepareSpecials(output);
         for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
                 "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-turbo",
                 "ui-nav","ui-confirm","mine-place"))effect(output,id);
@@ -52,6 +53,8 @@ public final class GenerateAudio {
                 Homing latch/rise; Power heavy latch; Mine double click; Napalm liquid/valve/hiss;
                 Ballistic cassette/four tones; Cannon paired metal clunks. See pickup-provenance.json.
                 Pickup takes are mono 48kHz/16-bit; edge/DC cleanup; common RMS target 0.16; peak ceiling 0.82.
+                Player specials: six original local cues; pulse charge/hit, grinder start/periodic loop, dash hiss and bomb warning.
+                No external samples in these cues. Exact timing, recipes and hashes: special-provenance.json.
                 Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
                 Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
                 """,StandardCharsets.UTF_8);
@@ -279,6 +282,73 @@ public final class GenerateAudio {
                 "sampleRate":48000,"channels":1,"bits":16,"rmsTarget":0.16,"peakCeiling":0.82,
                 "mastering":"DC removal with silent tapered boundaries; RMS matching with linear peak ceiling; no clipped samples",
                 "previousRecipe":"docs/asset-history/GenerateAudio-before-recorded-results.java",
+                "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
+                """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
+    }
+
+    /** Original player-special cues. Integer-period loop components have no crossfade seam. */
+    private static void prepareSpecials(Path output)throws Exception {
+        String generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        List<String> evidence=new ArrayList<>();
+        for(String id:List.of("special-pulse-charge","special-pulse-hit","special-grinder-start",
+                "special-grinder-loop","special-dash","special-bomb-warning")) {
+            double seconds=switch(id) {
+                case "special-pulse-charge","special-pulse-hit" -> .3;
+                case "special-grinder-start" -> .6;case "special-grinder-loop" -> .5;
+                case "special-dash" -> .22;case "special-bomb-warning" -> .7;
+                default -> throw new IllegalArgumentException(id);
+            };
+            String recipe=switch(id) {
+                case "special-pulse-charge" -> "Low rising 70 to 230 Hz coil with a quiet inharmonic metal overtone; 0.3 second windup";
+                case "special-pulse-hit" -> "Falling 145 Hz bass thump with short filtered impact noise and resonant steel; 0.3 second decay";
+                case "special-grinder-start" -> "Rising 32 to 104 Hz motor with gear overtones and filtered friction; 0.6 second spinup";
+                case "special-grinder-loop" -> "Integer-cycle 68/104/414 Hz gears with 26 Hz rotor modulation and seeded periodic friction; seamless 0.5 second loop";
+                case "special-dash" -> "Seeded highpass air hiss with short valve onset and rapid 0.22 second release";
+                case "special-bomb-warning" -> "Four clear warning beeps at 0.01, 0.23, 0.43 and 0.57 seconds; rising pitch before 0.7 second fuse";
+                default -> throw new IllegalArgumentException(id);
+            };
+            Random random=new Random(SEED^id.hashCode());
+            float[] pcm=new float[(int)Math.round(seconds*RATE)];
+            double low=0;double[] phases=new double[16];
+            for(int harmonic=0;harmonic<phases.length;harmonic++)phases[harmonic]=random.nextDouble()*TAU;
+            boolean loop=id.equals("special-grinder-loop");
+            for(int frame=0;frame<pcm.length;frame++) {
+                double t=frame/(double)RATE,n=random.nextDouble()*2-1;
+                low+=.055*(n-low);
+                double sound=switch(id) {
+                    case "special-pulse-charge" -> Math.sin(TAU*(70*t+160*t*t/(2*seconds)))*(.12+.65*t/seconds)
+                            +Math.sin(TAU*(185*t+350*t*t))*.12;
+                    case "special-pulse-hit" -> (Math.sin(TAU*(145*t-130*t*t))*.9+low*1.7)*Math.exp(-t*17)
+                            +metal(t,.003,235,22,n)*.25;
+                    case "special-grinder-start" -> {
+                        double rotor=TAU*(32*t+72*t*t/(2*seconds));
+                        yield (Math.sin(rotor)+.24*Math.sin(rotor*4)+low*.8)*(.16+.5*t/seconds);
+                    }
+                    case "special-grinder-loop" -> {
+                        double friction=0;
+                        for(int harmonic=0;harmonic<phases.length;harmonic++)
+                            friction+=Math.sin(TAU*(326+harmonic*46)*t+phases[harmonic])*.018;
+                        yield Math.sin(TAU*68*t)*.24+Math.sin(TAU*104*t)*(.38+.14*Math.sin(TAU*26*t))
+                                +Math.sin(TAU*414*t)*.10+friction;
+                    }
+                    case "special-dash" -> (n-low)*.75*Math.exp(-t*8)+metal(t,.002,560,65,n)*.22;
+                    case "special-bomb-warning" -> pickupTone(t,.01,.075,840,0,.9)
+                            +pickupTone(t,.23,.075,920,0,.9)+pickupTone(t,.43,.075,1040,0,.9)
+                            +pickupTone(t,.57,.095,1180,0,.9);
+                    default -> throw new IllegalArgumentException(id);
+                };
+                pcm[frame]=(float)sound;
+            }
+            if(loop)master(new float[][]{pcm},.72);else masterPickup(pcm);
+            write(output,id,new float[][]{pcm});
+            evidence.add("{\"path\":\"audio/"+id+".wav\",\"frames\":"+pcm.length+",\"loop\":"+loop
+                    +",\"sha256\":\""+hash(Files.readAllBytes(output.resolve(id+".wav")))+"\",\"recipe\":\""+recipe+"\"}");
+        }
+        Files.writeString(output.resolve("special-provenance.json"),"""
+                {"schemaVersion":1,"origin":"ORIGINAL_PROJECT_CONTENT","externalSamples":false,
+                "generator":"%s","generatorSha256":"%s","seed":"0x5249464657415645",
+                "sampleRate":48000,"channels":1,"bits":16,
+                "mastering":"One shots: silent tapered edges, DC cleanup, RMS target 0.16 and peak ceiling 0.82. Loop: periodic waveform, DC cleanup and peak 0.72.",
                 "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
                 """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
     }

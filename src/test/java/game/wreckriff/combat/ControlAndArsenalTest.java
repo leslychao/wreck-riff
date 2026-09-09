@@ -21,7 +21,8 @@ class ControlAndArsenalTest {
     private VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,null,0,false,false,AbilityId.NONE);}
     @Test void fullHealthAndIndependentArsenalStartAtApprovedValues() {
         assertEquals(800,session.vehicle(0).maximumHp);assertEquals(800,session.vehicle(0).hp);
-        for(int i=1;i<5;i++)assertEquals(400,session.vehicle(i).hp);
+        float[] botHealth={400,520,320,400};
+        for(int i=1;i<5;i++)assertEquals(botHealth[i-1],session.vehicle(i).hp);
         for(AbilityId ability:AbilityId.values())assertEquals(0,session.vehicle(0).abilityCooldown(ability));
         assertEquals(3,session.vehicle(0).weapon(WeaponType.MINE).ammo);
         assertEquals(6,session.vehicle(0).weapon(WeaponType.NAPALM).maximumAmmo);
@@ -117,7 +118,9 @@ class ControlAndArsenalTest {
         world.positions[1].set(0,1,10);world.positions[2].set(1,7,10);world.surfaceIds[2]=1;
         world.positions[3].set(-1,1,10);world.hidden.add(3);
         combat.drainEvents();for(int i=0;i<30;i++)tick(VehicleCommand.NONE);
-        assertEquals(392.5f,session.vehicle(1).hp,.001f);assertEquals(400,session.vehicle(2).hp);assertEquals(400,session.vehicle(3).hp);
+        assertEquals(392.5f,session.vehicle(1).hp,.001f);
+        assertEquals(session.vehicle(2).maximumHp,session.vehicle(2).hp);
+        assertEquals(session.vehicle(3).maximumHp,session.vehicle(3).hp);
         assertEquals(1,combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.DAMAGE&&e.kind().equals("napalm-fire")).count());
         assertTrue(combat.fireZones().getFirst().surfacePoints().size()<=81);
     }

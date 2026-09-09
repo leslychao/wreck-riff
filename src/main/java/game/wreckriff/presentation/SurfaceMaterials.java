@@ -28,8 +28,12 @@ public final class SurfaceMaterials {
             case "repair" -> paint(new ColorRGBA(.17f,.8f,.24f,1));
             case "ivory" -> paint(new ColorRGBA(.84f,.82f,.7f,1));
             case "black" -> textured("metal_plate_02",new ColorRGBA(.09f,.10f,.12f,1),16,.22f);
-            case "road-patch" -> lit(assets,new ColorRGBA(.15f,.17f,.19f,1),4,.03f);
-            case "road-wet" -> lit(assets,new ColorRGBA(.10f,.14f,.17f,1),88,.72f);
+            // Fresh tar uses the same local grain as the road. Untextured .15 linear grey
+            // becomes a conspicuously bright plate after gamma correction in the real renderer.
+            case "road-patch" -> textured("asphalt_02",new ColorRGBA(.19f,.20f,.21f,1),3,.018f);
+            case "road-wet" -> textured("asphalt_02",new ColorRGBA(.13f,.18f,.22f,1),88,.44f);
+            case "roof-seam" -> lit(assets,new ColorRGBA(.022f,.026f,.031f,1),3,.01f);
+            case "lane-paint" -> lit(assets,new ColorRGBA(.46f,.34f,.16f,1),4,.03f);
             case "stone" -> textured("cracked_concrete",new ColorRGBA(.53f,.58f,.60f,1),9,.09f);
             case "dark-concrete" -> textured("cracked_concrete",new ColorRGBA(.34f,.39f,.44f,1),6,.08f);
             case "purple" -> paint(new ColorRGBA(.44f,.12f,.38f,1));

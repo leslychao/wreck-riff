@@ -17,10 +17,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Runs the pinned jME renderer against a deterministic device, not an audible hardware test. */
 class OpenAlPauseTest {
+    private static final UUID SESSION_ID=new UUID(0,101);
+    private static final String MUSIC="audio/metalmania.wav";
     @Test void campaignTransitionSeeksThePreparedStreamAndDevicePauseKeepsBothSources() {
         Node scene=new Node();
         try(Device device=new Device();AudioDirector director=new AudioDirector(new DesktopAssetManager(true),device.renderer,new Listener(),scene)) {
-            director.startMatch("audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
+            director.startMatch(SESSION_ID,"audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
             AudioNode normal=find(scene,"music-normal"),boss=find(scene,"music-boss");
             device.advanceMusic(normal,60_000);
             assertEquals(1.25f,director.musicPlaybackSeconds(),.00001f);
@@ -38,7 +40,7 @@ class OpenAlPauseTest {
         try (Device device = new Device()) {
             Node scene = new Node();
             try (AudioDirector director = director(device, scene)) {
-                director.startMatch();
+                director.startMatch(SESSION_ID,MUSIC,MUSIC);
                 director.accept(List.of(shot()));
                 AudioNode shot = find(scene, "sound-machine-gun");
                 device.finish(shot);
@@ -54,7 +56,7 @@ class OpenAlPauseTest {
         try (Device device = new Device()) {
             Node scene = new Node();
             try (AudioDirector director = director(device, scene)) {
-                director.startMatch();
+                director.startMatch(SESSION_ID,MUSIC,MUSIC);
                 director.accept(List.of(shot()));
                 AudioNode shot = find(scene, "sound-machine-gun"), music = find(scene, "music-metalmania");
                 device.advanceMusic(music, 4_800); // 0.1 seconds of stereo PCM.
@@ -90,7 +92,7 @@ class OpenAlPauseTest {
             AudioDirector director = director(device, scene);
             try {
                 for (int retry = 0; retry < 20; retry++) {
-                    director.startMatch();
+                    director.startMatch(SESSION_ID,MUSIC,MUSIC);
                     director.accept(List.of(shot()));
                     director.pause();
                     director.stopMatch();
@@ -98,7 +100,7 @@ class OpenAlPauseTest {
                     assertEquals(0, director.voiceCount());
                     assertDoesNotThrow(() -> device.renderer.update(0));
                 }
-                director.startMatch(); director.pause();
+                director.startMatch(SESSION_ID,MUSIC,MUSIC); director.pause();
             } finally {
                 director.close();
             }
@@ -113,7 +115,7 @@ class OpenAlPauseTest {
         return new AudioDirector(new DesktopAssetManager(true), device.renderer, new Listener(), scene);
     }
     private static GameEvent shot() {
-        return new GameEvent(GameEvent.Type.SHOT, 1, 0, 0, Vector3f.ZERO, "machine-gun", 0);
+        return new GameEvent(GameEvent.Type.SHOT, 1, 0, 0, Vector3f.ZERO, "machine-gun", 0).inSession(SESSION_ID);
     }
     private static AudioNode find(Node root, String name) {
         AudioNode[] found = {null};

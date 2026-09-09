@@ -10,6 +10,38 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AudioCaptureTest {
     @TempDir Path directory;
+    @Test void reconstructsAllLocalCampaignMusicPathsAndKeepsTheirExactAssetIdentity()throws Exception {
+        double[] time={0};java.util.Set<String> expected=new java.util.HashSet<>();
+        try(AudioCapture capture=new AudioCapture(directory,()->time[0],.12)) {
+            for(String arena:java.util.List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"))
+                for(String mix:java.util.List.of("normal","boss")) {
+                    String asset="audio/campaign/"+arena+"-"+mix+".wav";expected.add(asset);
+                    capture.observe(new Object(),asset,true,false,.02f,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,8,120,.5);
+                }
+            time[0]=.12;
+        }
+        java.util.Set<String> actual=new java.util.HashSet<>();
+        for(var voice:journal().getAsJsonArray("voices"))actual.add(voice.getAsJsonObject().get("asset").getAsString());
+        assertEquals(expected,actual);byte[] pcm=pcm(directory.resolve("audio.wav"));
+        boolean sound=false,stereo=false;
+        for(int frame=0;frame<pcm.length/4;frame++) {
+            sound|=sample(pcm,frame,0)!=0;stereo|=sample(pcm,frame,0)!=sample(pcm,frame,1);
+        }
+        assertTrue(sound);assertTrue(stereo);assertTrue(Files.readString(directory.resolve("AUDIO_README.txt")).contains("not an exact native OpenAL"));
+    }
+
+    @Test void campaignSupportCannotAdmitTraversalNestedFoldersOrUnrecognisedMusicFilenameShapes()throws Exception {
+        try(AudioCapture capture=new AudioCapture(directory,()->0,.01)) {
+            for(String path:java.util.List.of("audio/campaign/../metalmania.wav","audio/campaign/../../escape-normal.wav",
+                    "audio/campaign/sub/arena-normal.wav","audio/campaign/arena.wav","audio/campaign/arena-other.wav",
+                    "audio/campaign/arena-normal.wav/extra","audio/campaign\\arena-normal.wav","audio//arena.wav",
+                    "https://example.test/audio/campaign/arena-normal.wav"))
+                assertThrows(IllegalArgumentException.class,()->observe(capture,new Object(),path,.1f),path);
+            assertThrows(IllegalArgumentException.class,()->observe(capture,new Object(),null,.1f));
+        }
+        assertTrue(journal().getAsJsonArray("voices").isEmpty());
+    }
+
     @Test void reconstructsTheResolvedSampleAtActualStartWithPitchGainAndPan() throws Exception {
         double[] time={0};Object identity=new Object();
         try(AudioCapture capture=new AudioCapture(directory,()->time[0],.5)) {

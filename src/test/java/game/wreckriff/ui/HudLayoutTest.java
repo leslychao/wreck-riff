@@ -16,6 +16,8 @@ class HudLayoutTest {
             assertFalse(layout.weapons().overlaps(layout.abilities()));
             assertFalse(layout.objective().overlaps(layout.radar()));
             assertTrue(layout.fontSize()>=14);
+            for(UiBounds panel:layout.panels())assertFalse(layout.notification().overlaps(panel),"Notification covers "+panel);
+            assertFalse(layout.notification().overlaps(new UiBounds(size[0]/2f-18,size[1]/2f-18,36,36)));
             assertEquals(3,layout.abilitySlots().size());
             for(UiBounds slot:layout.abilitySlots()) {
                 assertTrue(slot.x()>=layout.abilities().x()&&slot.right()<=layout.abilities().right()+.001f);

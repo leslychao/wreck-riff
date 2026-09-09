@@ -31,7 +31,7 @@ public record HudLayout(int width,int height,float scale,float fontSize,int weap
         float objectiveX=Math.min((width-objectiveWidth)/2,radar.x()-margin-objectiveWidth);
         UiBounds objective=new UiBounds(Math.max(margin,objectiveX),height-margin-48*scale,objectiveWidth,48*scale);
         UiBounds notification=new UiBounds(margin,Math.max(abilities.top(),Math.max(health.top(),weapons.top()))+Math.max(margin,40*scale),
-                Math.min(620*scale,width-margin*2),48*scale);
+                Math.min(620*scale,width/2f-margin-34*scale),Math.max(76,82*scale));
         List<UiBounds> slots=new ArrayList<>();
         for(int i=0;i<6;i++)slots.add(new UiBounds(weapons.x()+pad+(i%columns)*(slotWidth+gap),
                 weapons.y()+pad+(rows-1-i/columns)*(slotHeight+gap),slotWidth,slotHeight));

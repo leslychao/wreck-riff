@@ -48,13 +48,13 @@ class HudViewTest {
         }
     }
     @Test void lockReticleRemainsCenteredAndResizePreservesSnapshot() {
-        try(var view=new HudView(ASSETS,new Node())) {
+        Node gui=new Node();try(var view=new HudView(ASSETS,gui)) {
             for(boolean locked:new boolean[]{false,true}) {
-                view.resize(1920,1080,1);view.update(snapshot(locked,List.of()));view.root().updateGeometricState();
+                view.resize(1920,1080,1);view.update(snapshot(locked,List.of()));gui.updateGeometricState();
                 var center=view.root().getChild("target-reticle").getWorldBound().getCenter();
                 assertEquals(960,center.x,.001);assertEquals(540,center.y,.001);
             }
-            view.resize(640,480,1);view.root().updateGeometricState();
+            view.resize(640,480,1);gui.updateGeometricState();
             assertEquals("520 / 800",((BitmapText)view.root().getChild("health-value")).getText());
             assertEquals(3,view.layout().weaponColumns());
         }
@@ -99,8 +99,19 @@ class HudViewTest {
                 BitmapText row=(BitmapText)view.root().getChild("help-description-"+i);
                 assertTrue(row.getSize()>=14);
                 assertTrue(row.getLocalTranslation().y<=top);
-                assertTrue(row.getLocalTranslation().y-row.getBox().height>=bottom,"Help row "+i+" leaves panel");
+                assertTrue(row.getLocalTranslation().y-row.getHeight()>=bottom,"Help row "+i+" leaves panel");
             }
+        }
+    }
+    @Test void criticalNotificationAndPickupReceiptRemainVisibleTogether() {
+        try(var view=new HudView(ASSETS,new Node())) {
+            view.resize(640,480,1.5f);var base=snapshot(false,List.of());
+            view.setPickupReceipt("Homing +2");
+            view.update(new HudView.Snapshot(base.vitals(),base.selectedWeapon(),base.weapons(),base.abilities(),base.objective(),null,false,"",
+                    "Progress not saved",base.observer(),base.radarTargets()));
+            assertEquals("Progress not saved",((BitmapText)view.root().getChild("notification")).getText());
+            assertEquals("Homing +2",((BitmapText)view.root().getChild("pickup-receipt")).getText());
+            assertNotEquals(Spatial.CullHint.Always,view.root().getChild("notice-panel").getCullHint());
         }
     }
 }

@@ -12,11 +12,12 @@ import java.util.*;
 /** Bounded frame samples and reproducible context, with load time kept separate. */
 public final class SessionReport {
     private final FrameMetrics frames=new FrameMetrics();
+    private final PhaseMetrics phaseMetrics=new PhaseMetrics();
     private final List<String> warnings=Collections.synchronizedList(new ArrayList<>());
     private long firstSight=-1,firstShot=-1,firstDamage=-1;
     private List<BotController.Metrics> aiMetrics=List.of();
     private double loadingSeconds;
-    public void frame(float seconds) { frames.add(seconds); }
+    public void frame(FrameSample sample) {phaseMetrics.add(sample);if(sample.drawable()&&sample.phase().combat())frames.add(sample.seconds());}
     public void loadSeconds(double seconds) { loadingSeconds=seconds; }
     public void warning(String warning) { if(warnings.size()<100)warnings.add(warning); }
     public void tick(MatchSession session,List<GameEvent> events,BotController bots) {
@@ -42,6 +43,7 @@ public final class SessionReport {
         data.put("aiMetrics",aiMetrics);data.put("warnings",List.copyOf(warnings));
         data.put("droppedSimulationTime",loop.droppedSimulationTime()); data.put("activeBodies",bodies); data.put("voices",voices);
         data.put("participants",session.vehicles); data.putAll(frames.snapshot());
+        data.put("phaseMetrics",phaseMetrics.snapshot());
         Runtime runtime=Runtime.getRuntime(); data.put("javaHeapUsedBytes",runtime.totalMemory()-runtime.freeMemory());
         Map<String,String> hashes=new LinkedHashMap<>();
         for(String name:List.of("vehicle","camera","match","combat","arena","ai","audio")) {

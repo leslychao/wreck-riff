@@ -128,10 +128,10 @@ class CombatVisualsTest {
             Node root=(Node)scene.getChild("combat-visuals");
             Geometry fields=(Geometry)root.getChild("ground-fire");
             var positions=(java.nio.FloatBuffer)fields.getMesh().getBuffer(VertexBuffer.Type.Position).getData();
-            assertEquals(48,fields.getMesh().getVertexCount());
+            assertEquals(84,fields.getMesh().getVertexCount(),"Six boundary edges plus two scorch cells");
             for(int i=0;i<positions.limit();i+=3) {
-                assertEquals(6.028f,positions.get(i+1),.0001f,"Scorch stays on the supported floor");
-                assertTrue(positions.get(i)>=1.44f && positions.get(i)<=3.56f,"No whole-radius disc through unsupported walls or edges");
+                assertEquals(i<36*3?6.045f:6.028f,positions.get(i+1),.0001f,"Outline and scorch stay on the supported floor");
+                assertTrue(positions.get(i)>=1.35f && positions.get(i)<=3.65f,"No whole-radius disc through unsupported walls or edges");
             }
             assertTrue(((Geometry)root.getChild("rocket-models")).getMesh().getVertexCount()>0,"Persistent mine is visible");
             visuals.update(List.of(),List.of(),List.of(),List.of(),session,.016f);

@@ -12,8 +12,10 @@ final class BossTactics {
     Phase phase=Phase.CRUISE;
     long beganTick,untilTick,chargeStartedTick,nextRamTick=360,nextProtocolTick=720,nextLaunchTick=1200,nextSearchTick;
     long lastContactTick=Long.MIN_VALUE/2,lastSeenTick=Long.MIN_VALUE/2;
-    int mode=1,launchIndex,side=1;
-    Vector3f targetPoint,chargeDirection,lastSeen;
+    long turnWindowTick,nextTurnTick,farSince=-1;
+    float turning;
+    int mode=1,launchIndex,protocolIndex,side=1;
+    Vector3f targetPoint,chargeDirection,lastSeen,lastForward;
     boolean completionPending;
 
     BossTactics(String profileId) {

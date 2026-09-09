@@ -43,6 +43,7 @@ public final class PickupPresentation implements AutoCloseable {
         this.session=Objects.requireNonNull(session);this.systems=Objects.requireNonNull(systems);this.burst=Objects.requireNonNull(burst);
         var materials=new SurfaceMaterials(assets);var icons=new VectorIcons();
         Mesh rimMesh=ring(.91f,1.02f),baseMesh=new Cylinder(2,24,1.08f,.08f,true);
+        com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(baseMesh);
         for(var definition:arena.pickups()) {
             var style=PickupStyle.of(definition.type());Node holder=new Node("pickup-"+definition.id());
             holder.setLocalTranslation(definition.position().vector());root.attachChild(holder);
