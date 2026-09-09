@@ -42,12 +42,13 @@ public final class CombatShowcase {
         Map<Integer,VehicleCommand> result=new HashMap<>();
         if(tick>=1440&&tick<1620)result.put(0,command(true,null,AbilityId.NONE));
         if(tick==1680)result.put(0,command(false,WeaponType.POWER,AbilityId.NONE));
-        if(tick==1920)result.put(0,command(false,null,AbilityId.FREEZE));
+        if(tick==1920) {session.vehicle(1).hp=.5f*session.vehicle(1).maximumHp;result.put(0,command(false,null,AbilityId.FREEZE));}
         if(tick==2070)result.put(1,command(false,null,AbilityId.SHIELD));
         if(tick==2160)result.put(2,command(false,null,AbilityId.FREEZE));
         if(tick>=2160&&tick<2280)result.put(0,command(true,null,AbilityId.NONE));
         if(tick==2400) {
             pair();world.teleport(1,new Vector3f(-42,.85f,-16),new Quaternion().fromAngleAxis(FastMath.PI,Vector3f.UNIT_Y));
+            world.teleport(2,new Vector3f(-62,.85f,-5),new Quaternion());
             session.vehicle(1).hp=session.vehicle(1).maximumHp;
             result.put(0,command(false,WeaponType.NAPALM,AbilityId.NONE));
         }

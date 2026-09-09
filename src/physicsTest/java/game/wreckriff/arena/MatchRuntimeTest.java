@@ -21,7 +21,45 @@ class MatchRuntimeTest {
             int fatalRecoveries,List<DriverResult> drivers) {}
     private record RecoveryEpisode(int seed,int vehicleId,long tick,Vector3f before,Vector3f after,
             Vector3f forward,Vector3f velocity,float upright,Vector3f goal,List<Integer> path,
-            long ticksSinceExternalDamage,String lastExternalDamage) {}
+            long ticksSinceExternalDamage,String lastExternalDamage,CannonHistory lastDirectCannon) {}
+    private record UpSample(long tick,String phase,float upright,int wheelContacts,Vector3f position,
+            Vector3f velocity,Vector3f angularVelocity) {}
+    private record CannonHistory(long eventId,long acceptedTick,float appliedDamage,Vector3f impactPoint,
+            int shieldTicks,int protectionTicks,UpSample beforeHit,long firstUpsideDownTick,
+            float timeToUpsideDownSeconds,long stableSupportResetTick,List<UpSample> upHistory) {}
+    /** Observation only: no gameplay state or acceptance count is changed by attribution. */
+    private static final class CannonTrace {
+        final long eventId,acceptedTick;
+        final float appliedDamage;
+        final Vector3f point;
+        final int shieldTicks,protectionTicks;
+        final UpSample beforeHit;
+        final List<UpSample> history=new ArrayList<>();
+        long firstUpsideDownTick=-1,stableSupportResetTick=-1;
+        int stableSupportTicks;
+        CannonTrace(GameEvent impact,GameEvent damage,VehicleState state,UpSample beforeHit,long tick) {
+            eventId=impact.eventId();acceptedTick=tick;appliedDamage=damage.value();point=impact.position();
+            shieldTicks=state.shieldTicks;protectionTicks=state.protectionTicks;this.beforeHit=beforeHit;
+        }
+        void observe(UpSample sample,boolean force) {
+            if(stableSupportResetTick>=0)return;
+            boolean firstUpsideDown=firstUpsideDownTick<0&&sample.upright()<=-.5f;
+            if(firstUpsideDown)firstUpsideDownTick=sample.tick();
+            stableSupportTicks=sample.wheelContacts()==4&&sample.upright()>.85f?stableSupportTicks+1:0;
+            if(stableSupportTicks>=60)stableSupportResetTick=sample.tick();
+            if(force||firstUpsideDown||stableSupportResetTick>=0||history.isEmpty()
+                    ||sample.tick()-history.getLast().tick()>=12)history.add(sample);
+        }
+        CannonHistory snapshot() {
+            return new CannonHistory(eventId,acceptedTick,appliedDamage,point,shieldTicks,protectionTicks,beforeHit,
+                    firstUpsideDownTick,firstUpsideDownTick<0?-1:(firstUpsideDownTick-acceptedTick)*MatchSession.DT,
+                    stableSupportResetTick,List.copyOf(history));
+        }
+    }
+    private static UpSample observePose(PhysicsWorld world,int id,long tick,String phase) {
+        return new UpSample(tick,phase,world.rotation(id).mult(Vector3f.UNIT_Y).y,world.wheelContacts(id),
+                world.position(id),world.velocity(id),world.containsVehicle(id)?world.vehicle(id).getAngularVelocity():Vector3f.ZERO);
+    }
     private record BatchReport(int schemaVersion,String scenario,String os,String javaVersion,double wallSeconds,
             double botMinutes,int recoveries,double recoveriesPerTenBotMinutes,long maximumStationaryTicks,
             List<BattleResult> battles,List<RecoveryEpisode> recoveryEpisodes,List<String> failures) {}
@@ -49,13 +87,37 @@ class MatchRuntimeTest {
                 int shots=0,pickups=0,maxProjectiles=0,fatalRecoveries=0,finished=0;
                 float damage=0,firstEncounter=-1,firstShot=-1,firstDamage=-1;
                 long[] lastExternalTick={-1,-1,-1,-1,-1};String[] lastExternalKind={"none","none","none","none","none"};
+                CannonTrace[] cannonTraces=new CannonTrace[5];
                 while (session.outcome==MatchSession.Outcome.NONE && session.tick<360L*120) {
                     Vector3f[] before=new Vector3f[5],forward=new Vector3f[5],velocity=new Vector3f[5];float[] upright=new float[5];
+                    UpSample[] beforeSamples=new UpSample[5];
                     for (int id=0;id<5;id++) {
-                        before[id]=world.position(id);forward[id]=world.forward(id);velocity[id]=world.velocity(id);
-                        upright[id]=world.rotation(id).mult(Vector3f.UNIT_Y).y;
+                        beforeSamples[id]=observePose(world,id,session.tick,"before-step");
+                        before[id]=beforeSamples[id].position();forward[id]=world.forward(id);velocity[id]=beforeSamples[id].velocity();
+                        upright[id]=beforeSamples[id].upright();
                     }
                     List<GameEvent> events=runtime.tick(VehicleCommand.NONE,true);
+                    // Only the terminal direct vehicle explosion plus accepted damage establishes
+                    // a Cannon chain. Splash, spawn-protected hits and later MG/fire do not.
+                    for(var explosion:events)if(explosion.type()==GameEvent.Type.EXPLOSION
+                            &&explosion.kind().equals("cannon")&&explosion.subjectId()>=0) {
+                        int id=explosion.subjectId();
+                        GameEvent accepted=events.stream().filter(e->e.type()==GameEvent.Type.DAMAGE&&e.kind().equals("cannon")
+                                &&e.eventId()==explosion.eventId()&&e.subjectId()==id&&e.value()>0).findFirst().orElse(null);
+                        if(accepted!=null&&session.vehicle(id).protectionTicks==0) {
+                            GameEvent impact=events.stream().filter(e->e.type()==GameEvent.Type.IMPACT
+                                    &&e.eventId()==explosion.eventId()&&e.subjectId()==id).findFirst().orElseThrow();
+                            cannonTraces[id]=new CannonTrace(impact,accepted,session.vehicle(id),beforeSamples[id],session.tick-1);
+                        }
+                    }
+                    boolean[] recovered=new boolean[5];
+                    for(var event:events)if(event.type()==GameEvent.Type.DAMAGE&&event.kind().equals("recovery"))recovered[event.subjectId()]=true;
+                    for(int id=0;id<5;id++)if(cannonTraces[id]!=null) {
+                        // Recovery teleports in prepare(), so its pre-step pose is the final
+                        // physical sample; the upright replacement must not clear the chain.
+                        UpSample sample=recovered[id]?beforeSamples[id]:observePose(world,id,session.tick-1,"after-step");
+                        cannonTraces[id].observe(sample,recovered[id]||cannonTraces[id].acceptedTick==session.tick-1);
+                    }
                     maxProjectiles=Math.max(maxProjectiles,runtime.combat().projectiles().size());
                     if (firstEncounter<0) for (int id=0;id<5;id++) {
                         if (!runtime.bots().observation(id).visible().isEmpty()) {
@@ -74,7 +136,9 @@ class MatchRuntimeTest {
                             int id=event.subjectId();
                             recoveryEpisodes.add(new RecoveryEpisode(seed,id,session.tick-1,before[id],world.position(id),forward[id],velocity[id],
                                     upright[id],runtime.bots().metrics(id).destination(),runtime.bots().route(id),
-                                    lastExternalTick[id]<0?-1:session.tick-1-lastExternalTick[id],lastExternalKind[id]));
+                                    lastExternalTick[id]<0?-1:session.tick-1-lastExternalTick[id],lastExternalKind[id],
+                                    cannonTraces[id]==null?null:cannonTraces[id].snapshot()));
+                            cannonTraces[id]=null;
                         }
                         if (event.type()==GameEvent.Type.DAMAGE && event.kind().equals("out-of-bounds")) fatalRecoveries++;
                     }
@@ -104,7 +168,7 @@ class MatchRuntimeTest {
         }
         double botMinutes=totalAliveTicks/(120.0*60),recoveryRate=totalRecoveries*10.0/botMinutes;
         if (recoveryRate>1) failures.add("Recovery limit exceeded: "+totalRecoveries+" recoveries / "+botMinutes+" bot-minutes = "+recoveryRate+" per10bot-minutes");
-        BatchReport report=new BatchReport(1,"seed 0..9, five AI, actual native physics and full MatchRuntime, no render",
+        BatchReport report=new BatchReport(2,"seed 0..9, five AI, actual native physics and full MatchRuntime, no render",
                 System.getProperty("os.name"),System.getProperty("java.version"),(System.nanoTime()-started)/1e9,
                 botMinutes,totalRecoveries,recoveryRate,maximumStationaryTicks,List.copyOf(results),List.copyOf(recoveryEpisodes),List.copyOf(failures));
         Path output=Path.of("build","reports","ai-batch.json");Files.createDirectories(output.getParent());

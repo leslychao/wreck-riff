@@ -100,14 +100,15 @@ class NativeV04CombatTest {
             // crossing car. Exaggerated lateral speed makes the time-domain mismatch
             // unambiguous: the car crosses before the bounce and is clear afterwards.
             world.addStatic(new BoxCollisionShape(new Vector3f(.05f,.025f,.025f)),new Vector3f(0,10.57f,.6875f),new Quaternion());
-            world.vehicle(1).setLinearVelocity(new Vector3f(480,0,0));
+            world.vehicle(1).setLinearVelocity(new Vector3f(840,0,0));
             MatchSession session=new MatchSession(1,360);CombatSystem combat=new CombatSystem(session,session.combatRules);
             combat.beginTick(Map.of(0,fire(WeaponType.CANNON)),world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);
             var events=combat.drainEvents();
-            assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("cannon-ricochet")).count());
+            assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("cannon-ricochet")).count(),
+                    ()->"target="+world.position(1)+"; events="+events);
             assertTrue(events.stream().noneMatch(e->e.type()==GameEvent.Type.IMPACT&&e.subjectId()==1),"The late segment must not re-hit the target's old position");
             assertEquals(1,combat.projectiles().size());assertEquals(1,combat.projectiles().getFirst().ricochets());
-            var bounce=events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("cannon-ricochet")).findFirst().orElseThrow();
+            var bounce=events.stream().filter(e->e.type()==GameEvent.Type.IMPACT&&e.subjectId()==-1).findFirst().orElseThrow();
             Vector3f from=bounce.position().add(bounce.normal().mult(.255f)),to=combat.projectiles().getFirst().position();
             WorldQuery.Hit whole=world.sweep(from,to,.25f,0,0,1),remaining=world.sweep(from,to,.25f,0,.9f,1);
             assertNotNull(whole,"The fixture must expose the old full-step false hit");assertEquals(1,whole.vehicleId());assertNull(remaining);
