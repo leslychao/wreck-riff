@@ -1,5 +1,7 @@
 # Wreck Riff 0.2 — approved implementation contract
 
+Historical contract. Current behavior is defined by [V0_3_PLAN](V0_3_PLAN.md).
+
 Approved by owner on 2026-09-09. This supersedes conflicting 0.1 defaults in MVP_SPEC.
 Priority: actual TM4-inspired visuals with a sharp modern image, heavy guitar music,
 then complete combat revision. No engine replacement, second PhysicsSpace, progression,

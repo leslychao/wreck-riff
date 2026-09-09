@@ -83,6 +83,10 @@ public final class CombatShowcase {
     public String frame(Camera camera) {
         Vector3f target=world.position(1);
         boolean close=session.seconds()<12 || (session.seconds()>=20&&session.seconds()<25);
+        // Keep the ground reference stable during recoil instead of cancelling movement with the camera.
+        if(session.seconds()>=12&&session.seconds()<20||session.seconds()>=25&&session.seconds()<28)
+            target=new Vector3f(-42,.55f,-35);
+        if(session.seconds()>=29&&session.seconds()<32)target=new Vector3f(-42,.55f,-51);
         Vector3f offset=close?new Vector3f(5.8f,3.0f,-7.2f):new Vector3f(14,8,-10);
         camera.setFrustumPerspective(close?43:55,camera.getWidth()/(float)camera.getHeight(),.1f,500);
         camera.setLocation(target.add(offset));camera.lookAt(target.add(0,.3f,close?0:-4),Vector3f.UNIT_Y);

@@ -32,8 +32,9 @@ try {
     $process=Start-Process -FilePath (Join-Path $image 'WreckRiff.exe') -WorkingDirectory $image -WindowStyle Hidden -PassThru `
         -ArgumentList @('--dev','--seed=42','--smoke-seconds=600') `
         -RedirectStandardOutput (Join-Path $testRoot 'stdout.log') -RedirectStandardError (Join-Path $testRoot 'stderr.log')
+    $null=$process.Handle
     if (-not $process.WaitForExit($TimeoutSeconds*1000)) { $process.Kill();throw 'Packaged graphical smoke timed out.' }
-    $process.Refresh();$exitCode=$process.ExitCode
+    $exitCode=$process.ExitCode
     if ($exitCode -ne 0) { throw "Packaged executable failed with exit code $exitCode. See $testRoot" }
 } finally {
     $env:JAVA_HOME=$savedJava;$env:PATH=$savedPath

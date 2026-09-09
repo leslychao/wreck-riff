@@ -21,6 +21,7 @@ public final class CombatVisuals implements AutoCloseable {
     public static final float TRACER_LENGTH=1.5f;
     private static final ColorRGBA AMBER=new ColorRGBA(1,.62f,.10f,1), HOT=new ColorRGBA(1,.24f,.035f,1);
     private static final ColorRGBA ION=new ColorRGBA(.12f,.9f,1,1), SMOKE=new ColorRGBA(.17f,.18f,.19f,.24f);
+    private static final ColorRGBA CRITICAL_SMOKE=new ColorRGBA(.05f,.055f,.063f,.62f);
     private static final ColorRGBA DUST=new ColorRGBA(.42f,.34f,.25f,.28f);
     private static final float SMOKE_RADIUS_LIMIT=.55f, FLASH_RADIUS_LIMIT=.68f;
     private static final float[] SPRITE_UV={0,0,1,0,1,1,0,0,1,1,0,1};
@@ -31,7 +32,7 @@ public final class CombatVisuals implements AutoCloseable {
         final float lifetime,size,growth,gravity;
         float age;
         Particle(Vector3f position,Vector3f velocity,ColorRGBA color,float lifetime,float size,float growth,float gravity) {
-            this.position=position.clone();this.velocity=velocity.clone();this.smoke=color==SMOKE||color==DUST;this.color=color.clone();
+            this.position=position.clone();this.velocity=velocity.clone();this.smoke=color==SMOKE||color==CRITICAL_SMOKE||color==DUST;this.color=color.clone();
             this.lifetime=lifetime;this.size=size;this.growth=growth;this.gravity=gravity;
         }
     }
@@ -208,9 +209,13 @@ public final class CombatVisuals implements AutoCloseable {
         if(session!=null)for(VehicleState vehicle:session.vehicles) {
             int id=vehicle.id;smokeClock[id]-=dt;turboClock[id]-=dt;
             if(vehicle.alive() && vehicle.hp/vehicle.maximumHp<=.25f && smokeClock[id]<=0) {
-                Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(0,.6f,.9f)));
-                emit(bonnet,new Vector3f(0,1.15f,0).addLocal(world.velocity(id).mult(.12f)),SMOKE,.78f,.12f,.4f,0);
-                smokeClock[id]=.12f;
+                Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(
+                        (visualRandom.nextFloat()-.5f)*.16f,.60f,1.05f+(visualRandom.nextFloat()-.5f)*.12f)));
+                Vector3f rise=new Vector3f((visualRandom.nextFloat()-.5f)*.18f,1.35f,(visualRandom.nextFloat()-.5f)*.14f);
+                // A narrow overlapping column reads as critical engine damage without covering the whole car.
+                // Ordinary rocket/fire smoke keeps its lighter profile; both use the same bounded alpha batch.
+                emit(bonnet,rise.addLocal(world.velocity(id).mult(.12f)),CRITICAL_SMOKE,1.12f,.18f,.32f,0);
+                smokeClock[id]=.06f;
             }
             if(vehicle.alive() && vehicle.turbo<previousTurbo[id]-.01f && turboClock[id]<=0) {
                 for(float side:new float[]{-.72f,.72f}) {
