@@ -1,6 +1,8 @@
 package game.wreckriff.audio;
 
 import com.jme3.asset.DesktopAssetManager;
+import com.jme3.asset.AssetManager;
+import com.jme3.asset.AssetInfo;
 import com.jme3.audio.*;
 import com.jme3.math.*;
 import com.jme3.scene.*;
@@ -12,6 +14,184 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Pure orchestration tests. A stub renderer cannot certify an audio device or audible output. */
 class AudioDirectorTest {
+    @Test void everyPickupUsesItsExactCueAndOnlyConfirmsAPositiveGrant() {
+        Node scene=new Node();
+        Map<String,String> cues=Map.of("homing-ammo","homing","power-ammo","power","mine-ammo","mine",
+                "napalm-ammo","napalm","ballistic-ammo","ballistic","cannon-ammo","cannon","repair","repair","turbo","turbo");
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();assertEquals(1,director.voiceCount(),"Available pickups have no idle sound");
+            long id=1;
+            for(var cue:cues.entrySet()) {
+                GameEvent pickup=event(GameEvent.Type.PICKUP,id++,0,0,cue.getKey(),1);
+                int before=director.voiceCount();director.accept(List.of(pickup));director.accept(List.of(pickup));
+                assertEquals(before+1,director.voiceCount(),"Duplicate delivery must not replay a pickup");
+                AudioNode node=find(scene,"sound-pickup-"+cue.getValue());assertNotNull(node,cue.getKey());
+                assertFalse(node.isPositional(),"Own confirmation remains clear at any camera distance");
+                assertFalse(node.isLooping());assertEquals(0,director.pendingImpactCount());
+            }
+            int before=director.voiceCount();
+            director.accept(List.of(event(GameEvent.Type.PICKUP,id++,0,0,"cannon-ammo",0),
+                    event(GameEvent.Type.PICKUP,id++,0,0,"repair",-1),
+                    event(GameEvent.Type.PICKUP,id++,0,0,"unknown-ammo",1),
+                    event(GameEvent.Type.PICKUP,id,0,0,"repair-unrecognized",1)));
+            assertEquals(before,director.voiceCount());assertNull(find(scene,"sound-pickup-ammo"));
+        }
+    }
+
+    @Test void eachWeaponPickupCyclesThreeActualTakesWithoutImmediateRepetition() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            long id=1;
+            for(String kind:List.of("homing","power","mine","napalm","ballistic","cannon")) {
+                director.startMatch();AudioData prior=null;
+                Set<AudioData> heard=Collections.newSetFromMap(new IdentityHashMap<>());
+                for(int take=0;take<9;take++) {
+                    director.accept(List.of(event(GameEvent.Type.PICKUP,id++,0,0,kind+"-ammo",1)));
+                    AudioNode node=find(scene,"sound-pickup-"+kind);assertNotNull(node,kind);
+                    if(prior!=null)assertNotSame(prior,node.getAudioData(),kind+" immediate repeat");
+                    heard.add(node.getAudioData());prior=node.getAudioData();node.setStatus(AudioSource.Status.Stopped);
+                }
+                assertEquals(3,heard.size(),kind);
+            }
+        }
+    }
+
+    @Test void enemyPickupIsQuieterPositionalAndCulledBeyondTheAudibleRange() {
+        Node scene=new Node();Listener listener=new Listener();listener.setLocation(Vector3f.ZERO);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),listener,scene)) {
+            director.startMatch();
+            Vector3f upperRoad=new Vector3f(14,8,6);
+            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,1,0,0,upperRoad,"cannon-ammo",1)));
+            AudioNode own=find(scene,"sound-pickup-cannon");
+            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,2,3,3,upperRoad,"cannon-ammo",1)));
+            AudioNode enemy=find(scene,"sound-pickup-cannon");
+            assertNotSame(own,enemy);assertTrue(enemy.isPositional());assertFalse(own.isPositional());
+            assertEquals(upperRoad,enemy.getLocalTranslation());assertEquals(8,enemy.getRefDistance());
+            assertEquals(120,enemy.getMaxDistance());assertTrue(enemy.getVolume()<own.getVolume()*.5f);
+            director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,3,4,4,new Vector3f(121,0,0),"cannon-ammo",1)));
+            assertEquals(3,director.voiceCount(),"Far enemy pickup must not allocate a source");
+            assertSame(enemy,find(scene,"sound-pickup-cannon"));
+        }
+    }
+
+    @Test void pickupFloodCannotEvictDangerCuesAndDoesNotQueueSoundsAcrossPauseRetryOrExit() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();director.hazard(true,true,Vector3f.ZERO);
+            AudioNode warning=find(scene,"sound-hazard-warning"),danger=find(scene,"sound-hazard-active");
+            List<GameEvent> flood=new ArrayList<>();
+            for(int i=0;i<200;i++)flood.add(event(GameEvent.Type.PICKUP,i,0,0,"homing-ammo",1));
+            director.accept(flood);assertEquals(32,director.voiceCount());assertEquals(0,director.pendingImpactCount());
+            assertSame(warning,find(scene,"sound-hazard-warning"));assertSame(danger,find(scene,"sound-hazard-active"));
+            double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
+            assertTrue(total[0]<=1.000001,"Pickup rush respects the shared mix ceiling");
+            director.startMatch();assertEquals(1,director.voiceCount());
+            director.pause();director.accept(List.of(event(GameEvent.Type.PICKUP,800,0,0,"power-ammo",1)));
+            director.resume();director.updateTail(.1f);assertNull(find(scene,"sound-pickup-power"));
+            director.accept(List.of(flood.getFirst()));assertEquals(2,director.voiceCount(),"Retry clears pickup dedupe");
+            director.stopMatch();director.accept(List.of(event(GameEvent.Type.PICKUP,801,0,0,"power-ammo",1)));
+            director.updateTail(.1f);assertEquals(0,director.voiceCount());
+            assertEquals(1,((Node)scene.getChild("match-audio")).getQuantity());
+        }
+        assertEquals(0,scene.getQuantity());
+    }
+
+    @Test void campaignCrossfadeUsesTwoSynchronizedSourcesAndDoesNotRestartOnRepeatedPhaseUpdates() {
+        Node scene=new Node();MatchSession session=new MatchSession(1,180);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch("audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
+            AudioNode normal=find(scene,"music-normal"),boss=find(scene,"music-boss");
+            assertEquals(1,director.musicSourceCount());assertEquals(AudioSource.Status.Stopped,boss.getStatus());
+            director.bossMusic(true);
+            assertEquals(2,director.musicSourceCount());
+            for(int i=0;i<10;i++) {director.bossMusic(true);director.update(session,world(Vector3f.ZERO),.1f);}
+            assertTrue(normal.getVolume()>0&&boss.getVolume()>0,"Both prepared streams participate in the crossfade");
+            float blendVolume=boss.getVolume();director.pause();director.update(session,world(Vector3f.ZERO),.1f);
+            assertEquals(blendVolume,boss.getVolume());director.resume();
+            for(int i=0;i<12;i++)director.update(session,world(Vector3f.ZERO),.1f);
+            assertEquals(1,director.musicSourceCount());assertEquals(AudioSource.Status.Stopped,normal.getStatus());
+            assertSame(boss,find(scene,"music-boss"));
+            for(int i=0;i<10;i++)director.bossMusic(true);
+            assertEquals(1,director.musicSourceCount());
+            director.stopMatch();assertEquals(0,director.voiceCount());
+        }
+        assertEquals(0,scene.getQuantity());
+    }
+
+    @Test void crossfadeIncludesBothMusicSourcesInTheHardGlobalSourceAndGainBudget() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch("audio/campaign/neon_zero-normal.wav","audio/campaign/neon_zero-boss.wav");
+            for(int i=0;i<60;i++)director.accept(List.of(event(GameEvent.Type.DAMAGE,i,1,2,"metal",2)));
+            assertEquals(32,director.voiceCount());
+            director.bossMusic(true);assertEquals(32,director.voiceCount());assertEquals(2,director.musicSourceCount());
+            director.update(new MatchSession(1,180),world(Vector3f.ZERO),.1f);
+            director.hazard(true,false,Vector3f.ZERO);
+            double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
+            assertTrue(total[0]<=1.000001,"Both music gains are counted by mix headroom");
+            assertTrue(director.voiceCount()<=32);assertNotNull(find(scene,"sound-hazard-warning"));
+        }
+    }
+
+    @Test void changingArenaDisposesOldStreamsAndRetryNeverAccumulatesMusicNodes() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            for(String arena:List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena")) {
+                director.startMatch("audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
+                assertEquals(2,((Node)scene.getChild("match-audio")).getQuantity());
+                AudioNode original=find(scene,"music-normal");
+                director.startMatch("audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
+                assertSame(original,find(scene,"music-normal"));assertEquals(1,director.voiceCount());
+                director.bossMusic(true);director.stopMatch();assertEquals(0,director.voiceCount());
+            }
+            director.startMatch();assertNotNull(find(scene,"music-metalmania"));
+            assertEquals(1,((Node)scene.getChild("match-audio")).getQuantity());
+        }
+        assertEquals(0,scene.getQuantity());
+    }
+
+    @Test void campaignMusicOwnsAtMostTheCurrentPairOfFileHandlesAndClosesBothOnShutdown() {
+        DesktopAssetManager delegate=new DesktopAssetManager(true);int[] open={0};
+        AssetManager[] holder=new AssetManager[1];
+        holder[0]=(AssetManager)Proxy.newProxyInstance(AssetManager.class.getClassLoader(),new Class<?>[]{AssetManager.class},(proxy,method,args)->{
+            if(method.getName().equals("locateAsset")) {
+                AssetInfo source=(AssetInfo)method.invoke(delegate,args);
+                if(source==null)return null;
+                return new AssetInfo(holder[0],source.getKey()) {
+                    @Override public java.io.InputStream openStream() {
+                        var input=source.openStream();open[0]++;
+                        return new java.io.FilterInputStream(input) {
+                            private boolean closed;
+                            @Override public void close()throws java.io.IOException {
+                                if(closed)return;closed=true;
+                                try {super.close();}finally {open[0]--;}
+                            }
+                        };
+                    }
+                };
+            }
+            return method.invoke(delegate,args);
+        });
+        try(AudioDirector director=new AudioDirector(holder[0],renderer(),new Listener(),new Node())) {
+            assertEquals(1,open[0]);
+            for(String arena:List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena")) {
+                director.startMatch("audio/campaign/"+arena+"-normal.wav","audio/campaign/"+arena+"-boss.wav");
+                assertEquals(2,open[0]);director.bossMusic(true);director.stopMatch();assertEquals(2,open[0]);
+            }
+        }
+        assertEquals(0,open[0],"Both current streams, and all earlier arena streams, must release their owned file handles");
+    }
+
+    @Test void pausedPhaseChangeDoesNotAllocateOrAdvanceMusicUntilResumed() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch("audio/campaign/euphoria_park-normal.wav","audio/campaign/euphoria_park-boss.wav");
+            director.pause();director.bossMusic(true);assertEquals(1,director.musicSourceCount());
+            director.resume();assertEquals(2,director.musicSourceCount());
+            director.stopMatch();director.bossMusic(true);assertEquals(0,director.voiceCount());
+        }
+    }
+
     @Test void a02PauseResumesSameMusicObjectAndRetryDoesNotGrowSources() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {

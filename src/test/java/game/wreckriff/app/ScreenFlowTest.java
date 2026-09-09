@@ -6,6 +6,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScreenFlowTest {
+    @Test void arenaAndStatisticsScreensReturnToMenuAndPreserveNestedOverlayParent() {
+        ScreenFlow flow=new ScreenFlow();flow.menu();flow.maps();
+        flow.open(ScreenFlow.Screen.CONFIRM);flow.back();
+        assertEquals(ScreenFlow.Screen.MAPS,flow.screen());
+        flow.menu();flow.statistics();flow.open(ScreenFlow.Screen.SETTINGS);flow.back();
+        assertEquals(ScreenFlow.Screen.STATISTICS,flow.screen());
+    }
     @Test void loadingEntersPlayDirectlyAndPauseOverlaysReturnToTheSameMatch() {
         ScreenFlow flow=new ScreenFlow();List<ScreenFlow.Screen> states=new ArrayList<>();
         flow.onChanged(()->states.add(flow.screen()));

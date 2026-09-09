@@ -8,8 +8,8 @@
     "durationSeconds": 0,
     "recoveryCost": 0,
     "introduction": "Два этажа. Два подброса. Одна победа.",
-    "music": "audio/campaign/ash_necropolis-normal.ogg",
-    "bossMusic": "audio/campaign/ash_necropolis-boss.ogg"
+    "music": "audio/campaign/ash_necropolis-normal.wav",
+    "bossMusic": "audio/campaign/ash_necropolis-boss.wav"
   },
   "bounds": {
     "minX": 0,

@@ -26,10 +26,12 @@ public final class GenerateAudio {
         }
         METRICS.clear();METRICS.add("asset,frames,channels,sample_rate,bits,peak,rms,sha256");
         prepareMusic(output,sources);
+        prepareCampaignMusic(output,sources.resolve("campaign"));
         prepareRecordedEffects(output,sources.resolve("recorded"));
         prepareResults(output,sources);
+        preparePickups(output);
         for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
-                "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-ammo","pickup-turbo",
+                "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-turbo",
                 "ui-nav","ui-confirm","mine-place"))effect(output,id);
         Files.write(output.resolve("audio-metrics.csv"),METRICS,StandardCharsets.UTF_8);
         Files.writeString(output.resolve("score.txt"), """
@@ -46,6 +48,10 @@ public final class GenerateAudio {
                 Victory/defeat/draw: short Metalmania guitar/drum excerpts with a recorded metal impact.
                 These result edits retain Kevin MacLeod credit and CC BY 4.0; see result-provenance.json.
                 Ancillary engine/UI sound effects: original deterministic synthesis seed 0x5249464657415645.
+                Weapon pickups: six original mechanical/electronic cue banks with three distinct takes each.
+                Homing latch/rise; Power heavy latch; Mine double click; Napalm liquid/valve/hiss;
+                Ballistic cassette/four tones; Cannon paired metal clunks. See pickup-provenance.json.
+                Pickup takes are mono 48kHz/16-bit; edge/DC cleanup; common RMS target 0.16; peak ceiling 0.82.
                 Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
                 Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
                 """,StandardCharsets.UTF_8);
@@ -124,6 +130,31 @@ public final class GenerateAudio {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
+    /** Authoring happens explicitly in compose_campaign_music.py; offline builds only verify and copy the finished scores. */
+    private static void prepareCampaignMusic(Path output,Path source)throws Exception {
+        Path target=output.resolve("campaign");Files.createDirectories(target);
+        List<String> metrics=Files.readAllLines(source.resolve("audio-metrics.csv"),StandardCharsets.UTF_8);
+        if(metrics.size()!=11||!metrics.getFirst().equals(METRICS.getFirst()))throw new IOException("Exactly ten campaign mixes are required");
+        Set<String> required=new HashSet<>();
+        for(String arena:List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"))
+            for(String mix:List.of("normal","boss"))required.add(arena+"-"+mix+".wav");
+        for(String row:metrics.subList(1,metrics.size())) {
+            String[] columns=row.split(",",-1);
+            if(columns.length!=8||!required.remove(columns[0])||!columns[2].equals("2")||!columns[3].equals("48000")||!columns[4].equals("16"))
+                throw new IOException("Invalid campaign audio metrics row: "+row);
+            Path file=source.resolve(columns[0]);
+            if(!hash(Files.readAllBytes(file)).equals(columns[7]))throw new IOException("Campaign music checksum mismatch: "+file);
+            try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(file.toFile())) {
+                var format=input.getFormat();
+                if(format.getChannels()!=2||format.getSampleRate()!=RATE||format.getSampleSizeInBits()!=16||format.isBigEndian()
+                        ||input.getFrameLength()!=Long.parseLong(columns[1]))throw new IOException("Invalid campaign PCM: "+file);
+            }
+            Files.copy(file,target.resolve(columns[0]),StandardCopyOption.REPLACE_EXISTING);
+        }
+        for(String file:List.of("audio-metrics.csv","provenance.json","score.txt"))
+            Files.copy(source.resolve(file),target.resolve(file),StandardCopyOption.REPLACE_EXISTING);
+    }
+
     /** Recorded rock punctuation; never a synthesized note ladder or a second music loop. */
     private static void prepareResults(Path output,Path sources)throws Exception {
         Path musicSource=sources.resolve("Metalmania-source.wav");
@@ -179,6 +210,116 @@ public final class GenerateAudio {
                 """.formatted(hash(Files.readAllBytes(musicSource)),hash(Files.readAllBytes(impactSource)),String.join(",",evidence)),StandardCharsets.UTF_8);
     }
 
+    /** Original physical-item punctuation, authored offline as PCM; playback never synthesizes audio. */
+    private static void preparePickups(Path output)throws Exception {
+        String generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        List<String> evidence=new ArrayList<>();
+        for(String kind:List.of("homing","power","mine","napalm","ballistic","cannon")) {
+            double seconds=switch(kind) {
+                case "homing" -> .42;case "power" -> .48;case "mine" -> .38;
+                case "napalm" -> .55;case "ballistic" -> .52;case "cannon" -> .50;
+                default -> throw new IllegalArgumentException(kind);
+            };
+            String recipe=switch(kind) {
+                case "homing" -> "Metal latch plus a short ascending electronic lock tone";
+                case "power" -> "Heavy bolt closure followed by low inharmonic steel and bass body";
+                case "mine" -> "Two dry latch clicks followed by a steady non-warning confirmation tone";
+                case "napalm" -> "Liquid bubble/slosh followed by a closing valve and short filtered hiss";
+                case "ballistic" -> "Cassette latch followed by four separate ascending stepped tones";
+                case "cannon" -> "Two spaced heavy inharmonic metal clunks with low ringing tails";
+                default -> throw new IllegalArgumentException(kind);
+            };
+            for(int take=1;take<=3;take++) {
+                String id="pickup-"+kind+"-"+take;
+                Random random=new Random(SEED^id.hashCode());
+                float[] pcm=new float[(int)Math.round(seconds*RATE)];
+                double pitch=1+(take-2)*.035,low=0,offset=(take-2)*.004;
+                for(int i=0;i<pcm.length;i++) {
+                    double t=i/(double)RATE,n=random.nextDouble()*2-1;
+                    low+=.08*(n-low);
+                    double sound=switch(kind) {
+                        case "homing" -> metal(t,.008,560*pitch,54,n)*.60
+                                + pickupTone(t,.075+offset,.245,720*pitch,840,.5);
+                        case "power" -> metal(t,.01,145*pitch,12,n)*.80
+                                + metal(t,.065+offset,230*pitch,20,n)*.36
+                                + pickupTone(t,.025,.36,74*pitch,-25,.70);
+                        case "mine" -> metal(t,.008,1250*pitch,88,n)*.72
+                                + metal(t,.085+offset,1610*pitch,92,n)*.68
+                                + pickupTone(t,.16,.14,1045*pitch,0,.40);
+                        case "napalm" -> {
+                            double water=Math.sin(TAU*(180*pitch*t+480*t*t)+1.9*Math.sin(TAU*37*t));
+                            double slosh=(water*.33+low*2.5)*pickupEnvelope(t,.008,.23);
+                            double hiss=(n-low)*pickupEnvelope(t,.245+offset,.24)*.20;
+                            yield slosh+metal(t,.22+offset,610*pitch,54,n)*.46+hiss;
+                        }
+                        case "ballistic" -> {
+                            double cassette=metal(t,.008,430*pitch,36,n)*.75;
+                            for(int step=0;step<4;step++)
+                                cassette+=pickupTone(t,.08+step*.075+offset,.060,
+                                        (630+step*175)*pitch,0,.53);
+                            yield cassette;
+                        }
+                        case "cannon" -> metal(t,.008,178*pitch,11,n)*.92
+                                + metal(t,.16+offset,211*pitch,13,n)*.85
+                                + pickupTone(t,.17,.27,92*pitch,0,.24);
+                        default -> throw new IllegalArgumentException(kind);
+                    };
+                    pcm[i]=(float)sound;
+                }
+                masterPickup(pcm);
+                write(output,id,new float[][]{pcm});
+                evidence.add("{\"path\":\"audio/"+id+".wav\",\"cue\":\"pickup-"+kind
+                        +"\",\"take\":"+take+",\"frames\":"+pcm.length+",\"sha256\":\""
+                        +hash(Files.readAllBytes(output.resolve(id+".wav")))+"\",\"recipe\":\""+recipe+"\"}");
+            }
+        }
+        Files.writeString(output.resolve("pickup-provenance.json"),"""
+                {"schemaVersion":1,"origin":"ORIGINAL_PROJECT_CONTENT","externalSamples":false,
+                "generator":"%s","generatorSha256":"%s","seed":"0x5249464657415645",
+                "sampleRate":48000,"channels":1,"bits":16,"rmsTarget":0.16,"peakCeiling":0.82,
+                "mastering":"DC removal with silent tapered boundaries; RMS matching with linear peak ceiling; no clipped samples",
+                "previousRecipe":"docs/asset-history/GenerateAudio-before-recorded-results.java",
+                "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
+                """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
+    }
+
+    private static double pickupEnvelope(double t,double start,double duration) {
+        double age=t-start;
+        if(age<=0||age>=duration)return 0;
+        return Math.min(1,age/.004)*Math.min(1,(duration-age)/.025);
+    }
+
+    private static double pickupTone(double t,double start,double duration,double hz,double sweep,double gain) {
+        double age=t-start;
+        return age<=0?0:gain*Math.sin(TAU*(hz*age+sweep*age*age*.5))
+                *pickupEnvelope(t,start,duration)*Math.exp(-age*4);
+    }
+
+    private static double metal(double t,double start,double hz,double decay,double noise) {
+        double age=t-start;
+        if(age<=0)return 0;
+        double modes=Math.sin(TAU*hz*age)+.47*Math.sin(TAU*hz*2.71*age)
+                +.23*Math.sin(TAU*hz*4.13*age);
+        return Math.min(1,age/.002)*(modes*Math.exp(-decay*age)+noise*.5*Math.exp(-age*100));
+    }
+
+    private static void masterPickup(float[] pcm) {
+        // Weighted DC removal preserves silent endpoints; release remains 30ms even for the metal tails.
+        double sum=0,weight=0;
+        for(int i=0;i<pcm.length;i++) {
+            double edge=Math.min(1,i/144.0)*Math.min(1,(pcm.length-i-1)/1440.0);
+            pcm[i]*=(float)edge;sum+=pcm[i];weight+=edge;
+        }
+        double peak=0,squares=0,mean=sum/weight;
+        for(int i=0;i<pcm.length;i++) {
+            double edge=Math.min(1,i/144.0)*Math.min(1,(pcm.length-i-1)/1440.0);
+            pcm[i]-=(float)(mean*edge);peak=Math.max(peak,Math.abs(pcm[i]));squares+=pcm[i]*pcm[i];
+        }
+        if(peak==0)throw new IllegalStateException("Silent pickup asset");
+        double gain=Math.min(.16/Math.sqrt(squares/pcm.length),.82/peak);
+        for(int i=0;i<pcm.length;i++)pcm[i]*=(float)gain;
+    }
+
     private static void effect(Path output, String id) throws Exception {
         boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active").contains(id);
         double seconds = switch (id) {
@@ -213,7 +354,6 @@ public final class GenerateAudio {
                 case "hazard-warning" -> Math.sin(TAU * (480 * t + 40 * t * t))
                         * (.35 + .2 * Math.sin(TAU * 5 * t)) * Math.min(1, (seconds - t) * 10);
                 case "pickup-repair" -> chime(t, 392, 523.25, 659.25);
-                case "pickup-ammo" -> chime(t, 220, 329.63, 440) + n * Math.exp(-t * 80) * .3;
                 case "pickup-turbo" -> Math.sin(TAU * (300 * t + 900 * t * t)) * Math.exp(-t * 6);
                 case "ui-nav" -> Math.sin(TAU * 740 * t) * Math.exp(-t * 45);
                 case "ui-confirm" -> chime(t, 493.88, 659.25, 987.77);

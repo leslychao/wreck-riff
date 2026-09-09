@@ -32,6 +32,8 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     private Consumer<String> uiAction=a->{};
     private Runnable disconnect=()->{};
     private boolean gameplay;
+    private boolean usingGamepad;
+    private float observedSteer,observedThrottle,observedBrake;
     public InputSystem(InputManager manager,Supplier<SettingsStore.Settings> settings) {
         this(manager,settings,GamepadProfile.bundled());
     }
@@ -43,11 +45,40 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     public void onDisconnect(Runnable listener) { disconnect=listener; }
     public void setGameplay(boolean value) { gameplay=value; manager.setCursorVisible(!value); }
     public int activePad() { return activePad; }
+    public boolean usingGamepad() {return usingGamepad;}
+    /** Prompts use the active physical device and its actual loaded bindings. */
+    public String displayBinding(String action) {
+        return displayBinding(action,usingGamepad);
+    }
+    public String displayBinding(String action,boolean gamepad) {
+        if(!gamepad)return switch(action) {
+            case "Machine gun"->"LMB";case "Selected weapon"->"RMB";case "Pause"->"ESC";
+            default->KeyLabels.name(settings.get().keys.get(action));
+        };
+        return switch(action) {
+            case "Throttle"->axisLabel(profile.throttleAxis());case "Brake / reverse"->axisLabel(profile.brakeAxis());
+            case "Steer","Steer left","Steer right"->axisLabel(profile.steerAxis());
+            case "Handbrake"->buttonLabel(profile.handbrake());case "Turbo"->buttonLabel(profile.turbo());
+            case "Machine gun"->buttonLabel(profile.machineGun());case "Selected weapon"->buttonLabel(profile.rocket());
+            case "Freeze"->buttonLabel(profile.freeze());case "Shield"->buttonLabel(profile.shield());
+            case "Previous weapon"->buttonLabel(profile.previousWeapon());case "Next weapon"->buttonLabel(profile.nextWeapon());
+            case "Rear view"->buttonLabel(profile.rearView());case "Recover"->buttonLabel(profile.recover());
+            case "Pause"->buttonLabel(profile.pause());default->"UNBOUND";
+        };
+    }
+    private static String axisLabel(int axis) {
+        return switch(axis){case 0->"LS X";case 1->"LS Y";case 2->"RS X";case 3->"RS Y";case 4->"LT";case 5->"RT";default->"UNBOUND";};
+    }
+    private static String buttonLabel(int button) {
+        return switch(button){case 0->"A";case 1->"B";case 2->"X";case 3->"Y";case 4->"LB";case 5->"RB";
+            case 6->"BACK";case 7->"START";case 8->"GUIDE";case 9->"LS CLICK";case 10->"RS CLICK";
+            case 11->"D-PAD UP";case 12->"D-PAD RIGHT";case 13->"D-PAD DOWN";case 14->"D-PAD LEFT";default->"UNBOUND";};
+    }
     public String padName() { return activePad<0?"No mapped gamepad":glfwGetGamepadName(activePad); }
     public String diagnostics() { return String.format(Locale.ROOT,"%s | steer %.2f RT %.2f LT %.2f\n%s",padName(),axisSteer,axisThrottle,axisBrake,profile.warning()); }
     public void pollGamepad() {
         if(activePad>=0 && (!glfwJoystickPresent(activePad) || !glfwJoystickIsGamepad(activePad))) {
-            activePad=-1; clear(); disconnect.run();
+            activePad=-1;usingGamepad=false;clear();disconnect.run();
         }
         if(activePad<0) for(int id=GLFW_JOYSTICK_1;id<=GLFW_JOYSTICK_LAST;id++) if(glfwJoystickIsGamepad(id)) { activePad=id; break; }
         if(activePad<0 || !glfwGetGamepadState(activePad,pad)) return;
@@ -60,6 +91,11 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
         axisSteer=deadZone(snapshot.axes(profile.steerAxis()),settings.get().deadZone);
         axisThrottle=profile.trigger(snapshot.axes(profile.throttleAxis()));
         axisBrake=profile.trigger(snapshot.axes(profile.brakeAxis()));
+        boolean freshButton=false;
+        for(int i=0;i<currentPad.length;i++)freshButton|=currentPad[i]&&!priorPad[i];
+        if(freshButton||Math.abs(axisSteer-observedSteer)>.05f||Math.abs(axisThrottle-observedThrottle)>.05f||Math.abs(axisBrake-observedBrake)>.05f) {
+            usingGamepad=true;observedSteer=axisSteer;observedThrottle=axisThrottle;observedBrake=axisBrake;
+        }
         padHandbrake=availableButton(profile.handbrake()); padTurbo=availableButton(profile.turbo());
         padMg=availableButton(profile.machineGun()); padRocket=availableButton(profile.rocket());
         padRear=availableButton(profile.rearView()); padRecover=availableButton(profile.recover());
@@ -108,6 +144,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     @Override public void onKeyEvent(KeyInputEvent event) {
         if(event.isRepeating()) return;
         if(event.isPressed()) {
+            usingGamepad=false;
             boolean newPress=!keys.contains(event.getKeyCode());
             keys.add(event.getKeyCode());
             if(!suppressedKeys.contains(event.getKeyCode())) keyPressed.accept(event.getKeyCode());
@@ -127,14 +164,19 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
         };
     }
     @Override public void onMouseButtonEvent(MouseButtonEvent event) {
-        if(event.isPressed()) { mouse.add(event.getButtonIndex()); if(!gameplay&&event.getButtonIndex()==0&&!suppressedMouse.contains(0)) uiAction.accept("click"); }
-        else { mouse.remove(event.getButtonIndex()); suppressedMouse.remove(event.getButtonIndex()); }
+        if(event.isPressed()) {usingGamepad=false;mouse.add(event.getButtonIndex()); if(!gameplay&&event.getButtonIndex()==0&&!suppressedMouse.contains(0)) uiAction.accept("click"); }
+        else {mouse.remove(event.getButtonIndex());suppressedMouse.remove(event.getButtonIndex());if(!gameplay&&event.getButtonIndex()==0)uiAction.accept("release");}
     }
     @Override public void beginInput() {}
     @Override public void endInput() {}
     @Override public void onJoyAxisEvent(JoyAxisEvent event) {}
     @Override public void onJoyButtonEvent(JoyButtonEvent event) {}
-    @Override public void onMouseMotionEvent(MouseMotionEvent event) {}
+    @Override public void onMouseMotionEvent(MouseMotionEvent event) {
+        if(event.getDX()!=0||event.getDY()!=0||event.getDeltaWheel()!=0) {
+            usingGamepad=false;
+            if(!gameplay)uiAction.accept(event.getDeltaWheel()>0?"scroll-up":event.getDeltaWheel()<0?"scroll-down":"pointer-move");
+        }
+    }
     @Override public void onTouchEvent(TouchEvent event) {}
     @Override public void close() { manager.removeRawInputListener(this); clear(); }
 }

@@ -11,8 +11,8 @@ import java.util.*;
 public final class SettingsStore {
     public static final class Settings {
         public int schemaVersion=3, width=1280,height=720, samples=4;
-        public boolean fullscreen=false,vsync=true;
-        public float master=0.8f,music=0.8f,sfx=0.9f,shake=0.6f,sensitivity=1,deadZone=0.15f;
+        public boolean fullscreen=false,vsync=true,subtitles=true;
+        public float master=0.8f,music=0.8f,sfx=0.9f,shake=0.6f,sensitivity=1,deadZone=0.15f,uiScale=1,flashes=1;
         public Map<String,Integer> keys=defaultKeys();
         public Settings copy() { return Configs.gson().fromJson(Configs.gson().toJson(this),Settings.class); }
     }
@@ -112,6 +112,7 @@ public final class SettingsStore {
         value.master=unit(value.master,0.8f); value.music=unit(value.music,0.8f); value.sfx=unit(value.sfx,0.9f); value.shake=unit(value.shake,0.6f);
         value.deadZone=Math.clamp(Float.isFinite(value.deadZone)?value.deadZone:0.15f,0,0.45f);
         value.sensitivity=Math.clamp(Float.isFinite(value.sensitivity)?value.sensitivity:1,0.25f,2);
+        value.uiScale=Math.clamp(Float.isFinite(value.uiScale)?value.uiScale:1,.8f,1.5f);value.flashes=unit(value.flashes,1);
         Map<String,Integer> defaults=defaultKeys();
         Map<String,Integer> supplied=value.keys==null?Map.of():value.keys;
         LinkedHashMap<String,Integer> normalized=new LinkedHashMap<>();

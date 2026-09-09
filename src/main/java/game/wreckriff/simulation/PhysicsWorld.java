@@ -31,7 +31,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<String,ArenaDefinition.Surface> surfacesByGeometry=new HashMap<>();
     private ArenaDefinition arenaDefinition;
     private final Map<Integer,Integer> wheelContactCounts=new HashMap<>();
-    private final Map<Integer,Integer> wheelContactMasks=new HashMap<>();
+    private final Map<Integer,Support[]> wheelSupports=new HashMap<>();
+    private final Map<Integer,Set<Integer>> chassisSupports=new HashMap<>();
+    private final Map<Integer,Set<Integer>> vehicleContacts=new HashMap<>();
     private final Map<PhysicsCollisionObject,Integer> identities=new IdentityHashMap<>();
     private final Map<Integer,Pose> previous=new HashMap<>();
     private final Map<Integer,Long> teleportGenerations=new HashMap<>();
@@ -66,7 +68,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         if(arenaDefinition!=null&&arenaDefinition!=definition)throw new IllegalStateException("Physics world already belongs to an arena");
         arenaDefinition=definition;surfacesByGeometry.clear();
         for(var surface:definition.surfaces())surfacesByGeometry.put(surface.geometryId(),surface);
-        for(var entry:vehicles.entrySet())refreshRoadContext(entry.getKey(),entry.getValue());
+        for(int id:vehicles.keySet())refreshRoadContext(id);
     }
     @Override public RoadContext roadContext(int id) { return roadContexts.getOrDefault(id,RoadContext.UNKNOWN); }
     public void beginLaunch(int id,String launchId,String sourceId,String targetId) {
@@ -77,7 +79,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     public void endLaunch(int id) {
         roadContexts.put(id,roadContext(id).airborne());
-        PhysicsVehicle body=vehicles.get(id);if(body!=null)refreshRoadContext(id,body);
+        if(vehicles.containsKey(id))refreshRoadContext(id);
     }
     public PhysicsRigidBody addStatic(CollisionShape shape,Vector3f position,Quaternion rotation) {
         return addStatic("static-"+nextStaticId,shape,position,rotation);
@@ -97,6 +99,10 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         Integer surfaceId=staticIds.remove(objectId);if(surfaceId==null)return false;
         PhysicsRigidBody body=statics.remove(surfaceId);
         space.removeCollisionObject(body);staticIdentities.remove(body);staticNames.remove(surfaceId);
+        chassisSupports.values().forEach(supports->supports.remove(surfaceId));
+        chassisSupports.values().removeIf(Set::isEmpty);
+        for(var supports:wheelSupports.values())for(int wheel=0;wheel<supports.length;wheel++)
+            if(supports[wheel]!=null&&supports[wheel].surfaceId()==surfaceId)supports[wheel]=null;
         return true;
     }
     public PhysicsVehicle addVehicle(int id,Vector3f position,Quaternion orientation) {
@@ -130,6 +136,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         profiles.put(id,profile);
         recoveryProbes.computeIfAbsent(profile,key->new PhysicsGhostObject(chassisShape(key,.12f)));
         teleportGenerations.put(id,0L);
+        clearBodyContacts(id);
         body.updateWheels(); refreshWheelContacts(id,body); resetInterpolation(id);
         return body;
     }
@@ -146,16 +153,27 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public PhysicsVehicle vehicle(int id) { return vehicles.get(id); }
     public boolean containsVehicle(int id) { return vehicles.containsKey(id); }
     public long teleportGeneration(int id) {return teleportGenerations.getOrDefault(id,0L);}
+    /** Last native step's chassis support; wheel suspension is observed separately. */
+    public boolean chassisSupported(int id) {return chassisSupports.containsKey(id);}
+    /** Last native step's actual contact with another registered vehicle. */
+    public boolean touchingVehicle(int id) {return vehicleContacts.containsKey(id);}
+    private void clearBodyContacts(int id) {
+        chassisSupports.remove(id);vehicleContacts.remove(id);
+        vehicleContacts.values().forEach(contacts->contacts.remove(id));
+        vehicleContacts.values().removeIf(Set::isEmpty);
+    }
     public void removeVehicle(int id) {
         immobilize(id,false);
+        clearBodyContacts(id);
         teleportGenerations.remove(id);
         if(vehicles.containsKey(id))resetInterpolation(id);
         PhysicsVehicle body=vehicles.remove(id);
-        if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id);wheelContactMasks.remove(id); }
+        if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id);wheelSupports.remove(id); }
         roadContexts.remove(id);
     }
     public void step() {
         rams.clear();
+        chassisSupports.clear();vehicleContacts.clear();
         for (var entry:vehicles.entrySet()) {
             int id=entry.getKey();
             previous.put(id,new Pose(position(id),rotation(id)));
@@ -203,6 +221,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     private void contact(PhysicsCollisionEvent event) {
         Integer a=identities.get(event.getObjectA()), b=identities.get(event.getObjectB());
+        observeBodyContact(event,a,b);
         if (a==null || b==null || a.equals(b)) return;
         Vector3f relative=preStepVelocity.get(a).subtract(preStepVelocity.get(b));
         // Bullet's normal points from body B to body A.
@@ -215,6 +234,23 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             Vector3f normal=event.getNormalWorldOnB().clone();if(a!=first)normal.negateLocal();
             rams.put(key,new Ram(first,second,closing,point,normal));
         }
+    }
+    private void observeBodyContact(PhysicsCollisionEvent event,Integer a,Integer b) {
+        // Persistent manifolds can outlive actual contact while their points separate.
+        // One millimetre covers resting solver slop, not a ray/proximity substitute.
+        if(!(event.getDistance1()<=.001f))return;
+        if(a!=null&&b!=null&&!a.equals(b)) {
+            vehicleContacts.computeIfAbsent(a,key->new HashSet<>()).add(b);
+            vehicleContacts.computeIfAbsent(b,key->new HashSet<>()).add(a);
+            return;
+        }
+        // Bullet's normal points from body B to body A: keep only upward support
+        // of a chassis by a currently registered static, never a wall or ceiling.
+        Integer vehicle=a!=null?a:b;
+        if(vehicle==null)return;
+        Integer surface=staticIdentities.get(a!=null?event.getObjectB():event.getObjectA());
+        float up=event.getNormalWorldOnB().y*(a!=null?1:-1);
+        if(surface!=null&&up>=.65f)chassisSupports.computeIfAbsent(vehicle,key->new HashSet<>()).add(surface);
     }
     public List<Ram> rams() { return List.copyOf(rams.values()); }
     @Override public Vector3f position(int id) {
@@ -240,28 +276,54 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public int wheelContacts(int id) {
         return wheelContactCounts.getOrDefault(id,0);
     }
+    /** Cached suspension contacts on upward static surfaces, excluding walls/cars. */
+    public int supportedWheelContacts(int id) {
+        Support[] supports=wheelSupports.get(id);if(supports==null)return 0;
+        int count=0;for(var support:supports)if(support!=null)count++;
+        return count;
+    }
     private void refreshWheelContacts(int id,PhysicsVehicle body) {
         // castRay updates Bullet wheel/suspension state. Keep it in the physics
         // owner; HUD, AI, recovery and repeated diagnostics only read this snapshot.
-        int count=0,mask=0;
-        for (int i=0;i<4;i++) if (body.castRay(i)>=0) {count++;mask|=1<<i;}
+        int count=0,contactMask=0;
+        Support[] supports=new Support[body.getNumWheels()];
+        for(int i=0;i<body.getNumWheels();i++)if(body.castRay(i)>=0) {
+            count++;contactMask|=1<<i;
+        }
+        // Finish every native suspension cast before making any independent
+        // support queries, preserving the original wheel refresh ordering.
+        Vector3f position=body.getPhysicsLocation();Quaternion rotation=body.getPhysicsRotation();
+        for(int i=0;i<body.getNumWheels();i++)if((contactMask&(1<<i))!=0) {
+            var wheel=body.getWheel(i);
+            Vector3f point=wheel.getCollisionLocation(),normal=wheel.getCollisionNormal();
+            if(point==null||!Float.isFinite(point.x)||!Float.isFinite(point.y)||!Float.isFinite(point.z)
+                    ||normal==null||!(normal.y>=.65f))continue;
+            // Minie exposes the native point/normal, but not the wheel's ground
+            // object. Repeat the full suspension segment only to identify that
+            // object. Tiny rays around the point lose precision on large boxes.
+            Vector3f from=position.add(rotation.mult(wheel.getLocation()));
+            Vector3f to=from.add(rotation.mult(wheel.getDirection(null)).multLocal(wheel.getRestLength()+wheel.getRadius()));
+            PhysicsRayTestResult nearest=null;
+            for(var hit:space.rayTest(from,to)) {
+                if(hit.getCollisionObject()==body)continue;
+                if(nearest==null||hit.getHitFraction()<nearest.getHitFraction())nearest=hit;
+            }
+            if(nearest==null)continue;
+            Integer surface=staticIdentities.get(nearest.getCollisionObject());
+            if(surface!=null&&nearest.getHitNormalLocal().y>=.65f)supports[i]=new Support(surface,point,normal);
+        }
         wheelContactCounts.put(id,count);
-        wheelContactMasks.put(id,mask);
-        refreshRoadContext(id,body);
+        wheelSupports.put(id,supports);
+        refreshRoadContext(id);
     }
-    private void refreshRoadContext(int id,PhysicsVehicle body) {
+    private void refreshRoadContext(int id) {
         RoadContext previous=roadContext(id);
         if(previous.motion()==RoadContext.Motion.LAUNCH)return;
-        if(arenaDefinition==null||wheelContacts(id)==0) {roadContexts.put(id,previous.airborne());return;}
+        if(arenaDefinition==null||supportedWheelContacts(id)==0) {roadContexts.put(id,previous.airborne());return;}
         Map<String,Integer> votes=new LinkedHashMap<>();
         Map<String,ArenaDefinition.Surface> found=new HashMap<>();
-        for(int i=0;i<body.getNumWheels();i++) {
-            if((wheelContactMasks.getOrDefault(id,0)&(1<<i))==0)continue;
-            var wheel=body.getWheel(i);
-            Vector3f point=wheel.getCollisionLocation();
-            if(point==null||!Float.isFinite(point.x)||!Float.isFinite(point.y)||!Float.isFinite(point.z))continue;
-            var support=support(point.add(0,.08f,0),.16f);
-            if(support==null||support.point().distanceSquared(point)>.03f*.03f||support.normal().y<.65f)continue;
+        for(var support:wheelSupports.get(id)) {
+            if(support==null)continue;
             var surface=surfacesByGeometry.get(staticObjectId(support.surfaceId()));
             // Older anonymous static registration has no authored ID. Resolve only
             // at the verified native contact, never at a guessed car height.
@@ -437,6 +499,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     public void teleport(int id,Vector3f position,Quaternion rotation) {
         immobilize(id,false);
+        clearBodyContacts(id);
         roadContexts.put(id,RoadContext.UNKNOWN);
         teleportGenerations.merge(id,1L,Long::sum);
         PhysicsVehicle body=vehicle(id); body.setPhysicsLocation(position); body.setPhysicsRotation(rotation);
@@ -451,8 +514,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.removeOngoingCollisionListener(contactListener);
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
         for (PhysicsRigidBody body:statics.values()) space.removeCollisionObject(body);
-        vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelContactMasks.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();
+        vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelSupports.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();
         statics.clear();staticIds.clear();staticNames.clear();staticIdentities.clear();preStepVelocity.clear();rams.clear();sweepShapes.clear();
+        chassisSupports.clear();vehicleContacts.clear();
         space.destroy();
     }
 }

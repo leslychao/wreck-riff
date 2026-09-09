@@ -28,15 +28,29 @@ public final class SurfaceMaterials {
             case "repair" -> paint(new ColorRGBA(.17f,.8f,.24f,1));
             case "ivory" -> paint(new ColorRGBA(.84f,.82f,.7f,1));
             case "black" -> textured("metal_plate_02",new ColorRGBA(.09f,.10f,.12f,1),16,.22f);
+            case "road-patch" -> lit(assets,new ColorRGBA(.15f,.17f,.19f,1),4,.03f);
+            case "road-wet" -> lit(assets,new ColorRGBA(.10f,.14f,.17f,1),88,.72f);
+            case "stone" -> textured("cracked_concrete",new ColorRGBA(.53f,.58f,.60f,1),9,.09f);
+            case "dark-concrete" -> textured("cracked_concrete",new ColorRGBA(.34f,.39f,.44f,1),6,.08f);
+            case "purple" -> paint(new ColorRGBA(.44f,.12f,.38f,1));
+            case "faded-red" -> paint(new ColorRGBA(.42f,.19f,.17f,1));
+            case "light-amber" -> emissive(new ColorRGBA(1,.57f,.16f,1));
+            case "light-cyan" -> emissive(new ColorRGBA(.13f,.80f,.92f,1));
+            case "light-magenta" -> emissive(new ColorRGBA(.88f,.19f,.55f,1));
+            case "light-white" -> emissive(new ColorRGBA(.72f,.84f,1,1));
             default -> throw new IllegalArgumentException("Unknown material "+key);
         });
     }
     public Material paint(ColorRGBA color) {
         Material result=lit(assets,color,32,.4f);
         result.setTexture("DiffuseMap",texture("textures/vehicle/paint.png",true));
-        result.setTexture("NormalMap",texture("textures/materials/blue_metal_plate/normal.png",false));
+        // Paint sits on formed panels, not on the deep diamond-plate normal of structural metal.
         result.setTexture("SpecularMap",texture("textures/materials/blue_metal_plate/specular.png",false));
         return result;
+    }
+    public Material emissive(ColorRGBA color) {
+        Material result=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");
+        result.setColor("Color",color);result.setColor("GlowColor",color.mult(.55f));return result;
     }
     public Material rubber() {
         Material result=lit(assets,new ColorRGBA(.38f,.39f,.41f,1),8,.08f);

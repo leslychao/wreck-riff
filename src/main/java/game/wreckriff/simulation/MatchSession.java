@@ -39,15 +39,25 @@ public final class MatchSession {
         this(seed,arena,mode,rules,UUID.randomUUID());
     }
     public MatchSession(long seed,ArenaDefinition arena,Mode mode,CombatRules rules,UUID sessionId) {
-        this(seed,arena.id(),mode,mode==Mode.BOSS_DUEL?0:arena.metadata().normalEnemies(),arena.metadata().durationSeconds(),rules,sessionId);
+        this(seed,arena,mode,rules,sessionId,false,0);
+    }
+    public MatchSession(long seed,ArenaDefinition arena,Mode mode,CombatRules rules,UUID sessionId,boolean bossCheckpoint,int liveryId) {
+        this(seed,arena.id(),mode,mode==Mode.BOSS_DUEL||bossCheckpoint?0:arena.metadata().normalEnemies(),arena.metadata().durationSeconds(),rules,sessionId,liveryId);
         if((mode==Mode.LEGACY)!=arena.bosses().isEmpty())throw new IllegalArgumentException("Arena/mode mismatch");
+        if(bossCheckpoint) {
+            if(mode!=Mode.CAMPAIGN&&mode!=Mode.ARENA)throw new IllegalArgumentException("This mode cannot restore a boss checkpoint");
+            preBossRepairApplied=true;phase=Phase.BOSS_ENTRY;
+        }
     }
     private MatchSession(long seed,String arenaId,Mode mode,int enemies,int durationSeconds,CombatRules rules,UUID sessionId) {
+        this(seed,arenaId,mode,enemies,durationSeconds,rules,sessionId,0);
+    }
+    private MatchSession(long seed,String arenaId,Mode mode,int enemies,int durationSeconds,CombatRules rules,UUID sessionId,int liveryId) {
         if(enemies<0||durationSeconds<0)throw new IllegalArgumentException("Invalid match settings");
         this.seed=seed;this.sessionId=Objects.requireNonNull(sessionId);this.arenaId=Objects.requireNonNull(arenaId);this.mode=Objects.requireNonNull(mode);
         combatRules=Objects.requireNonNull(rules);
         maximumTicks=durationSeconds==0?Long.MAX_VALUE:Math.multiplyExact((long)durationSeconds,TICKS_PER_SECOND);
-        participants.add(new VehicleState(0,"Rivet",true,rules));
+        participants.add(new VehicleState(0,"Rivet",true,"rivet",liveryId,false,rules.health().playerMaximumHp(),rules));
         String[] names={"Static","Dent","Buzz","Fuse"};
         for(int id=1;id<=enemies;id++)participants.add(new VehicleState(id,names[(id-1)%names.length]+(id>4?" "+id:""),false,rules));
         vehicles=Collections.unmodifiableList(participants);

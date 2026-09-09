@@ -12,6 +12,37 @@ import java.lang.reflect.Proxy;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InputSystemTest {
+    @Test void hudPromptsFollowActualInputAndIdleConnectedPadCannotStealThemBack() {
+        try(InputSystem input=input()) {
+            var snapshot=GLFWGamepadState.create();
+            snapshot.axes(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER,-1);snapshot.axes(GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER,-1);
+            input.acceptGamepadState(snapshot);assertFalse(input.usingGamepad());
+            snapshot.axes(GLFW_GAMEPAD_AXIS_LEFT_X,.6f);input.acceptGamepadState(snapshot);
+            assertTrue(input.usingGamepad());assertEquals("RB",input.displayBinding("Selected weapon"));
+            input.onKeyEvent(key(KeyInput.KEY_W,true));assertFalse(input.usingGamepad());
+            input.acceptGamepadState(snapshot);assertFalse(input.usingGamepad(),"An unchanged held stick is not new user activity");
+            snapshot.axes(GLFW_GAMEPAD_AXIS_LEFT_X,.61f);input.acceptGamepadState(snapshot);
+            assertFalse(input.usingGamepad(),"Small axis noise cannot replace keyboard prompts");
+            snapshot.buttons(GLFW_GAMEPAD_BUTTON_A,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
+            assertTrue(input.usingGamepad());assertEquals("A",input.displayBinding("Shield"));
+            input.onMouseMotionEvent(new MouseMotionEvent(100,100,0,0,0,0));assertTrue(input.usingGamepad());
+            input.onMouseMotionEvent(new MouseMotionEvent(101,100,1,0,0,0));assertFalse(input.usingGamepad());
+            assertEquals("RMB",input.displayBinding("Selected weapon"));
+        }
+    }
+    @Test void promptLabelsRespectKeyboardRemappingAndTheLoadedGamepadProfile() {
+        var settings=new SettingsStore.Settings();settings.keys.put("Freeze",KeyInput.KEY_C);
+        var defaults=GamepadProfile.bundled();
+        var custom=new GamepadProfile(3,2,4,5,-1,1,defaults.handbrake(),defaults.turbo(),defaults.rocket(),defaults.machineGun(),
+                defaults.shield(),defaults.previousWeapon(),defaults.nextWeapon(),defaults.rearView(),defaults.recover(),defaults.pause(),
+                defaults.up(),defaults.down(),defaults.back(),defaults.freeze(),defaults.activate());
+        try(InputSystem input=new InputSystem(new InputManager(device(MouseInput.class),device(KeyInput.class),null,null),()->settings,custom)) {
+            assertEquals("C",input.displayBinding("Freeze"));assertEquals("LMB",input.displayBinding("Machine gun"));
+            var snapshot=GLFWGamepadState.create();snapshot.buttons(GLFW_GAMEPAD_BUTTON_A,(byte)GLFW_PRESS);input.acceptGamepadState(snapshot);
+            assertEquals("LB",input.displayBinding("Selected weapon"));assertEquals("RB",input.displayBinding("Machine gun"));
+            assertEquals("LT",input.displayBinding("Throttle"));assertEquals("RS X",input.displayBinding("Steer"));
+        }
+    }
     @Test void unknownKeyCannotActivateDisabledAbilitiesWeaponSelectionOrCycle() {
         var settings=new SettingsStore.Settings();
         for(String action:java.util.List.of("Freeze","Shield","Select Homing","Select Power","Select Mine","Select Napalm","Select Ballistic","Select Cannon","Next weapon"))settings.keys.put(action,0);

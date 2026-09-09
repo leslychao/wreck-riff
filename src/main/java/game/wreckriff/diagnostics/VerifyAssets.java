@@ -77,15 +77,6 @@ public final class VerifyAssets {
         attempt(errors,"arena catalogue",()-> {
             var registry=ArenaRegistry.load();
             for(var entry:registry.entries())configs.put(entry.resourceKey(),ArenaDefinition.class);
-            for(var entry:registry.entries())if(entry.campaign()) {
-                var arena=registry.definition(entry.id());
-                for(String path:List.of(arena.metadata().music(),arena.metadata().bossMusic()))
-                    attempt(errors,entry.id()+" music "+path,()-> {
-                        byte[] bytes=resource(path);
-                        if(bytes.length<1024)throw new IOException("Empty/truncated arena music: "+path);
-                        assets.add(asset(path,"campaign-music",bytes,"Original campaign composition; authoring source required","RESOURCE_PRESENT"));
-                    });
-            }
         });
         for (String name : configs.keySet()) attempt(errors, "config/" + name + ".json", () -> {
             String path = "config/" + name + ".json";
@@ -96,6 +87,7 @@ public final class VerifyAssets {
             assets.add(asset(path, "config", bytes, "src/main/resources/" + path, "VALIDATED"));
         });
         attempt(errors, "audio", () -> verifyAudio(assets));
+        attempt(errors, "campaign music", () -> verifyCampaignMusic(assets));
         attempt(errors, "font", () -> verifyFont(assets));
         attempt(errors, "licensed textures", () -> verifyTextures(assets));
         attempt(errors, "asset license evidence", () -> {
@@ -131,7 +123,8 @@ public final class VerifyAssets {
                 assets.add(asset(path, "procedural-source", bytes, "Original project source recipe", "SOURCE_PRESENT"));
             }
             for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateAudio-v0.2.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt",
-                    "docs/asset-history/audio-0.3/prepare_recorded_sfx.py.txt", "docs/asset-history/audio-0.3/sfx-provenance.json", "docs/asset-history/audio-0.3/audio-metrics.csv")) {
+                    "docs/asset-history/audio-0.3/prepare_recorded_sfx.py.txt", "docs/asset-history/audio-0.3/sfx-provenance.json", "docs/asset-history/audio-0.3/audio-metrics.csv",
+                    "docs/asset-history/GenerateAudio-before-recorded-results.java")) {
                 assets.add(asset(path, "historical-source", Files.readAllBytes(Path.of(path)),
                         "Superseded original recipe retained for provenance only; excluded from compilation and runtime", "SOURCE_PRESENT"));
             }
@@ -163,7 +156,7 @@ public final class VerifyAssets {
             String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
             String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
             String origin = source ? asset.path : asset.source;
-            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
+            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
@@ -237,12 +230,13 @@ public final class VerifyAssets {
     private static void verifyAudio(List<Asset> assets) throws Exception {
         AudioConfig config = Configs.gson().fromJson(new String(resource("config/audio.json"), StandardCharsets.UTF_8), AudioConfig.class);
         if (!config.musicAsset().equals("audio/metalmania.wav")) throw new IOException("Unexpected music cue");
-        for(String retired:List.of("dead-air-circuit","overheat","pulse","stun","freeze","shield",
+        for(String retired:List.of("dead-air-circuit","overheat","pulse","stun","freeze","shield","pickup-ammo",
                 "machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch","mine-detonate","napalm-launch")) {
             if(config.effects().contains(retired) || VerifyAssets.class.getClassLoader().getResource("audio/"+retired+".wav")!=null)
                 throw new IOException("Superseded runtime audio is still packaged: "+retired);
         }
         Map<String,String> recorded = verifyRecordedEffects(config,assets);
+        Map<String,String> pickups = verifyPickupEffects(config,assets);
         byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
         JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
         JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -291,13 +285,106 @@ public final class VerifyAssets {
             }
             assets.add(new Asset(path, channels == 2 ? "licensed-music" : results.containsKey(path)?"licensed-result":recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
                     channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
-                            : results.getOrDefault(path,recorded.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples")),
+                            : results.getOrDefault(path,recorded.getOrDefault(path,pickups.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"))),
                     channels == 2 || recorded.containsKey(path)||results.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
         assets.add(asset("audio/score.txt", "score", resource("audio/score.txt"), "GenerateAudio.java", "SOURCE_PRESENT"));
         assets.add(asset("audio/music-provenance.json", "music-provenance", provenanceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
         assets.add(asset("audio/music-source.json", "music-provenance", sourceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
+    }
+
+    private static Map<String,String> verifyPickupEffects(AudioConfig config,List<Asset> assets)throws Exception {
+        String path="audio/pickup-provenance.json",generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        byte[] bytes=resource(path);
+        JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()
+                ||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
+                ||!generator.equals(evidence.get("generator").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(generator))).equals(evidence.get("generatorSha256").getAsString())
+                ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString())
+                ||evidence.get("sampleRate").getAsInt()!=48000||evidence.get("channels").getAsInt()!=1||evidence.get("bits").getAsInt()!=16
+                ||!"docs/asset-history/GenerateAudio-before-recorded-results.java".equals(evidence.get("previousRecipe").getAsString()))
+            throw new IOException("Pickup synthesis source/provenance mismatch");
+        Set<String> required=new HashSet<>();
+        for(String kind:List.of("homing","power","mine","napalm","ballistic","cannon")) {
+            String cue="pickup-"+kind;
+            List<String> expected=List.of(cue+"-1",cue+"-2",cue+"-3");
+            if(!expected.equals(config.cueBanks().get(cue)))throw new IOException("Pickup requires three ordered takes: "+cue);
+            for(String take:expected)required.add("audio/"+take+".wav");
+        }
+        Map<String,String> origins=new HashMap<>();Set<String> hashes=new HashSet<>();
+        for(JsonElement entry:evidence.getAsJsonArray("assets")) {
+            JsonObject item=entry.getAsJsonObject();String audio=item.get("path").getAsString();
+            if(!required.remove(audio)||!audio.equals("audio/"+item.get("cue").getAsString()+"-"+item.get("take").getAsInt()+".wav"))
+                throw new IOException("Unexpected/duplicate pickup take: "+audio);
+            WaveMetrics metrics=inspectWave(uniqueResource(audio));
+            if(metrics.frames<12000||metrics.frames>28800||metrics.channels!=1||metrics.bits!=16||metrics.rate!=48000
+                    ||metrics.frames!=item.get("frames").getAsLong()||!metrics.sha256.equals(item.get("sha256").getAsString())
+                    ||!hashes.add(metrics.sha256)||metrics.peak>.82004||metrics.rms<.12||metrics.rms>.16004)
+                throw new IOException("Invalid pickup take duration/hash/signal: "+audio);
+            origins.put(audio,"Original synthesis; "+item.get("recipe").getAsString()+"; three takes; RMS matching; audio/pickup-provenance.json");
+        }
+        if(!required.isEmpty())throw new IOException("Missing pickup take provenance: "+required);
+        assets.add(asset(path,"pickup-provenance",bytes,generator+"; original synthesized pickup cue recipes and exact output hashes","VERIFIED"));
+        return Map.copyOf(origins);
+    }
+
+    private static void verifyCampaignMusic(List<Asset> assets)throws Exception {
+        String generator="src/tools/compose_campaign_music.py";
+        byte[] recipe=Files.readAllBytes(Path.of(generator)),evidenceBytes=resource("audio/campaign/provenance.json");
+        String sourceHash=hash(recipe);
+        JsonObject evidence=JsonParser.parseString(new String(evidenceBytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()
+                ||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
+                ||!generator.equals(evidence.get("generator").getAsString())||!sourceHash.equals(evidence.get("generatorSha256").getAsString())
+                ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString()))
+            throw new IOException("Campaign score source/provenance mismatch");
+        Map<String,String> required=new HashMap<>();
+        var registry=ArenaRegistry.load();
+        for(var entry:registry.entries())if(entry.campaign()) {
+            var arena=registry.definition(entry.id());
+            required.put(arena.metadata().music(),entry.id());required.put(arena.metadata().bossMusic(),entry.id());
+        }
+        if(required.size()!=10)throw new IOException("Five separate normal/boss score pairs are required");
+        byte[] metricsBytes=resource("audio/campaign/audio-metrics.csv");
+        List<String> rows=new String(metricsBytes,StandardCharsets.UTF_8).lines().toList();
+        if(rows.size()!=11||!rows.getFirst().equals("asset,frames,channels,sample_rate,bits,peak,rms,sha256"))throw new IOException("Campaign metrics manifest mismatch");
+        Map<String,String[]> metricsByPath=new HashMap<>();
+        for(String row:rows.subList(1,rows.size())) {
+            String[] columns=row.split(",",-1);
+            if(columns.length!=8||metricsByPath.put("audio/campaign/"+columns[0],columns)!=null)throw new IOException("Duplicate/invalid campaign metric row");
+        }
+        Set<String> found=new HashSet<>(),hashes=new HashSet<>();Map<String,Long> framesByArena=new HashMap<>();
+        for(JsonElement value:evidence.getAsJsonArray("assets")) {
+            JsonObject item=value.getAsJsonObject();String path=item.get("path").getAsString(),arenaId=required.get(path);
+            if(arenaId==null||!found.add(path)||!arenaId.equals(item.get("arenaId").getAsString())
+                    ||!generator.equals(item.get("sourcePath").getAsString())||!sourceHash.equals(item.get("sourceSha256").getAsString())
+                    ||!path.equals("audio/campaign/"+arenaId+"-"+item.get("mix").getAsString()+".wav")
+                    ||item.get("bars").getAsInt()!=48||item.get("transformation").getAsString().isBlank())
+                throw new IOException("Campaign source/score binding mismatch: "+path);
+            WaveMetrics signal=inspectWave(uniqueResource(path));String[] row=metricsByPath.get(path);
+            if(row==null||signal.channels()!=2||signal.frames()<60L*48000||signal.frames()>180L*48000
+                    ||signal.peak()<.65||signal.peak()>.9||signal.rms()<.07||!hashes.add(signal.sha256())
+                    ||!signal.sha256().equals(item.get("sha256").getAsString())||!signal.sha256().equals(row[7])
+                    ||signal.frames()!=item.get("frames").getAsLong()||signal.frames()!=Long.parseLong(row[1])
+                    ||signal.frames()!=Math.round(48*4*60.0/item.get("bpm").getAsDouble()*48000)
+                    ||!row[2].equals("2")||!row[3].equals("48000")||!row[4].equals("16")
+                    ||Math.abs(signal.peak()-Double.parseDouble(row[5]))>.00004||Math.abs(signal.rms()-Double.parseDouble(row[6]))>.00004
+                    ||!signal.sha256().equals(hash(Files.readAllBytes(Path.of("src/tools/assets/audio/campaign",path.substring("audio/campaign/".length()))))))
+                throw new IOException("Campaign music PCM/hash/length mismatch: "+path);
+            Long partner=framesByArena.putIfAbsent(arenaId,signal.frames());
+            if(partner!=null&&partner.longValue()!=signal.frames())throw new IOException("Campaign normal/boss timeline differs: "+arenaId);
+            assets.add(new Asset(path,"campaign-music",signal.bytes(),signal.sha256(),generator+"; "+item.get("title").getAsString()+"; original score and synthesis",
+                    "ORIGINAL_GENERATED",2,signal.frames(),signal.peak(),signal.rms()));
+        }
+        if(!found.equals(required.keySet())||!metricsByPath.keySet().equals(found))throw new IOException("Campaign manifest must cover exactly the ten configured mixes");
+        byte[] score=resource("audio/campaign/score.txt");
+        if(!new String(score,StandardCharsets.UTF_8).contains("NEEDS_CREATIVE_REVIEW"))throw new IOException("Campaign creative-review status is missing");
+        assets.add(asset(generator,"procedural-source",recipe,"Original project score and synthesis; no external recordings","SOURCE_PRESENT"));
+        assets.add(asset("audio/campaign/provenance.json","campaign-provenance",evidenceBytes,generator,"VERIFIED"));
+        assets.add(asset("audio/campaign/audio-metrics.csv","campaign-metrics",metricsBytes,generator,"VERIFIED_AGAINST_PCM"));
+        assets.add(asset("audio/campaign/score.txt","campaign-score",score,generator,"SOURCE_PRESENT"));
     }
 
     private static Map<String,String> verifyResults(AudioConfig config,List<Asset> assets,JsonObject music)throws Exception {

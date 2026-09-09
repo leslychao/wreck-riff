@@ -28,7 +28,7 @@ public final class EnemyHealthBars implements AutoCloseable {
     private final Material background,fill;
     private final Map<Integer,Bar> bars=new HashMap<>();
     private int viewportWidth,viewportHeight;
-    private float barWidth,barHeight,gap;
+    private float barWidth,barHeight,gap,previousUiScale;
 
     public EnemyHealthBars(AssetManager assets,Node guiNode) {
         background=material(assets,new ColorRGBA(.055f,.065f,.075f,.92f));
@@ -43,6 +43,8 @@ public final class EnemyHealthBars implements AutoCloseable {
     public void resize(int width,int height,float uiScale) {
         if(width<=0||height<=0||!Float.isFinite(uiScale)||uiScale<=0)
             throw new IllegalArgumentException("Invalid enemy health viewport");
+        if(width==viewportWidth&&height==viewportHeight&&uiScale==previousUiScale)return;
+        previousUiScale=uiScale;
         viewportWidth=width;viewportHeight=height;
         float scale=height/1080f*uiScale;
         barWidth=Math.min(width,48*scale);barHeight=Math.min(height,Math.max(4,5*scale));

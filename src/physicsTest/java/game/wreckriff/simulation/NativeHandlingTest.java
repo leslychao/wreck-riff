@@ -77,7 +77,7 @@ class NativeHandlingTest {
                 assertTrue(rig.world.vehicle(0).getWheel(0).getBrake()>0);
             }
             rig.world.vehicle(0).setLinearVelocity(Vector3f.ZERO);
-            for(int i=1;i<6;i++) {
+            for(int i=1;i<=6;i++) {
                 rig.step(requested);
                 assertEquals(0,rig.world.vehicle(0).getWheel(0).getEngineForce(),"Must wait through step "+i);
             }
@@ -89,13 +89,22 @@ class NativeHandlingTest {
         }
     }
     @Test void releasingPendingSwitchResetsDelayAndBrakeWinsSimultaneousInput() {
-        try(var rig=new Rig()) {
-            for(int i=0;i<3;i++)rig.step(REVERSE);
+        for(int direction:new int[]{-1,1})try(var rig=new Rig()) {
+            VehicleCommand requested=direction<0?REVERSE:GAS;
+            rig.world.vehicle(0).setLinearVelocity(new Vector3f(0,0,-direction*8));
+            rig.driver.drive(requested);
+            rig.world.vehicle(0).setLinearVelocity(Vector3f.ZERO);
+            for(int i=0;i<3;i++)rig.step(requested);
             rig.step(VehicleCommand.NONE);
-            for(int i=0;i<5;i++) {
-                rig.step(REVERSE);
+            for(int i=0;i<6;i++) {
+                rig.step(requested);
                 assertEquals(0,rig.world.vehicle(0).getWheel(0).getEngineForce());
             }
+            rig.step(requested);
+            assertTrue(rig.world.vehicle(0).getWheel(0).getEngineForce()*direction>0);
+        }
+        try(var rig=new Rig()) {
+            for(int i=0;i<6;i++)rig.step(command(1,1,0,false));
             rig.step(command(1,1,0,false));
             assertTrue(rig.world.vehicle(0).getWheel(0).getEngineForce()<0);
             rig.world.vehicle(0).setLinearVelocity(new Vector3f(0,0,8));

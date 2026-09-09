@@ -24,8 +24,8 @@ class Arena:
                          metadata=dict(title=title, theme=theme, normalEnemies=len(spawns)-1,
                                        durationSeconds=0, recoveryCost=0,
                                        introduction="Два этажа. Два подброса. Одна победа.",
-                                       music=f"audio/campaign/{identity}-normal.ogg",
-                                       bossMusic=f"audio/campaign/{identity}-boss.ogg"),
+                                       music=f"audio/campaign/{identity}-normal.wav",
+                                       bossMusic=f"audio/campaign/{identity}-boss.wav"),
                          bounds=dict(minX=0, maxX=width, minZ=0, maxZ=depth, recoveryY=-12),
                          boxes=[], ramps=[], spawns=[], pickups=[], hazards=[], nodes=[], edges=[],
                          surfaces=[], launchPads=[], drops=[], destructibles=[], secrets=[], bosses=[], barriers=[])

@@ -16,6 +16,15 @@ class ProgressStoreTest {
     @TempDir Path directory;
     private static final Duration TIMEOUT=Duration.ofSeconds(5);
 
+    @Test void resolvedDeathDuringBossEntryWithNoActiveCombatTicksStillRecordsExactlyOnce() {
+        try(var store=new ProgressStore(directory)) {
+            Attempt attempt=store.beginAttempt("construction_17",Mode.CAMPAIGN,false);
+            var result=new Result(attempt,Outcome.DEFEAT,0,0,0,false);
+            assertTrue(store.record(result));assertFalse(store.record(result));
+            assertEquals(1,store.snapshot().stats().losses());assertTrue(store.snapshot().records().isEmpty());
+        }
+    }
+
     @Test void migratesOriginalCountersAndPreservesExactVersionOneFile() throws Exception {
         String original="""
                 {"schemaVersion":1,"completedMatches":3,"wins":1,"losses":1,"draws":1,

@@ -57,7 +57,7 @@ public final class ProgressStore implements AutoCloseable {
     public record Result(Attempt attempt,Outcome outcome,double damageDealt,long eliminations,long activeTicks,boolean bossDefeated) {
         public Result {
             Objects.requireNonNull(attempt,"result.attempt");Objects.requireNonNull(outcome,"result.outcome");
-            finiteNonNegative(damageDealt,"damageDealt");nonNegative(eliminations,"eliminations");require(activeTicks>0,"activeTicks must be positive");
+            finiteNonNegative(damageDealt,"damageDealt");nonNegative(eliminations,"eliminations");nonNegative(activeTicks,"activeTicks");
             require(!bossDefeated||attempt.mode()!=Mode.LEGACY,"Legacy arena has no boss");
             require(!bossDefeated||outcome==Outcome.VICTORY,"Boss destruction resolves as victory, including simultaneous player death");
             require(outcome!=Outcome.VICTORY||attempt.mode()==Mode.LEGACY||bossDefeated,"A new-arena victory requires the boss defeat");
@@ -150,7 +150,7 @@ public final class ProgressStore implements AutoCloseable {
         public ArenaRecord {
             nonNegative(victories,"record.victories");nonNegative(bossVictories,"record.bossVictories");
             require(bossVictories<=victories,"Boss victories exceed victories");
-            require(bestFullMapTicks==null||bestFullMapTicks>0,"Invalid full-map time");require(bestBossDuelTicks==null||bestBossDuelTicks>0,"Invalid duel time");
+            require(bestFullMapTicks==null||bestFullMapTicks>=0,"Invalid full-map time");require(bestBossDuelTicks==null||bestBossDuelTicks>=0,"Invalid duel time");
             require(bestFullMapTicks==null||victories>0,"A full-map record requires a victory");
             require(bestBossDuelTicks==null||bossVictories>0,"A duel record requires a boss victory");
         }

@@ -10,8 +10,29 @@ public record VehicleRules(float mass, float gravity, float width, float length,
         float handbrakeTorque, float handbrakeYawDamping, float stabilizingTorque, float gripReturnSeconds,
         float turboDrain, float turboRegen, float turboRegenDelay, float recoveryCost,
         float recoveryHold, float recoveryCooldown, float recoveryProtection,
-        float carPairRestitution, float impactStabilizerOffSeconds, float impactStabilizerReturnSeconds) {
+        float carPairRestitution, float impactStabilizerOffSeconds, float impactStabilizerReturnSeconds,
+        GroundStability groundStability, SelfRighting selfRighting) {
+    public record GroundStability(float torque, float damping) {
+        public GroundStability {
+            positive(torque); positive(damping);
+        }
+    }
+    public record SelfRighting(float tiltDegrees, float maxSpeed, float holdSeconds,
+                              float angularAcceleration, float angularSpeed, float response) {
+        public SelfRighting {
+            positive(tiltDegrees); positive(maxSpeed); positive(holdSeconds);
+            positive(angularAcceleration); positive(angularSpeed); positive(response);
+            if(tiltDegrees<45 || tiltDegrees>=90 || maxSpeed>5 || holdSeconds>2
+                    || angularAcceleration>100 || angularSpeed>6 || response>30)
+                throw new IllegalArgumentException("Invalid self-righting tuning");
+        }
+    }
+    private static void positive(float value) {
+        if(!Float.isFinite(value)||value<=0)throw new IllegalArgumentException("Assistance tuning must be finite and positive");
+    }
     public VehicleRules {
+        java.util.Objects.requireNonNull(groundStability,"groundStability");
+        java.util.Objects.requireNonNull(selfRighting,"selfRighting");
         if (mass<=0 || gravity<=0 || wheelRadius<=0 || maxSpeed<=0 || turboSpeed<maxSpeed
                 || width<=0 || length<=0 || height<=0 || wheelBase<=0 || wheelBase>=length
                 || reverseSpeed<=0 || reverseSpeed>maxSpeed || suspensionStiffness<=0

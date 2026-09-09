@@ -17,6 +17,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Runs the pinned jME renderer against a deterministic device, not an audible hardware test. */
 class OpenAlPauseTest {
+    @Test void campaignTransitionSeeksThePreparedStreamAndDevicePauseKeepsBothSources() {
+        Node scene=new Node();
+        try(Device device=new Device();AudioDirector director=new AudioDirector(new DesktopAssetManager(true),device.renderer,new Listener(),scene)) {
+            director.startMatch("audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
+            AudioNode normal=find(scene,"music-normal"),boss=find(scene,"music-boss");
+            device.advanceMusic(normal,60_000);
+            assertEquals(1.25f,director.musicPlaybackSeconds(),.00001f);
+            director.bossMusic(true);
+            assertEquals(1.25f,boss.getTimeOffset(),.00001f,"Boss mix starts at the current music position");
+            assertEquals(2,director.musicSourceCount());int plays=device.plays;
+            director.pause();director.bossMusic(true);director.resume();
+            assertEquals(plays,device.plays,"Device resume and repeated phase requests do not restart either score");
+            director.stopMatch();assertEquals(0,director.voiceCount());
+        }
+        assertEquals(0,scene.getQuantity());
+    }
+
     @Test void pinnedRendererReproducesFinishedOneShotPauseRace() {
         try (Device device = new Device()) {
             Node scene = new Node();

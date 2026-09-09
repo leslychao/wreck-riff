@@ -53,9 +53,13 @@ sourceSets {
     }
 }
 configurations {
+    toolsImplementation.extendsFrom implementation
     physicsTestImplementation.extendsFrom testImplementation, implementation
     physicsTestRuntimeOnly.extendsFrom testRuntimeOnly, runtimeOnly
 }
+sourceSets.tools.compileClasspath += sourceSets.main.output.classesDirs
+sourceSets.tools.runtimeClasspath += sourceSets.main.output.classesDirs
+tasks.named('compileToolsJava') { dependsOn tasks.named('compileJava') }
 
 application {
     mainClass = 'game.wreckriff.Main'
@@ -112,7 +116,17 @@ tasks.register('generateBuildInfo') {
     }
 }
 sourceSets.main.resources.srcDir layout.buildDirectory.dir('generated-resources')
-tasks.named('processResources') { dependsOn tasks.named('generateAudio'),tasks.named('generateFont'),tasks.named('generateBuildInfo') }
+tasks.register('generatePickupModels', JavaExec) {
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.GeneratePickupModels'
+    args file('src/main/resources').absolutePath
+    args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    inputs.files(sourceSets.tools.allSource, sourceSets.main.output.classesDirs)
+    inputs.dir('src/main/resources/textures')
+    outputs.dir(layout.buildDirectory.dir('generated-resources/models/pickups'))
+}
+tasks.named('processResources') { dependsOn tasks.named('generateAudio'),tasks.named('generateFont'),tasks.named('generateBuildInfo'),tasks.named('generatePickupModels') }
 
 tasks.register('physicsTest', Test) {
     description = 'Real Minie/Bullet integration tests without a graphics context'

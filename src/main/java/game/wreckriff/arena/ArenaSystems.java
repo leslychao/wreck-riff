@@ -1,5 +1,6 @@
 package game.wreckriff.arena;
 import game.wreckriff.combat.WeaponType;
+import game.wreckriff.config.ProgressStore;
 
 import com.jme3.math.Vector3f;
 import game.wreckriff.simulation.*;
@@ -16,6 +17,8 @@ public final class ArenaSystems {
     private final ArenaDefinition definition;
     private final ArenaLaunches launches;
     private final Map<String,Long> returnsAt=new HashMap<>();
+    private final Map<String,ProgressStore.ObjectState> objects=new LinkedHashMap<>();
+    private long hazardTicks;
     private final Map<String,Map<Integer,Integer>> hazardExposure=new HashMap<>();
     private final List<GameEvent> events=new ArrayList<>();
     private long lastHazardTick=Long.MIN_VALUE,lastPickupTick=Long.MIN_VALUE;
@@ -23,6 +26,7 @@ public final class ArenaSystems {
     public ArenaSystems(MatchSession session,ArenaDefinition definition) {
         this.session=session; this.definition=definition;
         launches=new ArenaLaunches(session,definition);
+        definition.destructibles().forEach(object->objects.put(object.id(),new ProgressStore.ObjectState(object.maximumHp(),false,false)));
     }
     public ArenaLaunches launches() { return launches; }
     public void beforePhysics(PhysicsWorld world,Map<Integer,VehicleController> drivers) { launches.beforePhysics(world,drivers); }
@@ -31,8 +35,9 @@ public final class ArenaSystems {
         return definition.hazards().stream().map(h->hazardPhase(h.id())).max(Comparator.naturalOrder()).orElse(HazardPhase.OFF);
     }
     public HazardPhase hazardPhase(String id) {
-        return phaseAt(session.tick,definition.hazards(),id);
+        return phaseAt(hazardClock(),definition.hazards(),id);
     }
+    private long hazardClock() {return session.mode==MatchSession.Mode.LEGACY?session.tick:hazardTicks;}
     public static HazardPhase phaseAt(long tick,List<ArenaDefinition.Hazard> hazards,String id) {
         long period=hazards.stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum();
         long phase=period==0?0:tick%period;
@@ -51,7 +56,7 @@ public final class ArenaSystems {
     }
     public float warningProgress(String id) {
         long period=definition.hazards().stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum();
-        long phase=period==0?0:session.tick%period;
+        long phase=period==0?0:hazardClock()%period;
         for(var hazard:definition.hazards()) {
             if(hazard.id().equals(id))return Math.clamp((phase-hazard.offTicks())/(float)hazard.warningTicks(),0,1);
             phase-=hazard.periodTicks();
@@ -79,6 +84,54 @@ public final class ArenaSystems {
             }
         }
         }
+        if(session.mode!=MatchSession.Mode.LEGACY)hazardTicks++;
+    }
+    public ProgressStore.ArenaState snapshot() {
+        Map<String,ProgressStore.PickupState> pickups=new LinkedHashMap<>();
+        definition.pickups().forEach(p->pickups.put(p.id(),new ProgressStore.PickupState(Math.max(0,returnsAt.getOrDefault(p.id(),0L)-session.tick))));
+        return new ProgressStore.ArenaState(pickups,objects,hazardSnapshot(hazardClock()),0,session.seed);
+    }
+    private Map<String,ProgressStore.HazardState> hazardSnapshot(long clock) {
+        Map<String,ProgressStore.HazardState> result=new LinkedHashMap<>();
+        long total=definition.hazards().stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum(),offset=0;
+        for(var hazard:definition.hazards()) {
+            long local=Math.floorMod(clock-offset,total),remaining;ProgressStore.HazardPhase phase;
+            if(local<hazard.offTicks()) {phase=ProgressStore.HazardPhase.READY;remaining=hazard.offTicks()-local;}
+            else if(local<hazard.offTicks()+hazard.warningTicks()) {phase=ProgressStore.HazardPhase.WARNING;remaining=hazard.offTicks()+hazard.warningTicks()-local;}
+            else if(local<hazard.periodTicks()) {phase=ProgressStore.HazardPhase.ACTIVE;remaining=hazard.periodTicks()-local;}
+            else {phase=ProgressStore.HazardPhase.COOLDOWN;remaining=total-local;}
+            result.put(hazard.id(),new ProgressStore.HazardState(phase,remaining,0,clock/total));offset+=hazard.periodTicks();
+        }
+        return result;
+    }
+    public void restore(ProgressStore.ArenaState state,PhysicsWorld world,NavGraph graph) {
+        long restored=0;
+        if(!definition.hazards().isEmpty()) {
+            var first=definition.hazards().getFirst();var stored=Objects.requireNonNull(state.hazards().get(first.id()));
+            long total=definition.hazards().stream().mapToLong(ArenaDefinition.Hazard::periodTicks).sum();
+            long end=switch(stored.phase()) {
+                case READY -> first.offTicks();case WARNING -> first.offTicks()+first.warningTicks();
+                case ACTIVE -> first.periodTicks();case COOLDOWN -> total;
+                default -> throw new IllegalArgumentException("Invalid saved hazard schedule");
+            };
+            if(stored.remainingTicks()>end)throw new IllegalArgumentException("Invalid saved hazard duration");
+            restored=Math.addExact(Math.multiplyExact(stored.cycle(),total),end-stored.remainingTicks());
+            if(!hazardSnapshot(restored).equals(state.hazards()))throw new IllegalArgumentException("Inconsistent saved hazard schedule");
+        }
+        returnsAt.clear();state.pickups().forEach((id,p)->returnsAt.put(id,Math.addExact(session.tick,p.respawnTicks())));
+        objects.clear();objects.putAll(state.objects());hazardTicks=restored;hazardExposure.clear();
+        restoreGeometry(state,world,graph,definition);
+    }
+    /** Initial collider restoration happens before placing participants in the restored road network. */
+    public static void restoreGeometry(ProgressStore.ArenaState state,PhysicsWorld world,NavGraph graph,ArenaDefinition definition) {
+        for(var object:definition.destructibles()) {
+            var saved=Objects.requireNonNull(state.objects().get(object.id()));
+            if(saved.destroyed()||saved.open()) {
+                world.removeStatic(object.geometryId());
+                if(definition.edges().stream().anyMatch(edge->edge.type()==ArenaDefinition.Transition.OPENABLE&&object.id().equals(edge.objectId())))
+                    graph.setOpen(object.id(),true);
+            }
+        }
     }
     public void collectPickups(WorldQuery world) {
         if (lastPickupTick==session.tick || session.outcome!=MatchSession.Outcome.NONE) return;
@@ -103,7 +156,7 @@ public final class ArenaSystems {
                 float amount=apply(winner,pickup.type());
                 returnsAt.put(pickup.id(),session.tick+pickup.respawnTicks());
                 events.add(new GameEvent(GameEvent.Type.PICKUP,-(1L<<60)-session.tick*16-pickupIndex,
-                        winner.id,winner.id,surface,pickupKind(pickup.type()),amount));
+                        winner.id,winner.id,surface,pickupKind(pickup.type()),amount).forObject(pickup.id()));
             }
         }
     }

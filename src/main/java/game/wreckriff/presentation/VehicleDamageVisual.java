@@ -9,6 +9,7 @@ import com.jme3.scene.*;
 import com.jme3.scene.control.AbstractControl;
 import com.jme3.util.BufferUtils;
 import com.jme3.util.mikktspace.MikktspaceTangentGenerator;
+import game.wreckriff.config.VehicleProfile;
 import java.nio.FloatBuffer;
 import java.util.*;
 
@@ -25,16 +26,21 @@ final class VehicleDamageVisual extends AbstractControl {
     private final Material scratchMaterial,sootMaterial;
     private final Mesh[] crackStages=new Mesh[STAGES],wearStages=new Mesh[STAGES];
     private int stage;
+    private final Spatial bossPanels;
+    private final boolean shedPanels;
 
-    static void install(AssetManager assets,Node root) { root.addControl(new VehicleDamageVisual(assets,root)); }
-    private VehicleDamageVisual(AssetManager assets,Node root) {
+    static void install(AssetManager assets,Node root) {install(assets,root,null);}
+    static void install(AssetManager assets,Node root,VehicleProfile profile) {root.addControl(new VehicleDamageVisual(assets,root,profile));}
+    private VehicleDamageVisual(AssetManager assets,Node root,VehicleProfile profile) {
+        bossPanels=root.getChild("boss-panels");
+        shedPanels=profile!=null&&Set.of("boss_emcee","boss_ash_shepherd","boss_director").contains(profile.id());
         IdentityHashMap<Material,Material[]> materials=new IdentityHashMap<>();
         for(Spatial child:List.copyOf(root.getChildren())) {
             if(child.getName().startsWith("wheel-")||child.getName().startsWith("exhaust-"))continue;
             child.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
                 boolean lamp=geometry.getName().equals("headlights")||geometry.getName().equals("taillights");
                 Mesh[] meshes=new Mesh[STAGES];meshes[0]=lamp?geometry.getMesh().deepClone():geometry.getMesh();
-                for(int damage=1;damage<STAGES;damage++)meshes[damage]=deform(meshes[0],damage);
+                for(int damage=1;damage<STAGES;damage++)meshes[damage]=deform(meshes[0],damage,profile);
                 if(lamp)for(int damage=0;damage<STAGES;damage++)lampColors(meshes[damage],damage);
                 Material[] colors=materials.computeIfAbsent(geometry.getMaterial(),VehicleDamageVisual::materialStages);
                 if(lamp)for(Material color:colors)color.setBoolean("VertexColor",true);
@@ -58,7 +64,16 @@ final class VehicleDamageVisual extends AbstractControl {
                 }
             }});
         }
-        for(int damage=1;damage<STAGES;damage++) {crackStages[damage]=cracks(damage);wearStages[damage]=damage<3?scratches(damage):soot(damage);}
+        for(int damage=1;damage<STAGES;damage++) {
+            if(profile==null) {crackStages[damage]=cracks(damage);wearStages[damage]=damage<3?scratches(damage):soot(damage);}
+            else {
+                final int selected=damage;
+                Mesh damagedGlass=parts.stream().filter(p->p.geometry.getName().equals("glass")).findFirst().orElseThrow().meshes[selected];
+                Mesh damagedPaint=parts.stream().filter(p->p.geometry.getName().equals("paint")).findFirst().orElseThrow().meshes[selected];
+                crackStages[damage]=surfaceWear(damagedGlass,damage,true);
+                wearStages[damage]=surfaceWear(damagedPaint,damage,false);
+            }
+        }
         cracks=new Geometry("glass-cracks",crackStages[1]);cracks.setMaterial(translucent(assets,new ColorRGBA(.67f,.79f,.85f,.65f)));
         scratchMaterial=translucent(assets,new ColorRGBA(.55f,.50f,.41f,.66f));
         sootMaterial=translucent(assets,new ColorRGBA(.025f,.018f,.013f,.67f));
@@ -75,7 +90,10 @@ final class VehicleDamageVisual extends AbstractControl {
         return hpFraction<=0?4:hpFraction<=.25f?3:hpFraction<=.5f?2:hpFraction<=.75f?1:0;
     }
     void damage(float hpFraction) {
-        int next=stage(hpFraction);if(next==stage)return;stage=next;
+        int next=stage(hpFraction);
+        if(bossPanels!=null&&shedPanels)
+            bossPanels.setCullHint(hpFraction<=.30f?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
+        if(next==stage)return;stage=next;
         for(Part part:parts) {part.geometry.setMesh(part.meshes[stage]);part.geometry.setMaterial(part.materials[stage]);}
         for(Part part:frostParts)part.geometry.setMesh(part.meshes[stage]);
         for(Part part:shieldParts)part.geometry.setMesh(part.meshes[stage]);
@@ -140,10 +158,26 @@ final class VehicleDamageVisual extends AbstractControl {
         float dx=(p.x-x)/rx,dy=(p.y-y)/ry,dz=(p.z-z)/rz;
         return Math.max(0,1-dx*dx-dy*dy-dz*dz);
     }
-    private static Mesh deform(Mesh original,int stage) {
+    private static Vector3f bossDent(Vector3f point,int stage,VehicleProfile profile) {
+        float w=profile.width()/2,h=profile.height()/1.07f,l=profile.length()/2;
+        for(int barrel=0;barrel<2;barrel++) {
+            Vector3f muzzle=profile.machineGunMuzzle(barrel);
+            if(Math.abs(point.x-muzzle.x)<.16f*w&&Math.abs(point.y-muzzle.y)<.16f*w&&point.z>muzzle.z-.31f*l)
+                return point.clone();
+        }
+        Vector3f p=new Vector3f(point.x/w,point.y/h,point.z/l);
+        float left=patch(p,-.93f,.25f,-.15f,.30f,.42f,.64f),right=patch(p,.95f,.20f,.18f,.32f,.38f,.53f);
+        float front=patch(p,.10f,.20f,.95f,.90f,.36f,.20f),rear=patch(p,-.20f,.25f,-.96f,.85f,.40f,.21f);
+        float roof=patch(p,-.18f,.87f,-.06f,.61f,.24f,.31f);
+        Vector3f delta=new Vector3f(.27f*left-.33f*right,-.23f*front-.16f*rear-.29f*roof,-.23f*front+.25f*rear).multLocal(DENT_STRENGTH[stage]);
+        if(delta.length()>MAX_DENT)delta.normalizeLocal().multLocal(MAX_DENT);
+        return point.add(delta);
+    }
+    private static Mesh deform(Mesh original,int stage,VehicleProfile profile) {
         Mesh mesh=original.deepClone();FloatBuffer positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);
         for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
-            Vector3f changed=dent(new Vector3f(positions.get(vertex*3),positions.get(vertex*3+1),positions.get(vertex*3+2)),stage);
+            Vector3f point=new Vector3f(positions.get(vertex*3),positions.get(vertex*3+1),positions.get(vertex*3+2));
+            Vector3f changed=profile==null?dent(point,stage):bossDent(point,stage,profile);
             positions.put(vertex*3,changed.x);positions.put(vertex*3+1,changed.y);positions.put(vertex*3+2,changed.z);
         }
         mesh.getBuffer(VertexBuffer.Type.Position).updateData(positions);
@@ -159,6 +193,26 @@ final class VehicleDamageVisual extends AbstractControl {
             if(mesh.getBuffer(VertexBuffer.Type.TexCoord)!=null)MikktspaceTangentGenerator.generate(mesh);
         }
         mesh.updateBound();mesh.setStatic();return mesh;
+    }
+    /** Marks are sampled from each authored, already dented surface, never a Rivet-sized overlay. */
+    private static Mesh surfaceWear(Mesh surface,int stage,boolean glass) {
+        List<Vector3f> vertices=new ArrayList<>();
+        int count=surface.getTriangleCount(),stride=Math.max(1,count/(glass?7:18));
+        Vector3f a=new Vector3f(),b=new Vector3f(),c=new Vector3f();
+        for(int triangle=0;triangle<count;triangle+=stride) {
+            surface.getTriangle(triangle,a,b,c);Vector3f normal=b.subtract(a).cross(c.subtract(a));
+            if(normal.lengthSquared()<.000001f||(!glass&&normal.normalizeLocal().y<.3f))continue;
+            normal.normalizeLocal();Vector3f centre=a.add(b).addLocal(c).divideLocal(3).addLocal(normal.mult(.012f));
+            if(!glass&&stage>=3) {
+                Vector3f p=new Vector3f().interpolateLocal(centre,a,.45f),q=new Vector3f().interpolateLocal(centre,b,.45f),r=new Vector3f().interpolateLocal(centre,c,.45f);
+                Collections.addAll(vertices,p,q,r);
+            } else for(Vector3f corner:List.of(a,b,c)) {
+                Vector3f end=new Vector3f().interpolateLocal(centre,corner,glass?.72f:.5f).addLocal(normal.mult(.012f));
+                Vector3f side=end.subtract(centre).cross(normal).normalizeLocal().multLocal(.003f+stage*.002f);
+                Collections.addAll(vertices,centre.subtract(side),end.subtract(side),end.add(side),centre.subtract(side),end.add(side),centre.add(side));
+            }
+        }
+        return SurfaceMesh.triangles(vertices,1);
     }
     private static Mesh offset(Mesh original,float distance) {
         Mesh mesh=original.deepClone();FloatBuffer positions=mesh.getFloatBuffer(VertexBuffer.Type.Position),normals=mesh.getFloatBuffer(VertexBuffer.Type.Normal);

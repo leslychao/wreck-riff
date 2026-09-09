@@ -14,6 +14,7 @@ public final class MatchRuntime implements AutoCloseable {
     private final MatchSession session;
     private final PhysicsWorld world;
     private final ArenaDefinition arena;
+    private final NavGraph graph;
     private final VehicleRules vehicleRules;
     private final VehicleProfile bossProfile;
     private final Map<Integer,VehicleController> drivers=new LinkedHashMap<>();
@@ -27,7 +28,7 @@ public final class MatchRuntime implements AutoCloseable {
     public MatchRuntime(MatchSession session,PhysicsWorld world,ArenaDefinition arena,
             NavGraph graph,VehicleRules vehicleRules) {
         this.session=Objects.requireNonNull(session); this.world=Objects.requireNonNull(world);
-        this.arena=Objects.requireNonNull(arena);this.vehicleRules=Objects.requireNonNull(vehicleRules);
+        this.arena=Objects.requireNonNull(arena);this.graph=Objects.requireNonNull(graph);this.vehicleRules=Objects.requireNonNull(vehicleRules);
         world.configureArena(arena);
         bossProfile=arena.bosses().isEmpty()?null:VehicleProfile.boss(arena.bosses().getFirst().profileId(),vehicleRules);
         for (var state:session.vehicles) {
@@ -106,6 +107,32 @@ public final class MatchRuntime implements AutoCloseable {
         return events.stream().map(e->e.inSession(session.sessionId)).toList();
     }
     public void skipIntro() { if(session.phase==MatchSession.Phase.INTRO)session.transition(MatchSession.Phase.ARENA_COMBAT); }
+    public ProgressStore.Checkpoint checkpoint(ProgressStore.CheckpointStage stage) {
+        if(session.mode!=MatchSession.Mode.CAMPAIGN&&session.mode!=MatchSession.Mode.ARENA)
+            throw new IllegalStateException("This match has no continuation checkpoint");
+        if(!session.vehicle(0).alive())throw new IllegalStateException("Cannot save a destroyed player");
+        var pose=drivers.get(0).checkpointPose().orElseThrow(()->new IllegalStateException("Нет свободной дорожной точки для продолжения"));
+        Vector3f position=pose.position();
+        var support=world.support(position.add(0,.2f,0),world.profile(0).roadOffset()+2);
+        if(support==null)throw new IllegalStateException("Checkpoint road support disappeared");
+        var road=arena.surfaceAt(support.point(),0,.2f).orElseThrow(()->new IllegalStateException("Unknown checkpoint surface"));
+        var anchor=arena.nodes().stream().filter(n->n.surfaceId().equals(road.id()))
+                .min(Comparator.comparingDouble(n->n.position().vector().distanceSquared(position)))
+                .orElseThrow(()->new IllegalStateException("Checkpoint road has no navigation anchor"));
+        Vector3f forward=pose.rotation().mult(Vector3f.UNIT_Z);double yaw=Math.atan2(forward.x,forward.z);
+        var safe=new ProgressStore.SafePose(position.x,position.y,position.z,yaw,road.id(),"node-"+anchor.id());
+        var player=session.vehicle(0);
+        return new ProgressStore.Checkpoint(arena.id(),player.profileId,player.liveryId,session.seed,"normal",stage,
+                MatchCheckpoint.player(player),safe,arenaSystems.snapshot(),session.activeTicks);
+    }
+    public void restoreCheckpoint(ProgressStore.Checkpoint checkpoint) {
+        if(session.tick!=0||!session.arenaId.equals(checkpoint.arenaId())||session.seed!=checkpoint.seed())
+            throw new IllegalStateException("Checkpoint can only restore its fresh match");
+        if(checkpoint.stage()==ProgressStore.CheckpointStage.BOSS&&session.normalRivalsAlive()!=0)
+            throw new IllegalStateException("Boss checkpoint must not restore ordinary rivals");
+        arenaSystems.restore(checkpoint.arena(),world,graph);
+        MatchCheckpoint.restorePlayer(session.vehicle(0),checkpoint.player());
+    }
     /** Whole-tick outcome priority is shared by native execution and pure transition tests. */
     public static void finishTick(MatchSession session) {
         if(session.outcome!=MatchSession.Outcome.NONE||session.phase==MatchSession.Phase.ERROR)return;

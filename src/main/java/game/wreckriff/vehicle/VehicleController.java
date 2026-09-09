@@ -30,6 +30,9 @@ public final class VehicleController {
     private int reverseWait, forwardWait, recoveryHold;
     private boolean reversing, turboActive;
     private Vector3f launchDirection;
+    private Vector3f rightingAxis;
+    private int rightingHold, rightingStable, rightingUnsupported;
+    private long rightingGeneration;
     public VehicleController(PhysicsWorld world,VehicleState state,VehicleRules rules) {
         this(world,state,rules,new Bounds(-80,80,-70,70,-8),rules.recoveryCost());
     }
@@ -41,16 +44,33 @@ public final class VehicleController {
         this.world=world; this.state=state; this.rules=rules; rearGrip=rules.frictionSlip();
         this.profile=world.profile(state.id);this.bounds=Objects.requireNonNull(bounds);this.recoveryCost=recoveryCost;
         recordedTeleportGeneration=world.teleportGeneration(state.id);
+        rightingGeneration=recordedTeleportGeneration;
         safe.add(new SafePose(-120,world.position(state.id),world.rotation(state.id)));
     }
     public boolean reversing() { return reversing; }
     public boolean turboActive() { return turboActive; }
     public boolean launchActive() { return launchDirection!=null; }
+    public boolean rightingActive() { return rightingAxis!=null; }
     public void beginLaunch(Vector3f direction) {
         if(direction==null||direction.lengthSquared()<.1f)throw new IllegalArgumentException("Invalid launch direction");
         launchDirection=direction.clone().setY(0).normalizeLocal();
     }
     public void endLaunch() { launchDirection=null; }
+    /** Latest still-supported, unoccupied road pose; reading it never moves the live car. */
+    public Optional<PhysicsWorld.Pose> checkpointPose() {
+        for(var iterator=safe.descendingIterator();iterator.hasNext();) {
+            var pose=iterator.next();
+            if(!world.freePose(state.id,pose.position(),pose.rotation()))continue;
+            boolean supported=true;
+            for(int wheel=0;wheel<4;wheel++) {
+                Vector3f point=pose.position().add(pose.rotation().mult(profile.wheelConnection(wheel)));
+                var support=world.support(point,profile.suspensionRestLength()+profile.wheelRadius()+.4f);
+                if(support==null||support.normal().y<.75f||!bounds.contains(support.point())) {supported=false;break;}
+            }
+            if(supported)return Optional.of(new PhysicsWorld.Pose(pose.position().clone(),pose.rotation().clone()));
+        }
+        return Optional.empty();
+    }
     public Recovery prepare(VehicleCommand command,long tick) {
         if (!state.alive()) return Recovery.NONE;
         if (state.recoveryCooldown>0) state.recoveryCooldown--;
@@ -92,7 +112,7 @@ public final class VehicleController {
     }
     public void drive(VehicleCommand command) {
         PhysicsVehicle body=world.vehicle(state.id);
-        if (body==null || !state.alive()) return;
+        if (body==null || !state.alive()) { resetRighting(); return; }
         if(state.heavyImpactPending) {
             state.impactStabilizerTicks=seconds(rules.impactStabilizerOffSeconds()+rules.impactStabilizerReturnSeconds());
             state.heavyImpactPending=false;
@@ -102,13 +122,16 @@ public final class VehicleController {
         float longitudinal=velocity.dot(forward);
         float speed=Math.abs(longitudinal);
         int grounded=world.wheelContacts(state.id);
-        float throttle=command.throttle(), reverse=command.brakeReverse();
+        int supportedWheels=world.supportedWheelContacts(state.id);
+        updateRighting(command,supportedWheels);
+        boolean righting=rightingActive();
+        float throttle=righting?0:command.throttle(), reverse=righting?0:command.brakeReverse();
         float brake=0, power=0;
         int directionDelay=seconds(rules.directionChangeDelaySeconds());
         if (reverse>0) {
             forwardWait=0;
             if (longitudinal>0.5f) { brake=reverse; reverseWait=0; reversing=false; }
-            else if (longitudinal< -0.5f || reversing || ++reverseWait>=directionDelay) {
+            else if (longitudinal< -0.5f || reversing || reverseWait++>=directionDelay) {
                 power=-reverse; reversing=true; reverseWait=0;
             }
             else brake=reverse;
@@ -116,13 +139,13 @@ public final class VehicleController {
             reverseWait=0;
             if (throttle>0) {
                 if (longitudinal < -0.5f) { brake=throttle; forwardWait=0; reversing=true; }
-                else if (longitudinal>0.5f || !reversing || ++forwardWait>=directionDelay) {
+                else if (longitudinal>0.5f || !reversing || forwardWait++>=directionDelay) {
                     power=throttle; reversing=false; forwardWait=0;
                 }
                 else brake=throttle;
             } else forwardWait=0;
         }
-        turboActive=command.turbo() && power>0 && grounded>0 && state.turbo>=rules.turboDrain()*dt && state.protectionTicks==0;
+        turboActive=!righting && command.turbo() && power>0 && grounded>0 && state.turbo>=rules.turboDrain()*dt && state.protectionTicks==0;
         if (turboActive) {
             state.turbo=Math.max(0,state.turbo-rules.turboDrain()*dt); state.turboQuietTicks=0;
         } else {
@@ -139,14 +162,15 @@ public final class VehicleController {
         body.accelerate(force/4);
         body.brake(brake*rules.brakeForce()*massRatio);
         float angle=FastMath.interpolateLinear(Math.clamp(speed/maxSpeed,0,1),rules.lowSpeedSteering(),rules.highSpeedSteering())*FastMath.DEG_TO_RAD*profile.turnMultiplier();
-        float nativeSteer=-command.steer();
+        float nativeSteer=righting?0:-command.steer();
         steering += (nativeSteer*angle-steering)*(1-(float)Math.exp(-rules.steeringResponse()*dt));
         body.steer(steering);
-        float gripTarget=command.handbrake()?rules.handbrakeFriction():rules.frictionSlip();
-        float gripBlend=command.handbrake()?0.3f:Math.min(1,dt/rules.gripReturnSeconds()*3);
+        boolean handbrake=!righting && command.handbrake();
+        float gripTarget=handbrake?rules.handbrakeFriction():rules.frictionSlip();
+        float gripBlend=handbrake?0.3f:Math.min(1,dt/rules.gripReturnSeconds()*3);
         rearGrip += (gripTarget-rearGrip)*gripBlend;
         body.setFrictionSlip(2,rearGrip); body.setFrictionSlip(3,rearGrip);
-        if (command.handbrake()) {
+        if (handbrake) {
             body.brake(2,rules.brakeForce()*0.12f*massRatio); body.brake(3,rules.brakeForce()*0.12f*massRatio);
             if (speed>2 && grounded>=2) {
                 float upright=Math.max(0,world.rotation(state.id).mult(Vector3f.UNIT_Y).y);
@@ -155,16 +179,73 @@ public final class VehicleController {
             }
         }
         if(launchActive())stabilizeLaunch(body,command.steer(),massRatio);
-        else if (grounded>=2) {
+        else if(righting)rightInPlace(body,supportedWheels);
+        else if (!state.controlled() && supportedWheels>=1) {
             Vector3f up=world.rotation(state.id).mult(Vector3f.UNIT_Y);
-            Vector3f correction=up.cross(Vector3f.UNIT_Y).mult(rules.stabilizingTorque());
-            Vector3f angular=body.getAngularVelocity();
-            correction.addLocal(-angular.x*rules.stabilizingTorque()*0.12f,0,-angular.z*rules.stabilizingTorque()*0.12f);
-            float maximum=rules.stabilizingTorque();
-            if (correction.length()>maximum) correction.normalizeLocal().multLocal(maximum);
-            body.applyTorque(correction.multLocal(stabilizerScale()*massRatio));
+            // A wheel ray may touch a wall while overturned. Ordinary assistance
+            // only catches a recoverable lean; righting a fallen hull needs input.
+            if(up.y>FastMath.cos(rules.selfRighting().tiltDegrees()*FastMath.DEG_TO_RAD)) {
+                Vector3f correction=up.cross(Vector3f.UNIT_Y).mult(rules.groundStability().torque());
+                Vector3f angular=body.getAngularVelocity();
+                correction.addLocal(-angular.x*rules.groundStability().damping(),0,-angular.z*rules.groundStability().damping());
+                float maximum=rules.groundStability().torque();
+                if (correction.length()>maximum) correction.normalizeLocal().multLocal(maximum);
+                body.applyTorque(correction.multLocal(stabilizerScale()*massRatio));
+            }
         }
         if(state.impactStabilizerTicks>0)state.impactStabilizerTicks--;
+    }
+    private void resetRighting() {
+        rightingAxis=null; rightingHold=rightingStable=rightingUnsupported=0;
+    }
+    private void updateRighting(VehicleCommand command,int grounded) {
+        long generation=world.teleportGeneration(state.id);
+        if(generation!=rightingGeneration) { resetRighting(); rightingGeneration=generation; }
+        float input=Math.max(Math.abs(command.steer()),Math.max(command.throttle(),command.brakeReverse()));
+        if(input<=.2f || launchActive() || state.controlled() || world.touchingVehicle(state.id)
+                || state.impactStabilizerTicks>0) { resetRighting(); return; }
+        Vector3f up=world.rotation(state.id).mult(Vector3f.UNIT_Y);
+        boolean supported=world.chassisSupported(state.id)||(grounded>0&&up.y>.35f);
+        if(rightingActive()) {
+            // No torque in flight, including a small hop while rolling over a hull
+            // edge. A brief interruption preserves the chosen side without flying.
+            rightingUnsupported=supported?0:rightingUnsupported+1;
+            rightingStable=up.y>.9f&&grounded>=2?rightingStable+1:0;
+            if(rightingUnsupported>seconds(.5f)||rightingStable>=seconds(.15f))resetRighting();
+            return;
+        }
+        var tuning=rules.selfRighting();
+        if(up.y>=FastMath.cos(tuning.tiltDegrees()*FastMath.DEG_TO_RAD)
+                || world.velocity(state.id).length()>=tuning.maxSpeed()) { rightingHold=0; return; }
+        rightingHold=Math.min(rightingHold+1,seconds(tuning.holdSeconds()));
+        if(rightingHold<seconds(tuning.holdSeconds())||!world.chassisSupported(state.id))return;
+        Vector3f axis=up.cross(Vector3f.UNIT_Y);
+        if(axis.lengthSquared()<1e-6f) {
+            // up x worldUp is zero on an exact roof. Use heading to choose a
+            // reproducible roll axis, with steering breaking the left/right tie.
+            axis=world.forward(state.id).setY(0).normalizeLocal();
+            axis.multLocal(command.steer()<-.2f?1:-1);
+        } else axis.normalizeLocal();
+        rightingAxis=axis;
+        steering=0; reverseWait=forwardWait=0;
+    }
+    private void rightInPlace(PhysicsVehicle body,int grounded) {
+        Vector3f up=world.rotation(state.id).mult(Vector3f.UNIT_Y);
+        if(!world.chassisSupported(state.id)&&(grounded==0||up.y<=.35f))return;
+        float angle=(float)Math.atan2(up.cross(Vector3f.UNIT_Y).dot(rightingAxis),up.y);
+        // Numerical noise around pi must not reverse the selected roof-roll side.
+        if(angle< -FastMath.HALF_PI)angle+=FastMath.TWO_PI;
+        var tuning=rules.selfRighting();
+        float targetSpeed=Math.clamp(angle*4,-tuning.angularSpeed(),tuning.angularSpeed());
+        Vector3f angular=body.getAngularVelocity();
+        Vector3f acceleration=rightingAxis.mult(targetSpeed).subtractLocal(angular.x,0,angular.z).multLocal(tuning.response());
+        if(acceleration.length()>tuning.angularAcceleration())acceleration.normalizeLocal().multLocal(tuning.angularAcceleration());
+        // Transform through the native diagonal local inertia. Inverting the world
+        // inverse-inertia matrix directly trips Matrix3f's small-determinant cutoff.
+        Quaternion rotation=world.rotation(state.id);
+        Vector3f local=rotation.inverse().mult(acceleration),inverse=body.getInverseInertiaLocal(null);
+        Vector3f torque=new Vector3f(local.x/inverse.x,local.y/inverse.y,local.z/inverse.z);
+        body.applyTorque(rotation.mult(torque));
     }
     public float stabilizerScale() {
         int returning=seconds(rules.impactStabilizerReturnSeconds());
@@ -181,7 +262,7 @@ public final class VehicleController {
             float yawError=(float)Math.atan2(flat.cross(launchDirection).y,Math.clamp(flat.dot(launchDirection),-1,1));
             // Steering adjusts heading only, by at most 8 degrees. It adds no
             // horizontal force capable of leaving the authored landing corridor.
-            float desired=yawError-steer*8*FastMath.DEG_TO_RAD;
+            float desired=yawError+steer*8*FastMath.DEG_TO_RAD;
             correction.y=Math.clamp(desired*rules.stabilizingTorque(),-rules.stabilizingTorque()*.7f,rules.stabilizingTorque()*.7f);
         }
         Vector3f angular=body.getAngularVelocity();

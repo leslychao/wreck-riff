@@ -8,8 +8,8 @@
     "durationSeconds": 0,
     "recoveryCost": 0,
     "introduction": "Два этажа. Два подброса. Одна победа.",
-    "music": "audio/campaign/euphoria_park-normal.ogg",
-    "bossMusic": "audio/campaign/euphoria_park-boss.ogg"
+    "music": "audio/campaign/euphoria_park-normal.wav",
+    "bossMusic": "audio/campaign/euphoria_park-boss.wav"
   },
   "bounds": {
     "minX": 0,

@@ -58,6 +58,11 @@ public final class GameUi {
         text.setBox(new com.jme3.font.Rectangle(0,0,bounds.width(),bounds.height()));
         text.setLineWrapMode(LineWrapMode.Word);return text;
     }
+    public float paragraphHeight(String value,float width,float size) {
+        BitmapText text=new BitmapText(size>=27?boldFont:font);text.setSize(Math.max(14,size));
+        text.setBox(new com.jme3.font.Rectangle(0,0,width,100000));text.setLineWrapMode(LineWrapMode.Word);text.setText(value);
+        return text.getLineHeight()*text.getLineCount();
+    }
     public void title(String title,String subtitle) {
         rect("panel",90,85,850,910,INK,0);
         rect("stripe",90,85,8,910,ACCENT,1);

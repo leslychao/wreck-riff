@@ -211,12 +211,13 @@ public final class HudView implements AutoCloseable {
             node.setLocalTranslation(layout.radar().centerX()+marker.x()*radius,layout.radar().centerY()+marker.y()*radius,5);
             shape.setMesh(icons.mesh(marker.boss()?VectorIcons.Icon.CROWN:marker.far()?VectorIcons.Icon.CHEVRON:VectorIcons.Icon.DIAMOND));
             Quaternion angle=new Quaternion().fromAngleAxis(-(float)Math.atan2(marker.x(),marker.y()),Vector3f.UNIT_Z);
-            shape.setLocalRotation(marker.far()&&!marker.boss()?angle:Quaternion.IDENTITY);
-            direction.setLocalRotation(angle);show(direction,marker.far()&&marker.boss());
+            Quaternion shapeAngle=marker.far()&&!marker.boss()?angle:Quaternion.IDENTITY;
+            centerIcon(direction,18*s,angle);show(direction,marker.far()&&marker.boss());
             shape.setMaterial(materials.get(marker.boss()?Paint.ACCENT:Paint.RED));
-            float size=(marker.boss()?14:10)*s;shape.setLocalScale(size);shape.setLocalTranslation(-size/2,-size/2,0);
+            centerIcon(shape,(marker.boss()?14:10)*s,shapeAngle);
             show(lock,marker.locked());show(floor,marker.floor()==RadarProjection.Floor.ABOVE||marker.floor()==RadarProjection.Floor.BELOW);
             floor.setLocalScale(8*s,marker.floor()==RadarProjection.Floor.BELOW?-8*s:8*s,1);
+            floor.setLocalTranslation(-4*s,marker.floor()==RadarProjection.Floor.BELOW?-8*s:8*s,1);
             if(previousCount!=marker.count()){count.set(marker.count()>1?Integer.toString(marker.count()):"");previousCount=marker.count();}
         }
     }
@@ -250,13 +251,13 @@ public final class HudView implements AutoCloseable {
     }
     private void buildHelp() {
         help.detachAllChildren();help.removeFromParent();if(helpItems.isEmpty())return;
-        float s=layout.scale(),fontSize=Math.max(14,18*s),rowHeight=fontSize*1.65f;
-        float width=Math.min(layout.width()-32,650*s),height=Math.min(layout.height()-32,helpItems.size()*rowHeight+68*s);
+        float s=layout.scale(),fontSize=Math.max(14,18*s),rowHeight=fontSize*2.15f;
+        float width=Math.min(layout.width()-32,760*s),height=Math.min(layout.height()-32,helpItems.size()*rowHeight+68*s);
         UiBounds bounds=new UiBounds((layout.width()-width)/2,(layout.height()-height)/2,width,height);
         root.attachChild(help);help.setLocalTranslation(0,0,20);
         quad(help,"help-panel",bounds,Paint.PANEL,0);
         text(help,"help-title",new UiBounds(bounds.x()+16*s,bounds.top()-36*s,width-32*s,25*s),fontSize,Paint.ACCENT).set("CONTROLS   /   F1");
-        float bindingWidth=Math.min(130*s,width*.32f),top=bounds.top()-52*s;
+        float bindingWidth=Math.min(250*s,width*.42f),top=bounds.top()-52*s;
         for(int i=0;i<helpItems.size();i++) {
             HelpItem item=helpItems.get(i);float rowTop=top-i*rowHeight;
             text(help,"help-binding-"+i,new UiBounds(bounds.x()+16*s,rowTop-rowHeight,bindingWidth,rowHeight),fontSize,Paint.ACCENT).set(item.binding);
@@ -287,6 +288,10 @@ public final class HudView implements AutoCloseable {
         private void set(String value) {if(!Objects.equals(current,value)){text.setText(value);current=value;}}
     }
     private static UiBounds inset(UiBounds bounds,float pad) {return new UiBounds(bounds.x()+pad,bounds.y()+pad,Math.max(0,bounds.width()-pad*2),Math.max(0,bounds.height()-pad*2));}
+    private static void centerIcon(Geometry geometry,float size,Quaternion rotation) {
+        Vector3f center=rotation.mult(new Vector3f(size/2,size/2,0));
+        geometry.setLocalScale(size,size,1);geometry.setLocalRotation(rotation);geometry.setLocalTranslation(-center.x,-center.y,0);
+    }
     private static void show(Spatial spatial,boolean visible) {spatial.setCullHint(visible?Spatial.CullHint.Inherit:Spatial.CullHint.Always);}
     private static ColorRGBA color(Paint paint) {
         return switch(paint) {

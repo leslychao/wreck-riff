@@ -8,8 +8,8 @@
     "durationSeconds": 0,
     "recoveryCost": 0,
     "introduction": "Два этажа. Два подброса. Одна победа.",
-    "music": "audio/campaign/doomsday_arena-normal.ogg",
-    "bossMusic": "audio/campaign/doomsday_arena-boss.ogg"
+    "music": "audio/campaign/doomsday_arena-normal.wav",
+    "bossMusic": "audio/campaign/doomsday_arena-boss.wav"
   },
   "bounds": {
     "minX": 0,

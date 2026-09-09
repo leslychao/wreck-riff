@@ -8,8 +8,8 @@
     "durationSeconds": 0,
     "recoveryCost": 0,
     "introduction": "Два этажа. Два подброса. Одна победа.",
-    "music": "audio/campaign/construction_17-normal.ogg",
-    "bossMusic": "audio/campaign/construction_17-boss.ogg"
+    "music": "audio/campaign/construction_17-normal.wav",
+    "bossMusic": "audio/campaign/construction_17-boss.wav"
   },
   "bounds": {
     "minX": 0,

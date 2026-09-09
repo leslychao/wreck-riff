@@ -16,7 +16,7 @@ public record HudLayout(int width,int height,float scale,float fontSize,int weap
         // Increasing UI size on a small screen must preserve access to every control.
         scale=Math.min(scale,Math.min((width-28)/560f,(height-28)/310f));
         float gap=6*scale,margin=Math.max(12,18*scale),pad=6*scale;
-        float slotWidth=52*scale,slotHeight=60*scale,healthWidth=236*scale;
+        float slotWidth=Math.max(44,52*scale),slotHeight=Math.max(54,60*scale),healthWidth=Math.max(180,236*scale);
         float abilityWidth=2*slotWidth+gap+pad*2;
         int columns=healthWidth+abilityWidth+6*slotWidth+5*gap+pad*2+margin*4<=width?6:3;
         float weaponWidth=columns*slotWidth+(columns-1)*gap+pad*2;
@@ -29,7 +29,7 @@ public record HudLayout(int width,int height,float scale,float fontSize,int weap
         float objectiveWidth=Math.min(360*scale,radar.x()-margin*3);
         float objectiveX=Math.min((width-objectiveWidth)/2,radar.x()-margin-objectiveWidth);
         UiBounds objective=new UiBounds(Math.max(margin,objectiveX),height-margin-48*scale,objectiveWidth,48*scale);
-        UiBounds notification=new UiBounds(margin,Math.max(health.top(),weapons.top())+margin,
+        UiBounds notification=new UiBounds(margin,Math.max(health.top(),weapons.top())+Math.max(margin,40*scale),
                 Math.min(620*scale,width-margin*2),48*scale);
         List<UiBounds> slots=new ArrayList<>();
         for(int i=0;i<6;i++)slots.add(new UiBounds(weapons.x()+pad+(i%columns)*(slotWidth+gap),

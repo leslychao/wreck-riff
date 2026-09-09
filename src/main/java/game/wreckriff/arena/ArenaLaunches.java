@@ -9,7 +9,7 @@ import java.util.*;
 public final class ArenaLaunches {
     private record Key(String pad,int participant) {}
     private static final class PadState {
-        long compressionStart=-1,blockedUntil=Long.MIN_VALUE;
+        long compressionStart=-1,compressionGeneration=-1,blockedUntil=Long.MIN_VALUE;
         boolean exitedSinceLaunch=true,rejected;
     }
     private static final class Flight {
@@ -49,6 +49,7 @@ public final class ArenaLaunches {
             if(flight!=null&&world.teleportGeneration(id)!=flight.generation)cancel(id,world,drivers);
             for(var pad:arena.launchPads()) {
                 PadState state=pairs.computeIfAbsent(new Key(pad.id(),id),key->new PadState());
+                if(state.compressionStart>=0&&state.compressionGeneration!=world.teleportGeneration(id))state.compressionStart=-1;
                 Vector3f position=world.position(id);
                 boolean inside=inside(pad,position);
                 if(!inside) {state.exitedSinceLaunch=true;state.rejected=false;state.compressionStart=-1;continue;}
@@ -75,6 +76,7 @@ public final class ArenaLaunches {
                 if(state.compressionStart<0) {
                     if(speed+.0001f<pad.minimumSpeed())continue;
                     state.compressionStart=session.tick;
+                    state.compressionGeneration=world.teleportGeneration(id);
                     emit(GameEvent.Type.LAUNCH_COMPRESS,id,pad,position,pad.compressionTicks()*MatchSession.DT);
                 }
                 if(session.tick-state.compressionStart<pad.compressionTicks())continue;
