@@ -127,7 +127,7 @@ Java is included. Do not run the executable from inside the ZIP viewer.
 Your settings, statistics, logs, and captures are saved under LOCALAPPDATA/WreckRiff.
 
 Default controls: WASD drive, Space handbrake, Shift turbo, LMB machine gun,
-RMB selected weapon, 1/2/3/4 select Homing/Power/Mine/Napalm, Q/E cycle,
+RMB selected weapon, 1/2/3/4/5/6 select Homing/Power/Mine/Napalm/Ballistic/Cannon, Q/E cycle,
 F Shield, Z Freeze, hold R recovery, V rear view, Esc pause.
 Gamepad: A Shield, D-pad up Freeze, D-pad left/right cycle weapons.
 The Controls screen is authoritative for current/rebound controls.

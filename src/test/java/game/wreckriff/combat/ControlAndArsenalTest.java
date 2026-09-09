@@ -158,6 +158,7 @@ class ControlAndArsenalTest {
         public Quaternion rotation(int id){return rotations[id].clone();}public boolean grounded(int id){return true;}public float mass(int id){return 1100;}
         public Hit ray(Vector3f from,Vector3f to,int ignored){return null;}
         public Hit sweep(Vector3f from,Vector3f to,float radius,int ignored){Hit hit=nextSweep;nextSweep=null;return hit;}
+        public Hit staticSweep(Vector3f from,Vector3f to,float radius){return null;}
         public boolean visible(Vector3f from,Vector3f to,int id){return !hidden.contains(id);}
         public float distanceToHull(int id,Vector3f point){return Math.max(0,positions[id].distance(point)-1);}
         public void impulse(int id,Vector3f linear,Vector3f torque,float angularCap) {}

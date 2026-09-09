@@ -76,7 +76,6 @@
     "maximumAmmo": 6,
     "cooldownSeconds": 1.4,
     "speed": 28,
-    "upwardSpeed": 10,
     "gravity": 18,
     "ttlSeconds": 3,
     "impactDamage": 20,

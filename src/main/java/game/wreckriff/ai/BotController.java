@@ -1,6 +1,7 @@
 package game.wreckriff.ai;
 
 import game.wreckriff.combat.AbilityId;
+import game.wreckriff.combat.CombatSystem;
 import game.wreckriff.combat.ProjectileState;
 
 import game.wreckriff.combat.WeaponType;
@@ -19,6 +20,7 @@ public final class BotController {
     public record Metrics(int vehicleId,State state,int targetId,int reverseAttempts,int recoveries,
             long aliveTicks,long maximumUnplannedStationaryTicks,Vector3f destination) {}
     private static final Logger LOG=Logger.getLogger(BotController.class.getName());
+    private record Warning(Vector3f point,float radius,long impactTick) {}
     private static final class Brain {
         final Random random;
         final Map<Integer,BotObservation.Opponent> memory=new HashMap<>();
@@ -30,10 +32,12 @@ public final class BotController {
                 progressWindowStart,aliveTicks,stationaryTicks,maximumStationaryTicks;
         float progress;
         List<Integer> path=List.of();
+        List<Warning> warnings=List.of();
+        int weaponCursor;
         Vector3f destination,lastPosition,passingDestination,lastDrivingTarget,progressDirection=new Vector3f();
         long passingUntil,nextPassAttempt;
         String pickup;
-        boolean healing,requiredMovement,backingToRoute,recoveryDetourAttempted;
+        boolean healing,requiredMovement,backingToRoute,recoveryDetourAttempted,ballisticEvading;
         Brain(long seed) { random=new Random(seed); }
     }
     private final MatchSession session;
@@ -42,6 +46,7 @@ public final class BotController {
     private final AiRules rules;
     private final Supplier<List<ArenaDefinition.Pickup>> activePickups;
     private Supplier<List<ProjectileState>> observedProjectiles=List::of;
+    private Supplier<List<CombatSystem.BallisticWarningView>> observedBallisticWarnings=List::of;
     private final Brain[] brains=new Brain[5];
     private long lastCommandTick=Long.MIN_VALUE;
     private Map<Integer,VehicleCommand> cached=Map.of();
@@ -88,9 +93,20 @@ public final class BotController {
         cached=Collections.unmodifiableMap(result); return cached;
     }
     public void observeProjectiles(Supplier<List<ProjectileState>> projectiles) { observedProjectiles=Objects.requireNonNull(projectiles); }
+    public void observeBallisticWarnings(Supplier<List<CombatSystem.BallisticWarningView>> warnings) {
+        observedBallisticWarnings=Objects.requireNonNull(warnings);
+    }
     private AbilityId chooseAbility(VehicleState self,Brain brain,WorldQuery world) {
         if(session.tick<brain.reactionUntil)return AbilityId.NONE;
         Vector3f position=world.position(self.id),forward=world.forward(self.id);
+        if(self.abilityCooldown(AbilityId.SHIELD)==0)for(Warning warning:brain.warnings) {
+            float seconds=(warning.impactTick-session.tick)/(float)MatchSession.TICKS_PER_SECOND;
+            if(seconds<=0||seconds>.8f||!warningVisible(self.id,warning.point,world))continue;
+            Vector3f predicted=position.add(world.velocity(self.id).mult(seconds));
+            if(sameWarningFloor(position,warning)&&horizontalDistance(predicted,warning.point)<warning.radius+2
+                    && (self.controlled()||seconds<(warning.radius+2-horizontalDistance(position,warning.point))/6f+.2f))
+                return AbilityId.SHIELD;
+        }
         if(self.abilityCooldown(AbilityId.SHIELD)==0)for(ProjectileState projectile:observedProjectiles.get()) {
             Vector3f offset=projectile.position().subtract(position);
             if(projectile.ownerId()==self.id||offset.length()>35||angleDegrees(forward,offset)>rules.sightHalfAngleDegrees())continue;
@@ -122,6 +138,8 @@ public final class BotController {
         List<BotObservation.Opponent> remembered=brain.memory.values().stream()
                 .filter(e->visible.stream().noneMatch(v->v.id()==e.id())).sorted(Comparator.comparingInt(BotObservation.Opponent::id)).toList();
         brain.observation=new BotObservation(session.tick,visible,remembered);
+        brain.warnings=observedBallisticWarnings.get().stream().filter(w->w.remainingTicks()>0&&warningVisible(self.id,w.point(),world))
+                .map(w->new Warning(w.point(),w.radius(),session.tick+w.remainingTicks())).toList();
         for (var pickup:arena.pickups()) {
             Vector3f target=pickup.position().vector().add(0,.6f,0);
             if (target.distance(eye)>rules.sightRange() || world.ray(eye,target,self.id)!=null) continue;
@@ -133,6 +151,7 @@ public final class BotController {
         if (brain.state==State.RECOVER && (brain.reverseUntil>session.tick || needsRecovery(brain))) return;
         Vector3f position=world.position(self.id);
         boolean hazardActive=visibleActiveHazard(self.id,world);
+        if(evadeBallistic(self,brain,position,hazardActive,world))return;
         if (hazardActive && arena.hazard().contains(position)) {
             brain.state=State.EVADE_HAZARD; brain.pickup=null;
             int escape=graph.nodes().stream().filter(n->!arena.hazard().contains(n.position().vector()))
@@ -146,6 +165,8 @@ public final class BotController {
                 : self.weapon(WeaponType.POWER).ammo<Math.min(1,self.weapon(WeaponType.POWER).maximumAmmo) ? ArenaDefinition.PickupType.POWER_AMMO
                 : self.weapon(WeaponType.MINE).ammo==0 ? ArenaDefinition.PickupType.MINE_AMMO
                 : self.weapon(WeaponType.NAPALM).ammo==0 ? ArenaDefinition.PickupType.NAPALM_AMMO
+                : self.weapon(WeaponType.BALLISTIC).ammo==0 ? ArenaDefinition.PickupType.BALLISTIC_AMMO
+                : self.weapon(WeaponType.CANNON).ammo==0 ? ArenaDefinition.PickupType.CANNON_AMMO
                 : self.turbo<rules.turboSeekThreshold() || continuingTurboRun(brain,self)
                     ? ArenaDefinition.PickupType.TURBO_CELL : null;
         if (wanted!=null) {
@@ -204,6 +225,96 @@ public final class BotController {
                     +brain.random.nextInt(rules.reactionMaxTicks()-rules.reactionMinTicks()+1);
         }
     }
+    private WeaponType chooseWeapon(VehicleState self,Brain brain,WorldQuery world,BotObservation.Opponent target,
+            boolean visible,float distance,float angle) {
+        EnumSet<WeaponType> eligible=EnumSet.noneOf(WeaponType.class);
+        Vector3f muzzle=world.muzzle(self.id),forward=world.forward(self.id);
+        var combat=session.combatRules;
+        boolean locked=brain.lockTicks>=Math.round(combat.targeting().acquisitionSeconds()*MatchSession.TICKS_PER_SECOND);
+        if(visible) {
+            if(locked)eligible.add(WeaponType.HOMING);
+            if(distance>10&&distance<65&&angle<=rules.powerAngleDegrees()
+                    &&world.sweep(muzzle,muzzle.add(forward.mult(9)),.2f,self.id)==null)eligible.add(WeaponType.POWER);
+            var assist=combat.napalm().assist();
+            // CombatSystem owns the 0.25s/5m lead and guided arc; the driver uses its actual assist envelope.
+            if(distance>=assist.minimumRange()&&distance<=assist.maximumRange()&&angle<=assist.coneDegrees())eligible.add(WeaponType.NAPALM);
+            if(locked&&distance>=combat.ballistic().minimumRange()&&distance<=combat.ballistic().maximumRange()
+                    &&world.staticSweep(muzzle,muzzle.add(0,combat.ballistic().carrierHeight(),0),.25f)==null)eligible.add(WeaponType.BALLISTIC);
+            Vector3f cannonLead=target.position().add(target.velocity().mult(distance/combat.cannon().speed())).subtract(muzzle);
+            if(distance>combat.cannon().splashRadius()+4&&distance<=Math.min(rules.machineGunRange(),combat.cannon().speed())
+                    &&angleDegrees(forward,cannonLead)<=rules.powerAngleDegrees()
+                    &&world.sweep(muzzle,muzzle.add(forward.mult(9)),combat.cannon().radius(),self.id)==null)eligible.add(WeaponType.CANNON);
+        }
+        for(var pursuer:brain.observation.visible()) {
+            Vector3f behind=pursuer.position().subtract(world.position(self.id));
+            if(behind.length()<=16&&angleDegrees(forward,behind)>=120&&pursuer.velocity().dot(behind.negate())>0
+                    &&lineOfSight(world,muzzle,pursuer.position(),self.id,pursuer.id()))eligible.add(WeaponType.MINE);
+        }
+        // Rotate only among currently useful, ready weapons; a preferred cooling weapon cannot starve the rest.
+        WeaponType[] weapons=WeaponType.values();
+        for(int step=0;step<weapons.length;step++) {
+            int index=(brain.weaponCursor+step)%weapons.length;WeaponType weapon=weapons[index];
+            if(eligible.contains(weapon)&&self.weapon(weapon).ammo>0&&self.weapon(weapon).cooldownTicks==0) {
+                brain.weaponCursor=(index+1)%weapons.length;return weapon;
+            }
+        }
+        return null;
+    }
+    private boolean warningVisible(int id,Vector3f point,WorldQuery world) {
+        Vector3f eye=world.position(id).add(0,.6f,0),marker=point.add(0,.15f,0),offset=marker.subtract(eye);
+        WorldQuery.Hit blocker=world.ray(eye,marker,id);
+        return offset.length()<=rules.sightRange()&&angleDegrees(world.forward(id),offset)<=rules.sightHalfAngleDegrees()
+                &&(blocker==null||blocker.fraction()>=.999f);
+    }
+    private static boolean sameWarningFloor(Vector3f position,Warning warning) {
+        return Math.abs(position.y-.45f-warning.point.y)<2.2f;
+    }
+    private boolean evadeBallistic(VehicleState self,Brain brain,Vector3f position,boolean hazardActive,WorldQuery world) {
+        List<Warning> active=brain.warnings.stream().filter(w->w.impactTick>session.tick&&sameWarningFloor(position,w)).toList();
+        boolean threat=active.stream().anyMatch(w->{
+            float remaining=(w.impactTick-session.tick)/(float)MatchSession.TICKS_PER_SECOND;
+            Vector3f next=position.add(world.velocity(self.id).mult(Math.min(remaining,1.2f)));
+            return horizontalDistance(position,w.point)<w.radius+2||!safeWarningSegment(position,next,List.of(w))
+                    ||brain.ballisticEvading&&horizontalDistance(position,w.point)<w.radius+10;
+        });
+        if(!threat) {brain.ballisticEvading=false;return false;}
+        int start=navigationStart(position,world,self.id);
+        List<ArenaDefinition.NavNode> candidates=graph.nodes().stream()
+                .filter(n->Math.abs(n.position().y()+.45f-position.y)<2.2f)
+                .filter(n->active.stream().noneMatch(w->horizontalDistance(n.position().vector(),w.point)<w.radius+3))
+                .filter(n->!hazardActive||!arena.hazard().contains(n.position().vector()))
+                .sorted(Comparator.comparingDouble((ArenaDefinition.NavNode n)->n.position().vector().distanceSquared(position))
+                        .thenComparingInt(ArenaDefinition.NavNode::id)).limit(12).toList();
+        for(var candidate:candidates) {
+            List<Integer> path=graph.path(start,candidate.id(),hazardActive,rules.turnPenalty(),rules.activeHazardPenalty());
+            if(path.isEmpty())continue;
+            Vector3f previous=position;boolean safe=true;
+            for(int node:path) {
+                Vector3f next=graph.position(node).add(0,.45f,0);
+                if(!safeWarningSegment(previous,next,active)) {safe=false;break;}
+                previous=next;
+            }
+            if(!safe)continue;
+            brain.state=State.EVADE_HAZARD;brain.pickup=null;brain.passingDestination=null;brain.ballisticEvading=true;
+            brain.goalNode=-1;route(brain,position,candidate.position().vector(),hazardActive,world,self.id);return true;
+        }
+        // A blocked escape still permits ordinary obstacle recovery and the imminent-hit shield decision.
+        return false;
+    }
+    private static boolean safeWarningSegment(Vector3f from,Vector3f to,List<Warning> warnings) {
+        Vector3f direction=to.subtract(from);direction.y=0;
+        for(Warning warning:warnings) {
+            Vector3f relative=from.subtract(warning.point);relative.y=0;
+            float fraction=direction.lengthSquared()<1e-6f?0:Math.clamp(-relative.dot(direction)/direction.lengthSquared(),0,1);
+            Vector3f closest=from.clone().interpolateLocal(to,fraction);
+            if(!sameWarningFloor(closest,warning)||horizontalDistance(closest,warning.point)>=warning.radius+2)continue;
+            // A car already inside may leave monotonically; an outside segment may never cut through the circle.
+            if(sameWarningFloor(from,warning)&&horizontalDistance(from,warning.point)<warning.radius+2
+                    &&relative.dot(direction)>=-.001f&&horizontalDistance(to,warning.point)>=horizontalDistance(from,warning.point))continue;
+            return false;
+        }
+        return true;
+    }
     private boolean continuingTurboRun(Brain brain,VehicleState self) {
         // Passive regeneration crossing 20 must not cancel an already selected useful route.
         return brain.pickup!=null && self.turbo<100
@@ -231,7 +342,8 @@ public final class BotController {
         // The final connector belongs to the route too. A nearby visible goal must not cause
         // a replan back to its nearest graph node after the car has already left that node.
         if (horizontalDistance(position,destination)<12 && Math.abs(position.y-.45f-destination.y)<1.5f
-                && !(hazardActive && graph.crossesHazard(position,destination))) {
+                && !(hazardActive && graph.crossesHazard(position,destination))
+                &&safeWarningSegment(position,destination.add(0,.45f,0),brain.warnings)) {
             WorldQuery.Hit blocker=world.sweep(position.add(0,1.2f,0),destination.add(0,1.65f,0),1.05f,vehicleId);
             if ((blocker==null || drivableRampHit(blocker))
                     && supportedRoadConnection(vehicleId,position,destination.add(0,.45f,0),world)) {
@@ -260,6 +372,7 @@ public final class BotController {
                 if (startAngle>1.2f && nextAngle+.35f<startAngle && nextAngle<1.2f
                         && Math.abs(next.y-(position.y-.45f))<.75f
                         && !(hazardActive && graph.crossesHazard(position,next))
+                        &&safeWarningSegment(position,next.add(0,.45f,0),brain.warnings)
                         && world.sweep(position.add(0,1.2f,0),next.add(0,1.65f,0),1.2f,vehicleId)==null
                         && supportedRoadConnection(vehicleId,position,next.add(0,.45f,0),world)) brain.pathIndex=1;
             }
@@ -327,7 +440,7 @@ public final class BotController {
             brain.passingDestination=null;brain.recoveryDetourAttempted=false;
         } else if(brain.passingDestination!=null && session.tick>=brain.passingUntil)brain.passingDestination=null;
         var closeOpponent=brain.observation.visible().stream().min(Comparator.comparingDouble(e->e.position().distanceSquared(position))).orElse(null);
-        if (brain.passingDestination==null && session.tick>=brain.nextPassAttempt && closeOpponent!=null
+        if (brain.state!=State.EVADE_HAZARD && brain.passingDestination==null && session.tick>=brain.nextPassAttempt && closeOpponent!=null
                 && closeOpponent.position().distance(position)<rules.passDistance()
                 && Math.abs(closeOpponent.position().y-position.y)<1.5f) {
             brain.passingDestination=passingDestination(self.id,position,forward,closeOpponent.position(),world);
@@ -398,23 +511,11 @@ public final class BotController {
             Vector3f toTarget=target.position().subtract(world.muzzle(self.id));
             float distance=toTarget.length(),angle=angleDegrees(forward,toTarget);
             boolean visible=lineOfSight(world,world.muzzle(self.id),target.position(),self.id,target.id());
-            machineGun=visible && distance<=rules.machineGunRange() && angle<=rules.machineGunAngleDegrees();
-            if (visible && distance<=70 && angle<=18) brain.lockTicks++; else brain.lockTicks=0;
-            boolean safePower=visible && distance>10 && distance<65 && angle<=rules.powerAngleDegrees()
-                    && world.sweep(world.muzzle(self.id),world.muzzle(self.id).add(forward.mult(9)),.2f,self.id)==null;
-            WeaponType selected=safePower && self.weapon(WeaponType.POWER).ammo>0 ? WeaponType.POWER:WeaponType.HOMING;
-            rocket=selected==WeaponType.POWER?safePower&&self.weapon(selected).ammo>0:brain.lockTicks>=18&&self.weapon(selected).ammo>0;
-            Vector3f lead=target.position().add(target.velocity().mult(1.1f)).subtract(world.muzzle(self.id));
-            if(visible&&world.grounded(target.id())&&lead.length()>=24&&lead.length()<=38
-                    &&angleDegrees(forward,lead)<7&&self.weapon(WeaponType.NAPALM).ammo>0) {
-                selected=WeaponType.NAPALM;rocket=true;
-            }
-            for(var pursuer:brain.observation.visible()) {
-                Vector3f behind=pursuer.position().subtract(position);
-                if(behind.length()<=16&&angleDegrees(forward,behind)>=120&&self.weapon(WeaponType.MINE).ammo>0
-                        &&pursuer.velocity().dot(behind.negate())>0) {selected=WeaponType.MINE;rocket=true;break;}
-            }
-            if(selected!=self.selectedWeapon)directWeapon=selected;
+            machineGun=visible && distance<=rules.machineGunRange() && angle<=rules.machineGunAngleDegrees()&&self.machineGunCooldown==0;
+            var targeting=session.combatRules.targeting();
+            if (visible && distance<=targeting.acquisitionRange() && angle<=targeting.acquisitionConeDegrees()) brain.lockTicks++; else brain.lockTicks=0;
+            WeaponType selected=chooseWeapon(self,brain,world,target,visible,distance,angle);
+            if(selected!=null) {rocket=true;if(selected!=self.selectedWeapon)directWeapon=selected;}
         } else brain.lockTicks=0;
         // Braking forever in front of a blocker is still a failed request to follow a route.
         brain.requiredMovement=horizontalDistance(position,brain.destination)>2;

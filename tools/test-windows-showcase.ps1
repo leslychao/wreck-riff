@@ -28,8 +28,8 @@ foreach($artifact in $artifacts) {
     if(!(Test-Path -LiteralPath $file) -or (Get-Item -LiteralPath $file).Length -eq 0) {$artifactsPresent=$false}
 }
 $passed=$launcherExitCode -eq 0 -and $evidence.status -eq 'PASS' -and $evidence.mode -eq 'showcase' `
-    -and $evidence.audioEnabled -and $evidence.windowVisible -and $evidence.showcase.seconds -ge 38 `
-    -and $captures.Count -ge 12 -and $artifactsPresent
+    -and $evidence.audioEnabled -and $evidence.windowVisible -and $evidence.showcase.seconds -ge 40 `
+    -and $captures.Count -ge 17 -and $artifactsPresent
 $result=[ordered]@{
     status=$(if($passed){'PASS'}else{'FAIL'});sourceSha256=$evidence.sourceSha256
     runRoot=$runRoot;diagnosticPath=$reportPath;artifactDirectory=$directory

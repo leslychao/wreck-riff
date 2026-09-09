@@ -24,6 +24,23 @@ class AmmoPickupTest {
             assertEquals(6,session.vehicle(0).weapon(weapon).ammo);assertEquals(1,systems.drainEvents().getLast().value());
         }
     }
+    @Test void newAmmoHasIndependentSlotsCapsAndRespawnTimes() {
+        var arena=ArenaDefinition.load();
+        for(var type:new ArenaDefinition.PickupType[]{ArenaDefinition.PickupType.BALLISTIC_AMMO,ArenaDefinition.PickupType.CANNON_AMMO}) {
+            var session=new MatchSession(42,360);var world=new TestWorld();var systems=new ArenaSystems(session,arena);
+            var pickup=arena.pickups().stream().filter(p->p.type()==type).findFirst().orElseThrow();
+            var weapon=type==ArenaDefinition.PickupType.BALLISTIC_AMMO?WeaponType.BALLISTIC:WeaponType.CANNON;
+            int amount=weapon==WeaponType.BALLISTIC?1:2,respawn=weapon==WeaponType.BALLISTIC?3600:3000;
+            var slot=session.vehicle(0).weapon(weapon);slot.ammo=0;
+            world.positions[0]=pickup.position().vector().add(0,.8f,0);systems.collectPickups(world);
+            assertEquals(amount,slot.ammo);assertEquals(6,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+            assertEquals(respawn,pickup.respawnTicks());assertFalse(systems.active(pickup.id()));
+            session.tick=respawn-1;systems.collectPickups(world);assertEquals(amount,slot.ammo);
+            slot.ammo=slot.maximumAmmo-1;session.tick=respawn;systems.collectPickups(world);
+            assertEquals(slot.maximumAmmo,slot.ammo);assertEquals(1,systems.drainEvents().getLast().value());
+            session.tick=respawn*2;systems.collectPickups(world);assertTrue(systems.active(pickup.id()));
+        }
+    }
     @Test void nonDefaultWeaponCapacitiesAlsoBoundPickupEligibilityAndRefills() {
         verifyPickupLimits(1, 1);
         verifyPickupLimits(5, 3);

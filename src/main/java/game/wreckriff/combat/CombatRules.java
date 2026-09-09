@@ -63,14 +63,14 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
         }
     }
     public record Napalm(int maximumZones,int initialAmmo,int maximumAmmo,float cooldownSeconds,
-            float speed,float upwardSpeed,float gravity,float ttlSeconds,float impactDamage,
+            float speed,float gravity,float ttlSeconds,float impactDamage,
             float radius,float durationSeconds,float damagePerSecond,float intervalSeconds,float supportDepth,Blast blast, NapalmAssist assist) {
         public Napalm {
             Objects.requireNonNull(blast,"napalm.blast");
             Objects.requireNonNull(assist,"napalm.assist");
             if(maximumZones<1||maximumZones>6)throw new IllegalArgumentException("Fire-zone cap must be 1..6");
             ammo(initialAmmo,maximumAmmo);positive("napalm.cooldown",cooldownSeconds);
-            positive("napalm.speed",speed);positive("napalm.upwardSpeed",upwardSpeed);positive("napalm.gravity",gravity);
+            positive("napalm.speed",speed);positive("napalm.gravity",gravity);
             positive("napalm.ttl",ttlSeconds);positive("napalm.impact",impactDamage);range("napalm.radius",radius,.5f,10);
             positive("napalm.duration",durationSeconds);positive("napalm.damage",damagePerSecond);
             positive("napalm.interval",intervalSeconds);positive("napalm.supportDepth",supportDepth);

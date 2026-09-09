@@ -253,8 +253,8 @@ public final class CombatSystem {
                 if (projectile.remainingTicks <= 0) explode(projectile, null, world);
             }
         }
-        projectiles.removeIf(projectile -> projectile.exploded);
         releaseCharges();
+        projectiles.removeIf(projectile -> projectile.exploded);
         advanceMines(world);
         advanceFire(world);
     }
@@ -331,7 +331,7 @@ public final class CombatSystem {
         }
         reservedFireZones--;
         Vector3f center=hit.point().add(hit.normal().mult(.05f));
-        radialDamage(projectile.id(),projectile.ownerId(),"napalm",center,rules.napalm().radius(),rules.napalm().impactDamage(),rules.napalm().blast(),world);
+        radialDamage(projectile.id(),projectile.ownerId(),"napalm",center,rules.napalm().radius(),rules.napalm().impactDamage(),rules.napalm().blast(),hit.normal(),world);
         WorldQuery.Support support=world.support(center,rules.napalm().supportDepth());
         if(support==null||support.normal().y<.6f)return;
         List<Vector3f> points=fireSurface(support,world);
@@ -368,11 +368,11 @@ public final class CombatSystem {
             Vector3f center=mine.support.point().add(mine.support.normal().mult(.2f));
             boolean triggered=orderedVehicles.stream().anyMatch(v->v.alive()&&v.id!=mine.ownerId
                     &&world.distanceToHull(v.id,center)<=rules.mine().triggerRadius()&&exposed(center,v.id,world));
-            if(triggered) {radialDamage(mine.id,mine.ownerId,"mine",center,rules.mine().explosionRadius(),rules.mine().damage(),rules.mine().blast(),world);iterator.remove();}
+            if(triggered) {radialDamage(mine.id,mine.ownerId,"mine",center,rules.mine().explosionRadius(),rules.mine().damage(),rules.mine().blast(),mine.support.normal(),world);iterator.remove();}
         }
     }
-    private void radialDamage(long id,int owner,String kind,Vector3f center,float radius,float maximum,CombatRules.Blast blast,WorldQuery world) {
-        events.add(event(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius));
+    private void radialDamage(long id,int owner,String kind,Vector3f center,float radius,float maximum,CombatRules.Blast blast,Vector3f normal,WorldQuery world) {
+        events.add(new GameEvent(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius,Vector3f.ZERO,normal));
         for(VehicleState target:orderedVehicles) {
             if(!target.alive())continue;
             float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/radius);
@@ -444,6 +444,276 @@ public final class CombatSystem {
             if(exposed(point.add(0,.25f,0),id,world))return true;
         }
         return false;
+    }
+
+    public int napalmAssistTarget(int vehicleId) {return napalmTargets.getOrDefault(vehicleId,-1);}
+    private int assistTarget(int owner,WorldQuery world) {
+        var assist=rules.napalm().assist();Vector3f origin=world.muzzle(owner),forward=world.forward(owner).normalizeLocal();
+        float bestCosine=(float)Math.cos(radians(assist.coneDegrees())),bestDistance=Float.POSITIVE_INFINITY;int best=-1;
+        for(var target:orderedVehicles) {
+            if(!target.alive()||target.id==owner)continue;
+            Vector3f delta=world.position(target.id).subtract(origin);float distance=delta.length();
+            if(distance<assist.minimumRange()||distance>assist.maximumRange())continue;
+            float cosine=forward.dot(delta)/distance;
+            if(cosine<bestCosine||!world.visible(origin,world.position(target.id),target.id))continue;
+            if(best<0||cosine>bestCosine||(Float.compare(cosine,bestCosine)==0&&distance<bestDistance)) {
+                best=target.id;bestCosine=cosine;bestDistance=distance;
+            }
+        }
+        return best;
+    }
+    private int ballisticTarget(int owner,WorldQuery world) {
+        int id=lockTarget(owner);if(id<0)return -1;
+        float distance=world.muzzle(owner).distance(world.position(id));
+        return distance>=rules.ballistic().minimumRange()&&distance<=rules.ballistic().maximumRange()?id:-1;
+    }
+    private static Vector3f horizontal(Vector3f value) {Vector3f result=value.clone();result.y=0;return result;}
+    private static Vector3f forwardXZ(int owner,WorldQuery world) {
+        Vector3f forward=horizontal(world.forward(owner));
+        if(forward.lengthSquared()<1e-6f)forward.set(Vector3f.UNIT_Z);
+        return forward.normalizeLocal();
+    }
+    private Vector3f napalmAim(int target,WorldQuery world) {
+        Vector3f lead=horizontal(world.velocity(target)).multLocal(rules.napalm().assist().leadSeconds());
+        if(lead.length()>rules.napalm().assist().maximumLead())lead.normalizeLocal().multLocal(rules.napalm().assist().maximumLead());
+        return world.position(target).add(lead);
+    }
+    private static Vector3f groundPoint(Vector3f point,WorldQuery world) {
+        WorldQuery.Support support=world.support(point.add(0,35,0),80);
+        return support==null?point.clone():support.point().clone();
+    }
+    private void launchNapalm(ProjectileState projectile,WorldQuery world) {
+        var assist=rules.napalm().assist();
+        Vector3f aim=projectile.targetId>=0?napalmAim(projectile.targetId,world):groundPoint(
+                projectile.position.add(forwardXZ(projectile.ownerId(),world).mult(assist.fallbackRange())),world);
+        Vector3f displacement=aim.subtract(projectile.position);
+        float time=Math.clamp(horizontal(displacement).length()/rules.napalm().speed(),assist.minimumFlightSeconds(),assist.maximumFlightSeconds());
+        projectile.velocity.set(displacement.divide(time));projectile.velocity.y+=.5f*rules.napalm().gravity()*time;
+        projectile.originalVelocity.set(projectile.velocity);projectile.direction.set(projectile.velocity).normalizeLocal();
+    }
+    private void guideNapalm(ProjectileState projectile,WorldQuery world) {
+        var assist=rules.napalm().assist();
+        if(projectile.targetId>=0) {
+            if(!session.vehicle(projectile.targetId).alive())projectile.targetId=-1;
+            else {
+                if(world.visible(projectile.position,world.position(projectile.targetId),projectile.targetId))projectile.occludedTicks=0;
+                else projectile.occludedTicks++;
+                if(projectile.occludedTicks>ticks(assist.occlusionSeconds()))projectile.targetId=-1;
+            }
+        }
+        Vector3f base=horizontal(projectile.originalVelocity);float speed=base.length();if(speed<1e-5f)return;
+        float baseline=(float)Math.atan2(base.x,base.z),heading=(float)Math.atan2(projectile.velocity.x,projectile.velocity.z);
+        float desired=baseline;
+        if(projectile.targetId>=0) {
+            Vector3f aim=napalmAim(projectile.targetId,world).subtract(projectile.position);
+            if(horizontal(aim).lengthSquared()>1e-6f)desired=(float)Math.atan2(aim.x,aim.z);
+        }
+        float rate=radians(assist.turnDegreesPerSecond()),turn=rate*MatchSession.DT;
+        float candidate=heading+Math.clamp(angleDifference(desired,heading),-turn,turn);
+        float returning=heading+Math.clamp(angleDifference(baseline,heading),-turn,turn);
+        // Reserve enough of the 3m envelope to turn back at the same bounded rate.
+        // Losing the target disables tracking permanently; this bound still holds.
+        if(!napalmHeadingFits(projectile,candidate,baseline,speed,rate,assist.maximumDeviation())) {
+            float low=0,high=1;
+            for(int i=0;i<12;i++) {
+                float middle=(low+high)*.5f;
+                float trial=returning+angleDifference(candidate,returning)*middle;
+                if(napalmHeadingFits(projectile,trial,baseline,speed,rate,assist.maximumDeviation()))low=middle;else high=middle;
+            }
+            candidate=returning+angleDifference(candidate,returning)*low;
+        }
+        projectile.velocity.x=(float)Math.sin(candidate)*speed;projectile.velocity.z=(float)Math.cos(candidate)*speed;
+    }
+    private static float angleDifference(float target,float source) {return (float)Math.atan2(Math.sin(target-source),Math.cos(target-source));}
+    private static boolean napalmHeadingFits(ProjectileState p,float heading,float baseline,float speed,float rate,float maximum) {
+        Vector3f next=p.position.add((float)Math.sin(heading)*speed*MatchSession.DT,0,(float)Math.cos(heading)*speed*MatchSession.DT);
+        Vector3f original=p.launchPosition.add(p.originalVelocity.mult((p.ageTicks+1)*MatchSession.DT));
+        float offset=horizontal(next.subtract(original)).length(),angle=Math.abs(angleDifference(heading,baseline));
+        float side=speed/rate*(1-(float)Math.cos(angle)),back=speed/rate*(angle-(float)Math.sin(angle));
+        return offset+(float)Math.sqrt(side*side+back*back)<=maximum-.02f;
+    }
+
+    private void advanceCannon(ProjectileState projectile,WorldQuery world) {
+        var cannon=rules.cannon();float remaining=MatchSession.DT;
+        Vector3f lastContact=null;
+        for(int contacts=0;contacts<3&&remaining>1e-7f&&!projectile.exploded;contacts++) {
+            Vector3f end=projectile.position.add(projectile.velocity.mult(remaining)).addLocal(0,-.5f*cannon.gravity()*remaining*remaining,0);
+            WorldQuery.Hit hit=world.sweep(projectile.position,end,cannon.radius(),projectile.ricochets==0?projectile.ownerId():-1);
+            if(hit==null) {
+                projectile.position.set(end);projectile.velocity.y-=cannon.gravity()*remaining;remaining=0;break;
+            }
+            float elapsed=remaining*Math.clamp(hit.fraction(),0,1);projectile.velocity.y-=cannon.gravity()*elapsed;
+            remaining-=elapsed;
+            Vector3f normal=hit.normal().normalize();
+            if(lastContact!=null&&hit.point().distanceSquared(lastContact)<1e-5f&&hit.fraction()<1e-5f) {
+                // A numerical zero-distance re-contact must never produce another blast.
+                projectile.position.set(hit.point().add(normal.mult(cannon.radius()+.01f)));
+                if(contacts==2)projectile.exploded=true;
+                continue;
+            }
+            Vector3f reflected=projectile.velocity.subtract(normal.mult(projectile.velocity.dot(normal))).multLocal(cannon.tangentRetention())
+                    .subtractLocal(normal.mult(projectile.velocity.dot(normal)*cannon.normalRestitution()));
+            boolean bounce=hit.vehicleId()<0&&normal.lengthSquared()>.5f&&projectile.ricochets<cannon.ricochets()
+                    &&reflected.length()>=cannon.minimumSpeed();
+            cannonImpact(projectile,hit,bounce,world);
+            if(bounce) {
+                projectile.ricochets++;projectile.velocity.set(reflected);
+                projectile.position.set(hit.point().add(normal.mult(cannon.radius()+.005f)));lastContact=hit.point().clone();
+            }
+        }
+        projectile.remainingTicks--;projectile.ageTicks++;
+        projectile.direction.set(projectile.velocity).normalizeLocal();
+        if(!projectile.exploded&&projectile.remainingTicks<=0)cannonImpact(projectile,null,false,world);
+    }
+    private void cannonImpact(ProjectileState projectile,WorldQuery.Hit hit,boolean ricochet,WorldQuery world) {
+        if(projectile.exploded)return;
+        var cannon=rules.cannon();long id=nextShotId++;
+        Vector3f point=hit==null?projectile.position.clone():hit.point();
+        Vector3f normal=hit==null?new Vector3f():hit.normal();
+        Vector3f center=point.add(normal.mult(rules.explosionSurfaceOffset()));
+        int direct=hit==null?-1:hit.vehicleId();String kind=ricochet?"cannon-ricochet":"cannon";
+        if(hit!=null)impact(id,projectile.ownerId(),kind,hit,projectile.previousPosition);
+        float radius=ricochet?cannon.ricochetRadius():cannon.splashRadius();
+        events.add(new GameEvent(GameEvent.Type.EXPLOSION,id,direct,projectile.ownerId(),center,kind,radius,projectile.previousPosition,normal));
+        for(var target:orderedVehicles) {
+            if(!target.alive())continue;
+            if(target.id==direct) {
+                float owner=target.id==projectile.ownerId()?rules.ownerSplashMultiplier():1;
+                queueContactDamage(target.id,projectile.ownerId(),cannon.directDamage()*owner,"cannon",id,point,normal);
+                if(target.protectionTicks==0) {
+                    float multiplier=owner*(target.shieldTicks>0?rules.control().shieldDamageMultiplier():1)
+                            *projectile.velocity.length()/cannon.speed();
+                    Vector3f linear=horizontal(projectile.velocity);
+                    if(linear.lengthSquared()>0)linear.normalizeLocal().multLocal(cannon.horizontalImpulse()*multiplier);
+                    linear.y=cannon.upwardImpulse()*multiplier;
+                    BlastSum sum=blasts.computeIfAbsent(target.id,ignored->new BlastSum());sum.heavy=true;
+                    sum.linear.addLocal(linear);sum.torque.addLocal(point.subtract(world.position(target.id)).cross(linear));
+                    target.heavyImpactPending=true;
+                }
+                continue;
+            }
+            float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/radius);
+            if(falloff<=0||!exposed(center,target.id,world))continue;
+            Vector3f hullPoint=world.closestHullPoint(target.id,center);
+            float amount=(ricochet?cannon.ricochetDamage():cannon.splashDamage())*falloff
+                    *(target.id==projectile.ownerId()?rules.ownerSplashMultiplier():1);
+            queueContactDamage(target.id,projectile.ownerId(),amount,"cannon",id,hullPoint,center.subtract(hullPoint).normalizeLocal());
+            addBlast(target.id,projectile.ownerId(),center,hullPoint,cannon.splashBlast(),falloff,world);
+        }
+        if(!ricochet)projectile.exploded=true;
+    }
+
+    private void launchCarrier(ProjectileState carrier,WorldQuery world) {
+        var ballistic=rules.ballistic();
+        Vector3f area=groundPoint(carrier.targetId>=0?world.position(carrier.targetId):
+                carrier.position.add(forwardXZ(carrier.ownerId(),world).mult(ballistic.fallbackRange())),world);
+        float duration=Math.clamp(horizontal(area.subtract(carrier.position)).length()/ballistic.carrierSpeed(),
+                ballistic.minimumCarrierSeconds(),ballistic.maximumCarrierSeconds());
+        int flightTicks=Math.max(1,ticks(duration));duration=flightTicks*MatchSession.DT;
+        Salvo salvo=new Salvo(carrier,area,flightTicks);salvo.station.set(area).addLocal(0,ballistic.carrierHeight(),0);
+        carrier.velocity.set(salvo.station.subtract(carrier.position).divide(duration)).addLocal(0,.5f*ballistic.gravity()*duration,0);
+        carrier.direction.set(carrier.velocity).normalizeLocal();salvos.put(carrier.id(),salvo);
+    }
+    private void advanceCarrier(ProjectileState carrier,WorldQuery world) {
+        Salvo salvo=salvos.get(carrier.id());if(salvo==null) {carrier.exploded=true;return;}
+        if(carrier.ageTicks<salvo.arrivalTicks) {
+            Vector3f end=carrier.position.add(carrier.velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
+            WorldQuery.Hit hit=world.sweep(carrier.position,end,rules.projectileRadius(),carrier.ownerId());
+            carrier.ageTicks++;carrier.remainingTicks--;carrier.velocity.y-=rules.ballistic().gravity()*MatchSession.DT;
+            if(hit!=null) {ballisticImpact(carrier,hit,world);return;}
+            carrier.position.set(end);carrier.direction.set(carrier.velocity).normalizeLocal();
+            if(carrier.ageTicks<salvo.arrivalTicks)return;
+            carrier.position.set(salvo.station);carrier.velocity.zero();
+            salvo.nextPlanTick=session.tick;
+        }
+        if(salvo.planned<rules.ballistic().charges()&&session.tick>=salvo.nextPlanTick) {
+            planCharge(salvo,world);salvo.planned++;
+            salvo.nextPlanTick=session.tick+ticks(rules.ballistic().releaseIntervalSeconds());
+        }
+        if(salvo.released==rules.ballistic().charges()) {carrier.exploded=true;salvos.remove(carrier.id());}
+    }
+    private void planCharge(Salvo salvo,WorldQuery world) {
+        var ballistic=rules.ballistic();
+        if(salvo.targetId>=0) {
+            if(!session.vehicle(salvo.targetId).alive()||!world.visible(salvo.carrier.position,world.position(salvo.targetId),salvo.targetId))salvo.targetId=-1;
+            else {
+                Vector3f correction=horizontal(world.position(salvo.targetId).subtract(salvo.area));
+                if(correction.length()>ballistic.correctionDistance())correction.normalizeLocal().multLocal(ballistic.correctionDistance());
+                Vector3f updated=salvo.area.add(correction),total=horizontal(updated.subtract(salvo.initialArea));
+                if(total.length()>ballistic.maximumCorrection())total.normalizeLocal().multLocal(ballistic.maximumCorrection());
+                salvo.area.set(groundPoint(salvo.initialArea.add(total),world));
+            }
+        }
+        float spread=ballistic.spread();Vector3f offset=switch(salvo.planned) {
+            case 0->new Vector3f(-spread,0,0);case 1->new Vector3f(0,0,spread);
+            case 2->new Vector3f(spread,0,0);default->new Vector3f(0,0,-spread);
+        };
+        Vector3f origin=salvo.carrier.position.clone(),aim=groundPoint(salvo.area.add(offset),world);
+        float duration=Math.max(.5f,(float)Math.sqrt(2*Math.max(.1f,origin.y-aim.y)/ballistic.gravity()));
+        Vector3f velocity=aim.subtract(origin).divide(duration).addLocal(0,.5f*ballistic.gravity()*duration,0);
+        int lifeTicks=Math.min(720,ticks(duration+1));
+        Prediction prediction=predictCharge(origin,velocity,lifeTicks,world);
+        if(prediction==null) {reservedCharges--;salvo.released++;return;}
+        long id=nextShotId++,release=session.tick+ticks(ballistic.minimumWarningSeconds());
+        FallingCharge charge=new FallingCharge(id,salvo.carrier.ownerId(),salvo.carrier.id(),origin,velocity,
+                prediction.hit.point().clone(),release,release+prediction.ticks,lifeTicks);
+        pendingCharges.add(charge);warnings.put(id,charge);
+    }
+    private record Prediction(WorldQuery.Hit hit,int ticks) {}
+    private Prediction predictCharge(Vector3f origin,Vector3f initialVelocity,int lifeTicks,WorldQuery world) {
+        Vector3f position=origin.clone(),velocity=initialVelocity.clone();
+        for(int tick=1;tick<=lifeTicks;tick++) {
+            Vector3f end=position.add(velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
+            WorldQuery.Hit hit=world.staticSweep(position,end,rules.projectileRadius());
+            if(hit!=null)return new Prediction(hit,tick);
+            position.set(end);velocity.y-=rules.ballistic().gravity()*MatchSession.DT;
+        }
+        return null;
+    }
+    private void releaseCharges() {
+        for(var iterator=pendingCharges.iterator();iterator.hasNext();) {
+            FallingCharge charge=iterator.next();if(session.tick<charge.releaseTick)continue;
+            Salvo salvo=salvos.get(charge.carrierId);
+            if(salvo==null)throw new IllegalStateException("Orphaned ballistic reservation");
+            ProjectileState projectile=new ProjectileState(charge.id,charge.ownerId,"ballistic-fall",charge.origin,
+                    charge.velocity,charge.lifeTicks,-1);
+            projectile.velocity.set(charge.velocity);projectiles.add(projectile);
+            events.add(new GameEvent(GameEvent.Type.SHOT,charge.id,charge.ownerId,charge.ownerId,charge.origin,
+                    "ballistic-fall",0,charge.origin,Vector3f.ZERO));
+            reservedCharges--;salvo.released++;iterator.remove();
+            if(salvo.released==rules.ballistic().charges()) {salvo.carrier.exploded=true;salvos.remove(charge.carrierId);}
+        }
+    }
+    private void advanceCharge(ProjectileState charge,WorldQuery world) {
+        Vector3f end=charge.position.add(charge.velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
+        WorldQuery.Hit hit=world.sweep(charge.position,end,rules.projectileRadius(),charge.ownerId());
+        charge.remainingTicks--;charge.ageTicks++;charge.velocity.y-=rules.ballistic().gravity()*MatchSession.DT;
+        charge.direction.set(charge.velocity).normalizeLocal();
+        if(hit!=null)ballisticImpact(charge,hit,world);
+        else {
+            charge.position.set(end);
+            if(charge.remainingTicks<=0) {charge.exploded=true;warnings.remove(charge.id());}
+        }
+    }
+    private void ballisticImpact(ProjectileState projectile,WorldQuery.Hit hit,WorldQuery world) {
+        if(projectile.exploded)return;projectile.exploded=true;projectile.position.set(hit.point());
+        Salvo salvo=salvos.remove(projectile.id());
+        if(salvo!=null) {
+            reservedCharges-=rules.ballistic().charges()-salvo.released;
+            pendingCharges.removeIf(charge->{if(charge.carrierId!=projectile.id())return false;warnings.remove(charge.id);return true;});
+        }
+        warnings.remove(projectile.id());
+        impact(projectile.id(),projectile.ownerId(),projectile.kind(),hit,projectile.previousPosition);
+        radialDamage(projectile.id(),projectile.ownerId(),"ballistic",hit.point().add(hit.normal().mult(rules.explosionSurfaceOffset())),
+                rules.ballistic().radius(),rules.ballistic().damage(),rules.ballistic().blast(),hit.normal(),world);
+    }
+    public List<BallisticWarningView> ballisticWarnings() {
+        return warnings.values().stream().map(warning->new BallisticWarningView(warning.id,warning.ownerId,warning.point,
+                rules.ballistic().radius(),(int)Math.max(0,warning.impactTick-session.tick))).toList();
+    }
+    public int reservedBallisticCharges() {return reservedCharges;}
+    public int occupiedProjectileSlots() {
+        return projectiles.size()+reservedCharges+(int)intents.stream().filter(intent->!intent.kind.equals("machine-gun")).count();
     }
 
     private void guide(ProjectileState projectile, WorldQuery world) {
@@ -550,11 +820,16 @@ public final class CombatSystem {
         damage.add(new Damage(targetId, sourceId, amount, cause, sourceEvent,point,normal,origin));
     }
 
-    public void queueRam(int first, int second, float closingSpeed) {
+    public void queueRam(int first, int second, float closingSpeed,Vector3f point,Vector3f normal) {
         if (!Float.isFinite(closingSpeed) || closingSpeed < 0) throw new IllegalArgumentException("Closing speed must be finite and nonnegative");
         if (first == second || first < 0 || second < 0 || first >= session.vehicles.size() || second >= session.vehicles.size()) return;
         if (closingSpeed <= rules.ram().minimumClosingSpeed()) return;
         Pair pair = Pair.of(first, second);
+        if(session.tick>=ramFeedbackAt.getOrDefault(pair,Long.MIN_VALUE)) {
+            events.add(new GameEvent(GameEvent.Type.RAM,nextShotId++,pair.first,pair.second,point,"ram",closingSpeed,
+                    Vector3f.ZERO,first==pair.first?normal:normal.negate()));
+            ramFeedbackAt.put(pair,session.tick+ticks(.15f));
+        }
         if (session.tick < ramReadyAt.getOrDefault(pair, Long.MIN_VALUE)) return;
         ramSpeeds.merge(pair, closingSpeed, Math::max);
     }
@@ -596,19 +871,22 @@ public final class CombatSystem {
         resolveControl(world);
         for(var entry:blasts.entrySet()) {
             VehicleState target=session.vehicle(entry.getKey());
-            if(!target.alive()||target.protectionTicks>0)continue;
+            if(destroyed.contains(target.id)||target.protectionTicks>0)continue;
+            if(!target.alive())world.immobilize(target.id,false);
             BlastSum blast=entry.getValue();float mass=world.mass(target.id);
+            CombatRules.BlastLimits limits=blast.heavy?rules.heavyBlastLimits():rules.blastLimits();
             float horizontal=(float)Math.sqrt(blast.linear.x*blast.linear.x+blast.linear.z*blast.linear.z);
-            float maximumHorizontal=rules.blastLimits().horizontalDeltaSpeed()*mass;
+            float maximumHorizontal=limits.horizontalDeltaSpeed()*mass;
             if(horizontal>maximumHorizontal) {blast.linear.x*=maximumHorizontal/horizontal;blast.linear.z*=maximumHorizontal/horizontal;}
-            blast.linear.y=Math.min(blast.linear.y,rules.blastLimits().upwardDeltaSpeed()*mass);
-            world.impulse(target.id,blast.linear,blast.torque,rules.blastLimits().angularDeltaSpeed());
+            blast.linear.y=Math.min(blast.linear.y,limits.upwardDeltaSpeed()*mass);
+            world.impulse(target.id,blast.linear,blast.torque,limits.angularDeltaSpeed());
         }
         blasts.clear();
         for (VehicleState target : orderedVehicles) {
             if (target.alive() || !destroyed.add(target.id)) continue;
             world.immobilize(target.id,false);
             target.frozenTicks=target.shieldTicks=target.controlImmunityTicks=0;
+            target.heavyImpactPending=false;target.impactStabilizerTicks=0;
             int killer = target.lastAttacker >= 0 && session.tick - target.lastAttackTick <= ticks(rules.killCreditSeconds())
                     ? target.lastAttacker : -1;
             if (killer >= 0 && killer != target.id) session.vehicle(killer).eliminations++;
@@ -703,9 +981,13 @@ public final class CombatSystem {
 
     public void clear() {
         if(lastWorld!=null)for(var vehicle:orderedVehicles)lastWorld.immobilize(vehicle.id,false);
-        for(var vehicle:orderedVehicles)vehicle.frozenTicks=vehicle.shieldTicks=vehicle.controlImmunityTicks=0;
+        for(var vehicle:orderedVehicles) {
+            vehicle.frozenTicks=vehicle.shieldTicks=vehicle.controlImmunityTicks=vehicle.impactStabilizerTicks=0;
+            vehicle.heavyImpactPending=false;
+        }
         mines.clear();fireZones.clear();controlHits.clear();fireExposureTicks.clear();reservedFireZones=0;
         projectiles.clear();
+        salvos.clear();pendingCharges.clear();warnings.clear();napalmTargets.clear();reservedCharges=0;
         intents.clear();
         damage.clear();
         events.clear();
@@ -714,12 +996,15 @@ public final class CombatSystem {
         emptyFeedbackAfter.clear();nextBarrels.clear();shieldFeedbackAfter.clear();expiredShields.clear();
         ramSpeeds.clear();
         ramReadyAt.clear();
+        ramFeedbackAt.clear();
         blasts.clear();
         seenDamage.clear();
         destroyed.clear();
     }
 
-    private CombatRules.Rocket rocketRules(String kind) { return kind.equals("homing") ? rules.homing() : rules.power(); }
+    private CombatRules.Rocket rocketRules(String kind) {
+        return switch(kind) {case "homing"->rules.homing();case "power"->rules.power();default->throw new IllegalArgumentException("Not a rocket: "+kind);};
+    }
     private static float radians(float degrees) { return (float) Math.toRadians(degrees); }
     private static GameEvent event(GameEvent.Type type, long id, int subject, int source, Vector3f position, String kind, float value) {
         return new GameEvent(type, id, subject, source, position, kind, value);

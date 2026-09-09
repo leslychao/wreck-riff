@@ -16,6 +16,7 @@ import java.util.*;
 final class VehicleDamageVisual extends AbstractControl {
     static final int STAGES=5;
     static final float MAX_DENT=.35f;
+    private static final float[] DENT_STRENGTH={0,.28f,.58f,.85f,1};
     private record Part(Geometry geometry,Mesh[] meshes,Material[] materials) {}
     private final List<Part> parts=new ArrayList<>();
     private final List<Part> frostParts=new ArrayList<>(),shieldParts=new ArrayList<>();
@@ -117,7 +118,8 @@ final class VehicleDamageVisual extends AbstractControl {
         return result;
     }
     private static Vector3f dent(Vector3f point,int stage) {
-        float strength=new float[]{0,.28f,.58f,.85f,1}[stage];
+        if(point.y>=.36f&&point.z>1.79f&&Math.abs(Math.abs(point.x)-.53f)<.11f)return point.clone();
+        float strength=DENT_STRENGTH[stage];
         // Broad folds cross local topology; sharper ridges catch light in addition to changing the outline.
         // The weapon barrels sit above this sheet-metal envelope and keep their authored muzzle position.
         float sheet=Math.clamp((.45f-point.y)/.15f,0,1);

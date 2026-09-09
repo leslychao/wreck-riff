@@ -21,7 +21,10 @@ $shots=@(
     @('hp-50','Повреждённые панели / 50%'),@('hp-25','Критическое состояние / 25%'),
     @('hp-0','Обугленный кузов / 0%'),@('hp-repaired','После ремонта / 100%'),
     @('machine-gun','Пулемёт'),@('power-hit','Power / отбрасывание'),
-    @('freeze','Freeze'),@('shield','Щит'),@('mine','Мина / подброс'),@('napalm','Напалм'))
+    @('freeze','Freeze'),@('shield','Щит'),@('napalm','Напалм / помощь броску'),
+    @('ballistic-warning','Баллистика / предупреждение'),@('ballistic-hit','Баллистика / накрытие'),
+    @('cannon-hit','Ядро / боковой удар'),@('cannon-ricochet','Ядро / рикошеты'),
+    @('cannon-lethal','Смертельный удар / физический остов'),@('wreck-removed','Остов удалён через три секунды'))
 $cards=foreach($shot in $shots) {
     $file=Get-ChildItem (Join-Path $destination 'captures') -Filter "WreckRiff-0.4.0-$($shot[0])-*.png" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if(!$file) {throw "Missing capture $($shot[0])"}
@@ -29,15 +32,15 @@ $cards=foreach($shot in $shots) {
 }
 $html=@'
 <!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wreck Riff 0.3 — демонстрация</title><style>
+<title>Wreck Riff 0.4 — демонстрация</title><style>
 body{margin:0;background:#14191c;color:#e6e5dc;font:17px/1.6 system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:32px}
 h1{font-size:36px;margin:0;color:#ffbc72}p{max-width:1000px}video{display:block;width:100%;border-radius:8px;background:#050708}
 section{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:20px}figure{margin:0;background:#20282d;border:1px solid #3a4246;border-radius:8px;overflow:hidden}
 img{display:block;width:100%}figcaption{padding:12px 18px;color:#ffca91}code{word-break:break-all}a{color:#ffca91}
 @media(max-width:520px){main{padding:16px}section{grid-template-columns:1fr}h1{font-size:28px}}</style><main>
-<h1>Wreck Riff 0.3</h1><p>Настоящие кадры игры: повреждения, короткие трассеры, физика попаданий, Freeze и щит.</p>
+<h1>Wreck Riff 0.4</h1><p>Настоящие кадры игры: повреждения кузова, тяжёлые попадания, напалм, баллистика, ядро, Freeze и щит.</p>
 <video controls preload="metadata" src="WreckRiff-0.4.0-demo.mp4"></video>
-<p>Первые 12 секунд — подписанная галерея предустановленных долей HP. Нулевая стадия показана визуально без уничтожения тестовой цели; затем идут реальные выстрелы через обычную симуляцию. Дорожка собрана из фактически запущенных игровых семплов и параметров, с текущей музыкой. Это не точная запись OpenAL/HRTF. Окончательную оценку ощущений даёт владелец.</p>
+<p>Первые 12 секунд — подписанная галерея предустановленных долей HP. Нулевая стадия здесь показана без уничтожения тестовой цели. Между последующими сценами позиции и HP подготовлены заново; все выстрелы, попадания и финальное уничтожение проходят обычную симуляцию. Дорожка собрана из фактически запущенных игровых семплов и параметров, с текущей музыкой. Это не точная запись OpenAL/HRTF. Окончательную оценку ощущений даёт владелец.</p>
 '@
 $html+='<p>Source SHA-256: <code>'+[Net.WebUtility]::HtmlEncode($report.sourceSha256)+'</code></p><section>'+($cards -join "`n")+'</section></main></html>'
 [IO.File]::WriteAllText((Join-Path $destination 'index.html'),$html,[Text.UTF8Encoding]::new($false))

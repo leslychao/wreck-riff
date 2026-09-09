@@ -210,7 +210,7 @@ public final class VehicleVisual {
                 Vector3f[] a=ring(rings[i]),b=ring(rings[i+1]);
                 for(int face=0;face<8;face++) {
                     int across=face==4?6:face==2||face==6?2:1;
-                    int along=face==4||face==2||face==6?4:1;
+                    int along=face==4||face==2||face==6?3:1;
                     panel(a[face],a[(face+1)%8],b[(face+1)%8],b[face],across,along);
                 }
             }

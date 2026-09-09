@@ -147,6 +147,28 @@ class InputSystemTest {
             assertEquals(AbilityId.NONE,input.consume().ability());
         }
     }
+    @Test void newWeaponEdgesShareTheShotTickAndCannotLeakAcrossRetry() {
+        try(InputSystem input=input()) {
+            input.setGameplay(true);
+            for(var entry:java.util.Map.of(KeyInput.KEY_5,WeaponType.BALLISTIC,KeyInput.KEY_6,WeaponType.CANNON).entrySet()) {
+                input.onKeyEvent(key(entry.getKey(),true));input.onMouseButtonEvent(mouse(1,true));
+                var command=input.consume();assertEquals(entry.getValue(),command.directWeapon());assertTrue(command.selectedWeapon());
+                assertNull(input.consume().directWeapon(),"Holding a number does not select again");
+                input.clear();input.setGameplay(false);input.setGameplay(true);
+                input.onKeyEvent(key(entry.getKey(),true));assertNull(input.consume().directWeapon());
+                input.onKeyEvent(key(entry.getKey(),false));input.onMouseButtonEvent(mouse(1,false));
+                input.onKeyEvent(key(entry.getKey(),true));assertEquals(entry.getValue(),input.consume().directWeapon());
+                input.onKeyEvent(key(entry.getKey(),false));
+            }
+        }
+    }
+    @Test void cannonRemappingUsesOnlyTheAssignedKey() {
+        var settings=new SettingsStore.Settings();settings.keys.put("Select Cannon",KeyInput.KEY_T);
+        try(InputSystem input=input(settings)) {
+            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_6,true));assertNull(input.consume().directWeapon());
+            input.onKeyEvent(key(KeyInput.KEY_T,true));assertEquals(WeaponType.CANNON,input.consume().directWeapon());
+        }
+    }
     private static InputSystem input() {
         return input(new SettingsStore.Settings());
     }

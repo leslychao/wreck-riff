@@ -92,6 +92,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public boolean containsVehicle(int id) { return vehicles.containsKey(id); }
     public void removeVehicle(int id) {
         immobilize(id,false);
+        if(vehicles.containsKey(id))resetInterpolation(id);
         PhysicsVehicle body=vehicles.remove(id);
         if (body!=null) { space.removeCollisionObject(body); identities.remove(body); wheelContactCounts.remove(id); }
     }
@@ -171,6 +172,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     /** Keep the same dynamic chassis and momentum, but stop all driver actuators. */
     public void makeWreck(int id) {
         immobilize(id,false);
+        stopDriving(id);
+    }
+    public void stopDriving(int id) {
         PhysicsVehicle body=vehicles.get(id);if(body==null)return;
         body.accelerate(0);body.brake(0);body.steer(0);
     }

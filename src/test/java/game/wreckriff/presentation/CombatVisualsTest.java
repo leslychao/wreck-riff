@@ -188,10 +188,10 @@ class CombatVisualsTest {
             assertEquals(0,batch(scene,"impact-fragments").getMesh().getVertexCount());
             assertEquals(0,batch(scene,"particles-and-tracers").getMesh().getVertexCount());
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
-            assertEquals(6*6,batch(scene,"particles-and-tracers").getMesh().getVertexCount());
-            assertEquals(16*3,batch(scene,"impact-fragments").getMesh().getVertexCount());
+            assertEquals(12*6,batch(scene,"particles-and-tracers").getMesh().getVertexCount());
+            assertEquals(16*3+3*12,batch(scene,"impact-fragments").getMesh().getVertexCount());
             var positions=batch(scene,"particles-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.Position);
-            for(int spark=0;spark<6;spark++)assertEquals(end.add(normal.mult(.02f)),point(positions,spark*6));
+            for(int spark=0;spark<12;spark++)assertEquals(end.add(normal.mult(.025f)),point(positions,spark*6));
             int count=visuals.effectCount();visuals.accept(List.of(shot,hit,shield));assertEquals(count,visuals.effectCount());
             for(int frame=0;frame<30;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.02f);
             visuals.accept(List.of(shot,hit,shield));assertEquals(0,visuals.effectCount(),"Duplicate delivery after expiry must not restart an old effect");
@@ -286,6 +286,76 @@ class CombatVisualsTest {
             assertEquals(1,visuals.effectCount());
         }
     }
+    @Test void ballisticWarningUsesDeclaredRoofPointAndRemovesWithAuthoritativeSnapshot() {
+        Node scene=new Node();var warning=new game.wreckriff.combat.CombatSystem.BallisticWarningView(7,1,new Vector3f(4,6,8),6,60);
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.update(List.of(),List.of(),List.of(),List.of(warning),null,.02f);
+            Mesh fields=batch(scene,"ground-fire").getMesh();assertEquals(32*6+12,fields.getVertexCount());
+            var points=fields.getFloatBuffer(VertexBuffer.Type.Position);
+            for(int i=0;i<points.limit();i+=3){assertEquals(6.045f,points.get(i+1),.0001f);assertTrue(new Vector3f(points.get(i)-4,0,points.get(i+2)-8).length()<=6.001f);}
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);assertEquals(0,fields.getVertexCount());
+        }
+    }
+    @Test void ballisticCosmeticFireHasSixteenPatchLimitFreezesAndExpiresWithoutChangingHp() {
+        Node scene=new Node();MatchSession session=new MatchSession(7,180);float hp=session.vehicle(0).hp;
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            for(int i=0;i<30;i++)visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,i,-1,0,new Vector3f(i,0,4),"ballistic",34,Vector3f.ZERO,Vector3f.UNIT_Y)));
+            assertEquals(CombatVisuals.COSMETIC_FIRE_LIMIT,visuals.cosmeticFireCount());
+            visuals.update(List.of(),List.of(),List.of(),List.of(),session,.1f);int count=visuals.effectCount();
+            for(int i=0;i<50;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),session,0);
+            assertEquals(count,visuals.effectCount());assertEquals(16,visuals.cosmeticFireCount());
+            assertEquals(hp,session.vehicle(0).hp,"Presentation fire cannot apply DOT");
+            for(int i=0;i<21;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),session,.1f);
+            assertEquals(0,visuals.cosmeticFireCount());assertEquals(0,visuals.effectCount());assertEquals(0,batch(scene,"ground-fire").getMesh().getVertexCount());
+        }
+    }
+    @Test void closeBlastsUseAtMostTwoBriefLightsPausePreservesThemAndCloseRemovesBoth() {
+        Node scene=new Node();CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());
+        assertEquals(2,scene.getLocalLightList().size());
+        visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,1,-1,1,new Vector3f(200,1,8),"power",6)));
+        for(var light:scene.getLocalLightList())assertFalse(light.isEnabled(),"Distant blasts do not spend a light");
+        for(int i=2;i<7;i++)visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,i,"power",6)));
+        for(var light:scene.getLocalLightList())assertTrue(light.isEnabled());
+        visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+        for(var light:scene.getLocalLightList())assertTrue(light.isEnabled());
+        for(int i=0;i<3;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
+        for(var light:scene.getLocalLightList())assertFalse(light.isEnabled());
+        visuals.close();assertEquals(0,scene.getLocalLightList().size());assertEquals(0,scene.getQuantity());
+    }
+    @Test void saturatedPoolsPreservePlayerHitOverRepeatedDistantImpactsAndTails() {
+        Node scene=new Node();
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            for(int i=0;i<40;i++)visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,i,2,2,new Vector3f(220,0,0),"power",6)));
+            visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,100,1,0,new Vector3f(0,1,8),"cannon",65)));
+            for(int i=101;i<141;i++)visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,i,2,2,new Vector3f(220,0,0),"power",6)));
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            Mesh mesh=batch(scene,"particles-and-tracers").getMesh();var points=mesh.getFloatBuffer(VertexBuffer.Type.Position);int near=0;
+            for(int vertex=0;vertex<mesh.getVertexCount();vertex+=6)if(point(points,vertex).distance(new Vector3f(0,1,8))<2)near++;
+            assertTrue(near>=60,"Player hit survives far-effect pressure");assertTrue(mesh.getVertexCount()<=CombatVisuals.PARTICLE_LIMIT*6);
+            Mesh fragments=batch(scene,"impact-fragments").getMesh();assertTrue(fragments.getVertexCount()<=CombatVisuals.SHARD_LIMIT*12);
+            assertTrue(fragments.getVertexCount()>0);
+        }
+    }
+    @Test void ramRequiresClosingSpeedAndExplosionProfilesHaveDistinctDebrisAndSmokeLifetimes() {
+        Node scene=new Node();
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.accept(List.of(event(GameEvent.Type.RAM,1,"ram",2)));assertEquals(0,visuals.effectCount());
+            visuals.accept(List.of(event(GameEvent.Type.RAM,2,"ram",12)));visuals.update(List.of(),List.of(),List.of(),List.of(),null,.01f);
+            assertTrue(batch(scene,"impact-fragments").getMesh().getVertexCount()>0);
+        }
+        Set<Integer> profiles=new HashSet<>();
+        for(String kind:List.of("power","mine","cannon","ballistic")) {
+            Node one=new Node();
+            try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),one,world())) {
+                visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,1,kind,34)));profiles.add(visuals.effectCount());
+                for(int i=0;i<7;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
+                Mesh smoke=batch(one,"particles-and-tracers").getMesh();assertTrue(smoke.getVertexCount()>0,"Smoke outlasts the 0.6s flash");
+                for(int i=0;i<10;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
+                assertEquals(0,visuals.effectCount());
+            }
+        }
+        assertEquals(4,profiles.size(),"Weapons have authored flame/debris profiles rather than one scaled burst");
+    }
     private static GameEvent shot(long id,int source,Vector3f origin,Vector3f end) {
         return new GameEvent(GameEvent.Type.SHOT,id,source,source,end,"machine-gun",8,origin,Vector3f.ZERO);
     }
@@ -303,6 +373,7 @@ class CombatVisualsTest {
             public float mass(int id){return 1100;}
             public Hit ray(Vector3f a,Vector3f b,int id){return null;}
             public Hit sweep(Vector3f a,Vector3f b,float r,int id){return null;}
+            public Hit staticSweep(Vector3f a,Vector3f b,float r){throw new AssertionError("Visual effects consume authoritative surface positions");}
             public boolean visible(Vector3f a,Vector3f b,int id){return true;}
             public float distanceToHull(int id,Vector3f p){return 0;}
             public Vector3f closestHullPoint(int id,Vector3f from){return position(id);}

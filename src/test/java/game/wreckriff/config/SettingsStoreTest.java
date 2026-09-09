@@ -45,6 +45,19 @@ class SettingsStoreTest {
         assertEquals(original,Files.readString(directory.resolve("settings.json.v2.bak")));
         assertEquals(store.settings().keys,new SettingsStore(directory).settings().keys);
     }
+    @Test void schemaThreeAddsNewWeaponsOnlyOnFreeKeysWithoutChangingExistingPreferences() throws Exception {
+        Files.writeString(directory.resolve("settings.json"),"""
+                {"schemaVersion":3,"width":1600,"height":900,"music":0.35,
+                 "keys":{"Recover":6,"Shield":33,"Freeze":44,"Rear view":0}}
+                """);
+        var store=new SettingsStore(directory);var settings=store.settings();
+        assertEquals(3,settings.schemaVersion);assertEquals(1600,settings.width);assertEquals(.35f,settings.music);
+        assertEquals(KeyInput.KEY_5,settings.keys.get("Recover"));assertEquals(0,settings.keys.get("Select Ballistic"));
+        assertEquals(KeyInput.KEY_6,settings.keys.get("Select Cannon"));assertEquals(0,settings.keys.get("Rear view"));
+        assertEquals(KeyInput.KEY_F,settings.keys.get("Shield"));assertEquals(KeyInput.KEY_Z,settings.keys.get("Freeze"));
+        assertFalse(settings.keys.containsValue(KeyInput.KEY_X));assertTrue(store.bindingWarning().contains("Select Ballistic"));
+        store.saveSettings();assertEquals(settings.keys,new SettingsStore(directory).settings().keys);
+    }
     @Test void firstRunIsDifferentFromKnownOrDamagedUserSettings() throws Exception {
         assertTrue(new SettingsStore(directory).firstRun());
         Files.writeString(directory.resolve("settings.json"),"{bad");

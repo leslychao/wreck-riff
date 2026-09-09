@@ -126,6 +126,7 @@ class BlastAndContactTest {
         public Quaternion rotation(int id){return new Quaternion();}public boolean grounded(int id){return true;}public float mass(int id){return 1100;}
         public Hit ray(Vector3f from,Vector3f to,int ignored){return from.distance(to)<2?null:rayHit;}
         public Hit sweep(Vector3f from,Vector3f to,float radius,int ignored){return hits.pollFirst();}
+        public Hit staticSweep(Vector3f from,Vector3f to,float radius){return null;}
         public boolean visible(Vector3f from,Vector3f to,int id){return !hidden.contains(id);}
         public float distanceToHull(int id,Vector3f point){return Math.max(0,position(id).distance(point)-1);}
         public Vector3f closestHullPoint(int id,Vector3f from){Vector3f offset=from.subtract(position(id));return offset.length()<=1?from.clone():position(id).add(offset.normalizeLocal());}

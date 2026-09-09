@@ -29,7 +29,7 @@ function Copy-Evidence([string]$source,[string]$relative) {
 Copy-Evidence 'build/generated-resources/build-info.properties' 'build-info.properties'
 Copy-Evidence 'README.md' 'PROJECT_README.md'
 Copy-Evidence "build/distributions/WreckRiff-$version-windows-x64.zip.sha256" "WreckRiff-$version-windows-x64.zip.sha256"
-foreach($doc in @('ACCEPTANCE.md','IMPLEMENTATION_STATUS.md','V0_3_PLAN.md','MVP_SPEC.md','DECISIONS.md','ASSET_REGISTER.csv','AUDIO_DESIGN.md','THIRD_PARTY_NOTICES.md','STEAM_HANDOFF.md')) {
+foreach($doc in @('ACCEPTANCE.md','IMPLEMENTATION_STATUS.md','V0_4_PLAN.md','MVP_SPEC.md','DECISIONS.md','ASSET_REGISTER.csv','AUDIO_DESIGN.md','THIRD_PARTY_NOTICES.md','STEAM_HANDOFF.md')) {
     Copy-Evidence "docs/$doc" "docs/$doc"
 }
 foreach($report in @('windows-benchmark.json','packaged-launch.json','negative-launch.json','ai-batch.json','showcase.json')) {
@@ -37,9 +37,9 @@ foreach($report in @('windows-benchmark.json','packaged-launch.json','negative-l
 }
 Copy-Evidence 'build/distributions/WreckRiff/reports/package-verification.json' 'reports/package-verification.json'
 Copy-Evidence 'build/reports/assets' 'reports/assets'
-Copy-Evidence 'build/reports/v03-first-failure' 'reports/prior-failures'
-Copy-Evidence 'build/v03-final-build.log' 'logs/final-build.log'
-Copy-Evidence 'build/v03-final-package.log' 'logs/final-package.log'
+Copy-Evidence 'build/reports/v04-prior-failures' 'reports/prior-failures'
+Copy-Evidence 'build/v04-final-build.log' 'logs/final-build.log'
+Copy-Evidence 'build/v04-final-package.log' 'logs/final-package.log'
 Copy-Evidence 'build/distributions/WreckRiff-0.4.0-demo' 'demo'
 foreach($suite in @('test','physicsTest')) {
     foreach($xml in Get-ChildItem -LiteralPath "build/test-results/$suite" -Filter 'TEST-*.xml') {

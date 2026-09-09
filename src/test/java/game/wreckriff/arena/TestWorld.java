@@ -31,6 +31,13 @@ public final class TestWorld implements WorldQuery {
     public Hit sweep(Vector3f from,Vector3f to,float radius,int ignored) {
         return blockSweeps?new Hit(-1,from.add(0,0,1),new Vector3f(0,0,-1),.1f):null;
     }
+    public Hit staticSweep(Vector3f from,Vector3f to,float radius) {
+        if(from.y>=radius&&to.y<=radius) {
+            float fraction=(from.y-radius)/(from.y-to.y);
+            return new Hit(-1,from.clone().interpolateLocal(to,fraction).subtractLocal(0,radius,0),Vector3f.UNIT_Y,fraction);
+        }
+        return null;
+    }
     public boolean visible(Vector3f from,Vector3f to,int target) { return !wall && !hidden.contains(target); }
     public float distanceToHull(int id,Vector3f point) { return Math.max(0,positions[id].distance(point)-1); }
     public void impulse(int id,Vector3f linear,Vector3f torque,float angularCap) { velocities[id].addLocal(linear.divide(mass(id))); }

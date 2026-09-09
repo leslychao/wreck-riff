@@ -133,7 +133,7 @@ class NativeCombatTest {
         combat.beginTick(Map.of(0, command), world);
         world.step();
         combat.advanceProjectiles(world);
-        for (PhysicsWorld.Ram ram : world.rams()) combat.queueRam(ram.first(), ram.second(), ram.closingSpeed());
+        for (PhysicsWorld.Ram ram : world.rams()) combat.queueRam(ram.first(), ram.second(), ram.closingSpeed(),ram.point(),ram.normal());
         combat.resolveDamage(world);
         session.finishTick();
     }

@@ -147,30 +147,30 @@ class CombatSystemTest {
     }
 
     @Test void T09_ramsDeduplicateAnUnorderedPairAndUseGreatestClosingSpeed() {
-        combat.queueRam(0, 1, 7);
-        combat.queueRam(1, 0, 10);
-        combat.queueRam(0, 1, 8);
+        combat.queueRam(0, 1, 7, Vector3f.ZERO, Vector3f.UNIT_Z);
+        combat.queueRam(1, 0, 10, Vector3f.ZERO, Vector3f.UNIT_Z);
+        combat.queueRam(0, 1, 8, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(192, session.vehicle(0).hp);
         assertEquals(192, session.vehicle(1).hp);
-        combat.queueRam(0, 1, 40);
+        combat.queueRam(0, 1, 40, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(192, session.vehicle(0).hp);
         session.tick = 72;
-        combat.queueRam(0, 1, 40);
+        combat.queueRam(0, 1, 40, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(167, session.vehicle(0).hp);
     }
 
     @Test void ramThresholdIsInclusiveAndRejectsNonFiniteSpeed() {
-        combat.queueRam(0, 1, 5.99f);
-        combat.queueRam(0, 1, 6);
+        combat.queueRam(0, 1, 5.99f, Vector3f.ZERO, Vector3f.UNIT_Z);
+        combat.queueRam(0, 1, 6, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(200, session.vehicle(0).hp);
-        combat.queueRam(0, 1, 6.01f);
+        combat.queueRam(0, 1, 6.01f, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(199.98f, session.vehicle(0).hp, 0.0001f);
-        assertThrows(IllegalArgumentException.class, () -> combat.queueRam(0, 1, Float.NaN));
+        assertThrows(IllegalArgumentException.class, () -> combat.queueRam(0, 1, Float.NaN, Vector3f.ZERO, Vector3f.UNIT_Z));
     }
 
     @Test void T10_simultaneousDeathsAndDamageStatsDoNotDependOnQueueOrder() {
@@ -452,6 +452,7 @@ class CombatSystemTest {
             nextSweep = null;
             return hit;
         }
+        @Override public Hit staticSweep(Vector3f from,Vector3f to,float radius) {return null;}
         @Override public boolean visible(Vector3f from, Vector3f to, int id) {
             return !hidden.contains(id) && (!onlyLastSampleVisible || to.z < positions[id].z);
         }

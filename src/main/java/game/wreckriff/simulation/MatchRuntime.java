@@ -93,7 +93,7 @@ public final class MatchRuntime implements AutoCloseable {
         if(session.outcome==MatchSession.Outcome.NONE)throw new IllegalStateException("Physics tail requires a finished match");
         if(!hasWrecks())return;
         if(!physicsTailStarted) {
-            for(var state:session.vehicles)if(world.containsVehicle(state.id))world.makeWreck(state.id);
+            for(var state:session.vehicles)if(world.containsVehicle(state.id))world.stopDriving(state.id);
             physicsTailStarted=true;
         }
         stepPhysics();
