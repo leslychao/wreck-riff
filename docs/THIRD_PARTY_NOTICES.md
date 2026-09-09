@@ -83,7 +83,7 @@ source-code license. Include the copyright and OFL notice with every copy, do no
 sell the font alone, and respect any reserved font names for modified versions.
 No system-font or online font service is used.
 
-## Recorded combat effects in 0.3
+## Recorded combat effects in 0.3 and 0.4
 
 The Free Firearm Sound Library: **Ben Jaszczak, Brian Nelson, Kevin Heras and
 Matthew Nanney**, [source and CC0 declaration](https://opengameart.org/content/the-free-firearm-sound-library).
@@ -107,6 +107,11 @@ pre-baked transient/body/debris layers, compression, DC removal and normalizatio
 Layering is performed locally by `src/tools/prepare_recorded_sfx.py`; no decoder,
 asset download or account is required at build/runtime. Designed ice/metal/shield
 sounds are recording derivatives, not claims about what object was originally recorded.
+Version 0.4 uses these same preserved recordings for harder blast/metal layers and
+three takes each of cannon launch/ricochet/hit, ballistic launch/fall/explosion and
+ram crush. No new external recordings were imported. The current preparation script
+SHA-256 is linked from sfx-provenance.json; superseded 0.3 recipes, output hashes and
+metrics remain in docs/asset-history/audio-0.3, excluded from runtime.
 
 Original procedural vehicle/arena geometry, shader code and ancillary sound effects
 remain project-authored. Recorded combat effects are identified separately above. Superseded score and 5x7 glyph recipes are preserved only as

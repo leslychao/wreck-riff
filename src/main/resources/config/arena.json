@@ -44,6 +44,8 @@
     {"id":"mine-north","type":"MINE_AMMO","position":{"x":30,"y":0,"z":55},"respawnTicks":2400},
     {"id":"napalm-deck","type":"NAPALM_AMMO","position":{"x":36,"y":6,"z":0},"respawnTicks":2400},
     {"id":"napalm-south","type":"NAPALM_AMMO","position":{"x":-30,"y":0,"z":-48},"respawnTicks":2400},
+    {"id":"ballistic-deck","type":"BALLISTIC_AMMO","position":{"x":54,"y":6,"z":6},"respawnTicks":3600},
+    {"id":"cannon-garage","type":"CANNON_AMMO","position":{"x":-44,"y":0,"z":28},"respawnTicks":3000},
     {"id":"repair-deck","type":"REPAIR","position":{"x":54,"y":6,"z":0},"respawnTicks":3000},
     {"id":"repair-garage","type":"REPAIR","position":{"x":-44,"y":0,"z":22},"respawnTicks":3000},
     {"id":"homing-south","type":"HOMING_AMMO","position":{"x":12,"y":0,"z":-36},"respawnTicks":1440},

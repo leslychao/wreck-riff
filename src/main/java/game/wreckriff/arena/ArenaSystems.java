@@ -75,6 +75,8 @@ public final class ArenaSystems {
             case POWER_AMMO -> vehicle.weapon(WeaponType.POWER).refill(2);
             case MINE_AMMO -> vehicle.weapon(WeaponType.MINE).refill(2);
             case NAPALM_AMMO -> vehicle.weapon(WeaponType.NAPALM).refill(2);
+            case BALLISTIC_AMMO -> vehicle.weapon(WeaponType.BALLISTIC).refill(1);
+            case CANNON_AMMO -> vehicle.weapon(WeaponType.CANNON).refill(2);
             case TURBO_CELL -> { float old=vehicle.turbo; vehicle.turbo=Math.min(100,vehicle.turbo+50); yield vehicle.turbo-old; }
         };
     }
@@ -85,6 +87,8 @@ public final class ArenaSystems {
             case POWER_AMMO -> vehicle.weapon(WeaponType.POWER).ammo<vehicle.weapon(WeaponType.POWER).maximumAmmo;
             case MINE_AMMO -> vehicle.weapon(WeaponType.MINE).ammo<vehicle.weapon(WeaponType.MINE).maximumAmmo;
             case NAPALM_AMMO -> vehicle.weapon(WeaponType.NAPALM).ammo<vehicle.weapon(WeaponType.NAPALM).maximumAmmo;
+            case BALLISTIC_AMMO -> vehicle.weapon(WeaponType.BALLISTIC).ammo<vehicle.weapon(WeaponType.BALLISTIC).maximumAmmo;
+            case CANNON_AMMO -> vehicle.weapon(WeaponType.CANNON).ammo<vehicle.weapon(WeaponType.CANNON).maximumAmmo;
             case TURBO_CELL -> vehicle.turbo<100;
         };
     }
@@ -96,6 +100,8 @@ public final class ArenaSystems {
             case POWER_AMMO -> "power-ammo";
             case MINE_AMMO -> "mine-ammo";
             case NAPALM_AMMO -> "napalm-ammo";
+            case BALLISTIC_AMMO -> "ballistic-ammo";
+            case CANNON_AMMO -> "cannon-ammo";
             case TURBO_CELL -> "turbo";
         };
     }

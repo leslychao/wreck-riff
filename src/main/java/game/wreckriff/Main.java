@@ -41,7 +41,7 @@ public final class Main {
             if(options.benchmarkSeconds()>0) { user.width=1920;user.height=1080;user.vsync=false;user.fullscreen=true; }
             if(options.showcase()) { user.width=1600;user.height=900;user.vsync=false;user.fullscreen=false; }
             AppSettings settings=new AppSettings(true);
-            settings.setTitle("Wreck Riff | 0.3.0"); settings.setResolution(user.width,user.height);
+            settings.setTitle("Wreck Riff | 0.4.0"); settings.setResolution(user.width,user.height);
             settings.setFullscreen(user.fullscreen); settings.setVSync(user.vsync); settings.setResizable(true);
             settings.setGammaCorrection(true); settings.setSamples(user.samples); settings.setFrameRate(0);
             if(options.noAudio()) settings.setAudioRenderer(null);

@@ -9,7 +9,10 @@ void main() {
     if (effectShape > 0.5) {
         // Original analytic sprite mask: no external bitmap or hard rectangular silhouette.
         float radius = length(effectUv);
-        if (effectShape > 2.5) {
+        if (effectShape > 3.5) {
+            float edge = 0.93 + 0.055 * sin(effectUv.x * 12.0) * sin(effectUv.y * 9.0);
+            coverage = 1.0 - smoothstep(0.10, edge, radius);
+        } else if (effectShape > 2.5) {
             // Critical smoke retains a broad opaque core while its outer edge stays soft.
             float edge = 0.92 + 0.035 * sin(effectUv.x * 8.0 + effectUv.y * 5.0)
                                       * sin(effectUv.y * 7.0 - effectUv.x * 4.0);

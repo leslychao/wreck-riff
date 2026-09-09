@@ -1,7 +1,7 @@
 $ErrorActionPreference='Stop'
 Set-Location -LiteralPath (Join-Path $PSScriptRoot '..')
 $projectRoot=$PWD.Path
-$version='0.3.0'
+$version='0.4.0'
 $name="WreckRiff-$version-verification"
 $destination=Join-Path $projectRoot "build/distributions/$name"
 $archive="$destination.zip"
@@ -40,7 +40,7 @@ Copy-Evidence 'build/reports/assets' 'reports/assets'
 Copy-Evidence 'build/reports/v03-first-failure' 'reports/prior-failures'
 Copy-Evidence 'build/v03-final-build.log' 'logs/final-build.log'
 Copy-Evidence 'build/v03-final-package.log' 'logs/final-package.log'
-Copy-Evidence 'build/distributions/WreckRiff-0.3.0-demo' 'demo'
+Copy-Evidence 'build/distributions/WreckRiff-0.4.0-demo' 'demo'
 foreach($suite in @('test','physicsTest')) {
     foreach($xml in Get-ChildItem -LiteralPath "build/test-results/$suite" -Filter 'TEST-*.xml') {
         [xml]$parsed=Get-Content -LiteralPath $xml.FullName -Raw
@@ -63,9 +63,9 @@ foreach($helper in @('test-windows-package.ps1','test-windows-benchmark.ps1','te
     Copy-Evidence "tools/$helper" "tools/$helper"
 }
 $readme=@'
-# Wreck Riff 0.3.0 verification
+# Wreck Riff 0.4.0 verification
 
-This archive accompanies WreckRiff-0.3.0-windows-x64.zip; it contains no game runtime.
+This archive accompanies WreckRiff-0.4.0-windows-x64.zip; it contains no game runtime.
 Check build-info.properties, the game ZIP checksum, and docs/ACCEPTANCE.md.
 reports/graphics-smoke.json and reports/benchmark.json contain the full final runtime evidence.
 reports/prior-failures is historical failed evidence, explicitly not a final PASS.

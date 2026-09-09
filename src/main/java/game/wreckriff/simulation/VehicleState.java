@@ -17,6 +17,8 @@ public final class VehicleState {
     public int machineGunCooldown;
     public int turboQuietTicks, recoveryCooldown, protectionTicks;
     public int frozenTicks,shieldTicks,controlImmunityTicks;
+    public int impactStabilizerTicks;
+    public boolean heavyImpactPending;
     public WeaponType selectedWeapon=WeaponType.HOMING;
     public float damageDealt;
     public int eliminations, recoveries;
@@ -33,6 +35,8 @@ public final class VehicleState {
         initializeWeapon(WeaponType.POWER,rules.power().initialAmmo(),rules.power().maximumAmmo());
         initializeWeapon(WeaponType.MINE,rules.mine().initialAmmo(),rules.mine().maximumAmmo());
         initializeWeapon(WeaponType.NAPALM,rules.napalm().initialAmmo(),rules.napalm().maximumAmmo());
+        initializeWeapon(WeaponType.BALLISTIC,rules.ballistic().initialAmmo(),rules.ballistic().maximumAmmo());
+        initializeWeapon(WeaponType.CANNON,rules.cannon().initialAmmo(),rules.cannon().maximumAmmo());
     }
     public WeaponSlot weapon(WeaponType type) {
         WeaponSlot result=weapons.get(type);

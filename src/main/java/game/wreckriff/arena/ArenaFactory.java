@@ -100,6 +100,17 @@ public final class ArenaFactory {
                     pickupRocket(item,-.34f,.17f,.9f,"yellow");pickupRocket(item,.34f,.17f,.9f,"yellow");
                 }
                 case POWER_AMMO -> pickupRocket(item,0,.31f,1.2f,"red");
+                case BALLISTIC_AMMO -> {
+                    pickupRocket(item,-.31f,.20f,1.1f,"cyan");pickupRocket(item,.31f,.20f,1.1f,"cyan");
+                    box(item,"salvo-cradle",new Vector3f(0,-.48f,0),new Vector3f(.62f,.12f,.28f),"steel");
+                }
+                case CANNON_AMMO -> {
+                    for(float x:new float[]{-.3f,.3f}) {
+                        Geometry ball=new Geometry("cannon-ammunition",new Sphere(10,16,.30f));
+                        ball.setLocalTranslation(x,0,0);ball.setMaterial(material("steel"));item.attachChild(ball);
+                    }
+                    box(item,"cannon-cradle",new Vector3f(0,-.34f,0),new Vector3f(.68f,.1f,.3f),"yellow");
+                }
                 case MINE_AMMO -> {
                     cylinder(item,"mine-magazine",new Vector3f(),.55f,.24f,"steel");
                     cylinder(item,"mine-trigger",new Vector3f(0,.2f,0),.2f,.18f,"red");

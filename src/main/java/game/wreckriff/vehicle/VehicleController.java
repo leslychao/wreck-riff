@@ -60,6 +60,10 @@ public final class VehicleController {
     public void drive(VehicleCommand command) {
         PhysicsVehicle body=world.vehicle(state.id);
         if (body==null || !state.alive()) return;
+        if(state.heavyImpactPending) {
+            state.impactStabilizerTicks=seconds(rules.impactStabilizerOffSeconds()+rules.impactStabilizerReturnSeconds());
+            state.heavyImpactPending=false;
+        }
         float dt=MatchSession.DT;
         Vector3f forward=world.forward(state.id), velocity=world.velocity(state.id);
         float longitudinal=velocity.dot(forward);
@@ -116,8 +120,13 @@ public final class VehicleController {
             correction.addLocal(-angular.x*rules.stabilizingTorque()*0.12f,0,-angular.z*rules.stabilizingTorque()*0.12f);
             float maximum=rules.stabilizingTorque();
             if (correction.length()>maximum) correction.normalizeLocal().multLocal(maximum);
-            body.applyTorque(correction);
+            body.applyTorque(correction.multLocal(stabilizerScale()));
         }
+        if(state.impactStabilizerTicks>0)state.impactStabilizerTicks--;
+    }
+    public float stabilizerScale() {
+        int returning=seconds(rules.impactStabilizerReturnSeconds());
+        return state.impactStabilizerTicks>returning?0:1-Math.max(0,state.impactStabilizerTicks-1)/(float)returning;
     }
     public void recordSafePose(long tick) {
         // A chassis hanging over an edge is not a safe recovery destination.

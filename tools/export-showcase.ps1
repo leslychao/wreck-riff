@@ -6,12 +6,12 @@ if($report.status -ne 'PASS') {throw 'A successful current showcase is required'
 $buildInfo=ConvertFrom-StringData (Get-Content (Join-Path $projectRoot 'build/generated-resources/build-info.properties') -Raw)
 if($report.sourceSha256 -ne $buildInfo.sourceSha256) {throw 'Showcase does not match the current build'}
 $source=[IO.Path]::GetFullPath($report.artifactDirectory)
-$destination=Join-Path $projectRoot 'build/distributions/WreckRiff-0.3.0-demo'
+$destination=Join-Path $projectRoot 'build/distributions/WreckRiff-0.4.0-demo'
 if(Test-Path -LiteralPath $destination) {throw 'Preserve the earlier demo before exporting a new one'}
 [IO.Directory]::CreateDirectory($destination)|Out-Null
 Copy-Item -LiteralPath (Join-Path $source 'captures') -Destination $destination -Recurse -Force
 foreach($name in @('audio-events.json','AUDIO_README.txt','diagnostic-result.json')) {Copy-Item -LiteralPath (Join-Path $source $name) -Destination $destination -Force}
-$movie=Join-Path $destination 'WreckRiff-0.3.0-demo.mp4'
+$movie=Join-Path $destination 'WreckRiff-0.4.0-demo.mp4'
 & $Ffmpeg -hide_banner -y -i (Join-Path $source 'showcase.avi') -i (Join-Path $source 'audio.wav') `
     -map 0:v:0 -map 1:a:0 -c:v libx264 -preset fast -crf 19 -pix_fmt yuv420p `
     -c:a aac -b:a 192k -shortest -movflags +faststart $movie
@@ -23,7 +23,7 @@ $shots=@(
     @('machine-gun','Пулемёт'),@('power-hit','Power / отбрасывание'),
     @('freeze','Freeze'),@('shield','Щит'),@('mine','Мина / подброс'),@('napalm','Напалм'))
 $cards=foreach($shot in $shots) {
-    $file=Get-ChildItem (Join-Path $destination 'captures') -Filter "WreckRiff-0.3.0-$($shot[0])-*.png" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $file=Get-ChildItem (Join-Path $destination 'captures') -Filter "WreckRiff-0.4.0-$($shot[0])-*.png" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if(!$file) {throw "Missing capture $($shot[0])"}
     '<figure><a href="captures/'+$file.Name+'"><img loading="lazy" src="captures/'+$file.Name+'" alt="'+$shot[1]+'"></a><figcaption>'+$shot[1]+'</figcaption></figure>'
 }
@@ -36,7 +36,7 @@ section{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));ga
 img{display:block;width:100%}figcaption{padding:12px 18px;color:#ffca91}code{word-break:break-all}a{color:#ffca91}
 @media(max-width:520px){main{padding:16px}section{grid-template-columns:1fr}h1{font-size:28px}}</style><main>
 <h1>Wreck Riff 0.3</h1><p>Настоящие кадры игры: повреждения, короткие трассеры, физика попаданий, Freeze и щит.</p>
-<video controls preload="metadata" src="WreckRiff-0.3.0-demo.mp4"></video>
+<video controls preload="metadata" src="WreckRiff-0.4.0-demo.mp4"></video>
 <p>Первые 12 секунд — подписанная галерея предустановленных долей HP. Нулевая стадия показана визуально без уничтожения тестовой цели; затем идут реальные выстрелы через обычную симуляцию. Дорожка собрана из фактически запущенных игровых семплов и параметров, с текущей музыкой. Это не точная запись OpenAL/HRTF. Окончательную оценку ощущений даёт владелец.</p>
 '@
 $html+='<p>Source SHA-256: <code>'+[Net.WebUtility]::HtmlEncode($report.sourceSha256)+'</code></p><section>'+($cards -join "`n")+'</section></main></html>'

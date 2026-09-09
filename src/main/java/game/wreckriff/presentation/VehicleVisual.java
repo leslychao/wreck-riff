@@ -73,8 +73,8 @@ public final class VehicleVisual {
             Node exhaust=new Node("exhaust-"+(side<0?"left":"right"));
             exhaust.setLocalTranslation(x*.72f,-.11f,-2.49f); root.attachChild(exhaust);
         }
-        metal.box(0,-.055f,2.32f,.81f,.072f,.075f);
-        metal.box(0,-.055f,-2.32f,.81f,.075f,.075f);
+        metal.bumper(2.32f,.072f);
+        metal.bumper(-2.32f,.075f);
         black.box(0,.065f,2.305f,.27f,.055f,.015f);
         for (int i=-3;i<=3;i++) metal.box(i*.071f,.065f,2.324f,.01f,.05f,.008f);
         // Rear amplifier pack: two speakers in a braced cabinet, cooling fins and a carrying rail.
@@ -180,6 +180,26 @@ public final class VehicleVisual {
                 float[] uv=SurfaceMesh.uv(p,n,1.5f);Collections.addAll(uvs,uv[0],uv[1]); }
         }
         void quad(Vector3f a,Vector3f b,Vector3f c,Vector3f d) { triangle(a,b,c);triangle(a,c,d); }
+        void panel(Vector3f a,Vector3f b,Vector3f c,Vector3f d,int across,int along) {
+            // Extra local vertices let prepared dents crease a panel instead of only moving its corners.
+            for(int u=0;u<across;u++)for(int v=0;v<along;v++) {
+                float u0=u/(float)across,u1=(u+1)/(float)across,v0=v/(float)along,v1=(v+1)/(float)along;
+                quad(panelPoint(a,b,c,d,u0,v0),panelPoint(a,b,c,d,u1,v0),
+                        panelPoint(a,b,c,d,u1,v1),panelPoint(a,b,c,d,u0,v1));
+            }
+        }
+        Vector3f panelPoint(Vector3f a,Vector3f b,Vector3f c,Vector3f d,float u,float v) {
+            return new Vector3f().interpolateLocal(new Vector3f().interpolateLocal(a,b,u),new Vector3f().interpolateLocal(d,c,u),v);
+        }
+        void bumper(float z,float height) {
+            // One material draw, but a segmented beam that bends locally without moving the wheels.
+            Vector3f a=v(-.81f,-.055f-height,z-.075f),b=v(.81f,-.055f-height,z-.075f),
+                    c=v(.81f,-.055f+height,z-.075f),d=v(-.81f,-.055f+height,z-.075f),
+                    e=v(-.81f,-.055f-height,z+.075f),f=v(.81f,-.055f-height,z+.075f),
+                    g=v(.81f,-.055f+height,z+.075f),h=v(-.81f,-.055f+height,z+.075f);
+            panel(a,d,c,b,1,8);panel(e,f,g,h,8,1);quad(a,e,h,d);quad(b,c,g,f);
+            panel(d,h,g,c,1,8);panel(a,b,f,e,8,1);
+        }
         void box(float x,float y,float z,float hx,float hy,float hz) {
             Vector3f a=v(x-hx,y-hy,z-hz),b=v(x+hx,y-hy,z-hz),c=v(x+hx,y+hy,z-hz),d=v(x-hx,y+hy,z-hz);
             Vector3f e=v(x-hx,y-hy,z+hz),f=v(x+hx,y-hy,z+hz),g=v(x+hx,y+hy,z+hz),h=v(x-hx,y+hy,z+hz);
@@ -188,7 +208,11 @@ public final class VehicleVisual {
         void loft(float[][] rings) {
             for(int i=0;i<rings.length-1;i++) {
                 Vector3f[] a=ring(rings[i]),b=ring(rings[i+1]);
-                for(int face=0;face<8;face++) quad(a[face],a[(face+1)%8],b[(face+1)%8],b[face]);
+                for(int face=0;face<8;face++) {
+                    int across=face==4?6:face==2||face==6?2:1;
+                    int along=face==4||face==2||face==6?4:1;
+                    panel(a[face],a[(face+1)%8],b[(face+1)%8],b[face],across,along);
+                }
             }
             Vector3f[] start=ring(rings[0]),end=ring(rings[rings.length-1]);
             for(int i=1;i<7;i++){triangle(start[0],start[i+1],start[i]);triangle(end[0],end[i],end[i+1]);}
@@ -262,7 +286,7 @@ public final class VehicleVisual {
             // Follow the bonnet crease instead of a chord that would cut through the paint.
             if(near<1.65f && far>1.65f) { hoodStrip(x,halfWidth,near,1.65f);hoodStrip(x,halfWidth,1.65f,far);return; }
             float y1=hoodY(near),y2=hoodY(far);
-            quad(v(x-halfWidth,y1,near),v(x-halfWidth,y2,far),v(x+halfWidth,y2,far),v(x+halfWidth,y1,near));
+            panel(v(x-halfWidth,y1,near),v(x-halfWidth,y2,far),v(x+halfWidth,y2,far),v(x+halfWidth,y1,near),4,2);
         }
         float hoodY(float z) { return z<1.65f?.39f-(z-.5f)*(.13f/1.15f)+.012f:.26f-(z-1.65f)*(.12f/.65f)+.012f; }
         void attach(Node parent,String name,Material material) {

@@ -108,14 +108,15 @@ public final class VerifyAssets {
             }
         });
         attempt(errors, "procedural sources", () -> {
-            for (String path : List.of("src/tools/java/game/wreckriff/tools/GenerateAudio.java", "src/tools/java/game/wreckriff/tools/GenerateFont.java",
+            for (String path : List.of("src/tools/java/game/wreckriff/tools/GenerateAudio.java", "src/tools/java/game/wreckriff/tools/GenerateFont.java", "src/tools/prepare_recorded_sfx.py",
                     "src/main/java/game/wreckriff/presentation/VehicleVisual.java", "src/main/java/game/wreckriff/arena/ArenaFactory.java",
                     "src/main/java/game/wreckriff/presentation/CombatVisuals.java", "src/main/java/game/wreckriff/presentation/ArenaPresentation.java")) {
                 byte[] bytes = Files.readAllBytes(Path.of(path));
                 if (bytes.length == 0) throw new IOException("Empty generator " + path);
                 assets.add(asset(path, "procedural-source", bytes, "Original project source recipe", "SOURCE_PRESENT"));
             }
-            for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateAudio-v0.2.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt")) {
+            for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateAudio-v0.2.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt",
+                    "docs/asset-history/audio-0.3/prepare_recorded_sfx.py.txt", "docs/asset-history/audio-0.3/sfx-provenance.json", "docs/asset-history/audio-0.3/audio-metrics.csv")) {
                 assets.add(asset(path, "historical-source", Files.readAllBytes(Path.of(path)),
                         "Superseded original recipe retained for provenance only; excluded from compilation and runtime", "SOURCE_PRESENT"));
             }
@@ -283,7 +284,10 @@ public final class VerifyAssets {
         JsonObject sources=JsonParser.parseString(new String(sourcesBytes,StandardCharsets.UTF_8)).getAsJsonObject();
         JsonObject provenance=JsonParser.parseString(new String(provenanceBytes,StandardCharsets.UTF_8)).getAsJsonObject();
         if(sources.get("schemaVersion").getAsInt()!=1 || provenance.get("schemaVersion").getAsInt()!=1
-                || !hash(sourcesBytes).equals(provenance.get("sourceEvidenceSha256").getAsString()))
+                || !hash(sourcesBytes).equals(provenance.get("sourceEvidenceSha256").getAsString())
+                || !"0.4".equals(provenance.get("revision").getAsString())
+                || !"src/tools/prepare_recorded_sfx.py".equals(provenance.get("preparationScriptPath").getAsString())
+                || !hash(Files.readAllBytes(Path.of("src/tools/prepare_recorded_sfx.py"))).equals(provenance.get("preparationScriptSha256").getAsString()))
             throw new IOException("Unsupported recording provenance schema");
         Map<String,String> origins=new HashMap<>();
         Map<String,String> archives=Map.of(
@@ -328,7 +332,8 @@ public final class VerifyAssets {
             recorded.put(path,String.join("; ",inputOrigins)+"; "+item.get("transformation").getAsString());
         }
         for(String cue:List.of("machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch",
-                "power-explosion","mine-detonate","napalm-launch","napalm-explosion")) {
+                "power-explosion","mine-detonate","napalm-launch","napalm-explosion",
+                "cannon-launch","cannon-ricochet","cannon-hit","ballistic-launch","ballistic-fall","ballistic-explosion","ram-hit")) {
             List<String> bank=config.cueBanks().get(cue);
             if(bank==null || bank.size()<3 || bank.stream().anyMatch(take->!recorded.containsKey("audio/"+take+".wav")))
                 throw new IOException("Three recorded variations required: "+cue);

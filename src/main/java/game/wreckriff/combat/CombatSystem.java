@@ -15,7 +15,24 @@ public final class CombatSystem {
     private record DamageKey(long eventId, int targetId) {}
     private record Damage(int targetId, int sourceId, float amount, String cause, long eventId, Vector3f point, Vector3f normal,Vector3f origin) {}
     private record ControlHit(int targetId,int sourceId,long eventId,Vector3f point,Vector3f normal) {}
-    private static final class BlastSum { final Vector3f linear=new Vector3f(),torque=new Vector3f(); }
+    private static final class BlastSum { final Vector3f linear=new Vector3f(),torque=new Vector3f();boolean heavy; }
+    public record BallisticWarningView(long id,int ownerId,Vector3f point,float radius,int remainingTicks) {
+        public BallisticWarningView {point=point.clone();}
+        @Override public Vector3f point() {return point.clone();}
+    }
+    private static final class Salvo {
+        final ProjectileState carrier;
+        final Vector3f initialArea,area,station;
+        final int arrivalTicks;
+        int targetId,planned,released;
+        long nextPlanTick=Long.MAX_VALUE;
+        Salvo(ProjectileState carrier,Vector3f area,int arrivalTicks) {
+            this.carrier=carrier;initialArea=area.clone();this.area=area.clone();station=new Vector3f();
+            this.arrivalTicks=arrivalTicks;targetId=carrier.targetId;
+        }
+    }
+    private record FallingCharge(long id,int ownerId,long carrierId,Vector3f origin,Vector3f velocity,
+            Vector3f point,long releaseTick,long impactTick,int lifeTicks) {}
     public record MineView(long id,int ownerId,Vector3f position,Vector3f normal,boolean armed,float radius) {
         public MineView { position=position.clone();normal=normal.clone(); }
     }
@@ -46,12 +63,17 @@ public final class CombatSystem {
     private final List<ControlHit> controlHits=new ArrayList<>();
     private final List<Mine> mines=new ArrayList<>();
     private final List<FireZone> fireZones=new ArrayList<>();
+    private final Map<Long,Salvo> salvos=new LinkedHashMap<>();
+    private final List<FallingCharge> pendingCharges=new ArrayList<>();
+    private final Map<Long,FallingCharge> warnings=new LinkedHashMap<>();
+    private final Map<Integer,Integer> napalmTargets=new HashMap<>();
     private final Map<Integer,Integer> fireExposureTicks=new HashMap<>();
     private final Map<Integer, Lock> locks = new HashMap<>();
     private final Map<Integer, SplittableRandom> spreadRandom = new HashMap<>();
     private final Map<Integer, Long> emptyFeedbackAfter = new HashMap<>();
     private final Map<Pair, Float> ramSpeeds = new TreeMap<>();
     private final Map<Pair, Long> ramReadyAt = new HashMap<>();
+    private final Map<Pair, Long> ramFeedbackAt=new HashMap<>();
     private final Map<Integer, BlastSum> blasts = new TreeMap<>();
     private final Map<Integer,Integer> nextBarrels=new HashMap<>();
     private final Map<Integer,Long> shieldFeedbackAfter=new HashMap<>();
@@ -60,6 +82,7 @@ public final class CombatSystem {
     private final Set<Integer> destroyed = new HashSet<>();
     private long nextShotId = 1;
     private int reservedFireZones;
+    private int reservedCharges;
     private WorldQuery lastWorld;
     private long lastControlTimerTick=Long.MIN_VALUE;
 
@@ -97,6 +120,7 @@ public final class CombatSystem {
             VehicleCommand command = commands.getOrDefault(vehicle.id, VehicleCommand.NONE);
             if (vehicle.protectionTicks > 0) command = command.withoutAttacks();
             updateLock(vehicle, world);
+            napalmTargets.put(vehicle.id,assistTarget(vehicle.id,world));
             if(command.directWeapon()!=null)vehicle.selectedWeapon=command.directWeapon();
             else if(command.weaponDelta()!=0)vehicle.selectedWeapon=vehicle.selectedWeapon.cycle(command.weaponDelta());
             if (vehicle.protectionTicks > 0) continue;
@@ -122,9 +146,9 @@ public final class CombatSystem {
         vehicle.shieldTicks=Math.max(0,vehicle.shieldTicks-1);
         vehicle.controlImmunityTicks=Math.max(0,vehicle.controlImmunityTicks-1);
     }
-    private boolean projectileCapacity() {
+    private boolean projectileCapacity(int required) {
         long reserved=intents.stream().filter(i->!i.kind.equals("machine-gun")).count();
-        return projectiles.size()+reserved<rules.maximumProjectiles();
+        return projectiles.size()+reserved+reservedCharges+required<=rules.maximumProjectiles();
     }
     private void denied(VehicleState vehicle,WorldQuery world,String reason) {
         if(session.tick<emptyFeedbackAfter.getOrDefault(vehicle.id,Long.MIN_VALUE))return;
@@ -136,21 +160,27 @@ public final class CombatSystem {
         if(slot.cooldownTicks>0)return;
         if(slot.ammo<=0) {denied(vehicle,world,"empty-ammo");return;}
         if(type==WeaponType.MINE) {acceptMine(vehicle,world);return;}
-        if(!projectileCapacity()) {denied(vehicle,world,"projectile-limit");return;}
+        if(!projectileCapacity(type==WeaponType.BALLISTIC?1+rules.ballistic().charges():1)) {denied(vehicle,world,"projectile-limit");return;}
         if(type==WeaponType.NAPALM && fireZones.size()+reservedFireZones>=rules.napalm().maximumZones()) {
             denied(vehicle,world,"fire-zone-limit");return;
         }
-        intents.add(new ShotIntent(nextShotId++,vehicle.id,type.id(),type==WeaponType.HOMING?lockTarget(vehicle.id):-1,0,0,0));
+        int target=switch(type) {
+            case HOMING->lockTarget(vehicle.id);case NAPALM->napalmAssistTarget(vehicle.id);
+            case BALLISTIC->ballisticTarget(vehicle.id,world);default->-1;
+        };
+        intents.add(new ShotIntent(nextShotId++,vehicle.id,type.id(),target,0,0,0));
         slot.ammo--;
         slot.cooldownTicks=ticks(switch(type) {
             case HOMING->rules.homing().cooldownSeconds();case POWER->rules.power().cooldownSeconds();
             case NAPALM->rules.napalm().cooldownSeconds();case MINE->throw new IllegalStateException();
+            case BALLISTIC->rules.ballistic().cooldownSeconds();case CANNON->rules.cannon().cooldownSeconds();
         });
         if(type==WeaponType.NAPALM)reservedFireZones++;
+        if(type==WeaponType.BALLISTIC)reservedCharges+=rules.ballistic().charges();
     }
     private void acceptAbility(VehicleState vehicle,AbilityId ability,WorldQuery world) {
         if(ability==AbilityId.NONE||ability==AbilityId.SHIELD||vehicle.abilityCooldown(ability)>0)return;
-        if(ability==AbilityId.FREEZE&&!projectileCapacity()) {denied(vehicle,world,"projectile-limit");return;}
+        if(ability==AbilityId.FREEZE&&!projectileCapacity(1)) {denied(vehicle,world,"projectile-limit");return;}
         intents.add(new ShotIntent(nextShotId++,vehicle.id,"freeze",-1,0,0,0));
         vehicle.abilityCooldown(ability,ticks(rules.control().freezeCooldownSeconds()));
     }
@@ -202,8 +232,11 @@ public final class CombatSystem {
         if (session.outcome != MatchSession.Outcome.NONE) return;
         for (ShotIntent intent : intents) executeIntent(intent, world);
         intents.clear();
-        for (ProjectileState projectile : projectiles) {
+        for (ProjectileState projectile : List.copyOf(projectiles)) {
             projectile.previousPosition.set(projectile.position);
+            if(projectile.kind().equals("cannon")) {advanceCannon(projectile,world);continue;}
+            if(projectile.kind().equals("ballistic")) {advanceCarrier(projectile,world);continue;}
+            if(projectile.kind().equals("ballistic-fall")) {advanceCharge(projectile,world);continue;}
             if(projectile.kind().equals("freeze") || projectile.kind().equals("napalm")) {
                 advanceUtilityProjectile(projectile,world);continue;
             }
@@ -221,6 +254,7 @@ public final class CombatSystem {
             }
         }
         projectiles.removeIf(projectile -> projectile.exploded);
+        releaseCharges();
         advanceMines(world);
         advanceFire(world);
     }
@@ -242,19 +276,26 @@ public final class CombatSystem {
             }
             return;
         }
-        float ttl=switch(intent.kind) {case "freeze"->rules.control().freezeTtlSeconds();case "napalm"->rules.napalm().ttlSeconds();default->rocketRules(intent.kind).ttlSeconds();};
+        float ttl=switch(intent.kind) {
+            case "freeze"->rules.control().freezeTtlSeconds();case "napalm"->rules.napalm().ttlSeconds();
+            case "cannon"->rules.cannon().ttlSeconds();case "ballistic"->8;
+            default->rocketRules(intent.kind).ttlSeconds();
+        };
         ProjectileState projectile = new ProjectileState(intent.id, intent.ownerId, intent.kind, muzzle,
                 forward, Math.max(1, ticks(ttl)), intent.targetId);
         if(intent.kind.equals("napalm")) {
-            forward.y=0;if(forward.lengthSquared()<.001f)forward.set(Vector3f.UNIT_Z);else forward.normalizeLocal();
-            projectile.velocity.set(forward.mult(rules.napalm().speed())).addLocal(0,rules.napalm().upwardSpeed(),0);
+            launchNapalm(projectile,world);
         }
+        if(intent.kind.equals("cannon"))projectile.velocity.set(forwardXZ(intent.ownerId,world).mult(rules.cannon().speed())).addLocal(0,rules.cannon().upwardSpeed(),0);
+        if(intent.kind.equals("ballistic"))launchCarrier(projectile,world);
         events.add(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
                 blocked==null?muzzle:blocked.point(),intent.kind,0,muzzle,Vector3f.ZERO));
         if (blocked == null) projectiles.add(projectile);
         else {
             projectile.position.set(blocked.point());
-            if(intent.kind.equals("freeze")||intent.kind.equals("napalm"))utilityImpact(projectile,blocked,world);
+            if(intent.kind.equals("cannon"))cannonImpact(projectile,blocked,false,world);
+            else if(intent.kind.equals("ballistic"))ballisticImpact(projectile,blocked,world);
+            else if(intent.kind.equals("freeze")||intent.kind.equals("napalm"))utilityImpact(projectile,blocked,world);
             else explode(projectile, blocked, world);
         }
     }
@@ -263,6 +304,7 @@ public final class CombatSystem {
         boolean napalm=projectile.kind().equals("napalm");
         Vector3f displacement;
         if(napalm) {
+            guideNapalm(projectile,world);
             displacement=projectile.velocity.mult(MatchSession.DT).addLocal(0,-.5f*rules.napalm().gravity()*MatchSession.DT*MatchSession.DT,0);
             projectile.velocity.y-=rules.napalm().gravity()*MatchSession.DT;
             projectile.direction.set(projectile.velocity).normalizeLocal();
@@ -270,6 +312,7 @@ public final class CombatSystem {
         Vector3f end=projectile.position.add(displacement);
         WorldQuery.Hit hit=world.sweep(projectile.position,end,napalm?rules.projectileRadius():rules.control().freezeRadius(),projectile.ownerId());
         projectile.remainingTicks--;
+        projectile.ageTicks++;
         if(hit!=null) {projectile.position.set(hit.point());utilityImpact(projectile,hit,world);}
         else {
             projectile.position.set(end);

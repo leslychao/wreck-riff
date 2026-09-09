@@ -15,7 +15,11 @@ import java.util.*;
 /** Single-threaded native physics owner. No scene controls are attached to bodies. */
 public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public record Pose(Vector3f position, Quaternion rotation) {}
-    public record Ram(int first,int second,float closingSpeed) {}
+    public record Ram(int first,int second,float closingSpeed,Vector3f point,Vector3f normal) {
+        public Ram { point=point.clone();normal=normal.clone(); }
+        @Override public Vector3f point() { return point.clone(); }
+        @Override public Vector3f normal() { return normal.clone(); }
+    }
     private final PhysicsSpace space;
     private final VehicleRules rules;
     private final Map<Integer,PhysicsVehicle> vehicles=new LinkedHashMap<>();
@@ -46,7 +50,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public PhysicsRigidBody addStatic(CollisionShape shape,Vector3f position,Quaternion rotation) {
         PhysicsRigidBody body=new PhysicsRigidBody(shape,0);
         body.setPhysicsLocation(position); body.setPhysicsRotation(rotation);
-        body.setFriction(0.8f); space.addCollisionObject(body); statics.add(body);
+        body.setFriction(0.8f); body.setRestitution(0); space.addCollisionObject(body); statics.add(body);
         return body;
     }
     public PhysicsVehicle addVehicle(int id,Vector3f position,Quaternion orientation) {
@@ -54,7 +58,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         CompoundCollisionShape shape=chassisShape(0);
         PhysicsVehicle body=new PhysicsVehicle(shape,rules.mass());
         body.setPhysicsLocation(position); body.setPhysicsRotation(orientation);
-        body.setDamping(0.02f,0.18f); body.setFriction(0.6f); body.setRestitution(0.08f);
+        body.setDamping(0.02f,0.18f); body.setFriction(0.6f);
+        // Bullet multiplies the two materials: only car/car contacts bounce.
+        body.setRestitution((float)Math.sqrt(rules.carPairRestitution()));
         body.setEnableSleep(false);
         body.setCcdMotionThreshold(0.3f); body.setCcdSweptSphereRadius(0.25f);
         body.setSuspensionStiffness(rules.suspensionStiffness());
@@ -145,7 +151,11 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         int first=Math.min(a,b), second=Math.max(a,b);
         long key=((long)first<<32)|(second&0xffffffffL);
         Ram old=rams.get(key);
-        if (old==null || old.closingSpeed()<closing) rams.put(key,new Ram(first,second,closing));
+        if (old==null || old.closingSpeed()<closing) {
+            Vector3f point=event.getPositionWorldOnA().add(event.getPositionWorldOnB()).multLocal(.5f);
+            Vector3f normal=event.getNormalWorldOnB().clone();if(a!=first)normal.negateLocal();
+            rams.put(key,new Ram(first,second,closing,point,normal));
+        }
     }
     public List<Ram> rams() { return List.copyOf(rams.values()); }
     @Override public Vector3f position(int id) {
@@ -157,7 +167,13 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         return body!=null?body.getPhysicsRotation():previous.get(id).rotation().clone();
     }
     @Override public Vector3f velocity(int id) { return vehicles.containsKey(id)?vehicle(id).getLinearVelocity():new Vector3f(); }
-    @Override public float mass(int id) { return rules.mass(); }
+    @Override public float mass(int id) { return vehicles.containsKey(id)?vehicle(id).getMass():rules.mass(); }
+    /** Keep the same dynamic chassis and momentum, but stop all driver actuators. */
+    public void makeWreck(int id) {
+        immobilize(id,false);
+        PhysicsVehicle body=vehicles.get(id);if(body==null)return;
+        body.accelerate(0);body.brake(0);body.steer(0);
+    }
     @Override public boolean grounded(int id) { return wheelContacts(id)>0; }
     public int wheelContacts(int id) {
         return wheelContactCounts.getOrDefault(id,0);

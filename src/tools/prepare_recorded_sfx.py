@@ -1,22 +1,19 @@
-"""Offline recording preparation. --preview makes first audition cues; --all follows audition.
+"""Offline 0.4 recording preparation. Default makes first audition cues; --all follows audition.
 
-Run with bundled Python/numpy and --ffmpeg pointing at the existing local FFmpeg.
-Sources are explicit approved archive entries; no network request is made here.
+Run with bundled Python/numpy. Only preserved, hash-verified 48kHz PCM is read.
+The original 0.3 decoder/import recipe remains in docs/asset-history/audio-0.3.
 """
 import argparse
 import csv
 import hashlib
 import json
 from pathlib import Path
-import shutil
-import subprocess
 import wave
 
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/tools/assets/audio/recorded"
-DOWNLOADS = ROOT / "build/audio-v03-downloads"
 RATE = 48000
 FIREARMS = "https://opengameart.org/content/the-free-firearm-sound-library"
 BANGS = "https://opengameart.org/content/25-cc0-bang-firework-sfx"
@@ -75,6 +72,10 @@ def lowpass(samples, cutoff):
     return np.fft.irfft(np.fft.rfft(samples) * transfer, n=len(samples))
 
 
+def band(samples, low, high):
+    return lowpass(samples, high) - lowpass(samples, low)
+
+
 def layer(*items, seconds):
     output = np.zeros(int(seconds * RATE))
     for signal, gain, delay in items:
@@ -84,44 +85,27 @@ def layer(*items, seconds):
     return output
 
 
-def sources(ffmpeg):
-    entries = []
-    choices = [("ak-shot", "Prepared SFX Library/AK-47/C_28P.wav"),
-               ("ar-shot", "Prepared SFX Library/AR-15/D_32P.wav"),
-               ("smg-shot", "Prepared SFX Library/Carl Gustav M45/G_31P.wav")]
-    choices += [(p.stem, p.name) for p in sorted(DOWNLOADS.glob("*.ogg"))]
-    archives = {a["file"]: a for a in json.loads((DOWNLOADS / "archives.json").read_text())}
-    for key, archive_entry in choices:
-        is_gun = archive_entry.endswith(".wav")
-        original = SOURCE / "original" / (key + Path(archive_entry).suffix)
-        original.parent.mkdir(parents=True, exist_ok=True)
-        if not original.exists(): shutil.copyfile(DOWNLOADS / archive_entry, original)
-        decoded = SOURCE / "decoded" / (key + ".wav")
-        decoded.parent.mkdir(parents=True, exist_ok=True)
-        if not decoded.exists():
-            subprocess.run([str(ffmpeg), "-hide_banner", "-loglevel", "error", "-y", "-i", str(original),
-                            "-map_metadata", "-1", "-ac", "1", "-ar", str(RATE), "-c:a", "pcm_s16le",
-                            "-bitexact", str(decoded)], check=True)
-        archive = archives["firearms.7z" if is_gun else "bangs.zip"]
-        entries.append(dict(id=key, sourcePath=str(original.relative_to(ROOT)).replace("\\", "/"),
-            sourceSha256=sha(original), decodedPath=str(decoded.relative_to(ROOT)).replace("\\", "/"),
-            decodedSha256=sha(decoded), sourceUrl=FIREARMS if is_gun else BANGS,
-            author=AUTHOR if is_gun else "rubberduck", license="CC0-1.0",
-            acquired="2026-09-09",
-            licensePath="licenses/assets/CC0-1.0.txt", archiveUrl=archive["url"],
-            archiveSha256=archive["sha256"], archiveEntry=archive_entry,
-            transformation="FFmpeg 7.1: downmix mono; resample 48000Hz; PCM16LE; strip metadata"))
-    (SOURCE / "sources.json").write_text(json.dumps(dict(schemaVersion=1, sources=entries), indent=2), encoding="utf-8")
-    return {e["id"]: read_pcm(ROOT / e["decodedPath"]) for e in entries}
+def sources():
+    evidence=json.loads((SOURCE / "sources.json").read_text(encoding="utf-8"))
+    if evidence["schemaVersion"] != 1: raise ValueError("Unsupported recording source manifest")
+    result={}
+    for entry in evidence["sources"]:
+        if entry["id"] in result or entry["sourceUrl"] not in (FIREARMS,BANGS):
+            raise ValueError("Unapproved or duplicate recording source")
+        for kind in ("source","decoded"):
+            path=(ROOT / entry[kind+"Path"]).resolve()
+            if not path.is_relative_to(SOURCE) or sha(path)!=entry[kind+"Sha256"]:
+                raise ValueError("Recording source hash/path mismatch: "+str(path))
+        result[entry["id"]]=read_pcm(ROOT / entry["decodedPath"])
+    return result
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ffmpeg", type=Path, required=True)
     parser.add_argument("--all", action="store_true")
     args = parser.parse_args()
-    raw = sources(args.ffmpeg)
-    output = SOURCE / "processed" if args.all else ROOT / "build/audio-v03-audition"
+    raw = sources()
+    output = SOURCE / "processed" if args.all else ROOT / "build/audio-v04-audition"
     provenance, metrics = [], []
 
     def emit(name, samples, inputs, transform, peak=.88):
@@ -144,33 +128,62 @@ def main():
         emit(f"machine-gun-{variant+1}", gun, [gun_key], f"recorded shot transient at {gun_onset:.6f}s; 280ms cut; body layer speed0.76 LP1300Hz +5ms; total320ms")
         boom_key = f"cannon_{variant+1:02}"
         boom, boom_onset = trim_attack(raw[boom_key], 1.15)
-        body = lowpass(respeed(boom, .55), 1000)
-        explosion = layer((boom, .52, 0), (body, 1, .012), (respeed(gun, .6), .2, .10), seconds=1.7)
-        emit(f"explosion-{variant+1}", explosion, [boom_key, gun_key], f"firework cannon at {boom_onset:.6f}s; speed0.55 LP1000Hz body +12ms; recorded debris +100ms; total1.7s")
+        body = band(respeed(boom, .43), 45, 300)
+        crack = gun-lowpass(gun,2200)
+        explosion = layer((boom,.95,0),(crack,.72,0),(body,2.4,.008),
+                          (lowpass(respeed(boom,.55),1400),.55,.018),
+                          (respeed(crack,.66),.33,.075),(respeed(crack,.91),.18,.145),seconds=1.65)
+        emit(f"explosion-{variant+1}", explosion, [boom_key, gun_key], f"0.4 recorded cannon at {boom_onset:.6f}s + HP2200Hz gun attack; speed0.43 band45..300Hz body gain2.4 +8ms; speed0.55 LP1400Hz gain0.55 +18ms; metallic tails speeds0.66/0.91 gains0.33/0.18 +75/145ms; total1.65s",.90)
         metal = gun - lowpass(gun, 1700)
         # A recorded transient excites short resonant echoes; this is designed metal impact,
         # not a claim that the source library contains a separately recorded metal plate.
-        hit = layer((metal, .85, 0), (respeed(metal, 1.29), .35, .011),
-                    (respeed(metal, .84), .24, .027), seconds=.23)
-        emit(f"metal-hit-{variant+1}", hit, [gun_key], "recorded high-pass1700Hz transient; short pitch-shifted resonant layers at11/27ms; total230ms", .78)
+        hit = layer((metal,1,0),(band(respeed(gun,.57),70,420),1.5,.004),
+                    (respeed(metal,1.29),.42,.009),(respeed(metal,.72),.38,.026),
+                    (respeed(metal,.88),.21,.057),seconds=.34)
+        emit(f"metal-hit-{variant+1}", hit, [gun_key], "0.4 recorded HP1700Hz attack; speed0.57 band70..420Hz body gain1.5 +4ms; metallic layers speeds1.29/0.72/0.88 gains0.42/0.38/0.21 +9/26/57ms; total340ms", .86)
+        # New weapon layers remain premixed into exactly one runtime voice per event.
+        cannon_launch=layer((gun,.95,0),(boom,.45,0),(body,2.1,.007),
+                            (respeed(hit,.74),.22,.08),seconds=.9)
+        ricochet=layer((metal,1,0),(respeed(metal,1.5),.65,.013),(respeed(metal,1.12),.42,.036),
+                       (band(respeed(gun,.65),100,600),.52,.002),seconds=.48)
+        cannon_hit=layer((hit,.95,0),(boom,.65,0),(body,2.5,.006),
+                         (respeed(hit,.53),.47,.11),(respeed(metal,.71),.3,.20),seconds=1.35)
+        fire_key=f"fw_{variant+1:02}"
+        fire,_=trim_attack(raw[fire_key],1.4)
+        fizz=fire-lowpass(fire,600)
+        ballistic_launch=layer((gun,.8,0),(body,1.5,.015),(lowpass(respeed(fizz,.72),3300),.95,.045),seconds=1.3)
+        # Reversed recorded firework intake rises into an arriving descending crack.
+        fall=layer((respeed(fizz,.84)[::-1],.7,0),(respeed(metal,.65),.42,.45),seconds=.75)
+        fall*=np.linspace(.1,1,len(fall))
+        ballistic_blast=layer((explosion,.9,0),(band(respeed(boom,.30),40,220),2.3,.012),
+                              (respeed(hit,.45),.5,.13),(fizz,.22,.31),seconds=2.6)
+        ram=layer((hit,1,0),(band(respeed(boom,.48),65,430),1.35,.003),
+                  (respeed(metal,.57),.65,.025),(respeed(hit,.83),.48,.075),seconds=.82)
+        for name,samples,inputs,transform in [
+            ("cannon-launch",cannon_launch,[gun_key,boom_key],"gun/cannon attack; speed0.43 band45..300Hz body gain2.1 +7ms; speed0.74 metal tail +80ms; total900ms"),
+            ("cannon-ricochet",ricochet,[gun_key],"HP1700Hz metal attack; speeds1.5/1.12 ringing tails +13/36ms; speed0.65 band100..600Hz thump +2ms; total480ms"),
+            ("cannon-hit",cannon_hit,[gun_key,boom_key],"metal/cannon attack; speed0.43 band45..300Hz body gain2.5 +6ms; slowed crushed-metal tails +110/200ms; total1.35s"),
+            ("ballistic-launch",ballistic_launch,[gun_key,boom_key,fire_key],"gun attack; speed0.43 low body +15ms; speed0.72 LP3300Hz firework exhaust +45ms; total1.3s"),
+            ("ballistic-fall",fall,[gun_key,fire_key],"reversed speed0.84 HP600Hz recorded firework rush; speed0.65 metal crack +450ms; rising envelope0.1..1; total750ms"),
+            ("ballistic-explosion",ballistic_blast,[gun_key,boom_key,fire_key],"layered blast attack; speed0.30 band40..220Hz body gain2.3 +12ms; speed0.45 crushed metal +130ms; firework debris +310ms; total2.6s"),
+            ("ram-hit",ram,[gun_key,boom_key],"metal impact attack; speed0.48 band65..430Hz body gain1.35 +3ms; speed0.57 metal flex +25ms; speed0.83 crushing tail +75ms; total820ms")]:
+            emit(f"{name}-{variant+1}",samples,inputs,"0.4 recorded "+transform,.9 if name!="ballistic-fall" else .80)
         if args.all:
-            fire_key=f"fw_{variant+1:02}"
-            fire,_=trim_attack(raw[fire_key],1.4)
-            fizz=fire-lowpass(fire,600)
             homing=layer((gun,.8,0),(lowpass(respeed(boom,1.7),4200),.48,.008),seconds=.55)
             power_launch=layer((gun,.55,0),(lowpass(respeed(boom,.76),1800),1,.006),seconds=.85)
-            heavy=layer((boom,.4,0),(lowpass(respeed(boom,.39),650),1,.012),(fizz,.18,.18),seconds=2.25)
-            mine=layer((boom,.45,0),(lowpass(respeed(boom,.34),720),1.1,.018),(hit,.38,.14),seconds=2.3)
-            destroyed=layer((explosion,.6,0),(lowpass(respeed(boom,.43),550),.8,.10),(fizz,.45,.32),seconds=2.8)
+            heavy=layer((explosion,.95,0),(band(respeed(boom,.34),40,250),2.0,.01),(hit,.42,.11),(fizz,.25,.20),seconds=2.25)
+            mine=layer((explosion,.88,0),(band(respeed(boom,.30),40,280),2.2,.008),(respeed(hit,.63),.65,.07),seconds=2.3)
+            destroyed=layer((explosion,.95,0),(band(respeed(boom,.37),45,330),1.7,.015),(respeed(hit,.44),.58,.15),(fizz,.45,.32),seconds=2.8)
             napalm_launch=layer((gun,.35,0),(lowpass(respeed(fizz,.8),3200),.9,.015),seconds=.7)
-            napalm_blast=layer((boom,.48,0),(lowpass(respeed(fire,.72),2100),.8,.04),(fizz,.45,.24),seconds=1.8)
+            napalm_blast=layer((boom,.75,0),(crack,.4,0),(body,1.1,.008),
+                               (lowpass(respeed(fire,.72),2100),.65,.04),(fizz,.45,.24),seconds=1.8)
             emit(f"homing-launch-{variant+1}",homing,[gun_key,boom_key],"recorded gun attack and speed1.7 LP4200Hz cannon body; total550ms")
             emit(f"power-launch-{variant+1}",power_launch,[gun_key,boom_key],"recorded gun attack and speed0.76 LP1800Hz cannon body; total850ms")
-            emit(f"power-explosion-{variant+1}",heavy,[boom_key,fire_key],"recorded cannon attack; speed0.39 LP650Hz blast body; firework debris at180ms; total2.25s")
-            emit(f"mine-detonate-{variant+1}",mine,[boom_key,gun_key],"recorded cannon attack; speed0.34 LP720Hz blast body; metal-impact derivative at140ms; total2.3s")
-            emit(f"destroyed-{variant+1}",destroyed,[boom_key,gun_key,fire_key],"recorded layered blast plus speed0.43 LP550Hz body at100ms; firework debris at320ms; total2.8s")
+            emit(f"power-explosion-{variant+1}",heavy,[boom_key,gun_key,fire_key],"0.4 layered attack; speed0.34 band40..250Hz body gain2 +10ms; crushed metal +110ms; firework debris +200ms; total2.25s",.90)
+            emit(f"mine-detonate-{variant+1}",mine,[boom_key,gun_key],"0.4 layered attack; speed0.30 band40..280Hz body gain2.2 +8ms; speed0.63 crushed metal +70ms; total2.3s",.90)
+            emit(f"destroyed-{variant+1}",destroyed,[boom_key,gun_key,fire_key],"0.4 layered attack; speed0.37 band45..330Hz body gain1.7 +15ms; speed0.44 metal breakup +150ms; firework debris +320ms; total2.8s",.90)
             emit(f"napalm-launch-{variant+1}",napalm_launch,[gun_key,fire_key],"recorded attack plus speed0.8 LP3200Hz firework hiss; total700ms")
-            emit(f"napalm-explosion-{variant+1}",napalm_blast,[boom_key,fire_key],"recorded cannon attack plus slowed firework body and high-passed crackle; total1.8s")
+            emit(f"napalm-explosion-{variant+1}",napalm_blast,[boom_key,gun_key,fire_key],"0.4 cannon and HP2200Hz gun attack; speed0.43 band45..300Hz body gain1.1 +8ms; speed0.72 LP2100Hz firework +40ms; crackle +240ms; total1.8s",.90)
     if args.all:
         loop=raw["fw_loop"]
         fire=layer((np.tile(loop,max(1,int(2*RATE/len(loop))+1)),1,0),seconds=2)
@@ -198,7 +211,9 @@ def main():
     metadata=SOURCE if args.all else output
     with (metadata / "audio-metrics.csv").open("w", newline="", encoding="utf-8") as f:
         writer=csv.writer(f); writer.writerow(["asset","frames","channels","sample_rate","bits","peak","rms","sha256"]); writer.writerows(metrics)
-    (metadata / "sfx-provenance.json").write_text(json.dumps(dict(schemaVersion=1,
+    (metadata / "sfx-provenance.json").write_text(json.dumps(dict(schemaVersion=1, revision="0.4",
+        preparationScriptPath="src/tools/prepare_recorded_sfx.py",
+        preparationScriptSha256=sha(Path(__file__)),
         sourceEvidenceSha256=sha(SOURCE / "sources.json"), assets=provenance),indent=2), encoding="utf-8")
     print("Prepared",len(provenance),"recorded cues:",output,flush=True)
 

@@ -11,6 +11,7 @@ import java.util.*;
 /** One render-thread audio owner. Never creates a device, never uses untracked playInstance voices. */
 public final class AudioDirector implements AutoCloseable {
     private enum Group { ENGINE, WEAPON, THREAT, UI }
+    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
     private record DelayedImpact(GameEvent event,double due) {}
     private static final class Voice {
@@ -163,19 +164,27 @@ public final class AudioDirector implements AutoCloseable {
             String kind=event.kind()==null?"":event.kind().toLowerCase(Locale.ROOT);
             switch (event.type()) {
                 case SHOT -> {
-                    String id=kind.contains("power")?"power-launch":kind.contains("homing")?"homing-launch"
-                            :kind.contains("napalm")?"napalm-launch":kind.contains("freeze")?"freeze-launch":"machine-gun";
-                    float gain=id.equals("machine-gun")?.32f:1;
+                    String id=switch(kind) {
+                        case "cannon" -> "cannon-launch";case "ballistic" -> "ballistic-launch";
+                        case "ballistic-fall" -> "ballistic-fall";case "power" -> "power-launch";
+                        case "homing" -> "homing-launch";case "napalm" -> "napalm-launch";
+                        case "freeze" -> "freeze-launch";default -> "machine-gun";
+                    };
+                    float gain=id.equals("machine-gun")?.32f:id.equals("ballistic-fall")?.7f:1;
                     shot(id,Group.WEAPON,player?96:58,event.origin(),gain,1);
                 }
                 case IMPACT -> { if(kind.equals("machine-gun"))contact(event); }
                 case EXPLOSION -> {
-                    String cue=kind.contains("mine")?"mine-detonate":kind.contains("power")?"power-explosion"
-                            :kind.contains("napalm")?"napalm-explosion":"explosion";
-                    shot(cue,Group.WEAPON,player?93:74,event.position(),.93f,1);
-                    if (event.value()>=35 || kind.contains("power")) duck=config.musicDuckSeconds();
+                    String cue=switch(kind) {
+                        case "cannon-ricochet" -> "cannon-ricochet";case "cannon" -> "cannon-hit";
+                        case "ballistic" -> "ballistic-explosion";case "mine" -> "mine-detonate";
+                        case "power" -> "power-explosion";case "napalm" -> "napalm-explosion";default -> "explosion";
+                    };
+                    shot(cue,Group.WEAPON,player?93:74,event.position(),kind.equals("cannon-ricochet")?.8f:.93f,1);
+                    if (event.value()>=35 || Set.of("power","mine","cannon","ballistic").contains(kind)) duck=config.musicDuckSeconds();
                 }
-                case DAMAGE -> { if (event.value()>=1 && !kind.equals("machine-gun")) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
+                case RAM -> shot("ram-hit",Group.WEAPON,event.subjectId()==0||player?92:66,event.position(),clamp(event.value()/18f,.08f,1),1);
+                case DAMAGE -> { if (event.value()>=1 && !OWN_CONTACT_CUE.contains(kind)) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
                         event.position(),clamp(event.value()/25f,.1f,.7f),1); }
                 case DESTROYED -> {
                     delayedImpacts.removeIf(impact->impact.event.subjectId()==event.subjectId());

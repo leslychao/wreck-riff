@@ -10,7 +10,7 @@ class AudioAssetsTest {
     @Test void a01AllRequiredEffectsAreDistinctMonoPcmWithoutClipping() throws Exception {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
-        assertEquals(54,config.effects().size());
+        assertEquals(75,config.effects().size());
         for(String effect:config.effects()) {
             try(InputStream input=asset("audio/"+effect+".wav")) {
                 PcmWave.Header header=PcmWave.header(input);
@@ -83,7 +83,8 @@ class AudioAssetsTest {
     @Test void repeatedCombatCuesHaveThreeDistinctRecordedTakesAndRetiredCuesAreAbsent() throws Exception {
         AudioConfig config=AudioConfig.load();
         for(String cue:List.of("machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch",
-                "power-explosion","mine-detonate","napalm-launch","napalm-explosion")) {
+                "power-explosion","mine-detonate","napalm-launch","napalm-explosion",
+                "cannon-launch","cannon-ricochet","cannon-hit","ballistic-launch","ballistic-fall","ballistic-explosion","ram-hit")) {
             assertEquals(3,config.cueBanks().get(cue).size(),cue);
         }
         for(String retired:List.of("pulse","stun","freeze","shield","machine-gun","metal-hit","explosion")) {

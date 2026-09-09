@@ -7,7 +7,8 @@ import java.util.Objects;
 public record CombatRules(int maximumProjectiles, float projectileRadius, float explosionSurfaceOffset,
         float ownerSplashMultiplier, BlastLimits blastLimits, float killCreditSeconds,
         float emptyFeedbackSeconds, MachineGun machineGun, Rocket homing, Rocket power,
-        Targeting targeting, Ram ram, Mine mine, Napalm napalm, Control control,Health health) {
+        Targeting targeting, Ram ram, Mine mine, Napalm napalm, Control control,Health health,
+        Cannon cannon,Ballistic ballistic,BlastLimits heavyBlastLimits) {
     public CombatRules {
         if (maximumProjectiles < 1 || maximumProjectiles > 64) throw new IllegalArgumentException("maximumProjectiles must be 1..64");
         positive("projectileRadius", projectileRadius);
@@ -23,6 +24,7 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
         Objects.requireNonNull(ram, "ram");
         Objects.requireNonNull(mine,"mine"); Objects.requireNonNull(napalm,"napalm"); Objects.requireNonNull(control,"control");
         Objects.requireNonNull(health,"health");
+        Objects.requireNonNull(cannon,"cannon");Objects.requireNonNull(ballistic,"ballistic");Objects.requireNonNull(heavyBlastLimits,"heavyBlastLimits");
     }
     public record BlastLimits(float horizontalDeltaSpeed,float upwardDeltaSpeed,float angularDeltaSpeed) {
         public BlastLimits { positive("blast.horizontalLimit",horizontalDeltaSpeed);positive("blast.upwardLimit",upwardDeltaSpeed);positive("blast.angularLimit",angularDeltaSpeed); }
@@ -62,9 +64,10 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
     }
     public record Napalm(int maximumZones,int initialAmmo,int maximumAmmo,float cooldownSeconds,
             float speed,float upwardSpeed,float gravity,float ttlSeconds,float impactDamage,
-            float radius,float durationSeconds,float damagePerSecond,float intervalSeconds,float supportDepth,Blast blast) {
+            float radius,float durationSeconds,float damagePerSecond,float intervalSeconds,float supportDepth,Blast blast, NapalmAssist assist) {
         public Napalm {
             Objects.requireNonNull(blast,"napalm.blast");
+            Objects.requireNonNull(assist,"napalm.assist");
             if(maximumZones<1||maximumZones>6)throw new IllegalArgumentException("Fire-zone cap must be 1..6");
             ammo(initialAmmo,maximumAmmo);positive("napalm.cooldown",cooldownSeconds);
             positive("napalm.speed",speed);positive("napalm.upwardSpeed",upwardSpeed);positive("napalm.gravity",gravity);
@@ -72,6 +75,54 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
             positive("napalm.duration",durationSeconds);positive("napalm.damage",damagePerSecond);
             positive("napalm.interval",intervalSeconds);positive("napalm.supportDepth",supportDepth);
             if(ticks(intervalSeconds)<1||intervalSeconds>durationSeconds)throw new IllegalArgumentException("Invalid fire interval");
+        }
+    }
+    public record NapalmAssist(float minimumRange,float maximumRange,float coneDegrees,float leadSeconds,
+            float maximumLead,float turnDegreesPerSecond,float maximumDeviation,float occlusionSeconds,
+            float minimumFlightSeconds,float maximumFlightSeconds,float fallbackRange) {
+        public NapalmAssist {
+            positive("napalm.assist.minimumRange",minimumRange);positive("napalm.assist.maximumRange",maximumRange);
+            if(maximumRange<minimumRange)throw new IllegalArgumentException("Invalid napalm assist range");
+            range("napalm.assist.cone",coneDegrees,0,90);positive("napalm.assist.lead",leadSeconds);
+            positive("napalm.assist.maximumLead",maximumLead);positive("napalm.assist.turn",turnDegreesPerSecond);
+            positive("napalm.assist.deviation",maximumDeviation);positive("napalm.assist.occlusion",occlusionSeconds);
+            positive("napalm.assist.minimumFlight",minimumFlightSeconds);positive("napalm.assist.maximumFlight",maximumFlightSeconds);
+            if(maximumFlightSeconds<minimumFlightSeconds)throw new IllegalArgumentException("Invalid napalm flight time");
+            positive("napalm.assist.fallback",fallbackRange);
+        }
+    }
+    public record Cannon(int initialAmmo,int maximumAmmo,float cooldownSeconds,float speed,float radius,
+            float upwardSpeed,float gravity,float ttlSeconds,int ricochets,float normalRestitution,
+            float tangentRetention,float minimumSpeed,float directDamage,float ricochetDamage,float ricochetRadius,
+            float splashDamage,float splashRadius,float horizontalImpulse,float upwardImpulse,Blast splashBlast) {
+        public Cannon {
+            ammo(initialAmmo,maximumAmmo);positive("cannon.cooldown",cooldownSeconds);positive("cannon.speed",speed);
+            positive("cannon.radius",radius);positive("cannon.upwardSpeed",upwardSpeed);positive("cannon.gravity",gravity);
+            positive("cannon.ttl",ttlSeconds);if(ricochets<0||ricochets>2)throw new IllegalArgumentException("Cannon supports at most two ricochets");
+            range("cannon.restitution",normalRestitution,0,1);range("cannon.retention",tangentRetention,0,1);
+            positive("cannon.minimumSpeed",minimumSpeed);positive("cannon.directDamage",directDamage);
+            positive("cannon.ricochetDamage",ricochetDamage);positive("cannon.ricochetRadius",ricochetRadius);
+            positive("cannon.splashDamage",splashDamage);positive("cannon.splashRadius",splashRadius);
+            positive("cannon.horizontalImpulse",horizontalImpulse);positive("cannon.upwardImpulse",upwardImpulse);
+            Objects.requireNonNull(splashBlast,"cannon.splashBlast");
+        }
+    }
+    public record Ballistic(int initialAmmo,int maximumAmmo,float cooldownSeconds,int charges,float releaseIntervalSeconds,
+            float minimumWarningSeconds,float minimumRange,float maximumRange,float fallbackRange,
+            float carrierHeight,float carrierSpeed,float minimumCarrierSeconds,float maximumCarrierSeconds,
+            float gravity,float correctionDistance,float maximumCorrection,float spread,float damage,float radius,Blast blast) {
+        public Ballistic {
+            ammo(initialAmmo,maximumAmmo);positive("ballistic.cooldown",cooldownSeconds);
+            if(charges!=4)throw new IllegalArgumentException("Ballistic salvo must contain four charges");
+            positive("ballistic.interval",releaseIntervalSeconds);range("ballistic.warning",minimumWarningSeconds,.5f,3);
+            positive("ballistic.minimumRange",minimumRange);positive("ballistic.maximumRange",maximumRange);
+            if(maximumRange<minimumRange)throw new IllegalArgumentException("Invalid ballistic range");
+            positive("ballistic.fallback",fallbackRange);positive("ballistic.height",carrierHeight);positive("ballistic.speed",carrierSpeed);
+            positive("ballistic.minimumCarrierTime",minimumCarrierSeconds);positive("ballistic.maximumCarrierTime",maximumCarrierSeconds);
+            if(maximumCarrierSeconds<minimumCarrierSeconds)throw new IllegalArgumentException("Invalid carrier time");
+            positive("ballistic.gravity",gravity);positive("ballistic.correction",correctionDistance);
+            positive("ballistic.maximumCorrection",maximumCorrection);positive("ballistic.spread",spread);
+            positive("ballistic.damage",damage);positive("ballistic.radius",radius);Objects.requireNonNull(blast,"ballistic.blast");
         }
     }
     public record Control(float freezeSeconds,float freezeCooldownSeconds,float freezeSpeed,float freezeTtlSeconds,

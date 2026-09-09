@@ -39,7 +39,6 @@ public final class GameApplication extends SimpleApplication {
     private final Map<Integer,Node> vehicleModels=new HashMap<>();
     private final Map<Integer,Spatial[]> wheels=new HashMap<>();
     private final Map<Integer,VehicleController> drivers=new LinkedHashMap<>();
-    private final Map<Integer,Float> wreckTimers=new HashMap<>();
     private InputSystem input;
     private GameUi ui;
     private AudioDirector audio;
@@ -236,6 +235,8 @@ public final class GameApplication extends SimpleApplication {
             if(flow.screen()==Screen.RUNNING) {
                 loop.advance(dt,true,this::fixedTick); report.frame(dt);
                 if(diagnostic!=null&&options.benchmarkSeconds()>0&&elapsed>=30&&drawable)diagnostic.frames.add(dt);
+            } else if(flow.screen()==Screen.RESULTS&&runtime!=null&&runtime.hasWrecks()) {
+                loop.advance(dt,true,runtime::tickPhysicsTail);
             } else loop.resetAccumulator();
             if(world!=null&&drawable) renderMatch(Math.min(dt,0.1f));
             else {
@@ -265,10 +266,9 @@ public final class GameApplication extends SimpleApplication {
         report.tick(session,events,bots);
         if(session.vehicle(0).recoveries>recoveries) chase.reset();
         for(GameEvent event:events) {
-            if(event.type()==GameEvent.Type.DESTROYED) {
-                wreckTimers.put(event.subjectId(),3f);
-            }
             if(event.type()==GameEvent.Type.DAMAGE && event.subjectId()==0) chase.impact(Math.min(0.7f,event.value()/60));
+            if(event.type()==GameEvent.Type.RAM&&(event.subjectId()==0||event.sourceId()==0))
+                chase.impact(Math.min(.7f,event.value()/40));
         }
         combatVisuals.accept(events);
         if(session.outcome!=MatchSession.Outcome.NONE) {
@@ -281,33 +281,29 @@ public final class GameApplication extends SimpleApplication {
     private void renderMatch(float dt) {
         boolean advancing=flow.screen()==Screen.RUNNING;
         boolean results=flow.screen()==Screen.RESULTS;
-        float alpha=advancing?loop.alpha():1;
+        float alpha=advancing||results&&runtime.hasWrecks()?loop.alpha():1;
         for(var state:session.vehicles) {
             Node model=vehicleModels.get(state.id);
             VehicleVisual.updateDamage(model,showcase==null?state.hp/state.maximumHp:showcase.displayHpFraction(state));
             VehicleVisual.updateEffects(model,!results&&state.alive()&&state.frozenTicks>0,!results&&state.alive()&&state.shieldTicks>0);
-            if(state.alive() && world.containsVehicle(state.id)) {
+            if(world.containsVehicle(state.id)) {
                 var pose=world.interpolatedPose(state.id,alpha); model.setLocalTranslation(pose.position()); model.setLocalRotation(pose.rotation());
                 for(int i=0;i<4;i++) if(wheels.get(state.id)[i]!=null) {
                     var wheel=world.interpolatedWheel(state.id,i,alpha); wheels.get(state.id)[i].setLocalTranslation(wheel.position()); wheels.get(state.id)[i].setLocalRotation(wheel.rotation());
                 }
-            } else if((advancing||results)&&wreckTimers.containsKey(state.id)) {
-                float remaining=wreckTimers.compute(state.id,(id,value)->value-dt);
-                if(remaining<=0) {
-                    model.removeFromParent();
-                    for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
-                    wreckTimers.remove(state.id);
-                }
+            } else if(!state.alive()) {
+                model.removeFromParent();
+                for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
             }
         }
         if(advancing) {
-            combatVisuals.update(combat.projectiles(),combat.mines(),combat.fireZones(),session,dt);
+            combatVisuals.update(combat.projectiles(),combat.mines(),combat.fireZones(),combat.ballisticWarnings(),session,dt);
             var hazard=arenaSystems.hazardPhase();
             audio.hazard(hazard==ArenaSystems.HazardPhase.WARNING,hazard==ArenaSystems.HazardPhase.ACTIVE,
                     new Vector3f((arena.hazard().minX()+arena.hazard().maxX())/2,0.2f,(arena.hazard().minZ()+arena.hazard().maxZ())/2));
             audio.update(session,world,dt);
         } else if(results) {
-            combatVisuals.update(List.of(),List.of(),List.of(),null,dt);
+            combatVisuals.update(List.of(),List.of(),List.of(),List.of(),null,dt);
             audio.updateTail(dt);
         }
         for(var pickup:arena.pickups()) {
@@ -351,7 +347,7 @@ public final class GameApplication extends SimpleApplication {
                 ui.button("CREDITS & LICENSES",140,406,640,()->flow.open(Screen.CREDITS));
                 ui.button("QUIT",140,328,640,this::stop);
                 ui.text("ONE ARENA / FIVE MACHINES / NO SECOND CHANCES",144,245,18,GameUi.ACCENT);
-                ui.text("0.3.0  |  Local single-player  |  "+store.stats().completedMatches+" completed matches",144,196,18,GameUi.PAPER);
+                ui.text("0.4.0  |  Local single-player  |  "+store.stats().completedMatches+" completed matches",144,196,18,GameUi.PAPER);
             }
             case LOADING -> { ui.title("TUNING IN","Loading Dead Air Yard..."); }
             case RUNNING -> createHud();
@@ -408,13 +404,14 @@ public final class GameApplication extends SimpleApplication {
         ui.rect("weapon-panel",1075,40,800,180,GameUi.INK,0);
         int slot=0;
         for(WeaponType type:WeaponType.values()) {
-            float x=1096+slot++*190;
-            Geometry plate=ui.rect("weapon-"+type,x,110,176,90,new ColorRGBA(.12f,.14f,.16f,1),1);
-            BitmapText title=ui.text(type.name(),x+12,185,21,GameUi.PAPER);
-            BitmapText ammo=ui.text("",x+12,151,27,GameUi.PAPER);
+            float x=1094+(slot%3)*258,y=134-(slot/3)*80;slot++;
+            Geometry plate=ui.rect("weapon-"+type,x,y,244,72,new ColorRGBA(.12f,.14f,.16f,1),1);
+            BitmapText title=ui.text(type.name(),x+12,y+59,21,GameUi.PAPER);
+            BitmapText ammo=ui.text("",x+12,y+31,24,GameUi.PAPER);
             weaponHud.put(type,new WeaponHud(title,ammo,plate));
         }
-        weaponText=ui.text("",1096,86,23,GameUi.PAPER);
+        ui.rect("weapon-status",1075,225,800,38,GameUi.INK,0);
+        weaponText=ui.text("",1096,252,21,GameUi.PAPER);
         timerText=ui.text("",785,1030,29,GameUi.PAPER);
         ui.text("+",949,575,32,GameUi.ACCENT);
         ui.rect("radar",1630,805,240,240,GameUi.INK,0);
@@ -439,7 +436,11 @@ public final class GameApplication extends SimpleApplication {
             card.plate().getMaterial().setColor("Color",selected?new ColorRGBA(.27f,.17f,.075f,.97f):new ColorRGBA(.12f,.14f,.16f,1));
             card.ammo().setText(slot.ammo+" / "+slot.maximumAmmo+(slot.cooldownTicks>0?"  "+cooldown(slot.cooldownTicks):""));
         }
-        weaponText.setText("LMB: MACHINE GUN    |    "+(lock>=0?"LOCK: "+session.vehicle(lock).name:bindingName("Previous weapon")+" / "+bindingName("Next weapon")+": CYCLE"));
+        int assisted=combat.napalmAssistTarget(0);
+        String targeting=player.selectedWeapon==WeaponType.NAPALM
+                ?(assisted>=0?"NAPALM ASSIST: "+session.vehicle(assisted).name:"NAPALM: FREE ARC")
+                :lock>=0?"LOCK: "+session.vehicle(lock).name:bindingName("Previous weapon")+" / "+bindingName("Next weapon")+": CYCLE";
+        weaponText.setText("LMB: MACHINE GUN    |    "+targeting);
         abilitiesText.setText("FREEZE ["+bindingName("Freeze")+"]  "+cooldown(player.abilityCooldown(AbilityId.FREEZE))+
                 "\nSHIELD ["+bindingName("Shield")+"]  "+cooldown(player.abilityCooldown(AbilityId.SHIELD)));
         statusText.setText(player.shieldTicks>0?"SHIELD  "+cooldown(player.shieldTicks):
@@ -569,7 +570,7 @@ public final class GameApplication extends SimpleApplication {
     }
     private void capture(String label) {
         if(screenshots!=null) {
-            String prefix="WreckRiff-0.3.0-"+label+"-"+System.currentTimeMillis()+"-";
+            String prefix="WreckRiff-0.4.0-"+label+"-"+System.currentTimeMillis()+"-";
             screenshots.setFileName(prefix);screenshots.takeScreenshot();
             if(diagnostic!=null) {diagnosticCaptures.add(prefix);diagnostic.put("capturePrefixes",List.copyOf(diagnosticCaptures));}
         }
@@ -585,7 +586,7 @@ public final class GameApplication extends SimpleApplication {
         if(audio!=null)audio.stopMatch(); if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
         else if(world!=null){world.close();world=null;}
-        matchNode.detachAllChildren();vehicleModels.clear();wheels.clear();drivers.clear();wreckTimers.clear();
+        matchNode.detachAllChildren();vehicleModels.clear();wheels.clear();drivers.clear();
         session=null;arenaSystems=null;bots=null;content=null;navNode=null;visualTour=null;showcase=null;showcaseText=null;
     }
     private void fail(Exception exception) {

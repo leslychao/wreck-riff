@@ -16,6 +16,7 @@ public interface WorldQuery {
     float mass(int vehicleId);
     Hit ray(Vector3f from, Vector3f to, int ignoredVehicle);
     Hit sweep(Vector3f from, Vector3f to, float radius, int ignoredVehicle);
+    Hit staticSweep(Vector3f from,Vector3f to,float radius);
     boolean visible(Vector3f from, Vector3f to, int targetVehicle);
     float distanceToHull(int vehicleId, Vector3f point);
     /** Aggregated world-space linear and torque impulse; only the native owner applies angular limits. */

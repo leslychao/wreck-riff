@@ -1,7 +1,7 @@
 # Wreck Riff
 
-Follow docs/MVP_SPEC.md, docs/DECISIONS.md and the approved docs/V0_3_PLAN.md.
-The 0.3 plan supersedes conflicting earlier behavior. The 0.2 resource approval remains applicable.
+Follow docs/MVP_SPEC.md, docs/DECISIONS.md and the approved docs/V0_4_PLAN.md.
+The 0.4 plan supersedes conflicting earlier behavior. The 0.2 resource approval remains applicable.
 One Java 21 Gradle project,
 jMonkeyEngine 3.8.1-stable, Minie 9.0.3, one manual fixed-step PhysicsSpace.
 Do not introduce another physics owner, framework, server, or runtime asset service.

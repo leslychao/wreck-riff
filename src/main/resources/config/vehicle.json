@@ -8,5 +8,6 @@
   "lowSpeedSteering": 32, "highSpeedSteering": 15, "steeringResponse": 12,
   "handbrakeTorque": 5000, "handbrakeYawDamping": 6500, "stabilizingTorque": 9000, "gripReturnSeconds": 0.25,
   "turboDrain": 40, "turboRegen": 15, "turboRegenDelay": 1,
-  "recoveryCost": 15, "recoveryHold": 1, "recoveryCooldown": 5, "recoveryProtection": 0.35
+  "recoveryCost": 15, "recoveryHold": 1, "recoveryCooldown": 5, "recoveryProtection": 0.35,
+  "carPairRestitution": 0.20, "impactStabilizerOffSeconds": 0.2, "impactStabilizerReturnSeconds": 0.2
 }

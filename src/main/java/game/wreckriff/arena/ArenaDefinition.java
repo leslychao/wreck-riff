@@ -25,7 +25,7 @@ public record ArenaDefinition(int schemaVersion, String id, Bounds bounds,
                        float startY, float endY, String material) {}
     /** Position is on the surface, not the center of a vehicle body. */
     public record Spawn(int id, Vec3 position, float yawDegrees) {}
-    public enum PickupType { REPAIR, HOMING_AMMO, POWER_AMMO, MINE_AMMO, NAPALM_AMMO, TURBO_CELL }
+    public enum PickupType { REPAIR, HOMING_AMMO, POWER_AMMO, MINE_AMMO, NAPALM_AMMO, BALLISTIC_AMMO, CANNON_AMMO, TURBO_CELL }
     public record Pickup(String id, PickupType type, Vec3 position, int respawnTicks) {}
     public record Hazard(float minX, float maxX, float minZ, float maxZ,
                          float minY, float maxY, int offTicks, int warningTicks,

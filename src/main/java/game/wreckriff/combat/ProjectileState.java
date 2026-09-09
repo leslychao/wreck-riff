@@ -11,6 +11,9 @@ public final class ProjectileState {
     final Vector3f previousPosition;
     final Vector3f direction;
     final Vector3f velocity=new Vector3f();
+    final Vector3f launchPosition;
+    final Vector3f originalVelocity=new Vector3f();
+    int ageTicks,ricochets;
     int remainingTicks;
     int targetId;
     int occludedTicks;
@@ -22,6 +25,7 @@ public final class ProjectileState {
         this.ownerId = ownerId;
         this.kind = kind;
         this.position = position.clone();
+        this.launchPosition = position.clone();
         this.previousPosition = position.clone();
         this.direction = direction.normalize();
         this.remainingTicks = remainingTicks;
@@ -36,4 +40,6 @@ public final class ProjectileState {
     public Vector3f direction() { return direction.clone(); }
     public int remainingTicks() { return remainingTicks; }
     public int targetId() { return targetId; }
+    public Vector3f velocity() { return velocity.clone(); }
+    public int ricochets() { return ricochets; }
 }

@@ -88,6 +88,12 @@
     "blast": {
       "horizontalDeltaSpeed": 2,
       "upwardDeltaSpeed": 0.5
+    },
+    "assist": {
+      "minimumRange": 5, "maximumRange": 60, "coneDegrees": 12,
+      "leadSeconds": 0.25, "maximumLead": 5, "turnDegreesPerSecond": 18,
+      "maximumDeviation": 3, "occlusionSeconds": 0.2,
+      "minimumFlightSeconds": 0.25, "maximumFlightSeconds": 2.2, "fallbackRange": 30
     }
   },
   "control": {
@@ -110,5 +116,24 @@
     "horizontalDeltaSpeed": 9,
     "upwardDeltaSpeed": 6,
     "angularDeltaSpeed": 2
+  },
+  "heavyBlastLimits": {
+    "horizontalDeltaSpeed": 16, "upwardDeltaSpeed": 10, "angularDeltaSpeed": 6
+  },
+  "cannon": {
+    "initialAmmo": 3, "maximumAmmo": 6, "cooldownSeconds": 2.4,
+    "speed": 55, "radius": 0.25, "upwardSpeed": 2, "gravity": 18, "ttlSeconds": 4,
+    "ricochets": 2, "normalRestitution": 0.70, "tangentRetention": 0.90, "minimumSpeed": 12,
+    "directDamage": 65, "ricochetDamage": 22, "ricochetRadius": 3.5,
+    "splashDamage": 30, "splashRadius": 4, "horizontalImpulse": 13200, "upwardImpulse": 8800,
+    "splashBlast": { "horizontalDeltaSpeed": 4, "upwardDeltaSpeed": 2 }
+  },
+  "ballistic": {
+    "initialAmmo": 2, "maximumAmmo": 4, "cooldownSeconds": 4.5,
+    "charges": 4, "releaseIntervalSeconds": 0.45, "minimumWarningSeconds": 0.5,
+    "minimumRange": 20, "maximumRange": 70, "fallbackRange": 40,
+    "carrierHeight": 22, "carrierSpeed": 45, "minimumCarrierSeconds": 0.7, "maximumCarrierSeconds": 1.6,
+    "gravity": 18, "correctionDistance": 3, "maximumCorrection": 6, "spread": 2,
+    "damage": 34, "radius": 6, "blast": { "horizontalDeltaSpeed": 4, "upwardDeltaSpeed": 2.5 }
   }
 }

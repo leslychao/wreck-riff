@@ -123,6 +123,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     public static String weaponBinding(WeaponType weapon) {
         return switch(weapon) {
             case HOMING->"Select Homing";case POWER->"Select Power";case MINE->"Select Mine";case NAPALM->"Select Napalm";
+            case BALLISTIC->"Select Ballistic";case CANNON->"Select Cannon";
         };
     }
     @Override public void onMouseButtonEvent(MouseButtonEvent event) {

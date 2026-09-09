@@ -161,6 +161,7 @@ public final class SettingsStore {
         keys.put("Shield",KeyInput.KEY_F); keys.put("Freeze",KeyInput.KEY_Z);
         keys.put("Select Homing",KeyInput.KEY_1); keys.put("Select Power",KeyInput.KEY_2);
         keys.put("Select Mine",KeyInput.KEY_3); keys.put("Select Napalm",KeyInput.KEY_4);
+        keys.put("Select Ballistic",KeyInput.KEY_5); keys.put("Select Cannon",KeyInput.KEY_6);
         keys.put("Rear view",KeyInput.KEY_V); keys.put("Recover",KeyInput.KEY_R);
         return keys;
     }

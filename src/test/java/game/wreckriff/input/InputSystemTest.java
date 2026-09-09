@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class InputSystemTest {
     @Test void unknownKeyCannotActivateDisabledAbilitiesWeaponSelectionOrCycle() {
         var settings=new SettingsStore.Settings();
-        for(String action:java.util.List.of("Freeze","Shield","Select Homing","Select Power","Select Mine","Select Napalm","Next weapon"))settings.keys.put(action,0);
+        for(String action:java.util.List.of("Freeze","Shield","Select Homing","Select Power","Select Mine","Select Napalm","Select Ballistic","Select Cannon","Next weapon"))settings.keys.put(action,0);
         settings.keys.remove("Previous weapon");
         try(InputSystem input=input(settings)) {
             input.setGameplay(true);input.onKeyEvent(key(0,true));

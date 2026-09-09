@@ -172,6 +172,54 @@ class AudioDirectorTest {
             }
         }
     }
+    @Test void cannonBallisticAndRamOwnOneContactCueWithThreeTakesAndNoDuplicateImpactLayers() {
+        record Cue(GameEvent.Type type,String kind,String bank) {}
+        List<Cue> cues=List.of(new Cue(GameEvent.Type.SHOT,"cannon","cannon-launch"),
+                new Cue(GameEvent.Type.EXPLOSION,"cannon-ricochet","cannon-ricochet"),
+                new Cue(GameEvent.Type.EXPLOSION,"cannon","cannon-hit"),
+                new Cue(GameEvent.Type.SHOT,"ballistic","ballistic-launch"),
+                new Cue(GameEvent.Type.SHOT,"ballistic-fall","ballistic-fall"),
+                new Cue(GameEvent.Type.EXPLOSION,"ballistic","ballistic-explosion"),
+                new Cue(GameEvent.Type.RAM,"ram","ram-hit"));
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            for(Cue cue:cues) {
+                director.startMatch();
+                Set<AudioData> samples=Collections.newSetFromMap(new IdentityHashMap<>());AudioData prior=null;
+                for(int i=0;i<6;i++) {
+                    List<GameEvent> batch=new ArrayList<>();
+                    batch.add(event(cue.type,100+i,1,0,cue.kind,20));
+                    if(cue.type==GameEvent.Type.EXPLOSION||cue.type==GameEvent.Type.RAM) {
+                        batch.add(event(GameEvent.Type.IMPACT,100+i,1,0,cue.kind,20));
+                        batch.add(event(GameEvent.Type.DAMAGE,100+i,1,0,cue.kind,20));
+                        batch.add(event(GameEvent.Type.DAMAGE,100+i,0,1,cue.kind,20));
+                    }
+                    director.accept(batch);director.accept(batch);
+                    assertEquals(i+2,director.voiceCount(),cue.bank+" needs one source per accepted event, plus music");
+                    AudioNode node=find(scene,"sound-"+cue.bank);assertNotNull(node,cue.bank);
+                    AudioData sample=node.getAudioData();if(prior!=null)assertNotSame(prior,sample);
+                    samples.add(sample);prior=sample;
+                    assertNull(find(scene,"sound-metal-hit"));assertNull(find(scene,"sound-machine-gun"));
+                    assertEquals(0,director.pendingImpactCount());
+                }
+                assertEquals(3,samples.size(),cue.bank);
+            }
+        }
+    }
+    @Test void ramCrushGainFollowsAuthoritativeClosingSpeed() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();director.accept(List.of(event(GameEvent.Type.RAM,1,1,0,"ram",5)));
+            AudioNode mild=find(scene,"sound-ram-hit");
+            director.accept(List.of(event(GameEvent.Type.RAM,2,1,0,"ram",20)));
+            AudioNode hard=find(scene,"sound-ram-hit");assertNotSame(mild,hard);
+            assertTrue(hard.getVolume()>mild.getVolume()*2,"A hard ram must carry more of the same premixed crush cue");
+            director.pause();director.accept(List.of(event(GameEvent.Type.RAM,3,1,0,"ram",20)));
+            assertEquals(3,director.voiceCount(),"Paused rams cannot queue sounds");director.resume();
+            director.stopMatch();director.accept(List.of(event(GameEvent.Type.RAM,4,1,0,"ram",20)));
+            assertEquals(0,director.voiceCount(),"Results cannot restart ramming sounds");
+        }
+    }
     @Test void sharedEventIdsKeepDifferentTypesAndSubjectsButDuplicateDeliveryIsIgnored() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
@@ -249,6 +297,7 @@ class AudioDirectorTest {
             public float mass(int id){return 1100;}
             public Hit ray(Vector3f a,Vector3f b,int id){return null;}
             public Hit sweep(Vector3f a,Vector3f b,float r,int id){return null;}
+            public Hit staticSweep(Vector3f a,Vector3f b,float r){return null;}
             public boolean visible(Vector3f a,Vector3f b,int id){return true;}
             public float distanceToHull(int id,Vector3f p){return 0;}
             public void impulse(int id,Vector3f linear,Vector3f angular,float cap){}

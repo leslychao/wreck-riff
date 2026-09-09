@@ -15,7 +15,7 @@ import java.util.*;
 /** Five immutable mesh/material stages, selected reversibly without touching vehicle physics or wheel nodes. */
 final class VehicleDamageVisual extends AbstractControl {
     static final int STAGES=5;
-    static final float MAX_DENT=.18f;
+    static final float MAX_DENT=.35f;
     private record Part(Geometry geometry,Mesh[] meshes,Material[] materials) {}
     private final List<Part> parts=new ArrayList<>();
     private final List<Part> frostParts=new ArrayList<>(),shieldParts=new ArrayList<>();
@@ -117,15 +117,27 @@ final class VehicleDamageVisual extends AbstractControl {
         return result;
     }
     private static Vector3f dent(Vector3f point,int stage) {
-        float strength=stage/4f;
-        float front=falloff(point,new Vector3f(-.55f,.22f,1.85f),1.18f);
-        float side=falloff(point,new Vector3f(1.02f,.10f,-.35f),1.2f);
-        float rear=falloff(point,new Vector3f(.3f,.22f,-1.9f),.98f);
-        Vector3f displacement=new Vector3f(-.10f*side+.025f*front,-.13f*front-.055f*rear,-.11f*front+.10f*rear).multLocal(strength);
+        float strength=new float[]{0,.28f,.58f,.85f,1}[stage];
+        // Broad folds cross local topology; sharper ridges catch light in addition to changing the outline.
+        // The weapon barrels sit above this sheet-metal envelope and keep their authored muzzle position.
+        float sheet=Math.clamp((.45f-point.y)/.15f,0,1);
+        float hood=patch(point,-.15f,.23f,1.38f,.83f,.6f,.85f)*sheet;
+        float ridge=patch(point,-.15f,.23f,.91f,.83f,.6f,.23f)*sheet;
+        float right=patch(point,1.02f,.08f,-.14f,.40f,.6f,.92f);
+        float left=patch(point,-1.02f,.08f,.30f,.35f,.5f,.65f);
+        float fender=patch(point,1.12f,.19f,1.43f,.42f,.46f,.48f);
+        float front=patch(point,-.28f,-.04f,2.32f,.85f,.34f,.31f);
+        float rear=patch(point,.32f,-.02f,-2.31f,.78f,.43f,.43f);
+        Vector3f displacement=new Vector3f(-.34f*right+.24f*left-.10f*fender,
+                -.33f*hood+.19f*ridge-.24f*fender-.10f*front-.11f*rear,
+                -.32f*front+.23f*rear-.09f*hood).multLocal(strength);
         if(displacement.length()>MAX_DENT)displacement.normalizeLocal().multLocal(MAX_DENT);
         return point.add(displacement);
     }
-    private static float falloff(Vector3f p,Vector3f centre,float radius) {float t=Math.max(0,1-p.distanceSquared(centre)/(radius*radius));return t*t;}
+    private static float patch(Vector3f p,float x,float y,float z,float rx,float ry,float rz) {
+        float dx=(p.x-x)/rx,dy=(p.y-y)/ry,dz=(p.z-z)/rz;
+        return Math.max(0,1-dx*dx-dy*dy-dz*dz);
+    }
     private static Mesh deform(Mesh original,int stage) {
         Mesh mesh=original.deepClone();FloatBuffer positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);
         for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
