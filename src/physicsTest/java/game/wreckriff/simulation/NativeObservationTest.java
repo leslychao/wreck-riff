@@ -44,12 +44,12 @@ class NativeObservationTest {
         List<VehicleCommand> commands = new ArrayList<>();
         List<Sample> samples = new ArrayList<>();
         try (PhysicsWorld world = new PhysicsWorld(rules)) {
-            ArenaContent arena = new ArenaFactory(new DesktopAssetManager(true)).build(definition);
+            ArenaContent arena = new ArenaFactory(game.wreckriff.arena.NativeArenaAssets.MANAGER).build(definition);
             for (var body : arena.bodies()) world.addStatic(body.shape(), body.position(), body.rotation());
             world.addVehicle(0, new Vector3f(54, 0.8f, -46), new Quaternion());
             for (int tick = 0; tick < 240; tick++) world.step();
             assertEquals(4, world.wheelContacts(0));
-            var driver = new VehicleController(world, new VehicleState(0, "Observation test", true), rules);
+            var driver = new VehicleController(world, new VehicleState(0, "Observation test", true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)), rules);
             int turnStarted = -1;
             for (int tick = 0; tick < (replay == null ? 1800 : replay.size()); tick++) {
                 if (replay == null && turnStarted < 0 && world.position(0).z >= 42) turnStarted = tick;

@@ -35,6 +35,14 @@ public final class VerifyAssets {
             String verificationStatus, String attributionRequired, String artifactForm) {}
     private record LicenseSource(String file, String source, List<String> components, String sha256) {}
     private record LicenseIndex(int schemaVersion, String description, List<LicenseSource> sources) {}
+    private record TextureSource(String path, String sourcePath, String sourceUrl, String author, String license,
+            String licensePath, String acquired, String sourceSha256, String sha256, String transformation) {}
+    private record TextureIndex(int schemaVersion, List<TextureSource> assets) {}
+    private static final Set<String> MATERIALS = Set.of("asphalt_02", "cracked_concrete", "metal_plate_02", "blue_metal_plate", "rusty_metal_03");
+    private static final Map<String,String> ASSET_LICENSE_HASHES = Map.of(
+            "CC-BY-4.0.txt", "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
+            "CC0-1.0.txt", "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+            "Roboto-OFL.txt", "061402327a96aadb0bfb694a960ed289ecd38d383e396243831ab81feb109c41");
     private static final Map<String, Class<?>> CONFIGS = Map.of(
             "ai", AiRules.class, "arena", ArenaDefinition.class, "audio", AudioConfig.class,
             "camera", CameraRules.class, "combat", CombatRules.class, "gamepad", GamepadProfile.class,
@@ -74,6 +82,19 @@ public final class VerifyAssets {
         });
         attempt(errors, "audio", () -> verifyAudio(assets));
         attempt(errors, "font", () -> verifyFont(assets));
+        attempt(errors, "licensed textures", () -> verifyTextures(assets));
+        attempt(errors, "asset license evidence", () -> {
+            for (var license : ASSET_LICENSE_HASHES.entrySet()) {
+                String path = "licenses/assets/" + license.getKey();
+                byte[] bytes = resource(path);
+                if (!hash(bytes).equals(license.getValue())) throw new IOException("Altered/missing licensed-asset notice: " + path);
+                String source = license.getKey().equals("Roboto-OFL.txt")
+                        ? "https://raw.githubusercontent.com/googlefonts/roboto-3-classic/v3.016/OFL.txt"
+                        : license.getKey().equals("CC0-1.0.txt") ? "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt"
+                        : "https://creativecommons.org/licenses/by/4.0/legalcode.txt";
+                assets.add(asset(path, "third-party-license", bytes, source, "TEXT_CAPTURED"));
+            }
+        });
         attempt(errors, "engine materials", () -> {
             for (String path : List.of("Common/MatDefs/Light/Lighting.j3md", "Common/MatDefs/Misc/Unshaded.j3md")) {
                 assets.add(asset(path, "engine-material", resource(path), "org.jmonkeyengine:jme3-core:3.8.1-stable; jme-BSD3.txt", "DEPENDENCY_RESOURCE_PRESENT"));
@@ -93,6 +114,10 @@ public final class VerifyAssets {
                 byte[] bytes = Files.readAllBytes(Path.of(path));
                 if (bytes.length == 0) throw new IOException("Empty generator " + path);
                 assets.add(asset(path, "procedural-source", bytes, "Original project source recipe", "SOURCE_PRESENT"));
+            }
+            for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt")) {
+                assets.add(asset(path, "historical-source", Files.readAllBytes(Path.of(path)),
+                        "Superseded original recipe retained for provenance only; excluded from compilation and runtime", "SOURCE_PRESENT"));
             }
         });
         attempt(errors, "dependency license evidence", () -> verifyDependencies(output, assets, dependencies, nativeEntries, errors));
@@ -117,12 +142,12 @@ public final class VerifyAssets {
         if (version == null || !version.matches("[0-9]+\\.[0-9]+\\.[0-9]+")) throw new IllegalArgumentException("Missing/invalid build version for asset registry");
         List<RegisterEntry> entries = new ArrayList<>();
         for (Asset asset : assets) {
-            boolean source = asset.category.equals("procedural-source");
+            boolean source = Set.of("procedural-source", "historical-source").contains(asset.category);
             boolean runtimeGeometry = source && asset.path.startsWith("src/main/");
             String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
             String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
             String origin = source ? asset.path : asset.source;
-            if (Set.of("music", "sound-effect", "audio-metrics", "score").contains(asset.category)) {
+            if (Set.of("music", "licensed-music", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
@@ -130,7 +155,23 @@ public final class VerifyAssets {
             String author = "Wreck Riff project contributors/tooling; ownership review pending";
             String permission = "Original project content; no distribution license assigned; owner review required";
             String license = "", attribution = "OWNER_REVIEW_REQUIRED";
-            if (asset.category.equals("engine-material")) {
+            if (asset.category.equals("licensed-music") || asset.category.equals("music-provenance")) {
+                author = "Kevin MacLeod (incompetech.com)";
+                permission = "CC-BY-4.0; source track Metalmania; local loop edit and normalization identified in audio/music-provenance.json";
+                license = "licenses/assets/CC-BY-4.0.txt";
+                attribution = "CREDIT_TITLE_AUTHOR_SOURCE_LICENSE_AND_MODIFICATIONS";
+            } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
+                author = "The Roboto Project Authors; atlas rasterization by Wreck Riff tooling";
+                permission = "OFL-1.1; Roboto Condensed v3.016 derived bitmap font";
+                license = "licenses/assets/Roboto-OFL.txt";
+                attribution = "RETAIN_COPYRIGHT_AND_OFL_NOTICE";
+            } else if (asset.category.equals("licensed-texture")) {
+                author = asset.source.contains("cracked_concrete") ? "Dimitrios Savva / Poly Haven"
+                        : asset.source.contains("rusty_metal_03") ? "Amal Kumar / Poly Haven" : "Rob Tuytel / Poly Haven";
+                permission = "CC0-1.0; source and per-file transformations retained in licenses/asset-provenance.json";
+                license = "licenses/assets/CC0-1.0.txt";
+                attribution = "NOT_REQUIRED_BY_CC0; SOURCE_RETAINED";
+            } else if (asset.category.equals("engine-material")) {
                 packaged = "app/jme3-core-3.8.1-stable.jar!/" + asset.path;
                 author = "jMonkeyEngine contributors; see retained upstream notice";
                 permission = "BSD-3-Clause; subject to the retained upstream notice";
@@ -146,7 +187,8 @@ public final class VerifyAssets {
                 license = "licenses/THIRD_PARTY_NOTICES.md";
                 attribution = "SEE_COMPONENT_NOTICES";
             }
-            String form = runtimeGeometry ? "RUNTIME_GEOMETRY_NOT_PACKAGED; generated by " + Path.of(asset.path).getFileName()
+            String form = asset.category.equals("historical-source") ? "HISTORICAL_RECIPE_NOT_COMPILED_OR_PACKAGED"
+                    : runtimeGeometry ? "RUNTIME_GEOMETRY_NOT_PACKAGED; generated by " + Path.of(asset.path).getFileName()
                     : source ? "BUILD_GENERATOR_NOT_PACKAGED" : "PACKAGED_RESOURCE";
             entries.add(new RegisterEntry(id, packaged, origin, author, permission, license, asset.sha256,
                     source ? "SOURCE_GENERATOR_BYTES; NOT_RUNTIME_MESH_OR_COMPILED_CLASS_BYTES" : "PACKAGED_RESOURCE_BYTES",
@@ -168,6 +210,23 @@ public final class VerifyAssets {
 
     private static void verifyAudio(List<Asset> assets) throws Exception {
         AudioConfig config = Configs.gson().fromJson(new String(resource("config/audio.json"), StandardCharsets.UTF_8), AudioConfig.class);
+        if (!config.musicAsset().equals("audio/metalmania.wav") || config.effects().contains("overheat"))
+            throw new IOException("Superseded music/overheat must not remain configured");
+        if (VerifyAssets.class.getClassLoader().getResource("audio/dead-air-circuit.wav") != null
+                || VerifyAssets.class.getClassLoader().getResource("audio/overheat.wav") != null)
+            throw new IOException("Superseded runtime audio is still packaged");
+        byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
+        JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
+        JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
+        if (!provenance.get("license").getAsString().equals("CC-BY-4.0")
+                || !source.get("license").getAsString().equals("CC-BY-4.0")
+                || !source.get("isrc").getAsString().equals("USUAN1700023")
+                || !source.get("author").getAsString().equals("Kevin MacLeod")
+                || !source.get("sourceUrl").getAsString().equals("https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3")
+                || !hash(sourceBytes).equals(provenance.get("sourceEvidenceSha256").getAsString())
+                || !hash(Files.readAllBytes(Path.of("src/tools/assets/audio/Metalmania-original.mp3"))).equals(source.get("originalSha256").getAsString())
+                || !hash(Files.readAllBytes(Path.of("src/tools/assets/audio/Metalmania-source.wav"))).equals(provenance.get("sourceSha256").getAsString()))
+            throw new IOException("Music source/license provenance mismatch");
         String metricsPath = "audio/audio-metrics.csv";
         byte[] metricsBytes = resource(metricsPath);
         Map<String, String[]> expected = new TreeMap<>();
@@ -197,14 +256,19 @@ public final class VerifyAssets {
             if (Math.abs(metrics.peak - Double.parseDouble(row[5])) > 0.00004 || Math.abs(metrics.rms - Double.parseDouble(row[6])) > 0.00004) {
                 throw new IOException("Audio signal metrics mismatch: " + path);
             }
-            if (path.equals(config.musicAsset()) && (metrics.frames / 48_000.0 < 150 || metrics.frames / 48_000.0 > 210)) {
-                throw new IOException("Music length must remain approximately 180 seconds");
+            if (path.equals(config.musicAsset()) && (metrics.frames != 8_601_600
+                    || !metrics.sha256.equals(provenance.get("sha256").getAsString()))) {
+                throw new IOException("Music must match registered 112-bar loop and hash");
             }
-            assets.add(new Asset(path, channels == 2 ? "music" : "sound-effect", metrics.bytes, metrics.sha256,
-                    "GenerateAudio.java; fixed score/seed; no external samples", "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
+            assets.add(new Asset(path, channels == 2 ? "licensed-music" : "sound-effect", metrics.bytes, metrics.sha256,
+                    channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
+                            : "GenerateAudio.java; fixed seed; original sound-effect synthesis; no external samples",
+                    channels == 2 ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
         assets.add(asset("audio/score.txt", "score", resource("audio/score.txt"), "GenerateAudio.java", "SOURCE_PRESENT"));
+        assets.add(asset("audio/music-provenance.json", "music-provenance", provenanceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
+        assets.add(asset("audio/music-source.json", "music-provenance", sourceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
     }
 
     public static WaveMetrics inspectWave(URL url) throws Exception {
@@ -253,25 +317,79 @@ public final class VerifyAssets {
     }
 
     private static void verifyFont(List<Asset> assets) throws Exception {
-        byte[] font = resource("fonts/wreck.fnt"), atlas = resource("fonts/wreck.png"), evidence = resource("fonts/font-provenance.json");
+        byte[] evidence = resource("fonts/font-provenance.json");
         JsonObject provenance = JsonParser.parseString(new String(evidence, StandardCharsets.UTF_8)).getAsJsonObject();
-        if (provenance.get("externalFontInput").getAsBoolean() || provenance.get("glyphs").getAsInt() != 95
-                || !hash(font).equals(provenance.get("fntSha256").getAsString()) || !hash(atlas).equals(provenance.get("pngSha256").getAsString())) {
+        if (!provenance.get("externalFontInput").getAsBoolean() || provenance.get("glyphs").getAsInt() != 161
+                || provenance.get("schemaVersion").getAsInt() != 2 || !provenance.get("license").getAsString().equals("OFL-1.1")) {
             throw new IOException("Font provenance/checksum mismatch");
         }
-        verifyFontBytes(font, atlas);
-        assets.add(asset("fonts/wreck.fnt", "bitmap-font", font, "GenerateFont.java; original 5x7 recipes", "ORIGINAL_GENERATED"));
-        assets.add(asset("fonts/wreck.png", "font-atlas", atlas, "GenerateFont.java; no system font input", "ORIGINAL_GENERATED"));
+        Set<String> names = new HashSet<>();
+        for (JsonElement element : provenance.getAsJsonArray("fonts")) {
+            JsonObject face = element.getAsJsonObject();
+            String name = face.get("name").getAsString(), style = name.equals("wreck") ? "Regular" : "Bold";
+            if (!Set.of("wreck", "wreck-bold").contains(name) || !names.add(name)) throw new IOException("Unexpected/duplicate font face");
+            byte[] font = resource("fonts/" + name + ".fnt"), atlas = resource("fonts/" + name + ".png");
+            Path source = Path.of("src/tools/assets/fonts/RobotoCondensed-" + style + ".ttf");
+            byte[] sourceBytes = Files.readAllBytes(source);
+            if (!hash(font).equals(face.get("fntSha256").getAsString()) || !hash(atlas).equals(face.get("pngSha256").getAsString())
+                    || !hash(sourceBytes).equals(face.get("sourceSha256").getAsString()))
+                throw new IOException("Font source or output checksum mismatch: " + name);
+            verifyFontSourceLicense(sourceBytes);
+            verifyFontBytes(font, atlas);
+            String origin = "https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip; GenerateFont.java; local static " + style + " TTF";
+            assets.add(asset("fonts/" + name + ".fnt", "bitmap-font", font, origin, "LICENSED_DERIVED"));
+            assets.add(asset("fonts/" + name + ".png", "font-atlas", atlas, origin, "LICENSED_DERIVED"));
+        }
+        if (names.size() != 2) throw new IOException("Both regular and bold font faces required");
         assets.add(asset("fonts/font-provenance.json", "font-provenance", evidence, "GenerateFont.java", "VERIFIED"));
+    }
+
+    /** A license from a newer font release must not be attached to older, differently licensed bytes. */
+    static void verifyFontSourceLicense(byte[] source) throws IOException {
+        try {
+            ByteBuffer ttf = ByteBuffer.wrap(source).order(ByteOrder.BIG_ENDIAN);
+            int tables = Short.toUnsignedInt(ttf.getShort(4));
+            if (tables > (source.length - 12) / 16) throw new IOException("Invalid TTF table directory");
+            for (int table = 0; table < tables; table++) {
+                int offset = 12 + table * 16;
+                if (ttf.getInt(offset) != 0x6e616d65) continue; // name
+                int start = ttf.getInt(offset + 8), length = ttf.getInt(offset + 12);
+                if (start < 0 || length < 6 || start > source.length - length) throw new IOException("Invalid TTF name table");
+                int count = Short.toUnsignedInt(ttf.getShort(start + 2));
+                int strings = Short.toUnsignedInt(ttf.getShort(start + 4));
+                if (count > (length - 6) / 12) throw new IOException("Invalid TTF name records");
+                boolean found = false;
+                for (int record = 0; record < count; record++) {
+                    int row = start + 6 + record * 12;
+                    int platform = Short.toUnsignedInt(ttf.getShort(row));
+                    if (Short.toUnsignedInt(ttf.getShort(row + 6)) != 13) continue;
+                    int size = Short.toUnsignedInt(ttf.getShort(row + 8));
+                    int textOffset = strings + Short.toUnsignedInt(ttf.getShort(row + 10));
+                    if (textOffset > length - size) throw new IOException("Invalid TTF license name range");
+                    String license = new String(source, start + textOffset, size,
+                            platform == 0 || platform == 3 ? StandardCharsets.UTF_16BE : StandardCharsets.ISO_8859_1);
+                    if (!license.contains("SIL Open Font License, Version 1.1"))
+                        throw new IOException("TTF embedded license does not match the retained OFL notice");
+                    found = true;
+                }
+                if (found) return;
+            }
+            throw new IOException("Missing TTF embedded OFL license metadata");
+        } catch (IndexOutOfBoundsException e) {
+            throw new IOException("Truncated TTF license metadata", e);
+        }
     }
 
     public static void verifyFontBytes(byte[] font, byte[] atlas) throws IOException {
         String text = new String(font, StandardCharsets.UTF_8);
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(atlas));
-        if (image == null || image.getWidth() != 512 || image.getHeight() != 256 || !text.contains("file=\"wreck.png\"")) {
+        if (image == null || image.getWidth() != 2048 || image.getHeight() != 1024
+                || !(text.contains("file=\"wreck.png\"") || text.contains("file=\"wreck-bold.png\""))
+                || !text.contains("smooth=1") || !text.contains("unicode=1")) {
             throw new IOException("Invalid font atlas reference or dimensions");
         }
         Set<Integer> characters = new HashSet<>();
+        boolean antialiased = false;
         Pattern pattern = Pattern.compile("^char id=(\\d+) x=(\\d+) y=(\\d+) width=(\\d+) height=(\\d+).*$");
         for (String line : text.lines().toList()) {
             var matcher = pattern.matcher(line);
@@ -283,12 +401,57 @@ public final class VerifyAssets {
             }
             boolean visible = false;
             for (int row = y; row < y + height; row++) for (int column = x; column < x + width; column++) {
-                if ((image.getRGB(column, row) >>> 24) != 0) visible = true;
+                int alpha = image.getRGB(column, row) >>> 24;
+                if (alpha != 0) visible = true;
+                if (alpha > 0 && alpha < 255) antialiased = true;
             }
-            if (code != 32 && !visible) throw new IOException("Empty visible ASCII glyph " + code);
+            if (code != 32 && !visible) throw new IOException("Empty visible font glyph " + code);
         }
         for (int code = 32; code <= 126; code++) if (!characters.contains(code)) throw new IOException("Missing ASCII glyph " + code);
-        if (characters.size() != 95) throw new IOException("Unexpected font charset");
+        for (int code = 0x410; code <= 0x44f; code++) if (!characters.contains(code)) throw new IOException("Missing Cyrillic glyph " + code);
+        if (!characters.contains(0x401) || !characters.contains(0x451) || characters.size() != 161 || !antialiased)
+            throw new IOException("Unexpected font charset or missing grayscale antialiasing");
+    }
+
+    private static void verifyTextures(List<Asset> assets) throws Exception {
+        byte[] evidence = resource("licenses/asset-provenance.json");
+        JsonElement tree = JsonParser.parseString(new String(evidence, StandardCharsets.UTF_8));
+        Configs.validate(tree, TextureIndex.class, "asset-provenance");
+        TextureIndex index = Configs.gson().fromJson(tree, TextureIndex.class);
+        Set<String> required = new TreeSet<>();
+        for (String material : MATERIALS) for (String map : List.of("diffuse", "normal", "specular"))
+            required.add("textures/materials/" + material + "/" + map + ".png");
+        required.addAll(List.of("textures/vehicle/paint.png", "textures/vehicle/rubber.png"));
+        Set<String> found = new HashSet<>();
+        if (index.schemaVersion != 1) throw new IOException("Unexpected texture provenance schema");
+        for (TextureSource source : index.assets) {
+            if (!required.contains(source.path) || !found.add(source.path)
+                    || !source.sourcePath.startsWith("src/tools/assets/materials/") || source.sourcePath.contains("..")
+                    || !(source.sourceUrl.startsWith("https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/")
+                         || source.sourceUrl.equals("https://polyhaven.com/a/blue_metal_plate"))
+                    || !source.license.equals("CC0-1.0") || !source.licensePath.equals("licenses/assets/CC0-1.0.txt")
+                    || source.author.isBlank() || source.transformation.isBlank())
+                throw new IOException("Unapproved/malformed texture source: " + source.path);
+            byte[] bytes = resource(source.path);
+            if (!hash(bytes).equals(source.sha256) || !hash(Files.readAllBytes(Path.of(source.sourcePath))).equals(source.sourceSha256))
+                throw new IOException("Texture source/output checksum mismatch: " + source.path);
+            verifyTextureBytes(bytes, source.path.endsWith("/normal.png"));
+            assets.add(asset(source.path, "licensed-texture", bytes, source.sourceUrl + "; " + source.transformation, "LICENSED_BYTES_VERIFIED"));
+        }
+        if (!found.equals(required)) throw new IOException("Required 2K material map missing");
+        assets.add(asset("licenses/asset-provenance.json", "asset-provenance", evidence, "src/tools/import_assets.py", "VERIFIED"));
+    }
+
+    static void verifyTextureBytes(byte[] bytes, boolean normalMap) throws IOException {
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(bytes));
+        if (image == null || image.getWidth() != 2048 || image.getHeight() != 2048)
+            throw new IOException("Required texture must be a 2K PNG");
+        if (normalMap) for (int y = 0; y < 2048; y += 31) for (int x = 0; x < 2048; x += 31) {
+            int rgb = image.getRGB(x, y);
+            float nx = ((rgb >> 16) & 255) / 127.5f - 1, ny = ((rgb >> 8) & 255) / 127.5f - 1, nz = (rgb & 255) / 127.5f - 1;
+            float length = nx * nx + ny * ny + nz * nz;
+            if (length < .75f || length > 1.25f || nz < -.01f) throw new IOException("Invalid tangent-space normal map");
+        }
     }
 
     private static void verifyDependencies(Path output, List<Asset> assets, List<Dependency> dependencies,

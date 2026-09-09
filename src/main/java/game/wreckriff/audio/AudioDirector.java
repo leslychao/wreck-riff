@@ -47,7 +47,7 @@ public final class AudioDirector implements AutoCloseable {
         try {
             AudioKey key = new AudioKey(config.musicAsset(), true, false);
             music = new AudioNode(PcmWave.stream(assets.locateAsset(key)), key);
-            music.setName("music-dead-air-circuit");
+            music.setName("music-metalmania");
             music.setPositional(false); music.setLooping(true);
             audioRoot.attachChild(music);
             for (String id : config.effects()) {
@@ -118,7 +118,7 @@ public final class AudioDirector implements AutoCloseable {
             loop("turbo-"+id,"turbo-loop",Group.ENGINE,vehicle.player?68:25,position,velocity,
                     boosting?own*.9f:0,1);
             priorSpeed[id]=speed; priorTurbo[id]=vehicle.turbo;
-            if (vehicle.player && vehicle.hp<60 && lowHpClock<=0) {
+            if (vehicle.player && vehicle.hp<=vehicle.maximumHp*.25f && lowHpClock<=0) {
                 shot("low-hp",Group.THREAT,100,null,.65f,1); lowHpClock=3;
             }
         }
@@ -144,14 +144,16 @@ public final class AudioDirector implements AutoCloseable {
             String kind=event.kind()==null?"":event.kind().toLowerCase(Locale.ROOT);
             switch (event.type()) {
                 case SHOT -> {
-                    String id=kind.contains("power")?"power-launch":kind.contains("homing")?"homing-launch":"machine-gun";
+                    String id=kind.contains("power")?"power-launch":kind.contains("homing")?"homing-launch"
+                            :kind.contains("napalm")?"napalm-launch":kind.contains("freeze")?"freeze"
+                            :kind.contains("stun")?"stun":"machine-gun";
                     float gain=id.equals("machine-gun")?.32f:1;
                     Vector3f sourcePosition=id.equals("machine-gun") && currentWorld!=null
                             ? currentWorld.muzzle(event.sourceId()) : event.position();
                     shot(id,Group.WEAPON,player?96:58,sourcePosition,gain,1);
                 }
                 case EXPLOSION -> {
-                    shot("explosion",Group.WEAPON,player?93:74,event.position(),.93f,1);
+                    shot(kind.contains("mine")?"mine-detonate":"explosion",Group.WEAPON,player?93:74,event.position(),.93f,1);
                     if (event.value()>=35 || kind.contains("power")) duck=config.musicDuckSeconds();
                 }
                 case DAMAGE -> { if (event.value()>=1) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
@@ -162,7 +164,14 @@ public final class AudioDirector implements AutoCloseable {
                 }
                 case PULSE -> shot("pulse",Group.WEAPON,player?98:80,event.position(),1,1);
                 case EMPTY -> { if (player || event.subjectId()==0) shot("empty",Group.UI,98,null,.62f,1); }
-                case OVERHEAT -> { if (player || event.subjectId()==0) shot("overheat",Group.THREAT,98,null,.66f,1); }
+                case MINE_PLACED -> shot("mine-place",Group.WEAPON,player?94:52,event.position(),.8f,1);
+                case FIRE_STARTED -> loop("fire-"+event.eventId(),"napalm-fire",Group.WEAPON,64,
+                        event.position(),Vector3f.ZERO,.55f,1);
+                case FIRE_ENDED -> stopLoop("fire-"+event.eventId());
+                case FREEZE -> shot("freeze",Group.THREAT,event.subjectId()==0?100:80,event.position(),.8f,.85f);
+                case STUN -> shot("stun",Group.THREAT,event.subjectId()==0?100:80,event.position(),.9f,1);
+                case SHIELD -> shot("shield",Group.THREAT,player?100:80,event.position(),.8f,1);
+                case CONTROL_ENDED -> { /* Expiry is conveyed by HUD/VFX; no repeated alert. */ }
                 case PICKUP -> {
                     String id=kind.contains("repair")?"pickup-repair":kind.contains("turbo")?"pickup-turbo":"pickup-ammo";
                     shot(id,Group.UI,event.subjectId()==0?95:40,event.subjectId()==0?null:event.position(),.85f,1);

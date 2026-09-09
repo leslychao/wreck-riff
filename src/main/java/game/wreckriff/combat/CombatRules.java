@@ -7,7 +7,7 @@ import java.util.Objects;
 public record CombatRules(int maximumProjectiles, float projectileRadius, float explosionSurfaceOffset,
         float ownerSplashMultiplier, float maximumCombinedDeltaSpeed, float killCreditSeconds,
         float emptyFeedbackSeconds, MachineGun machineGun, Rocket homing, Rocket power,
-        Pulse pulse, Targeting targeting, Ram ram, Mine mine, Napalm napalm, Control control) {
+        Pulse pulse, Targeting targeting, Ram ram, Mine mine, Napalm napalm, Control control,Health health) {
     public CombatRules {
         if (maximumProjectiles < 1 || maximumProjectiles > 64) throw new IllegalArgumentException("maximumProjectiles must be 1..64");
         positive("projectileRadius", projectileRadius);
@@ -23,9 +23,16 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
         Objects.requireNonNull(targeting, "targeting");
         Objects.requireNonNull(ram, "ram");
         Objects.requireNonNull(mine,"mine"); Objects.requireNonNull(napalm,"napalm"); Objects.requireNonNull(control,"control");
+        Objects.requireNonNull(health,"health");
         if (homing.maximumDeltaSpeed > maximumCombinedDeltaSpeed || power.maximumDeltaSpeed > maximumCombinedDeltaSpeed
                 || pulse.maximumDeltaSpeed > maximumCombinedDeltaSpeed) {
             throw new IllegalArgumentException("Individual impulses must not exceed the combined speed limit");
+        }
+    }
+    public record Health(float playerMaximumHp,float botMaximumHp,float repairFraction) {
+        public Health {
+            positive("health.playerMaximumHp",playerMaximumHp);positive("health.botMaximumHp",botMaximumHp);
+            range("health.repairFraction",repairFraction,Float.MIN_NORMAL,1);
         }
     }
 
@@ -58,7 +65,7 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
             if(maximumZones<1||maximumZones>6)throw new IllegalArgumentException("Fire-zone cap must be 1..6");
             ammo(initialAmmo,maximumAmmo);positive("napalm.cooldown",cooldownSeconds);
             positive("napalm.speed",speed);positive("napalm.upwardSpeed",upwardSpeed);positive("napalm.gravity",gravity);
-            positive("napalm.ttl",ttlSeconds);positive("napalm.impact",impactDamage);positive("napalm.radius",radius);
+            positive("napalm.ttl",ttlSeconds);positive("napalm.impact",impactDamage);range("napalm.radius",radius,.5f,10);
             positive("napalm.duration",durationSeconds);positive("napalm.damage",damagePerSecond);
             positive("napalm.interval",intervalSeconds);positive("napalm.supportDepth",supportDepth);
             if(ticks(intervalSeconds)<1||intervalSeconds>durationSeconds)throw new IllegalArgumentException("Invalid fire interval");

@@ -11,6 +11,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SettingsStoreTest {
     @TempDir Path directory;
+    @Test void v1MigrationPreservesVideoAudioAndAnExplicitBindingThatUsesNewModifierKey() throws Exception {
+        String original="""
+                {"schemaVersion":1,"width":1600,"height":900,"fullscreen":false,"music":0.35,
+                 "keys":{"Throttle":29}}
+                """;
+        Path file=directory.resolve("settings.json");Files.writeString(file,original);
+        SettingsStore store=new SettingsStore(directory);
+        assertFalse(store.firstRun());assertEquals(2,store.settings().schemaVersion);
+        assertEquals(1600,store.settings().width);assertEquals(900,store.settings().height);
+        assertFalse(store.settings().fullscreen);assertEquals(.35f,store.settings().music);
+        assertEquals(KeyInput.KEY_LCONTROL,store.settings().keys.get("Throttle"));
+        assertEquals(0,store.settings().keys.get("Ability modifier"));assertTrue(store.bindingWarning().contains("Ability modifier"));
+        assertEquals(original,Files.readString(directory.resolve("settings.json.v1.bak")));
+        var reloaded=new SettingsStore(directory);assertEquals(store.settings().keys,reloaded.settings().keys);
+        assertEquals(4,reloaded.settings().samples);
+    }
+    @Test void firstRunIsDifferentFromKnownOrDamagedUserSettings() throws Exception {
+        assertTrue(new SettingsStore(directory).firstRun());
+        Files.writeString(directory.resolve("settings.json"),"{bad");
+        assertFalse(new SettingsStore(directory).firstRun(),"A broken preference file is not authorization to change display mode");
+    }
     @Test void newerSchemaIsPreservedEvenAfterAttemptedSave() throws Exception {
         Path path=directory.resolve("settings.json");String future="{\"schemaVersion\":99,\"newOption\":\"preserve\"}";
         Files.writeString(path,future);
@@ -37,7 +58,7 @@ class SettingsStoreTest {
         assertEquals(1280,settings.width);assertEquals(720,settings.height);assertEquals(1,settings.master);
         assertEquals(.25f,settings.sensitivity);assertEquals(.45f,settings.deadZone);
         assertEquals(SettingsStore.defaultKeys().keySet(),settings.keys.keySet());
-        assertEquals(0,settings.keys.get("Throttle"));assertEquals(KeyInput.KEY_R,settings.keys.get("Recover"));
+        assertEquals(KeyInput.KEY_W,settings.keys.get("Throttle"));assertEquals(KeyInput.KEY_R,settings.keys.get("Recover"));
     }
     @Test void partiallyEditedBindingFileCannotCreateConflictingActions() throws Exception {
         Files.writeString(directory.resolve("settings.json"),"{\"schemaVersion\":1,\"keys\":{\"Throttle\":"+KeyInput.KEY_A+"}}");

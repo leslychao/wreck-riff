@@ -15,7 +15,7 @@ class AudioDirectorTest {
     @Test void a02PauseResumesSameMusicObjectAndRetryDoesNotGrowSources() {
         Node scene=new Node();
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
-            AudioNode music=find(scene,"music-dead-air-circuit");
+            AudioNode music=find(scene,"music-metalmania");
             for(int retry=0;retry<20;retry++) {
                 director.startMatch();
                 MatchSession session=new MatchSession(retry,180);
@@ -25,7 +25,7 @@ class AudioDirectorTest {
                 director.pause(); assertEquals(AudioSource.Status.Paused,music.getStatus());
                 director.ui(true);
                 director.resume();
-                assertSame(music,find(scene,"music-dead-air-circuit"));
+                assertSame(music,find(scene,"music-metalmania"));
                 assertEquals(AudioSource.Status.Playing,music.getStatus());
                 director.stopMatch(); assertEquals(0,director.voiceCount());
                 assertEquals(1,((Node)scene.getChild("match-audio")).getQuantity());
@@ -78,7 +78,51 @@ class AudioDirectorTest {
             director.startMatch();director.stopMatch();
             director.accept(List.of(event(GameEvent.Type.MATCH_FINISHED,1,0,-1,"victory",0)));
             assertNotNull(find(scene,"sound-victory"));assertEquals(1,director.voiceCount());
-            assertEquals(AudioSource.Status.Stopped,find(scene,"music-dead-air-circuit").getStatus());
+            assertEquals(AudioSource.Status.Stopped,find(scene,"music-metalmania").getStatus());
+        }
+    }
+    @Test void fireZoneAudioHasOneTrackedLoopPerZoneAndStopsOnItsExpiry() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();
+            director.accept(List.of(event(GameEvent.Type.FIRE_STARTED,41,0,0,"napalm-fire",5),
+                    event(GameEvent.Type.FIRE_STARTED,42,1,1,"napalm-fire",5)));
+            assertEquals(3,director.voiceCount());
+            director.accept(List.of(event(GameEvent.Type.FIRE_STARTED,41,0,0,"napalm-fire",5)));
+            assertEquals(3,director.voiceCount(),"Duplicate zone event cannot create a second loop");
+            director.pause(); director.resume();
+            director.accept(List.of(event(GameEvent.Type.FIRE_ENDED,41,0,0,"napalm-fire",0)));
+            assertEquals(2,director.voiceCount());
+            director.accept(List.of(event(GameEvent.Type.FIRE_ENDED,42,1,1,"napalm-fire",0)));
+            assertEquals(1,director.voiceCount());
+            assertNull(find(scene,"sound-napalm-fire"));
+        }
+    }
+    @Test void lowHealthAlertTracksQuarterOfPlayerMaximumInsteadOfTheOldAbsoluteThreshold() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();MatchSession session=new MatchSession(42,180);
+            session.vehicles.getFirst().hp=201;
+            director.update(session,world(Vector3f.ZERO),.02f);
+            assertNull(find(scene,"sound-low-hp"));
+            session.vehicles.getFirst().hp=200;
+            director.update(session,world(Vector3f.ZERO),.02f);
+            assertNotNull(find(scene,"sound-low-hp"));
+        }
+    }
+    @Test void newWeaponsAndControlsUseTheirOwnCues() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch();
+            director.accept(List.of(event(GameEvent.Type.SHOT,1,0,0,"napalm",0),
+                    event(GameEvent.Type.MINE_PLACED,2,0,0,"mine",0),
+                    event(GameEvent.Type.EXPLOSION,3,1,0,"mine",70),
+                    event(GameEvent.Type.FREEZE,4,1,0,"freeze",2),
+                    event(GameEvent.Type.STUN,5,2,0,"stun",1),
+                    event(GameEvent.Type.SHIELD,6,0,0,"shield",2.5f)));
+            for(String name:List.of("napalm-launch","mine-place","mine-detonate","freeze","stun","shield"))
+                assertNotNull(find(scene,"sound-"+name),name);
+            assertNull(find(scene,"sound-machine-gun"),"New shots must not fall through to the old default cue");
         }
     }
     private static GameEvent event(GameEvent.Type type,long id,int subject,int source,String kind,float value) {

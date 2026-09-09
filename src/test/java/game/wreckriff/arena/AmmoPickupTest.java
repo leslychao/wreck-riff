@@ -11,6 +11,19 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AmmoPickupTest {
+    @Test void mineAndNapalmPickupsUseTheirOwnSlotsAndTwentySecondRespawn() {
+        ArenaDefinition arena=ArenaDefinition.load();
+        for(var type: new ArenaDefinition.PickupType[]{ArenaDefinition.PickupType.MINE_AMMO,ArenaDefinition.PickupType.NAPALM_AMMO}) {
+            MatchSession session=new MatchSession(42,360);TestWorld world=new TestWorld();ArenaSystems systems=new ArenaSystems(session,arena);
+            var pickup=arena.pickups().stream().filter(p->p.type()==type).findFirst().orElseThrow();
+            world.positions[0]=pickup.position().vector().add(0,.8f,0);
+            WeaponType weapon=type==ArenaDefinition.PickupType.MINE_AMMO?WeaponType.MINE:WeaponType.NAPALM;
+            systems.collectPickups(world);assertEquals(5,session.vehicle(0).weapon(weapon).ammo);
+            assertEquals(6,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+            assertEquals(2400,pickup.respawnTicks());session.tick=2400;systems.collectPickups(world);
+            assertEquals(6,session.vehicle(0).weapon(weapon).ammo);assertEquals(1,systems.drainEvents().getLast().value());
+        }
+    }
     @Test void nonDefaultWeaponCapacitiesAlsoBoundPickupEligibilityAndRefills() {
         verifyPickupLimits(1, 1);
         verifyPickupLimits(5, 3);
@@ -31,7 +44,7 @@ class AmmoPickupTest {
         CombatRules rules = Configs.gson().fromJson(json, CombatRules.class);
         ArenaDefinition arena = ArenaDefinition.load();
         for (var type : new ArenaDefinition.PickupType[]{ArenaDefinition.PickupType.HOMING_AMMO, ArenaDefinition.PickupType.POWER_AMMO}) {
-            MatchSession session = new MatchSession(42, 360);
+            MatchSession session = new MatchSession(42, 360,rules);
             // MatchRuntime constructs arena systems first; combat initializes shared resources
             // before the first collection, so this order must not capture stale capacities.
             ArenaSystems systems = new ArenaSystems(session, arena);

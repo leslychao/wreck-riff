@@ -70,7 +70,7 @@ public final class GenerateFont {
         }
         Files.writeString(output.resolve("font-provenance.json"),"""
                 {"schemaVersion":2,"name":"Roboto Condensed","externalFontInput":true,"glyphs":161,
-                "sourceUrl":"https://github.com/googlefonts/roboto-classic/releases/download/v3.008/Roboto_v3.008.zip",
+                "sourceUrl":"https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip",
                 "author":"The Roboto Project Authors","license":"OFL-1.1","licensePath":"licenses/assets/Roboto-OFL.txt",
                 "rendering":"48px grayscale antialiasing; 2x supersampling; true lowercase and Cyrillic; no system font",
                 "artisticStatus":"NEEDS_CREATIVE_REVIEW","fonts":[%s]}

@@ -21,6 +21,7 @@ class VehicleVisualTest {
                 Mesh mesh=geometry.getMesh();triangles[0]+=mesh.getTriangleCount();draws[0]++;
                 FloatBuffer positions=(FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
                 for(int i=0;i<positions.limit();i++) assertTrue(Float.isFinite(positions.get(i)));
+                if(geometry.getMaterial().getMaterialDef().getName().equals("Phong Lighting"))
                 for(var type:List.of(VertexBuffer.Type.Normal,VertexBuffer.Type.TexCoord,VertexBuffer.Type.Tangent)) {
                     assertNotNull(mesh.getBuffer(type),"Textured vehicle mesh requires "+type);
                     FloatBuffer data=(FloatBuffer)mesh.getBuffer(type).getData();

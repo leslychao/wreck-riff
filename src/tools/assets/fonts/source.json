@@ -1,11 +1,12 @@
 {
-  "sourceUrl": "https://github.com/googlefonts/roboto-classic/releases/download/v3.008/Roboto_v3.008.zip",
-  "sourceCommit": "8aa699a9a715be7ecf6be41171e2851a580f0fb8",
-  "licenseUrl": "https://raw.githubusercontent.com/google/fonts/main/ofl/robotocondensed/OFL.txt",
+  "sourceUrl": "https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip",
+  "sourceCommit": "5166f3d07889bf7d3732fb72e09623d7e52f862b",
+  "licenseUrl": "https://raw.githubusercontent.com/googlefonts/roboto-3-classic/v3.016/OFL.txt",
   "acquired": "2026-09-09",
-  "archiveSha256": "64c51d5d69c36c9a71dca214cd80b699e637a57d1c19744ef46a23f91347bd24",
+  "archiveSha256": "1653dbe12f248da8fb0b9920db7b9496cd677ed3981154f6f15285c8bd4e334f",
+  "archiveDirectory": "hinted/static",
   "files": {
-    "RobotoCondensed-Bold.ttf": "dbdb744bb15be1c65a491d05753c8717dde034ae3c37c590a6b0c53ff3458a33",
-    "RobotoCondensed-Regular.ttf": "5d4b57bbd49d25520cbd6f9be56053be85a050149e4f41f5ba47cb1463314086"
+    "RobotoCondensed-Bold.ttf": "f910b672ba95b5715b7f9c6bbbc3c1ba9d48d2c31e22eb92675058c1719bb0a6",
+    "RobotoCondensed-Regular.ttf": "a272b33e9606ed59dd12b3d19bbf3abd799680cbf8ac148ce602795326337a03"
   }
 }

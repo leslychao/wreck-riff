@@ -33,6 +33,10 @@ public final class SurfaceMesh {
         Mesh mesh=new Mesh();mesh.setBuffer(VertexBuffer.Type.Position,3,BufferUtils.createFloatBuffer(p));
         mesh.setBuffer(VertexBuffer.Type.Normal,3,BufferUtils.createFloatBuffer(n));
         mesh.setBuffer(VertexBuffer.Type.TexCoord,2,BufferUtils.createFloatBuffer(uv));
+        // jME's static batch merger copies indices only when a physical Index buffer is present.
+        // Identity indices retain authored face seams while keeping every merged triangle drawable.
+        int[] indices=new int[size];for(int i=0;i<size;i++)indices[i]=i;
+        mesh.setBuffer(VertexBuffer.Type.Index,3,BufferUtils.createIntBuffer(indices));
         mesh.updateBound();MikktspaceTangentGenerator.generate(mesh);mesh.setStatic();return mesh;
     }
     public static float[] uv(Vector3f point,Vector3f normal,float metresPerTile) {

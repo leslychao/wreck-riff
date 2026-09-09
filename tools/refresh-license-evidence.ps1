@@ -7,7 +7,7 @@ $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $licenseRoot = Join-Path $projectRoot 'src/main/resources/licenses'
 [IO.Directory]::CreateDirectory($licenseRoot) | Out-Null
 $sources = @(
-    @{ file='jme-BSD3.txt'; url='https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/LICENSE.md'; components=@('org.jmonkeyengine:jme3-core:3.8.1-stable','org.jmonkeyengine:jme3-desktop:3.8.1-stable','org.jmonkeyengine:jme3-lwjgl3:3.8.1-stable','org.jmonkeyengine:jme3-terrain:3.8.1-stable') },
+    @{ file='jme-BSD3.txt'; url='https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/LICENSE.md'; components=@('org.jmonkeyengine:jme3-core:3.8.1-stable','org.jmonkeyengine:jme3-desktop:3.8.1-stable','org.jmonkeyengine:jme3-lwjgl3:3.8.1-stable','org.jmonkeyengine:jme3-terrain:3.8.1-stable','org.jmonkeyengine:jme3-effects:3.8.1-stable') },
     @{ file='minie-BSD3.txt'; url='https://raw.githubusercontent.com/stephengold/Minie/9.0.3/LICENSE'; components=@('com.github.stephengold:Minie:9.0.3') },
     @{ file='heart-BSD3.txt'; url='https://raw.githubusercontent.com/stephengold/Heart/9.2.0/license.txt'; components=@('com.github.stephengold:Heart:9.2.0') },
     @{ file='heart-Icosphere-source.txt'; url='https://raw.githubusercontent.com/stephengold/Heart/9.2.0/HeartLibrary/src/main/java/jme3utilities/mesh/Icosphere.java'; components=@('com.github.stephengold:Heart:9.2.0') },

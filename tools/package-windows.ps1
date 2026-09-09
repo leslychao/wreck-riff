@@ -122,7 +122,9 @@ Java is included. Do not run the executable from inside the ZIP viewer.
 Your settings, statistics, logs, and captures are saved under LOCALAPPDATA/WreckRiff.
 
 Default controls: WASD drive, Space handbrake, Shift turbo, LMB machine gun,
-RMB selected rocket, Q/E switch rocket, F Feedback Pulse, R recovery, Esc pause.
+RMB selected weapon, Q/E switch weapon, F Feedback Pulse, R recovery, Esc pause.
+Hold Left Ctrl, then press W for Freeze, A for Stun, or D for Shield.
+Gamepad: hold R3, then D-pad up/left/right for Freeze/Stun/Shield.
 The Controls screen is authoritative for current/rebound controls.
 
 This local MVP is not digitally signed. Windows may display a warning for an

@@ -33,7 +33,7 @@ public final class BotController {
         Vector3f destination,lastPosition,passingDestination,lastDrivingTarget,progressDirection=new Vector3f();
         long passingUntil,nextPassAttempt;
         String pickup;
-        boolean healing,requiredMovement,backingToRoute;
+        boolean healing,requiredMovement,backingToRoute,recoveryDetourAttempted;
         Brain(long seed) { random=new Random(seed); }
     }
     private final MatchSession session;
@@ -145,6 +145,8 @@ public final class BotController {
         ArenaDefinition.PickupType wanted=brain.healing ? ArenaDefinition.PickupType.REPAIR
                 : self.weapon(WeaponType.HOMING).ammo<Math.min(2,self.weapon(WeaponType.HOMING).maximumAmmo) ? ArenaDefinition.PickupType.HOMING_AMMO
                 : self.weapon(WeaponType.POWER).ammo<Math.min(1,self.weapon(WeaponType.POWER).maximumAmmo) ? ArenaDefinition.PickupType.POWER_AMMO
+                : self.weapon(WeaponType.MINE).ammo==0 ? ArenaDefinition.PickupType.MINE_AMMO
+                : self.weapon(WeaponType.NAPALM).ammo==0 ? ArenaDefinition.PickupType.NAPALM_AMMO
                 : self.turbo<rules.turboSeekThreshold() || continuingTurboRun(brain,self)
                     ? ArenaDefinition.PickupType.TURBO_CELL : null;
         if (wanted!=null) {
@@ -283,6 +285,20 @@ public final class BotController {
     private VehicleCommand drive(VehicleState self,Brain brain,WorldQuery world) {
         Vector3f position=world.position(self.id),velocity=world.velocity(self.id),forward=world.forward(self.id);
         float speed=velocity.length();
+        if(needsRecovery(brain) && !brain.recoveryDetourAttempted && world.grounded(self.id)
+                && world.rotation(self.id).mult(Vector3f.UNIT_Y).y>.8f) {
+            // An upright car can fail a short turning circle while a clear longer
+            // corridor remains. Try one observed, supported driving detour before
+            // requesting a paid recovery; a failed detour still reaches recovery.
+            brain.recoveryDetourAttempted=true;
+            Vector3f obstruction=brain.lastDrivingTarget==null?position.add(forward):brain.lastDrivingTarget;
+            Vector3f escape=passingDestination(self.id,position,forward,obstruction,world);
+            if(escape!=null) {
+                brain.passingDestination=escape;brain.passingUntil=session.tick+rules.recoveryAfterTicks();
+                brain.reverseUntil=0;brain.stuckSince=-1;brain.reverseAttempts=0;
+                brain.progress=0;brain.progressWindowStart=session.tick;brain.backingToRoute=false;
+            }
+        }
         if (needsRecovery(brain)) {
             brain.state=State.RECOVER; brain.requiredMovement=false;
             float longitudinal=velocity.dot(forward);
@@ -306,8 +322,11 @@ public final class BotController {
             return new VehicleCommand(0,.8f,reverseSteer,false,false,false,false,false,0,false,false,AbilityId.NONE);
         }
         Vector3f destination=steeringTarget(brain,position,speed);
-        if (brain.passingDestination!=null && (session.tick>=brain.passingUntil
-                || horizontalDistance(position,brain.passingDestination)<4)) brain.passingDestination=null;
+        if(brain.passingDestination!=null && horizontalDistance(position,brain.passingDestination)<4) {
+            // Reaching the verified detour is a successful escape. A later, unrelated
+            // blocked route gets its own attempt; timeout alone never resets it.
+            brain.passingDestination=null;brain.recoveryDetourAttempted=false;
+        } else if(brain.passingDestination!=null && session.tick>=brain.passingUntil)brain.passingDestination=null;
         var closeOpponent=brain.observation.visible().stream().min(Comparator.comparingDouble(e->e.position().distanceSquared(position))).orElse(null);
         if (brain.passingDestination==null && session.tick>=brain.nextPassAttempt && closeOpponent!=null
                 && closeOpponent.position().distance(position)<rules.passDistance()
@@ -325,7 +344,7 @@ public final class BotController {
             // moving enemy over its side and leaving the chassis suspended on the edge.
             float along=destination.z-position.z;
             float travel=Math.abs(along)>4?Math.signum(along):(forward.z>=0?1:-1);
-            float laneOffset=closeOpponent!=null && closeOpponent.position().distance(position)<rules.passDistance()?travel*2:0;
+            float laneOffset=closeOpponent!=null && closeOpponent.position().distance(position)<rules.passDistance()?-travel*2:0;
             destination=new Vector3f((ramp.minX()+ramp.maxX())*.5f+laneOffset,destination.y,
                     Math.clamp(position.z+travel*12,ramp.minZ()-4,ramp.maxZ()+4));
         }
@@ -507,7 +526,7 @@ public final class BotController {
             brain.reverseUntil=0; brain.progress=0; brain.progressWindowStart=session.tick;
             brain.destination=null; brain.path=List.of(); brain.state=State.SEEK_TARGET;
             brain.passingDestination=null;
-            brain.backingToRoute=false;
+            brain.backingToRoute=false;brain.recoveryDetourAttempted=false;
         }
         if (brain.lastPosition!=null) {
             Vector3f displacement=position.subtract(brain.lastPosition); displacement.y=0;

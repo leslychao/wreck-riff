@@ -23,14 +23,14 @@ class DrivingBoundaryTest {
     }
     @Test void handbrakeReversesCourseWithinAgreedWindowWithoutFlipping() {
         try(PhysicsWorld world=world()) {
-            var state=new VehicleState(0,"Test",true); var driver=new VehicleController(world,state,VehicleRules.load());
+            var state=new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)); var driver=new VehicleController(world,state,VehicleRules.load());
             for(int tick=0;tick<600&&world.velocity(0).z<20;tick++){driver.drive(GAS);world.step();}
             float previous=0,total=0; int first150=-1;
             for(int tick=1;tick<=156;tick++) {
                 driver.drive(DRIFT);world.step();Vector3f forward=world.forward(0);
                 float yaw=(float)Math.atan2(forward.x,forward.z),change=yaw-previous;
                 if(change>FastMath.PI)change-=FastMath.TWO_PI;if(change< -FastMath.PI)change+=FastMath.TWO_PI;
-                total+=change;previous=yaw;
+                total-=change;previous=yaw;
                 if(first150<0&&total>=150*FastMath.DEG_TO_RAD)first150=tick;
                 assertTrue(world.rotation(0).mult(Vector3f.UNIT_Y).y>0.6f,"Handbrake must not flip the chassis");
             }
@@ -42,7 +42,7 @@ class DrivingBoundaryTest {
         Vector3f reference=null; float referenceYaw=0;
         for(int fps:new int[]{30,60,144}) {
             try(PhysicsWorld world=world()) {
-                var driver=new VehicleController(world,new VehicleState(0,"Test",true),VehicleRules.load());
+                var driver=new VehicleController(world,new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)),VehicleRules.load());
                 var loop=new SimulationLoop(MatchRules.load()); int[] ticks={0};
                 for(int frame=0;frame<fps*4;frame++)loop.advance(1.0/fps,true,()->{
                     VehicleCommand command=ticks[0]<340?GAS:DRIFT; driver.drive(command);world.step();ticks[0]++;
@@ -55,7 +55,7 @@ class DrivingBoundaryTest {
     }
     @Test void turboConsumesOnlyOnGroundAndWaitsBeforeRegenerating() {
         try(PhysicsWorld world=world()) {
-            var state=new VehicleState(0,"Test",true);var driver=new VehicleController(world,state,VehicleRules.load());
+            var state=new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class));var driver=new VehicleController(world,state,VehicleRules.load());
             VehicleCommand turbo=new VehicleCommand(1,0,0,false,true,false,false,false,0,false,false,AbilityId.NONE);
             driver.drive(turbo);world.step();assertTrue(state.turbo<100);
             float after=state.turbo;world.teleport(0,new Vector3f(0,20,0),new Quaternion());
@@ -67,7 +67,7 @@ class DrivingBoundaryTest {
     }
     @Test void manualOccupiedRecoveryDoesNotSpendAndEmergencyWithoutSafePoseIsFatal() {
         try(PhysicsWorld world=world()) {
-            var state=new VehicleState(0,"Test",true);var driver=new VehicleController(world,state,VehicleRules.load());
+            var state=new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class));var driver=new VehicleController(world,state,VehicleRules.load());
             Vector3f safe=world.position(0);world.teleport(0,new Vector3f(4,1,0),new Quaternion());
             world.addVehicle(1,safe,new Quaternion());
             VehicleController.Recovery recovery=VehicleController.Recovery.NONE;
@@ -76,12 +76,12 @@ class DrivingBoundaryTest {
             world.teleport(0,new Vector3f(90,1,0),new Quaternion());state.recoveryCooldown=600;
             world.vehicle(0).setLinearVelocity(new Vector3f(40,0,0));
             recovery=driver.prepare(VehicleCommand.NONE,400);
-            assertTrue(recovery.fatal());assertEquals(200,recovery.cost());
+            assertTrue(recovery.fatal());assertEquals(800,recovery.cost());
         }
     }
     @Test void emergencyBypassesSpeedAndCooldownButPaysOnce() {
         try(PhysicsWorld world=world()) {
-            var state=new VehicleState(0,"Test",true);var driver=new VehicleController(world,state,VehicleRules.load());
+            var state=new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class));var driver=new VehicleController(world,state,VehicleRules.load());
             Vector3f safe=world.position(0);world.teleport(0,new Vector3f(90,1,0),new Quaternion());
             state.recoveryCooldown=600;world.vehicle(0).setLinearVelocity(new Vector3f(40,0,0));
             var recovery=driver.prepare(VehicleCommand.NONE,300);

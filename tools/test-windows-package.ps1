@@ -1,4 +1,4 @@
-param([ValidateRange(60,600)][int]$TimeoutSeconds=180)
+param([ValidateRange(60,900)][int]$TimeoutSeconds=660)
 $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $buildRoot=Join-Path $projectRoot 'build'
@@ -30,7 +30,7 @@ try {
     $env:JAVA_HOME=Join-Path $testRoot 'Java is not installed'
     $env:PATH="$env:SystemRoot\System32;$env:SystemRoot"
     $process=Start-Process -FilePath (Join-Path $image 'WreckRiff.exe') -WorkingDirectory $image -WindowStyle Hidden -PassThru `
-        -ArgumentList @('--dev','--seed=42','--smoke-seconds=120') `
+        -ArgumentList @('--dev','--seed=42','--smoke-seconds=600') `
         -RedirectStandardOutput (Join-Path $testRoot 'stdout.log') -RedirectStandardError (Join-Path $testRoot 'stderr.log')
     if (-not $process.WaitForExit($TimeoutSeconds*1000)) { $process.Kill();throw 'Packaged graphical smoke timed out.' }
     $process.Refresh();$exitCode=$process.ExitCode

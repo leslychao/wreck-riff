@@ -1,0 +1,5 @@
+# License and source-asset hashes refer to exact upstream bytes.
+src/main/resources/licenses/** -text whitespace=cr-at-eol
+src/main/resources/licenses/*.json text eol=lf
+src/tools/assets/** -text whitespace=cr-at-eol
+src/tools/assets/**/*.json text eol=lf

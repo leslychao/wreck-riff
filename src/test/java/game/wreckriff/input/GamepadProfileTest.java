@@ -12,6 +12,23 @@ import static org.junit.jupiter.api.Assertions.*;
 class GamepadProfileTest {
     @TempDir Path directory;
 
+    @Test void v1ProfileMigratesWithCalibrationAndBackupAndDisablesAConflictingModifier() throws Exception {
+        JsonObject old=defaults();old.addProperty("schemaVersion",1);old.remove("abilityModifier");
+        old.addProperty("rocket",10);old.addProperty("triggerMinimum",0);old.addProperty("triggerMaximum",1);
+        String original=Configs.gson().toJson(old);Files.writeString(directory.resolve("gamepad.json"),original);
+        GamepadProfile profile=GamepadProfile.load(directory);
+        assertEquals(2,profile.schemaVersion());assertEquals(10,profile.rocket());assertEquals(-1,profile.abilityModifier());
+        assertEquals(.5f,profile.trigger(.5f));assertTrue(profile.warning().contains("unbound"));
+        assertEquals(original,Files.readString(directory.resolve("gamepad.json.v1.bak")));
+        assertEquals(profile,GamepadProfile.load(directory));
+    }
+
+    @Test void defaultV1MappingGainsR3ModifierWithoutChangingOtherActions() throws Exception {
+        JsonObject old=defaults();old.addProperty("schemaVersion",1);old.remove("abilityModifier");
+        Files.writeString(directory.resolve("gamepad.json"),Configs.gson().toJson(old));
+        assertEquals(GamepadProfile.bundled(),GamepadProfile.load(directory));
+    }
+
     @Test void firstLoadCreatesAnEditableUtf8ProfileAndLaterLoadsPreserveIt() throws Exception {
         GamepadProfile expected=GamepadProfile.bundled();
         assertEquals(expected,GamepadProfile.load(directory));
@@ -47,7 +64,7 @@ class GamepadProfileTest {
     @Test void invalidSchemaAxisAndButtonValuesUseDefaultsAndPreserveOriginal() throws Exception {
         for(String field:new String[]{"schemaVersion","steerAxis","throttleAxis","brakeAxis","machineGun","pause","back"}) {
             JsonObject json=defaults();
-            json.addProperty(field,field.equals("schemaVersion")?2:field.endsWith("Axis")?6:15);
+            json.addProperty(field,field.equals("schemaVersion")?99:field.endsWith("Axis")?6:15);
             assertRejectedWithoutMutation(Configs.gson().toJson(json));
             json.addProperty(field,-1);assertRejectedWithoutMutation(Configs.gson().toJson(json));
         }
@@ -97,7 +114,7 @@ class GamepadProfileTest {
     private JsonObject defaults() { return Configs.gson().toJsonTree(GamepadProfile.bundled()).getAsJsonObject(); }
 
     private GamepadProfile withTriggerRange(float minimum,float maximum) {
-        return new GamepadProfile(1,0,5,4,minimum,maximum,2,1,4,5,0,14,12,3,6,7,11,13,1);
+        return new GamepadProfile(2,0,5,4,minimum,maximum,2,1,4,5,0,14,12,3,6,7,11,13,1,10);
     }
 
     private void assertRejectedWithoutMutation(String original) throws Exception {

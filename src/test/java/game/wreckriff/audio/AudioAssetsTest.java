@@ -10,7 +10,7 @@ class AudioAssetsTest {
     @Test void a01AllRequiredEffectsAreDistinctMonoPcmWithoutClipping() throws Exception {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
-        assertTrue(config.effects().size()>=24);
+        assertTrue(config.effects().size()==30);
         for(String effect:config.effects()) {
             try(InputStream input=asset("audio/"+effect+".wav")) {
                 PcmWave.Header header=PcmWave.header(input);
@@ -30,7 +30,7 @@ class AudioAssetsTest {
     @Test void a01MusicIsACompleteStereoScoreWithEnergyAndNonIdenticalChannels() throws Exception {
         try(InputStream input=asset(AudioConfig.load().musicAsset())) {
             PcmWave.Header header=PcmWave.header(input);
-            assertEquals(2,header.channels()); assertEquals(180,header.seconds(),.001);
+            assertEquals(2,header.channels()); assertEquals(179.2,header.seconds(),.001);
             byte[] pcm=input.readNBytes((int)header.dataBytes());
             assertEquals(header.dataBytes(),pcm.length);
             Metrics total=metrics(pcm);
@@ -51,7 +51,7 @@ class AudioAssetsTest {
     }
 
     @Test void continuousEffectsHaveQuietSampleBoundary() throws Exception {
-        for(String effect:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","hazard-active")) {
+        for(String effect:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","hazard-active","napalm-fire")) {
             try(InputStream input=asset("audio/"+effect+".wav")) {
                 PcmWave.Header header=PcmWave.header(input);
                 byte[] pcm=input.readNBytes((int)header.dataBytes());
@@ -63,10 +63,21 @@ class AudioAssetsTest {
     @Test void scoreAndSignalProvenanceAreBundled() throws Exception {
         try(InputStream input=asset("audio/score.txt")) {
             String score=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
-            assertTrue(score.contains("96 bars")); assertTrue(score.contains("NEEDS_CREATIVE_REVIEW"));
+            assertTrue(score.contains("Metalmania") && score.contains("CC BY 4.0") && score.contains("112 bars")); assertTrue(score.contains("NEEDS_CREATIVE_REVIEW"));
         }
         try(InputStream input=asset("audio/audio-metrics.csv")) {
-            assertEquals(26,new String(input.readAllBytes()).lines().count());
+            assertEquals(AudioConfig.load().effects().size()+2,new String(input.readAllBytes()).lines().count());
+        }
+    }
+    @Test void licensedRecordingReplacesRejectedSongAndOverheatIsAbsent() throws Exception {
+        assertEquals("audio/metalmania.wav",AudioConfig.load().musicAsset());
+        assertFalse(AudioConfig.load().effects().contains("overheat"));
+        assertNull(getClass().getResource("/audio/dead-air-circuit.wav"));
+        assertNull(getClass().getResource("/audio/overheat.wav"));
+        try(InputStream input=asset("audio/music-provenance.json")) {
+            String evidence=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue(evidence.contains("Kevin MacLeod"));assertTrue(evidence.contains("CC-BY-4.0"));
+            assertTrue(evidence.contains("sourceSha256"));assertTrue(evidence.contains("NEEDS_CREATIVE_REVIEW"));
         }
     }
     private static InputStream asset(String path) { return Objects.requireNonNull(AudioAssetsTest.class.getResourceAsStream("/"+path),path); }

@@ -70,7 +70,7 @@ public final class ArenaSystems {
     }
     private static float apply(VehicleState vehicle,ArenaDefinition.PickupType type) {
         return switch (type) {
-            case REPAIR -> { float old=vehicle.hp; vehicle.hp=Math.min(vehicle.maximumHp,vehicle.hp+vehicle.maximumHp*.25f); yield vehicle.hp-old; }
+            case REPAIR -> { float old=vehicle.hp; vehicle.hp=Math.min(vehicle.maximumHp,vehicle.hp+vehicle.maximumHp*vehicle.repairFraction); yield vehicle.hp-old; }
             case HOMING_AMMO -> vehicle.weapon(WeaponType.HOMING).refill(3);
             case POWER_AMMO -> vehicle.weapon(WeaponType.POWER).refill(2);
             case MINE_AMMO -> vehicle.weapon(WeaponType.MINE).refill(2);

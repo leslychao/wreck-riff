@@ -4,11 +4,9 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ScreenshotAppState;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
-import com.jme3.light.*;
 import com.jme3.material.Material;
 import com.jme3.math.*;
 import com.jme3.scene.*;
-import com.jme3.scene.shape.Box;
 import game.wreckriff.Main;
 import game.wreckriff.ai.*;
 import game.wreckriff.arena.*;
@@ -55,6 +53,8 @@ public final class GameApplication extends SimpleApplication {
     private CombatSystem combat;
     private CombatVisuals combatVisuals;
     private ChaseCamera chase;
+    private DiagnosticCameraTour visualTour;
+    private final List<String> diagnosticCaptures=new ArrayList<>();
     private SessionReport report;
     private ScreenshotAppState screenshots;
     private FileHandler fileLog;
@@ -64,7 +64,7 @@ public final class GameApplication extends SimpleApplication {
     private record WeaponHud(BitmapText title,BitmapText ammo,Geometry plate) {}
     private final Map<WeaponType,WeaponHud> weaponHud=new EnumMap<>(WeaponType.class);
     private final Map<Integer,BitmapText> radarMarkers=new HashMap<>();
-    private boolean debug,navDebug,showHelp,smokeStarted,smokeCapture;
+    private boolean debug,navDebug,showHelp,smokeStarted;
     private Node navNode;
     private float noticeTime;
     private double elapsed,videoDeadline;
@@ -150,6 +150,7 @@ public final class GameApplication extends SimpleApplication {
                 session=new MatchSession(seed,matchRules.durationSeconds()); report=new SessionReport();
                 world=new PhysicsWorld(vehicleRules);
                 arena=ArenaDefinition.load(); content=new ArenaFactory(assetManager).build(arena);
+                if(options.automated()) visualTour=new DiagnosticCameraTour(arena);
                 matchNode.attachChild(content.visual());
                 for(var body:content.bodies()) world.addStatic(body.shape(),body.position(),body.rotation());
                 List<ArenaDefinition.Spawn> spawns=new ArrayList<>(content.spawns()); Collections.shuffle(spawns,new Random(seed));
@@ -163,7 +164,7 @@ public final class GameApplication extends SimpleApplication {
                 }
                 runtime=new MatchRuntime(session,world,arena,content.graph(),vehicleRules);
                 drivers.putAll(runtime.drivers()); arenaSystems=runtime.arenaSystems();bots=runtime.bots();combat=runtime.combat();
-                ArenaPresentation.attach(assetManager,content.visual(),world,session,arena,arenaSystems);
+                ArenaPresentation.attach(assetManager,content.visual(),session,arena,arenaSystems);
                 combatVisuals=new CombatVisuals(assetManager,matchNode,world);
                 createNavigationLines();
                 // Loading prepares native suspension without consuming a single gameplay tick.
@@ -177,6 +178,13 @@ public final class GameApplication extends SimpleApplication {
                     if(bodies!=baselineBodies||listeners!=baselineListeners||!combat.projectiles().isEmpty()||audio.voiceCount()>(audioRenderer==null?0:1))
                         throw new IllegalStateException("Retry resource baseline changed");
                     diagnostic.cycle(diagnosticRetries,bodies,listeners,combat.projectiles().size(),audio.voiceCount());
+                    if(session.tick!=0 || session.vehicles.stream().anyMatch(v->world.wheelContacts(v.id)!=4||v.hp!=v.maximumHp))
+                        throw new IllegalStateException("Loading did not prepare grounded, undamaged participants at tick zero");
+                    if(!combat.mines().isEmpty()||!combat.fireZones().isEmpty()||combat.reservedFireZones()!=0)
+                        throw new IllegalStateException("Transient weapons survive match preparation");
+                    diagnostic.put("initialSimulationTick",session.tick);
+                    diagnostic.put("initialHp",session.vehicles.stream().map(v->v.hp).toList());
+                    diagnostic.put("startWithoutCountdown",true);
                     diagnostic.put("latestLoadSeconds",(System.nanoTime()-loadingStarted)/1_000_000_000.0);
                 }
             } catch(Exception e) { fail(e); }
@@ -206,7 +214,10 @@ public final class GameApplication extends SimpleApplication {
                 cam.setLocation(new Vector3f(-6,4.5f,10)); cam.lookAt(new Vector3f(0.5f,0.7f,0),Vector3f.UNIT_Y);
             }
             if(noticeTime>0) { noticeTime-=dt; if(noticeTime<=0&&noticeText!=null) noticeText.setText(""); }
-            if(options.automated() && elapsed>8 && !smokeCapture && world!=null&&drawable) { capture(); smokeCapture=true; }
+            if(visualTour!=null&&world!=null&&drawable&&elapsed<22) {
+                String shot=visualTour.apply(cam,world,elapsed);
+                if(shot!=null) capture(shot);
+            }
             if(options.automated()) advanceDiagnostic(drawable);
         } catch(Exception e) { fail(e); }
     }
@@ -274,6 +285,7 @@ public final class GameApplication extends SimpleApplication {
     }
     private void screenChanged() {
         screenSince=elapsed;
+        if(flow.screen()==Screen.RUNNING) message="";
         if(diagnostic!=null)diagnostic.transition(flow.screen().name(),elapsed);
         input.clear(); input.setGameplay(flow.screen()==Screen.RUNNING);
         if(world!=null && flow.screen()!=Screen.RUNNING && flow.screen()!=Screen.RESULTS) audio.pause();
@@ -404,7 +416,7 @@ public final class GameApplication extends SimpleApplication {
     private static String cooldown(int ticks) { return ticks<=0?"READY":String.format(Locale.ROOT,"%.1fs",ticks/120f); }
     private String bindingName(String action) {
         Integer key=store.settings().keys.get(action);
-        return key==null||key==0?"UNBOUND":inputManager.getKeyName(key);
+        return KeyLabels.name(key);
     }
     private void drawSettings() {
         var s=store.settings(); ui.title("SETTINGS","Select a row to change it. ESC returns.");
@@ -506,7 +518,14 @@ public final class GameApplication extends SimpleApplication {
     private void returnToMenu() { cleanupMatch();flow.menu(); }
     private void notice(String text) {message=text;noticeTime=5;if(noticeText!=null)noticeText.setText(text);}
     private void capture() {
-        if(screenshots!=null) {screenshots.setFileName("WreckRiff-0.2.0-"+System.currentTimeMillis()+"-");screenshots.takeScreenshot();}
+        capture("manual");
+    }
+    private void capture(String label) {
+        if(screenshots!=null) {
+            String prefix="WreckRiff-0.2.0-"+label+"-"+System.currentTimeMillis()+"-";
+            screenshots.setFileName(prefix);screenshots.takeScreenshot();
+            if(diagnostic!=null) {diagnosticCaptures.add(prefix);diagnostic.put("capturePrefixes",List.copyOf(diagnosticCaptures));}
+        }
     }
     private void writeReport() {
         if(!options.dev()||session==null||world==null||report==null)return;
@@ -519,7 +538,7 @@ public final class GameApplication extends SimpleApplication {
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
         else if(world!=null){world.close();world=null;}
         matchNode.detachAllChildren();vehicleModels.clear();wheels.clear();drivers.clear();wreckTimers.clear();
-        session=null;arenaSystems=null;bots=null;content=null;navNode=null;
+        session=null;arenaSystems=null;bots=null;content=null;navNode=null;visualTour=null;
     }
     private void fail(Exception exception) {
         Logger.getLogger(getClass().getName()).log(Level.SEVERE,"Game failure",exception);

@@ -57,6 +57,7 @@ public final class CombatSystem {
     private long nextShotId = 1;
     private int reservedFireZones;
     private WorldQuery lastWorld;
+    private long lastControlTimerTick=Long.MIN_VALUE;
 
     public CombatSystem(MatchSession session, CombatRules rules) {
         this.session = Objects.requireNonNull(session);
@@ -64,7 +65,6 @@ public final class CombatSystem {
         orderedVehicles = session.vehicles.stream().sorted(Comparator.comparingInt(v -> v.id)).toList();
         SplittableRandom weaponSeed = new SplittableRandom(session.seed ^ 0x575245434b524946L);
         for (VehicleState vehicle : orderedVehicles) {
-            vehicle.initializeArsenal(rules);
             vehicle.pulseCooldown = ticks(rules.pulse().initialDelaySeconds());
             spreadRandom.put(vehicle.id, weaponSeed.split());
         }
@@ -120,14 +120,6 @@ public final class CombatSystem {
         vehicle.advanceAbilityCooldowns();
         vehicle.shieldTicks=Math.max(0,vehicle.shieldTicks-1);
         vehicle.controlImmunityTicks=Math.max(0,vehicle.controlImmunityTicks-1);
-        boolean controlled=vehicle.controlled();
-        vehicle.frozenTicks=Math.max(0,vehicle.frozenTicks-1);
-        vehicle.stunnedTicks=Math.max(0,vehicle.stunnedTicks-1);
-        if(controlled && !vehicle.controlled()) {
-            vehicle.controlImmunityTicks=ticks(rules.control().immunitySeconds());
-            world.immobilize(vehicle.id,false);
-            events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,vehicle.id,vehicle.id,world.position(vehicle.id),"control-ended",0));
-        }
     }
     private boolean projectileCapacity() {
         long reserved=intents.stream().filter(i->!i.kind.equals("machine-gun")&&!i.kind.equals("pulse")&&!i.kind.equals("stun")).count();
@@ -389,17 +381,20 @@ public final class CombatSystem {
         for(FireZone zone:fireZones)if(session.tick>=zone.expiresAt)events.add(event(GameEvent.Type.FIRE_ENDED,zone.id,zone.ownerId,zone.ownerId,zone.support.point(),"napalm-fire",0));
         fireZones.removeIf(zone->session.tick>=zone.expiresAt);
         int interval=ticks(rules.napalm().intervalSeconds());
+        float baseAmount=rules.napalm().damagePerSecond()*interval*MatchSession.DT;
         for(VehicleState target:orderedVehicles) {
             FireZone selected=null;
+            float maximumAmount=0;
             if(target.alive())for(FireZone zone:fireZones) {
-                if(inFire(target.id,zone,world)&&(selected==null||zone.id<selected.id))selected=zone;
+                if(!inFire(target.id,zone,world))continue;
+                if(selected==null||zone.id<selected.id)selected=zone;
+                float amount=baseAmount*(target.id==zone.ownerId?rules.ownerSplashMultiplier():1);
+                maximumAmount=Math.max(maximumAmount,amount);
             }
             if(selected==null||target.protectionTicks>0) {fireExposureTicks.remove(target.id);continue;}
             int elapsed=fireExposureTicks.getOrDefault(target.id,0)+1;
             if(elapsed>=interval) {
-                float amount=rules.napalm().damagePerSecond()*interval*MatchSession.DT;
-                if(target.id==selected.ownerId)amount*=rules.ownerSplashMultiplier();
-                queueDamage(target.id,selected.ownerId,amount,"napalm-fire",nextShotId++);elapsed=0;
+                queueDamage(target.id,selected.ownerId,maximumAmount,"napalm-fire",nextShotId++);elapsed=0;
             }
             fireExposureTicks.put(target.id,elapsed);
         }
@@ -605,6 +600,19 @@ public final class CombatSystem {
     }
 
     private void resolveControl(WorldQuery world) {
+        // Existing CC lasts through this complete physics step. Fresh hits below start
+        // their duration afterwards, avoiding a one-step-short immobilization.
+        if(lastControlTimerTick!=session.tick) {
+            lastControlTimerTick=session.tick;
+            for(VehicleState target:orderedVehicles) {
+                boolean controlled=target.controlled();
+                target.frozenTicks=Math.max(0,target.frozenTicks-1);target.stunnedTicks=Math.max(0,target.stunnedTicks-1);
+                if(controlled&&!target.controlled()) {
+                    target.controlImmunityTicks=ticks(rules.control().immunitySeconds());world.immobilize(target.id,false);
+                    events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"control-ended",0));
+                }
+            }
+        }
         controlHits.sort(Comparator.comparingInt((ControlHit hit)->hit.ability==AbilityId.STUN?0:1).thenComparingLong(ControlHit::eventId));
         for(ControlHit hit:controlHits) {
             VehicleState target=session.vehicle(hit.targetId);

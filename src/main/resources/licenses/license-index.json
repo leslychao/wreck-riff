@@ -9,7 +9,8 @@
         "org.jmonkeyengine:jme3-core:3.8.1-stable",
         "org.jmonkeyengine:jme3-desktop:3.8.1-stable",
         "org.jmonkeyengine:jme3-lwjgl3:3.8.1-stable",
-        "org.jmonkeyengine:jme3-terrain:3.8.1-stable"
+        "org.jmonkeyengine:jme3-terrain:3.8.1-stable",
+        "org.jmonkeyengine:jme3-effects:3.8.1-stable"
       ],
       "sha256": "fe47d99c352ce1cc69005f7d47cfd5f3c23700599946c196c03af04dce97dddb"
     },

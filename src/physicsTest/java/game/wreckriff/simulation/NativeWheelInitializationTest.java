@@ -24,7 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class NativeWheelInitializationTest {
     private record Sample(Vector3f position, Quaternion rotation, Vector3f velocity) {}
     private record Drive(List<Sample> samples, boolean injected) {}
-    private static final VehicleCommand REVERSE_TURN = new VehicleCommand(0, 1, 1, false, false, false, false, false, 0, false, false,AbilityId.NONE);
+    // Driver-left preserves this fixture's original world-space reverse approach to the ramp.
+    private static final VehicleCommand REVERSE_TURN = new VehicleCommand(0, 1, -1, false, false, false, false, false, 0, false, false,AbilityId.NONE);
     private static final VehicleCommand REVERSE_STRAIGHT = new VehicleCommand(0, 1, 0, false, false, false, false, false, 0, false, false,AbilityId.NONE);
 
     @Test void repeatedInclineStartsKeepRawWheelAnglesFinite() {
@@ -84,7 +85,7 @@ class NativeWheelInitializationTest {
             }
             assertEquals(4, world.wheelContacts(0));
             assertRawDeltas(world, "after settle");
-            var driver = new VehicleController(world, new VehicleState(0, "Wheel initialization test", true), rules);
+            var driver = new VehicleController(world, new VehicleState(0, "Wheel initialization test", true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)), rules);
             PhysicsTickListener corruption = new PhysicsTickListener() {
                 @Override public void prePhysicsTick(PhysicsSpace space, float timeStep) {}
                 @Override public void physicsTick(PhysicsSpace space, float timeStep) {
@@ -118,7 +119,7 @@ class NativeWheelInitializationTest {
 
     private PhysicsWorld arenaWorld(VehicleRules rules) {
         PhysicsWorld world = new PhysicsWorld(rules);
-        var content = new ArenaFactory(new DesktopAssetManager(true)).build(ArenaDefinition.load());
+        var content = new ArenaFactory(game.wreckriff.arena.NativeArenaAssets.MANAGER).build(ArenaDefinition.load());
         for (var body : content.bodies()) world.addStatic(body.shape(), body.position(), body.rotation());
         return world;
     }

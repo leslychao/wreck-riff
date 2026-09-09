@@ -6,10 +6,10 @@
 
 | Поле | Значение |
 |---|---|
-| Версия проекта | `0.1.0`, источник — `build.gradle` |
+| Версия проекта | `0.2.0`, источник — `build.gradle` |
 | Сборочная команда | `./gradlew.bat packageWindows` на Windows с Microsoft JDK 21 |
 | Локальный app-image | `build/distributions/WreckRiff/` |
-| ZIP | `build/distributions/WreckRiff-0.1.0-windows-x64.zip` |
+| ZIP | `build/distributions/WreckRiff-0.2.0-windows-x64.zip` |
 | SHA-256 | Соседний файл `.zip.sha256`; проверить перед передачей |
 | Launcher относительно корня содержимого depot | `WreckRiff.exe` |
 | Обычные аргументы запуска | Пустые; `--dev` не нужен игроку |
@@ -33,19 +33,17 @@ README.txt
 
 ## Что фактически реализовано
 
-Один локальный игрок и четыре AI; одна машина с различными ливреями, одна двухуровневая арена; пулемёт, Homing/Power Rocket и Pulse; ремонты/боеприпасы/hazard; результаты и Retry; локальные настройки и статистика; оригинальные procedural mesh, bitmap-шрифт, музыка и SFX. Интерфейс — английский, документация разработчика — русская. Клавиатура/мышь и Xbox-совместимый GLFW-профиль предусмотрены кодом.
+Один локальный игрок и четыре AI; Rivet с пятью ливреями и двухуровневая промышленная арена; пулемёт, Homing/Power Rocket, Mine, Napalm и Pulse; Freeze/Stun/Shield; ремонты/боеприпасы/hazard; результаты и Retry; локальные настройки и статистика. В 0.2 переработаны геометрия, текстуры, освещение, тени, шрифт и музыка. Игрок имеет 800 HP, боты 400 HP, перегрева и стартового отсчёта нет. Интерфейс — английский, документация разработчика — русская. Клавиатура/мышь и Xbox-совместимый GLFW-профиль предусмотрены кодом.
 
 Сетевой multiplayer, достижения Steam, Steam Cloud, Steam Overlay API, Steam Input API, Workshop и Steam Deck certification не реализованы. Не указывать эти возможности как подтверждённые свойства страницы. Физический контроллер и полноту навигации им нужно принять отдельно прежде, чем заявлять соответствующий уровень controller support.
 
 ## Фактически проверенная платформа
 
-Единый источник актуальных SHA исходников/ZIP, hardware, test/native/package/runtime reports и численных замеров — [ACCEPTANCE](ACCEPTANCE.md). Структура текущего Windows app-image проверена, полный native набор и AI batch 10 seeds проходят, включая норму recovery. Это не определяет минимальные системные требования и не заменяет ручную оценку боя.
-
-Длительный 1080p benchmark и строгий отрицательный запуск с неверным конфигом PASS. Финальный packaged smoke подтвердил реальное окно/OpenAL, 20 restart, кириллицу/пробелы, read-only install и запуск с изоляцией внешней Java. Граница SHA между benchmark и финальным исправлением ошибочной ветки подтверждена отдельным source report в ACCEPTANCE. FUNCTIONAL_COMPLETE = YES в рамках §1.4/20.3; ручной UI, fresh Windows без Java, физический геймпад, внешний CI, права и оценка владельца остаются открытыми. FEEL_APPROVED = NO; MVP_ACCEPTED = NO. Проверять актуальный протокол перед передачей.
+Единый источник актуальных SHA исходников/ZIP, hardware, test/native/package/runtime reports и численных замеров — [ACCEPTANCE](ACCEPTANCE.md). Отчёты 0.1 сохранены в docs/history и не являются подтверждением новой сборки 0.2. Минимальные системные требования, физический контроллер и чистую Windows нужно подтвердить отдельно. FEEL_APPROVED = NO; MVP_ACCEPTED = NO до фактической оценки владельца.
 
 ## Ресурсы и распространение
 
-Источники оригинальных assets: [ASSET_REGISTER](ASSET_REGISTER.csv), `GenerateAudio.java`, `GenerateFont.java`, `VehicleVisual.java`, `ArenaFactory.java` и материалы CombatParticles. Проверка WAV/размера/hash не подтверждает художественное качество. Ресурсы оригинальной Twisted Metal 4 не являются входом генераторов.
+Источники и преобразования assets: [ASSET_REGISTER](ASSET_REGISTER.csv), [AUDIO_DESIGN](AUDIO_DESIGN.md), `src/main/resources/licenses/asset-provenance.json` и генераторы. Текстуры Poly Haven, музыка Metalmania Kevin MacLeod и Roboto Condensed имеют локальные исходники и лицензионные сведения. Проверка WAV/размера/hash не подтверждает художественное качество. Ресурсы оригинальной Twisted Metal 4 не являются входом генераторов.
 
 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) и `src/main/resources/licenses/license-index.json` указывают upstream документы и hashes; build записывает точные Maven coordinates и license evidence. Сохраняются лицензии зависимости и `runtime/legal`. Для OpenAL Soft до внешнего распространения требуется закрыть отмеченную проверку corresponding-source delivery и возможности замены библиотеки для точного native build; здесь не дано неподтверждённое обещание поставки исходников от имени владельца.
 
@@ -53,7 +51,7 @@ README.txt
 
 ## Следующие действия владельца
 
-1. Принять конкретный ZIP по SHA/source: пройти полный бой вручную, UI/focus/video, физический геймпад и fresh Windows без Java. Доступные автоматические проверки, read-only install, 20 Retry и производительность уже подтверждены в ACCEPTANCE; внешний CI выполнить при доступной среде и разрешении.
+1. Принять конкретный ZIP по SHA/source: сверить актуальные автоматические проверки в ACCEPTANCE, пройти полный бой вручную, UI/focus/video, физический геймпад и fresh Windows без Java; внешний CI выполнить при доступной среде и разрешении.
 2. Записать личную оценку пяти категорий ощущений и желание повторного боя по [ACCEPTANCE](ACCEPTANCE.md); закрыть лицензионные и коммерческие вопросы.
 3. При отдельном решении о публикации оформить собственное приложение Steamworks и получить реальные AppID/DepotID. Не использовать чужой тестовый AppID.
 4. Подготовить страницу, реальные screenshots/trailer, требования и заявления о возможностях строго для принятой сборки. Настроить Windows launch option на `WreckRiff.exe`, без dev-аргументов.

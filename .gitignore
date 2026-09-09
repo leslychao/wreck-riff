@@ -6,3 +6,4 @@ build/
 hs_err_pid*
 *.jfr
 *.hprof
+__pycache__/

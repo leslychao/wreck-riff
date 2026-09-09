@@ -11,7 +11,7 @@ import com.jme3.util.BufferUtils;
 import com.jme3.font.BitmapText;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.material.RenderState;
-import com.jme3.util.geom.GeometryBatchFactory;
+import jme3tools.optimize.GeometryBatchFactory;
 import game.wreckriff.presentation.SurfaceMaterials;
 import game.wreckriff.presentation.SurfaceMesh;
 import java.util.*;
@@ -83,7 +83,7 @@ public final class ArenaFactory {
                 (hazard.maxZ()-hazard.minZ())*.5f),"black");
         for (float x=hazard.minX()+1;x<hazard.maxX();x+=2) box(root,"hazard-stripe",new Vector3f(x,.03f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f(.32f,.02f,(hazard.maxZ()-hazard.minZ())*.5f-.2f),"yellow");
-        GeometryBatchFactory.optimize(structure,false);root.attachChild(structure);
+        structure.updateGeometricState();GeometryBatchFactory.optimize(structure,false);root.attachChild(structure);
         addSigns(root);
         for (var pickup:definition.pickups()) {
             Geometry stand=new Geometry("stand-"+pickup.id(),new Cylinder(2,16,1.2f,.12f,true));
@@ -235,13 +235,24 @@ public final class ArenaFactory {
                 dome.setLocalScale(1,.32f,1);dome.setMaterial(material("steel"));buildings.attachChild(dome);
             }
         }
+        for(float x:new float[]{-84,84}) {
+            for(int z=-64;z<=64;z+=32) {
+                beam(buildings,"power-pole",new Vector3f(x,0,z),new Vector3f(x,9,z),.12f,"rust");
+                beam(buildings,"power-crossarm",new Vector3f(x-1.4f,8.6f,z),new Vector3f(x+1.4f,8.6f,z),.09f,"steel");
+                if(z<64)for(float offset:new float[]{-1.1f,1.1f})for(int span=0;span<12;span++) {
+                    float t=span/12f,u=(span+1)/12f;
+                    beam(buildings,"sagging-power-wire",new Vector3f(x+offset,8.7f-3*t*(1-t),z+32*t),
+                            new Vector3f(x+offset,8.7f-3*u*(1-u),z+32*u),.025f,"black");
+                }
+            }
+        }
         // A graded sky hemisphere uses continuous vertex colours, with no low-resolution image enlargement.
         Sphere sphere=new Sphere(20,48,350);Geometry sky=new Geometry("industrial-sky",sphere);
         var positions=(java.nio.FloatBuffer)sphere.getBuffer(VertexBuffer.Type.Position).getData();
         float[] colors=new float[sphere.getVertexCount()*4];
         for(int vertex=0;vertex<sphere.getVertexCount();vertex++) {
             float height=Math.clamp(positions.get(vertex*3+1)/350,0,1);
-            ColorRGBA color=new ColorRGBA(.47f,.42f,.35f,1).interpolateLocal(new ColorRGBA(.065f,.105f,.18f,1),(float)Math.sqrt(height));
+            ColorRGBA color=new ColorRGBA(.29f,.25f,.20f,1).interpolateLocal(new ColorRGBA(.025f,.065f,.13f,1),(float)Math.sqrt(height));
             colors[vertex*4]=color.r;colors[vertex*4+1]=color.g;colors[vertex*4+2]=color.b;colors[vertex*4+3]=1;
         }
         sphere.setBuffer(VertexBuffer.Type.Color,4,BufferUtils.createFloatBuffer(colors));

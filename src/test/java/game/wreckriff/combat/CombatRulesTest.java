@@ -18,8 +18,8 @@ class CombatRulesTest {
         assertEquals(12, rules.machineGun().cooldownTicks());
         assertEquals(96, CombatRules.ticks(rules.homing().cooldownSeconds()));
         assertEquals(132, CombatRules.ticks(rules.power().cooldownSeconds()));
-        assertEquals(1680, CombatRules.ticks(rules.pulse().cooldownSeconds()));
-        assertEquals(480, CombatRules.ticks(rules.pulse().initialDelaySeconds()));
+        assertEquals(1440, CombatRules.ticks(rules.pulse().cooldownSeconds()));
+        assertEquals(0, CombatRules.ticks(rules.pulse().initialDelaySeconds()));
         assertEquals(18, CombatRules.ticks(rules.targeting().acquisitionSeconds()));
         assertEquals(36, CombatRules.ticks(rules.targeting().occlusionGraceSeconds()));
         assertEquals(72, CombatRules.ticks(rules.ram().cooldownSeconds()));
@@ -58,10 +58,7 @@ class CombatRulesTest {
         assertThrows(RuntimeException.class, () -> Configs.gson().fromJson(ammo, CombatRules.class));
     }
 
-    @Test void T01_invalidHeatThresholdsAndTargetRetentionAreRejected() {
-        JsonObject heat = configuration();
-        heat.getAsJsonObject("machineGun").addProperty("resumeHeat", 100);
-        assertThrows(RuntimeException.class, () -> Configs.gson().fromJson(heat, CombatRules.class));
+    @Test void T01_invalidTargetRetentionIsRejected() {
         JsonObject cone = configuration();
         cone.getAsJsonObject("targeting").addProperty("retentionConeDegrees", 17);
         assertThrows(RuntimeException.class, () -> Configs.gson().fromJson(cone, CombatRules.class));

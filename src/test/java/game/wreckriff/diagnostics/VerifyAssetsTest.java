@@ -57,9 +57,53 @@ class VerifyAssetsTest {
 
     @Test void A01_fontGlyphCannotPointOutsideAtlasOrUseMissingAtlas() throws Exception {
         byte[] fnt = bundled("fonts/wreck.fnt"), png = bundled("fonts/wreck.png");
-        String invalid = new String(fnt, StandardCharsets.UTF_8).replaceFirst("char id=32 x=\\d+", "char id=32 x=999");
+        String invalid = new String(fnt, StandardCharsets.UTF_8).replaceFirst("char id=32 x=\\d+", "char id=32 x=9999");
         assertThrows(IOException.class, () -> VerifyAssets.verifyFontBytes(invalid.getBytes(StandardCharsets.UTF_8), png));
         assertThrows(IOException.class, () -> VerifyAssets.verifyFontBytes(fnt, new byte[]{0, 1, 2}));
+    }
+    @Test void fontRequiresActualCyrillicPixelsAndBothLicensedFaces() throws Exception {
+        for(String face:List.of("wreck","wreck-bold")) {
+            byte[] fnt=bundled("fonts/"+face+".fnt"),png=bundled("fonts/"+face+".png");
+            VerifyAssets.verifyFontBytes(fnt,png);
+            String missing=new String(fnt,StandardCharsets.UTF_8).replaceAll("(?m)^char id=1105 .*\\R", "");
+            assertThrows(IOException.class,()->VerifyAssets.verifyFontBytes(missing.getBytes(StandardCharsets.UTF_8),png));
+        }
+    }
+    @Test void materialValidationRejectsLowResolutionAndColorAsNormalData() throws Exception {
+        VerifyAssets.verifyTextureBytes(bundled("textures/materials/asphalt_02/normal.png"),true);
+        VerifyAssets.verifyTextureBytes(bundled("textures/materials/metal_plate_02/diffuse.png"),false);
+        assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("fonts/wreck.png"),false));
+        assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("textures/materials/asphalt_02/diffuse.png"),true));
+    }
+    @Test void fontSourceLicenseMustMatchTheActualFontRevision() throws Exception {
+        for (String style : List.of("Regular", "Bold")) {
+            byte[] ttf = Files.readAllBytes(Path.of("src/tools/assets/fonts/RobotoCondensed-" + style + ".ttf"));
+            VerifyAssets.verifyFontSourceLicense(ttf);
+            byte[] name = "SIL Open Font License, Version 1.1".getBytes(StandardCharsets.UTF_16BE);
+            boolean replaced = false;
+            for (int i = 0; i <= ttf.length - name.length; i++) {
+                if (java.util.Arrays.equals(ttf, i, i + name.length, name, 0, name.length)) {
+                    ttf[i + 1] = 'X'; replaced = true;
+                }
+            }
+            assertTrue(replaced);
+            assertThrows(IOException.class, () -> VerifyAssets.verifyFontSourceLicense(ttf));
+        }
+        assertThrows(IOException.class, () -> VerifyAssets.verifyFontSourceLicense(new byte[8]));
+    }
+    @Test void registrySeparatesLicensedRecordingFontAndTexturesFromOriginalProjectContent() {
+        var music=new VerifyAssets.Asset("audio/metalmania.wav","licensed-music",100,"c".repeat(64),
+                "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3","LICENSED_DERIVED",2,10L,.5,.2);
+        var texture=new VerifyAssets.Asset("textures/materials/cracked_concrete/diffuse.png","licensed-texture",100,"c".repeat(64),
+                "https://polyhaven.com/a/cracked_concrete","LICENSED_BYTES_VERIFIED",null,null,null,null);
+        var font=new VerifyAssets.Asset("fonts/wreck.fnt","bitmap-font",100,"c".repeat(64),"GenerateFont.java","LICENSED_DERIVED",null,null,null,null);
+        var records=VerifyAssets.registerEntries(List.of(music,texture,font),"0.2.0");
+        assertTrue(records.getFirst().author().contains("Kevin MacLeod"));
+        assertTrue(records.getFirst().licensePermission().contains("CC-BY-4.0"));
+        assertEquals("licenses/assets/CC-BY-4.0.txt",records.getFirst().licenseTextPath());
+        assertTrue(records.get(1).author().contains("Dimitrios Savva"));
+        assertTrue(records.get(1).licensePermission().contains("CC0-1.0"));
+        assertTrue(records.getLast().licensePermission().contains("OFL-1.1"));
     }
 
     @Test void A01_registryDistinguishesActualPackagedBytesFromRuntimeGeometryRecipes() {

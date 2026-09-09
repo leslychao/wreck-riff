@@ -30,6 +30,7 @@ class CombatSystemTest {
         rules = Configs.load("combat", CombatRules.class);
         combat = new CombatSystem(session, rules);
         world = new FakeWorld();
+        session.vehicles.forEach(v -> v.hp=200); // Damaged-hull fixtures isolate damage arithmetic from spawn health.
     }
 
     @Test void T02_emptyAmmoDoesNotSpendCooldownOrCreateProjectile() {
@@ -57,28 +58,9 @@ class CombatSystemTest {
         assertEquals(1, count(events, GameEvent.Type.PULSE));
     }
 
-    @Test void T03_overheatBlocksUntilTheExactRecoveryThreshold() {
-        session.vehicle(0).heat = 100;
-        session.vehicle(0).overheated = true;
-        step(machineGun());
-        assertTrue(session.vehicle(0).overheated);
-        assertEquals(99.75f, session.vehicle(0).heat, 0.0001f);
-        assertEquals(0, count(combat.drainEvents(), GameEvent.Type.SHOT));
-        session.vehicle(0).heat = 35.5f;
-        step(machineGun());
-        assertTrue(session.vehicle(0).overheated);
-        step(machineGun());
-        assertFalse(session.vehicle(0).overheated);
-        assertEquals(1, count(combat.drainEvents(), GameEvent.Type.SHOT));
-    }
-
-    @Test void T03_heatHasSpecifiedRiseAndCoolingDelay() {
-        for (int i = 0; i < 120; i++) step(machineGun());
-        assertEquals(20, session.vehicle(0).heat, 0.001f);
-        for (int i = 0; i < 23; i++) step(VehicleCommand.NONE);
-        assertEquals(20, session.vehicle(0).heat, 0.001f);
-        step(VehicleCommand.NONE);
-        assertEquals(19.75f, session.vehicle(0).heat, 0.001f);
+    @Test void continuousMachineGunRetainsItsCadenceForThirtySeconds() {
+        for(int i=0;i<30*120;i++)step(machineGun());
+        assertEquals(300,count(combat.drainEvents(),GameEvent.Type.SHOT));
     }
 
     @Test void T04_weaponSwitchPreservesCooldownAndDoesNotFire() {
@@ -86,8 +68,8 @@ class CombatSystemTest {
         int cooldown = session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks;
         combat.drainEvents();
         step(switchWeapon());
-        step(switchWeapon());
-        assertEquals(0, session.vehicle(0).selectedWeapon);
+        step(new VehicleCommand(0,0,0,false,false,false,false,false,-1,false,false,AbilityId.NONE));
+        assertEquals(WeaponType.HOMING, session.vehicle(0).selectedWeapon);
         assertEquals(cooldown - 2, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
         assertEquals(0, count(combat.drainEvents(), GameEvent.Type.SHOT));
         step(rocket());
@@ -121,7 +103,7 @@ class CombatSystemTest {
         VehicleCommand command = new VehicleCommand(0, 0, 0, false, false, false, false, true, 1, false, false,AbilityId.NONE);
         step(command);
         for (int i = 0; i < 11; i++) step(command.withoutEdges());
-        assertEquals(1, session.vehicle(0).selectedWeapon);
+        assertEquals(WeaponType.POWER, session.vehicle(0).selectedWeapon);
         assertEquals(1, count(combat.drainEvents(), GameEvent.Type.PULSE));
     }
 
@@ -157,7 +139,7 @@ class CombatSystemTest {
         world.onlyLastSampleVisible = true;
         session.vehicle(0).pulseCooldown = 0;
         step(pulse());
-        assertEquals(180, session.vehicle(1).hp);
+        assertEquals(110, session.vehicle(1).hp);
     }
 
     @Test void T09_duplicateDamageCannotDuplicateDamageOrDeath() {
@@ -209,6 +191,7 @@ class CombatSystemTest {
         session = new MatchSession(42, 1);
         combat = new CombatSystem(session, rules);
         session.tick = 119;
+        session.vehicles.forEach(v->v.hp=200);
         for (int i = 1; i < 5; i++) combat.queueDamage(i, 0, 200, "machine-gun", i);
         combat.resolveDamage(world);
         session.finishTick();
@@ -353,14 +336,14 @@ class CombatSystemTest {
     }
 
     @Test void pulseIncludesHullAtRadiusAndRejectsJustBeyondIt() {
-        world.positions[1].set(11, 0, 0); // Fake hull radius 1, so nearest hull distance is exactly 10.
-        world.positions[2].set(-11.001f, 0, 0);
-        world.positions[3].set(0, 0, 10.999f);
+        world.positions[1].set(13, 0, 0); // Fake hull radius 1: nearest hull distance is exactly 12.
+        world.positions[2].set(-13.001f, 0, 0);
+        world.positions[3].set(0, 0, 12.999f);
         session.vehicle(0).pulseCooldown = 0;
         step(pulse());
-        assertEquals(180, session.vehicle(1).hp);
+        assertEquals(110, session.vehicle(1).hp);
         assertEquals(200, session.vehicle(2).hp);
-        assertEquals(180, session.vehicle(3).hp);
+        assertEquals(110, session.vehicle(3).hp);
     }
 
     @Test void homingHasLimitedAngularSpeedAndNeverReacquiresLostTarget() {
@@ -394,6 +377,7 @@ class CombatSystemTest {
     }
 
     @Test void impulsesAreHorizontalAndHaveCommonPerTickLimit() {
+        session.vehicle(1).hp=session.vehicle(1).maximumHp; // Four 90-damage Pulses must leave a living hull to observe the push.
         world.positions[1].set(0, 0, 5);
         for (int id : List.of(0, 2, 3, 4)) {
             world.positions[id].set(0, 0, 0);
@@ -446,6 +430,7 @@ class CombatSystemTest {
         session = new MatchSession(seed, 360);
         combat = new CombatSystem(session, rules);
         world = new FakeWorld();
+        session.vehicles.forEach(v -> v.hp=200); // Damaged-hull fixtures isolate damage arithmetic from spawn health.
         Random sound = new Random(17);
         for (int i = 0; i < 120; i++) {
             if (soundNoise) for (int j = 0; j < 17; j++) sound.nextFloat();
@@ -458,6 +443,7 @@ class CombatSystemTest {
         JsonObject json = Configs.gson().toJsonTree(rules).getAsJsonObject();
         mutate.accept(json);
         rules = Configs.gson().fromJson(json, CombatRules.class);
+        session=new MatchSession(session.seed,360,rules);session.vehicles.forEach(v->v.hp=200);
         combat = new CombatSystem(session, rules);
     }
 

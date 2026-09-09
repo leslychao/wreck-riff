@@ -100,7 +100,7 @@ tasks.register('generateBuildInfo') {
         def git = providers.exec { commandLine 'git', 'rev-parse', '--verify', 'HEAD'; ignoreExitValue = true }
         def commit = git.result.get().exitValue == 0 ? git.standardOutput.asText.get().trim() : 'uncommitted'
         def sourceDigest = MessageDigest.getInstance('SHA-256')
-        def sources = files(fileTree('src/main'), fileTree('src/tools'), 'build.gradle', 'settings.gradle', 'gradle.lockfile').files.findAll { it.isFile() }
+        def sources = files(fileTree('src/main'), fileTree('src/tools') { exclude '**/__pycache__/**', '**/*.pyc' }, 'build.gradle', 'settings.gradle', 'gradle.lockfile').files.findAll { it.isFile() }
         sources.sort { relativePath(it) }.each { source ->
             sourceDigest.update(relativePath(source).replace('\\', '/').getBytes('UTF-8'))
             sourceDigest.update((byte) 0)
@@ -130,7 +130,7 @@ tasks.register('smokeTest', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = application.mainClass
-    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=120'
+    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=600'
 }
 tasks.register('packageWindows', Exec) {
     dependsOn tasks.named('installDist'), tasks.named('verifyAssets')

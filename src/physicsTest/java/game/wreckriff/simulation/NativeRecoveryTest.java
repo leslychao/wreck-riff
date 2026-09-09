@@ -23,7 +23,7 @@ class NativeRecoveryTest {
             world.addVehicle(0, new Vector3f(-15, 1, 0), new Quaternion());
             for (int tick = 0; tick < 240; tick++) world.step();
             assertEquals(4, world.wheelContacts(0));
-            var state = new VehicleState(0, "Recovery test", true);
+            var state = new VehicleState(0, "Recovery test", true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class));
             var driver = new VehicleController(world, state, rules);
 
             // This recorded pose differs from the constructor's initial fallback.

@@ -1,5 +1,5 @@
 {
-  "musicAsset": "audio/dead-air-circuit.wav",
+  "musicAsset": "audio/metalmania.wav",
   "musicGain": 0.56,
   "engineGain": 0.45,
   "weaponsGain": 0.92,
@@ -16,9 +16,10 @@
   "musicDuckSeconds": 0.45,
   "effects": [
     "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "machine-gun",
-    "homing-launch", "power-launch", "pulse", "empty", "overheat", "metal-hit",
+    "homing-launch", "power-launch", "pulse", "empty", "metal-hit",
     "explosion", "destroyed", "low-hp", "hazard-warning", "hazard-active",
     "pickup-repair", "pickup-ammo", "pickup-turbo", "ui-nav", "ui-confirm",
-    "victory", "defeat", "draw"
+    "victory", "defeat", "draw", "mine-place", "mine-detonate", "napalm-launch",
+    "napalm-fire", "freeze", "stun", "shield"
   ]
 }

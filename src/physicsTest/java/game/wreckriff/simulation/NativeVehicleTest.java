@@ -34,7 +34,7 @@ class NativeVehicleTest {
     }
     @Test void accelerationAndBrakingMeetMvpTargetsUsingForces() {
         try(PhysicsWorld world=world()) {
-            VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true),VehicleRules.load());
+            VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)),VehicleRules.load());
             int acceleration=0;
             while(world.velocity(0).z<20 && acceleration<1200) { controller.drive(GAS); world.step(); acceleration++; }
             assertTrue(world.position(0).z>10,"Positive throttle must drive +Z");
@@ -45,14 +45,30 @@ class NativeVehicleTest {
             assertTrue(braking/120f>=1.0f && braking/120f<=1.5f,"20->0 outside agreed 1.0-1.5 s: "+braking/120f);
         }
     }
-    @Test void positiveSteerTurnsTowardPositiveX() {
+    @Test void positiveSteerTurnsTowardDriversRight() {
         try(PhysicsWorld world=world()) {
-            VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true),VehicleRules.load());
+            VehicleController controller=new VehicleController(world,new VehicleState(0,"Test",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)),VehicleRules.load());
             for(int i=0;i<120;i++) { controller.drive(GAS); world.step(); }
             VehicleCommand turn=new VehicleCommand(1,0,0.7f,false,false,false,false,false,0,false,false,AbilityId.NONE);
             for(int i=0;i<120;i++) { controller.drive(turn); world.step(); }
             System.out.printf("P02 steer result position=%s forward=%s%n",world.position(0),world.forward(0));
-            assertTrue(world.position(0).x>1,"Positive steering must turn +X");
+            assertTrue(world.position(0).x < -1,"Positive steering must turn toward driver-right (-X for +Z heading)");
+        }
+    }
+    @Test void steeringDirectionUsesDriversFrameAtEveryCardinalHeadingAndReversesYawWhileBacking() {
+        for(float yaw:new float[]{0,FastMath.HALF_PI,FastMath.PI,-FastMath.HALF_PI})for(int direction:new int[]{-1,1}) {
+            try(PhysicsWorld world=world()) {
+                Quaternion rotation=new Quaternion().fromAngleAxis(yaw,Vector3f.UNIT_Y);
+                world.teleport(0,new Vector3f(0,1,0),rotation);for(int i=0;i<180;i++)world.step();
+                var state=new VehicleState(0,"Direction",true,Configs.load("combat",game.wreckriff.combat.CombatRules.class));
+                var controller=new VehicleController(world,state,VehicleRules.load());
+                VehicleCommand straight=direction>0?GAS:BRAKE;
+                for(int i=0;i<120;i++){controller.drive(straight);world.step();}
+                Vector3f right=rotation.mult(Vector3f.UNIT_Z).cross(Vector3f.UNIT_Y).normalizeLocal();
+                VehicleCommand turn=new VehicleCommand(direction>0?1:0,direction<0?1:0,.7f,false,false,false,false,false,0,false,false,AbilityId.NONE);
+                for(int i=0;i<90;i++){controller.drive(turn);world.step();}
+                assertTrue(world.forward(0).dot(right)*direction>.12f,"Heading "+yaw+" drive "+direction+" forward "+world.forward(0)+" right "+right);
+            }
         }
     }
     @Test void staticAndRelativeSweepsSeeThinWallAndMovingTarget() {

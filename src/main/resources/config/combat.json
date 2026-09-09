@@ -98,5 +98,10 @@
     "shieldCooldownSeconds": 16,
     "shieldDamageMultiplier": 0.3,
     "immunitySeconds": 3
+  },
+  "health": {
+    "playerMaximumHp": 800,
+    "botMaximumHp": 400,
+    "repairFraction": 0.25
   }
 }

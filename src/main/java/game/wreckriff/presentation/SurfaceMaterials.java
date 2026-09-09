@@ -3,6 +3,7 @@ package game.wreckriff.presentation;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.TextureKey;
 import com.jme3.material.Material;
+import com.jme3.material.MatParamTexture;
 import com.jme3.math.ColorRGBA;
 import com.jme3.texture.Texture;
 import com.jme3.texture.image.ColorSpace;
@@ -50,7 +51,7 @@ public final class SurfaceMaterials {
         return result;
     }
     private Texture texture(String path,boolean color) {
-        TextureKey key=new TextureKey(path,false);key.setGenerateMips(true);
+        TextureKey key=new TextureKey(path,true);key.setGenerateMips(true);
         Texture texture=assets.loadTexture(key);texture.setWrap(Texture.WrapMode.Repeat);
         texture.setMinFilter(Texture.MinFilter.Trilinear);texture.setMagFilter(Texture.MagFilter.Bilinear);
         // The renderer clamps this requested level to the device's supported maximum.
@@ -59,6 +60,11 @@ public final class SurfaceMaterials {
     }
     public static Material lit(AssetManager assets,ColorRGBA color,float shininess,float specular) {
         Material result=new Material(assets,"Common/MatDefs/Light/Lighting.j3md");
+        // This application supplies scalar roughness-derived specular masks, never sRGB specular colours.
+        // Declare that contract on the shared Phong definition before any texture is assigned, so jME
+        // validates the map as data instead of converting it to its default colour-map interpretation.
+        ((MatParamTexture)result.getMaterialDef().getMaterialParam("SpecularMap")).setColorSpace(ColorSpace.Linear);
+        result.setFloat("NormalType",1); // Bundled maps use the OpenGL (+Y), not Phong's default DirectX convention.
         result.setBoolean("UseMaterialColors",true);result.setColor("Diffuse",color);
         result.setColor("Ambient",color);result.setColor("Specular",new ColorRGBA(specular,specular,specular,1));
         result.setFloat("Shininess",shininess);return result;

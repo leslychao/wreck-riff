@@ -83,9 +83,20 @@ def materials():
                 spec = np.rint(255 * (.025 + maximum * (1 - rough) ** 2)).astype(np.uint8)
                 png(destination, np.repeat(spec[:, :, None], 3, axis=2))
                 change = f"Roughness linear -> RGB Phong strength: 0.025 + {maximum}*(1-r)^2; PNG 2K"
+            elif target == "normal":
+                # Poly Haven's lower-resolution normal files can contain averaged
+                # vectors shorter than one. Normalize after decoding, retain the
+                # original source, and strip color metadata from this data texture.
+                vector = np.asarray(image.convert("RGB"), dtype=np.float32) / 127.5 - 1
+                magnitude = np.linalg.norm(vector, axis=2, keepdims=True)
+                if np.any(magnitude < .01):
+                    raise ValueError("Degenerate normal source: " + str(source))
+                normal = np.rint((vector / magnitude + 1) * 127.5).clip(0, 255).astype(np.uint8)
+                png(destination, normal)
+                change = "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
             else:
                 save(destination, source.read_bytes())
-                change = "Unmodified 2K PNG; " + ("sRGB color" if target == "diffuse" else "linear OpenGL tangent-space normal")
+                change = "Unmodified 2K PNG; sRGB color"
             entry(destination, source, url, author + " / Poly Haven", "CC0-1.0", "licenses/assets/CC0-1.0.txt", change)
         print("Imported material", asset, flush=True)
     # Vehicle paint is a neutral-color derivative of the flat blue painted sheet.
@@ -98,7 +109,7 @@ def materials():
     paint_path = RESOURCES / "textures/vehicle/paint.png"
     png(paint_path, np.rint(np.repeat(neutral[:, :, None], 3, axis=2) * 255).astype(np.uint8))
     entry(paint_path, source, "https://polyhaven.com/a/blue_metal_plate", "Rob Tuytel / Poly Haven", "CC0-1.0",
-          "licenses/assets/CC0-1.0.txt", "Neutral livery diffuse: linear luminance contrast centered at .58; renderer supplies paint tint")
+          "licenses/assets/CC0-1.0.txt", "Neutral livery diffuse: sRGB luma contrast centered at .58; renderer supplies paint tint")
     rubber_path = RESOURCES / "textures/vehicle/rubber.png"
     rubber = np.clip(.45 + (luminance - luminance.mean()) * .13, .3, .6)
     png(rubber_path, np.rint(np.repeat(rubber[:, :, None], 3, axis=2) * 255).astype(np.uint8))
@@ -107,18 +118,18 @@ def materials():
 
 
 def font():
-    url = "https://github.com/googlefonts/roboto-classic/releases/download/v3.008/Roboto_v3.008.zip"
+    url = "https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip"
     if (SOURCES / "fonts/source.json").exists():
         return
     archive = zipfile.ZipFile(io.BytesIO(fetch(url)))
     names = archive.namelist()
     for style in ("Regular", "Bold"):
-        name = next(n for n in names if n.endswith("/RobotoCondensed-" + style + ".ttf") and "/hinted/" in n)
+        name = next(n for n in names if n.endswith("/RobotoCondensed-" + style + ".ttf") and n.startswith("hinted/static/"))
         save(SOURCES / "fonts" / ("RobotoCondensed-" + style + ".ttf"), archive.read(name))
-    license_url = "https://raw.githubusercontent.com/google/fonts/main/ofl/robotocondensed/OFL.txt"
+    license_url = "https://raw.githubusercontent.com/googlefonts/roboto-3-classic/v3.016/OFL.txt"
     save(RESOURCES / "licenses/assets/Roboto-OFL.txt", fetch(license_url))
     save(SOURCES / "fonts/source.json", json.dumps(dict(sourceUrl=url,
-        sourceCommit="8aa699a9a715be7ecf6be41171e2851a580f0fb8", licenseUrl=license_url,
+        sourceCommit="5166f3d07889bf7d3732fb72e09623d7e52f862b", licenseUrl=license_url,
         acquired=DATE, archiveSha256=sha(archive.fp.getvalue()) if isinstance(archive.fp, io.BytesIO) else "",
         files={p.name: sha(p.read_bytes()) for p in (SOURCES / "fonts").glob("*.ttf")}), indent=2).encode())
     print("Imported Roboto Condensed regular/bold", flush=True)

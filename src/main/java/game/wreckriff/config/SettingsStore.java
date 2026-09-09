@@ -75,6 +75,11 @@ public final class SettingsStore {
             if(name.equals("settings.json") && version==1) {
                 // Keep explicit v1 video preferences and bindings; only add new defaults.
                 tree.addProperty("schemaVersion",2);
+                if(tree.has("keys")&&tree.get("keys").isJsonObject()) {
+                    // v1 did not define zero as an unbound action; it was an invalid key.
+                    tree.getAsJsonObject("keys").entrySet().removeIf(e->e.getValue().isJsonPrimitive()
+                            && e.getValue().getAsJsonPrimitive().isNumber()&&e.getValue().getAsInt()==0);
+                }
                 migrateSettings=true;
             }
             T loaded=Configs.gson().fromJson(tree,type);

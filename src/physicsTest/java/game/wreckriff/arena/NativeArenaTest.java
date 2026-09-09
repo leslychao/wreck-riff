@@ -28,7 +28,7 @@ class NativeArenaTest {
 
     private PhysicsWorld arenaWorld() {
         PhysicsWorld world=new PhysicsWorld(vehicleRules);
-        ArenaContent content=new ArenaFactory(new DesktopAssetManager(true)).build(definition);
+        ArenaContent content=new ArenaFactory(NativeArenaAssets.MANAGER).build(definition);
         for (var body:content.bodies()) world.addStatic(body.shape(),body.position(),body.rotation());
         return world;
     }
@@ -57,7 +57,7 @@ class NativeArenaTest {
                 world.addVehicle(0,new Vector3f(54,.8f,-46*direction),
                         new Quaternion().fromAngleAxis(direction==1?0:FastMath.PI,Vector3f.UNIT_Y));
                 settle(world);
-                VehicleController driver=new VehicleController(world,new VehicleState(0,"Rivet",true),vehicleRules);
+                VehicleController driver=new VehicleController(world,new VehicleState(0,"Rivet",true,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)),vehicleRules);
                 float highest=world.position(0).y; int tick=0;
                 while (world.position(0).z*direction<42 && tick<1800) {
                     driver.drive(GAS);world.step();highest=Math.max(highest,world.position(0).y);tick++;
@@ -87,7 +87,7 @@ class NativeArenaTest {
         driveToRepair("repair-deck",new Vector3f(31,.85f,-27),140);
     }
     @ParameterizedTest(name="P11 real collection: {0}")
-    @ValueSource(strings={"homing-south","homing-north","power-west","power-east","turbo-hazard","turbo-north"})
+    @ValueSource(strings={"homing-south","homing-north","power-west","power-east","turbo-hazard","turbo-north","mine-west","mine-north","napalm-deck","napalm-south"})
     void everyAmmoAndTurboPickupIsReachableAndCollectedByANativeVehicle(String pickupId) {
         driveToPickup(pickupId,null,0);
     }
@@ -108,6 +108,8 @@ class NativeArenaTest {
         switch (target.type()) {
             case HOMING_AMMO -> session.vehicle(0).weapon(WeaponType.HOMING).ammo=0;
             case POWER_AMMO -> session.vehicle(0).weapon(WeaponType.POWER).ammo=0;
+            case MINE_AMMO -> session.vehicle(0).weapon(WeaponType.MINE).ammo=0;
+            case NAPALM_AMMO -> session.vehicle(0).weapon(WeaponType.NAPALM).ammo=0;
             case TURBO_CELL -> session.vehicle(0).turbo=0;
             default -> throw new IllegalArgumentException("Repair has separate full route fixtures");
         }

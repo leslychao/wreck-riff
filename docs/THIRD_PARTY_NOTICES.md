@@ -33,8 +33,59 @@ to replace/debug the library. This project does not make an unsupported source
 offer on the owner's behalf. Local packaging reports keep this item as
 `REVIEW_REQUIRED`; a technical ZIP is not an approval to publish it.
 
-The game uses the original `Wreck Grid` ASCII font generated from recipes in
-`GenerateFont.java`, not system fonts or the engine's default atlas. Engine JARs
-are not altered to remove unused bundled resources. The original procedural
-models, glyph recipes and audio score remain in the project's sources; their
-artistic status is `NEEDS_CREATIVE_REVIEW` until the owner's actual evaluation.
+## Licensed game assets in 0.2
+
+**Metalmania** by **Kevin MacLeod** (incompetech.com), ISRC USUAN1700023.
+Source: https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1700023
+License: **Creative Commons Attribution 4.0 International**,
+https://creativecommons.org/licenses/by/4.0/ ; full text: `licenses/assets/CC-BY-4.0.txt`.
+Changes: MP3 decoded to stereo PCM 48 kHz / 16-bit; edited to a 179.2-second loop with
+100 ms equal-power crossfade; DC removed; linear peak normalized to 0.84.
+The original MP3, decoded local PCM and creator catalog entry are retained in
+`src/tools/assets/audio`; generated `audio/music-source.json` and
+`audio/music-provenance.json` bind sources and output by SHA-256. This attribution
+does not suggest that Kevin MacLeod endorses Wreck Riff. Retain this credit, source,
+license and modification notice when redistributing the music or the game.
+
+**Poly Haven textures, CC0 1.0**. Source files may be redistributed and adapted under
+https://creativecommons.org/publicdomain/zero/1.0/ ; retained legal text:
+`licenses/assets/CC0-1.0.txt`. Poly Haven policy: https://polyhaven.com/license .
+
+| Material | Author | Source |
+|---|---|---|
+| Asphalt 02 | Rob Tuytel | https://polyhaven.com/a/asphalt_02 |
+| Cracked Concrete | Dimitrios Savva | https://polyhaven.com/a/cracked_concrete |
+| Metal Plate 02 | Rob Tuytel | https://polyhaven.com/a/metal_plate_02 |
+| Blue Metal Plate | Rob Tuytel | https://polyhaven.com/a/blue_metal_plate |
+| Rusty Metal 03 | Amal Kumar | https://polyhaven.com/a/rusty_metal_03 |
+
+All selected sources are 2K PNG. Diffuse maps retain their source bytes. OpenGL normal vectors are normalized per
+texel after source downsampling and color metadata is removed from the linear data
+PNG; the unmodified source maps are retained separately. Roughness is transformed into a restrained Phong specular-strength mask:
+`0.025 + k * (1 - roughness)^2`, with k=0.70 for metal_plate_02/blue_metal_plate and
+k=0.22 for the other three materials. This is a rendering approximation for the
+existing Lighting.j3md, not a metallic-roughness PBR conversion. Neutral paint/rubber
+diffuse derivatives come from blue_metal_plate; the renderer owns their final tint.
+Exact original/download URLs, SHA-256 values and transformations for all 17 texture
+outputs are in `licenses/asset-provenance.json`. Original maps remain under
+`src/tools/assets/materials`. No Poly Haven webpage previews, logos or example
+renders are included as game assets. CC0 does not require credit; provenance is
+retained voluntarily for maintenance.
+
+**Roboto Condensed Regular and Bold**, The Roboto Project Authors, **SIL OFL 1.1**.
+Official source: https://github.com/googlefonts/roboto-3-classic/releases/tag/v3.016
+Source archive: https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip
+Retained notice: `licenses/assets/Roboto-OFL.txt`.
+The static local TTFs are converted by GenerateFont to 48 px grayscale-antialiased,
+2x supersampled bitmap atlases containing ASCII and the complete Russian alphabet.
+The fonts and their generated font derivatives remain under OFL, not the game's
+source-code license. Include the copyright and OFL notice with every copy, do not
+sell the font alone, and respect any reserved font names for modified versions.
+No system-font or online font service is used.
+
+Original procedural vehicle/arena geometry, shader code and sound effects remain
+project-authored. Superseded score and 5x7 glyph recipes are preserved only as
+historical source in `docs/asset-history`, excluded from compilation and runtime.
+The generated registry distinguishes licensed recordings/textures/fonts from these
+original recipes. Technical evidence does not grant artistic or legal approval;
+owner creative review and the existing native-library distribution review remain.

@@ -22,8 +22,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "f96c0a1664e556d233b3f76e8f70ab08af5b1c342786efb99b72b8854563440e",
-      "sha256": "f96c0a1664e556d233b3f76e8f70ab08af5b1c342786efb99b72b8854563440e",
-      "transformation": "Unmodified 2K PNG; linear OpenGL tangent-space normal"
+      "sha256": "ebad8bc66753740960103c7bdc48913686874b2768824beb3ecc46ea66b67d4a",
+      "transformation": "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
     },
     {
       "path": "textures/materials/asphalt_02/specular.png",
@@ -58,8 +58,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "38b53c92f5c022b029a4f821b23b2c7ea5251529381e7920b94ee9a91f38ddf1",
-      "sha256": "38b53c92f5c022b029a4f821b23b2c7ea5251529381e7920b94ee9a91f38ddf1",
-      "transformation": "Unmodified 2K PNG; linear OpenGL tangent-space normal"
+      "sha256": "0b43222e10ff0eec75d3b9f12d21fe822d52121c5276dc0d360d32c23bc1acde",
+      "transformation": "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
     },
     {
       "path": "textures/materials/cracked_concrete/specular.png",
@@ -94,8 +94,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "b6fce599aeb0e92735e812b36bfeab8e7f0029bd3b99747bfb2a456ab93a29fe",
-      "sha256": "b6fce599aeb0e92735e812b36bfeab8e7f0029bd3b99747bfb2a456ab93a29fe",
-      "transformation": "Unmodified 2K PNG; linear OpenGL tangent-space normal"
+      "sha256": "ce55d71a0457d7c64e10d6bc2b70b0b9681da77867f54226a3f5146a27fa438a",
+      "transformation": "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
     },
     {
       "path": "textures/materials/metal_plate_02/specular.png",
@@ -130,8 +130,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "8c5701c09d71bbc7dffe97b45fde3c57b132c5fca8d39851695f7566f54b02e9",
-      "sha256": "8c5701c09d71bbc7dffe97b45fde3c57b132c5fca8d39851695f7566f54b02e9",
-      "transformation": "Unmodified 2K PNG; linear OpenGL tangent-space normal"
+      "sha256": "5e03a543978cc8d6ce31e695ad1f8d42414e5ba2c6595125c6b977f6c85a8ede",
+      "transformation": "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
     },
     {
       "path": "textures/materials/blue_metal_plate/specular.png",
@@ -166,8 +166,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "1a5f4a5b5026c06d0eb6468c9eee8d87d4f1053ccfb1616473316f767324036b",
-      "sha256": "1a5f4a5b5026c06d0eb6468c9eee8d87d4f1053ccfb1616473316f767324036b",
-      "transformation": "Unmodified 2K PNG; linear OpenGL tangent-space normal"
+      "sha256": "5ced0e083a452b72b4db1d1f4676c023739524dd88faac1bf8e28b968facbf9e",
+      "transformation": "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
     },
     {
       "path": "textures/materials/rusty_metal_03/specular.png",
@@ -191,7 +191,19 @@
       "acquired": "2026-09-09",
       "sourceSha256": "c37be7a33c50cd92308577132833bb1d1cc33688b6d3b1ffe68c976f5357ff02",
       "sha256": "ea49fcad2c0789d87a60a122c9db8ae1cf8fbaf8480e76d12dd06bb195ac3346",
-      "transformation": "Neutral livery diffuse: linear luminance contrast centered at .58; renderer supplies paint tint"
+      "transformation": "Neutral livery diffuse: sRGB luma contrast centered at .58; renderer supplies paint tint"
+    },
+    {
+      "path": "textures/vehicle/rubber.png",
+      "sourcePath": "src/tools/assets/materials/blue_metal_plate/diff.png",
+      "sourceUrl": "https://polyhaven.com/a/blue_metal_plate",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-09",
+      "sourceSha256": "c37be7a33c50cd92308577132833bb1d1cc33688b6d3b1ffe68c976f5357ff02",
+      "sha256": "cd23a9797bf2efabcfc7d7f5b4f1622646f65a10c14ce3b0bd69855f758fab52",
+      "transformation": "Neutral low-contrast grayscale derivative for rubber; renderer supplies dark tint; geometry owns tread"
     }
   ]
 }

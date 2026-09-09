@@ -27,7 +27,7 @@ public final class MatchRuntime implements AutoCloseable {
         }
         arenaSystems=new ArenaSystems(session,arena);
         bots=new BotController(session,arena,graph,AiRules.load(),arenaSystems::activePickups);
-        combat=new CombatSystem(session,Configs.load("combat",CombatRules.class));
+        combat=new CombatSystem(session,session.combatRules);
         bots.observeProjectiles(combat::projectiles);
     }
     public List<GameEvent> tick(VehicleCommand player,boolean aiPlayer) {

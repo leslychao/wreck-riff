@@ -10,18 +10,21 @@ public final class MatchSession {
     public final UUID sessionId = UUID.randomUUID();
     public final long seed;
     public final List<VehicleState> vehicles;
+    public final game.wreckriff.combat.CombatRules combatRules;
     public long tick;
     public Outcome outcome = Outcome.NONE;
     public String outcomeReason = "";
     private final long maximumTicks;
 
     public MatchSession(long seed, int durationSeconds) {
+        this(seed,durationSeconds,game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class));
+    }
+    public MatchSession(long seed,int durationSeconds,game.wreckriff.combat.CombatRules combatRules) {
         this.seed=seed;
+        this.combatRules=java.util.Objects.requireNonNull(combatRules);
         maximumTicks=(long) durationSeconds*TICKS_PER_SECOND;
-        vehicles=List.of(new VehicleState(0,"Rivet",true), new VehicleState(1,"Static",false),
-                new VehicleState(2,"Dent",false),new VehicleState(3,"Buzz",false),new VehicleState(4,"Fuse",false));
-        var combatRules=game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class);
-        vehicles.forEach(vehicle->vehicle.initializeArsenal(combatRules));
+        vehicles=List.of(new VehicleState(0,"Rivet",true,combatRules), new VehicleState(1,"Static",false,combatRules),
+                new VehicleState(2,"Dent",false,combatRules),new VehicleState(3,"Buzz",false,combatRules),new VehicleState(4,"Fuse",false,combatRules));
     }
     public VehicleState vehicle(int id) { return vehicles.get(id); }
     public void finishTick() {

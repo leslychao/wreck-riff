@@ -29,7 +29,7 @@ class MatchRuntimeTest {
     @Test void tenSeededMatchesRespectNavigationAndRecoveryAcceptance() throws Exception {
         long started=System.nanoTime();
         ArenaDefinition arena=ArenaDefinition.load();VehicleRules vehicleRules=VehicleRules.load();
-        var assets=new DesktopAssetManager(true);
+        var assets=NativeArenaAssets.MANAGER;
         List<BattleResult> results=new ArrayList<>();List<String> failures=new ArrayList<>();
         List<RecoveryEpisode> recoveryEpisodes=new ArrayList<>();
         long totalAliveTicks=0,maximumStationaryTicks=0;int totalRecoveries=0;

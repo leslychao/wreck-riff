@@ -52,8 +52,7 @@ class NativePauseTest {
             player.machineGunCooldown = 31;
             player.weapon(WeaponType.POWER).cooldownTicks = 41;
             player.pulseCooldown = 51;
-            player.heat = 72;
-            player.heatQuietTicks = 100;
+            player.shieldTicks = 72;
             player.turboQuietTicks = CombatRules.ticks(vehicleRules.turboRegenDelay()) - 1;
             player.recoveryCooldown = 21;
 
@@ -72,12 +71,12 @@ class NativePauseTest {
             assertEquals(0, loop.advance(SimulationLoop.STEP / 2, true, tick), "Pause must discard the old partial-step debt");
             assertEquals(1, loop.advance(SimulationLoop.STEP / 2, true, tick));
             assertEquals(beforeTick + 1, session.tick);
-            assertEquals(170 - hazard.damage(), player.hp, 0.001f, "The preserved hazard interval completes once after Resume");
+            assertEquals(170 - hazard.damage()*.3f, player.hp, 0.001f, "The preserved hazard interval completes once after Resume");
             assertEquals(30, player.machineGunCooldown);
             assertEquals(40, player.weapon(WeaponType.POWER).cooldownTicks);
             assertEquals(50, player.pulseCooldown);
             assertEquals(20, player.recoveryCooldown);
-            assertTrue(player.heat < 72, "Cooling resumes on the first real tick");
+            assertEquals(71,player.shieldTicks, "Shield duration resumes on the first real tick");
             assertTrue(player.turbo > beforeTurbo, "Turbo regeneration resumes on the first real tick");
             assertFalse(runtime.arenaSystems().active(repair.id()));
         }

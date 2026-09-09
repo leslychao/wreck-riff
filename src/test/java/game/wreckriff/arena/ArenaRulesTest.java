@@ -8,6 +8,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ArenaRulesTest {
     private final ArenaDefinition arena=ArenaDefinition.load();
+    @Test void configuredMaximumHealthAndRepairFractionAreAuthoritativeForBothDrivers() {
+        var json=game.wreckriff.config.Configs.gson().toJsonTree(game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)).getAsJsonObject();
+        json.getAsJsonObject("health").addProperty("playerMaximumHp",1000);
+        json.getAsJsonObject("health").addProperty("botMaximumHp",600);
+        json.getAsJsonObject("health").addProperty("repairFraction",.2);
+        var rules=game.wreckriff.config.Configs.gson().fromJson(json,game.wreckriff.combat.CombatRules.class);
+        for(int id:new int[]{0,1}) {
+            MatchSession session=new MatchSession(42,360,rules);TestWorld world=new TestWorld();ArenaSystems systems=new ArenaSystems(session,arena);
+            assertEquals(id==0?1000:600,session.vehicle(id).maximumHp);
+            session.vehicle(id).hp=100;world.positions[id]=new Vector3f(-44,.8f,22);
+            systems.collectPickups(world);assertEquals(id==0?300:220,session.vehicle(id).hp,.001f);
+        }
+    }
 
     @Test void authoredGraphHasBothSurfaceCorrectEntrancesAndConnectedPickups() {
         NavGraph graph=new NavGraph(arena);
@@ -54,19 +67,19 @@ class ArenaRulesTest {
         world.positions[0]=new Vector3f(-44,.8f,22); world.positions[1]=world.positions[0].clone();
         session.vehicle(0).hp=100; session.vehicle(1).hp=100;
         systems.collectPickups(world); systems.collectPickups(world);
-        assertEquals(150,session.vehicle(0).hp); assertEquals(100,session.vehicle(1).hp);
+        assertEquals(300,session.vehicle(0).hp); assertEquals(100,session.vehicle(1).hp);
         assertFalse(systems.active("repair-garage"));
         var events=systems.drainEvents(); assertEquals(1,events.size()); assertEquals("repair",events.getFirst().kind());
         assertTrue(systems.drainEvents().isEmpty());
-        session.tick=2999; systems.collectPickups(world); assertEquals(150,session.vehicle(0).hp);
-        session.tick=3000; systems.collectPickups(world); assertEquals(200,session.vehicle(0).hp);
+        session.tick=2999; systems.collectPickups(world); assertEquals(300,session.vehicle(0).hp);
+        session.tick=3000; systems.collectPickups(world); assertEquals(500,session.vehicle(0).hp);
     }
     @Test void fullDeadProtectedOccludedAndWrongFloorVehiclesCannotCollect() {
         for (String situation:List.of("full","dead","protected","wall","floor")) {
             MatchSession session=new MatchSession(1,360); ArenaSystems systems=new ArenaSystems(session,arena); TestWorld world=new TestWorld();
             world.positions[0]=new Vector3f(54,6.8f,0); session.vehicle(0).hp=100;
             switch(situation) {
-                case "full" -> session.vehicle(0).hp=200;
+                case "full" -> session.vehicle(0).hp=session.vehicle(0).maximumHp;
                 case "dead" -> session.vehicle(0).hp=0;
                 case "protected" -> session.vehicle(0).protectionTicks=1;
                 case "wall" -> world.wall=true;

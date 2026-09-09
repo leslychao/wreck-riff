@@ -1,6 +1,8 @@
 package game.wreckriff.presentation;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.font.BitmapText;
+import jme3tools.optimize.GeometryBatchFactory;
 import com.jme3.material.Material;
 import com.jme3.math.*;
 import com.jme3.renderer.queue.RenderQueue;
@@ -16,9 +18,6 @@ public final class VehicleVisual {
         new ColorRGBA(.92f,.65f,.11f,1), new ColorRGBA(.11f,.69f,.7f,1),
         new ColorRGBA(.35f,.77f,.19f,1)
     };
-    private static final int[][] DIGITS = {
-        {7,5,5,5,7}, {2,6,2,2,7}, {7,1,7,4,7}, {7,1,7,1,7}, {5,5,7,1,1}
-    };
     private VehicleVisual() {}
 
     public static Node create(AssetManager assets, int livery) {
@@ -27,8 +26,8 @@ public final class VehicleVisual {
         SurfaceMaterials surfaces=new SurfaceMaterials(assets);
         Material paint=surfaces.paint(PAINT[livery]), steel=surfaces.material("steel");
         Material dark=surfaces.rubber();
-        Material glass=lit(assets,new ColorRGBA(.035f,.09f,.13f,1),.95f);
-        Material markings=lit(assets,new ColorRGBA(.88f,.84f,.72f,1),.08f);
+        Material glass=SurfaceMaterials.lit(assets,new ColorRGBA(.035f,.09f,.13f,1),64,.8f);
+        Material markings=SurfaceMaterials.lit(assets,new ColorRGBA(.88f,.84f,.72f,1),15,.08f);
         Material lamps=unlit(assets,new ColorRGBA(1,.77f,.33f,1));
         Material tail=unlit(assets,new ColorRGBA(.95f,.09f,.025f,1));
         Builder body=new Builder(), metal=new Builder(), black=new Builder(), windows=new Builder(), ink=new Builder();
@@ -73,8 +72,6 @@ public final class VehicleVisual {
             black.cylinderZ(x*.72f,-.11f,-2.48f,.067f,.008f,10);
             Node exhaust=new Node("exhaust-"+(side<0?"left":"right"));
             exhaust.setLocalTranslation(x*.72f,-.11f,-2.49f); root.attachChild(exhaust);
-            // Raster number painted on both doors: no external/system font.
-            numberSide(ink,side,livery);
         }
         metal.box(0,-.055f,2.32f,.81f,.072f,.075f);
         metal.box(0,-.055f,-2.32f,.81f,.075f,.075f);
@@ -94,9 +91,6 @@ public final class VehicleVisual {
             metal.box(x,.405f-(z>0?z*.065f:0),z,.028f,.014f,.028f);
         for (int i=0;i<5;i++) black.box(0,.392f-i*.008f,.61f+i*.12f,.25f,.012f,.027f);
         pattern(ink,livery);
-        // Own bitmap race number also appears on the roof, making identity visible from chase camera.
-        for (int row=0;row<5;row++) for (int col=0;col<3;col++) if ((DIGITS[livery][row]&(1<<(2-col)))!=0)
-            ink.box((col-1)*.105f,1.024f,-.44f+(2-row)*.094f,.042f,.007f,.038f);
         body.attach(root,"paint",paint); metal.attach(root,"steel",steel); black.attach(root,"rubber-trim",dark);
         windows.attach(root,"glass",glass); ink.attach(root,"livery-markings",markings);
         frontLights.attach(root,"headlights",lamps); rearLights.attach(root,"taillights",tail);
@@ -105,6 +99,7 @@ public final class VehicleVisual {
             node.setLocalTranslation(wheel%2==0?-1.06f:1.06f,-.20f,wheel<2?1.4f:-1.4f);
             root.attachChild(node);
         }
+        addNumbers(root,assets,livery);
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         root.setUserData("livery",livery); root.setUserData("assetOrigin","original-java-procedural");
         return root;
@@ -135,9 +130,21 @@ public final class VehicleVisual {
         rubber.attach(node,"tyre",tyre); steel.attach(node,"hub",metal);
         return node;
     }
-    private static void numberSide(Builder ink,int side,int digit) {
-        for (int row=0;row<5;row++) for(int col=0;col<3;col++) if ((DIGITS[digit][row]&(1<<(2-col)))!=0)
-            ink.box(side*1.043f,.28f-row*.059f,-.35f+(col-1)*.07f,.008f,.024f,.027f);
+    private static void addNumbers(Node root,AssetManager assets,int livery) {
+        Node numbers=new Node("race-numbers");
+        for(int face=0;face<3;face++) {
+            BitmapText number=new BitmapText(assets.loadFont("fonts/wreck-bold.fnt"));number.setText(Integer.toString(livery));
+            number.setSize(face==2?.64f:.43f);number.setColor(new ColorRGBA(.9f,.87f,.74f,1));
+            if(face==2) {
+                number.rotate(-FastMath.HALF_PI,0,0);number.setLocalTranslation(-number.getLineWidth()*.5f,1.032f,-.72f);
+            } else {
+                float side=face==0?-1:1;number.rotate(0,side*FastMath.HALF_PI,0);
+                number.setLocalTranslation(side*1.044f,.32f,-.10f+side*number.getLineWidth()*.5f);
+            }
+            number.updateLogicalState(0);number.setQueueBucket(RenderQueue.Bucket.Transparent);
+            number.setShadowMode(RenderQueue.ShadowMode.Off);numbers.attachChild(number);
+        }
+        numbers.updateGeometricState();GeometryBatchFactory.optimize(numbers,false);root.attachChild(numbers);
     }
     private static void pattern(Builder ink,int livery) {
         // Hood patterns remain visibly distinct under colour-vision deficiencies.
@@ -155,12 +162,6 @@ public final class VehicleVisual {
             }
             default -> throw new IllegalArgumentException();
         }
-    }
-    private static Material lit(AssetManager assets,ColorRGBA color,float shine) {
-        Material material=new Material(assets,"Common/MatDefs/Light/Lighting.j3md");
-        material.setBoolean("UseMaterialColors",true); material.setColor("Diffuse",color);
-        material.setColor("Ambient",color.mult(.72f)); material.setColor("Specular",new ColorRGBA(shine,shine,shine,1));
-        material.setFloat("Shininess",12+shine*42); return material;
     }
     private static Material unlit(AssetManager assets,ColorRGBA color) {
         Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");
@@ -199,10 +200,11 @@ public final class VehicleVisual {
                 double a=-.15+i*(Math.PI+.3)/count,b=-.15+(i+1)*(Math.PI+.3)/count;
                 for(float side:new float[]{-1,1}) {
                     float face=x+side*half;
-                    quad(v(face,y+(float)Math.sin(a)*inner,z+(float)Math.cos(a)*inner),
-                            v(face,y+(float)Math.sin(a)*outer,z+(float)Math.cos(a)*outer),
-                            v(face,y+(float)Math.sin(b)*outer,z+(float)Math.cos(b)*outer),
-                            v(face,y+(float)Math.sin(b)*inner,z+(float)Math.cos(b)*inner));
+                    Vector3f p=v(face,y+(float)Math.sin(a)*inner,z+(float)Math.cos(a)*inner),
+                            q=v(face,y+(float)Math.sin(a)*outer,z+(float)Math.cos(a)*outer),
+                            r=v(face,y+(float)Math.sin(b)*outer,z+(float)Math.cos(b)*outer),
+                            t=v(face,y+(float)Math.sin(b)*inner,z+(float)Math.cos(b)*inner);
+                    if(side>0)quad(p,t,r,q);else quad(p,q,r,t);
                 }
                 quad(v(x-half,y+(float)Math.sin(a)*outer,z+(float)Math.cos(a)*outer),
                         v(x+half,y+(float)Math.sin(a)*outer,z+(float)Math.cos(a)*outer),
@@ -211,15 +213,27 @@ public final class VehicleVisual {
             }
         }
         void tyre(float radius,float width,int segments,int sections) {
-            // Axial profile closes through the hub instead of a flat cylinder end-cap.
+            // Smooth vertex normals follow the rounded axial shoulder profile; UVs unwrap circumference.
             float[][] profile={{-width*.5f,.22f},{-width*.55f,.30f},{-width*.44f,.36f},{-width*.28f,radius},
                     {width*.28f,radius},{width*.44f,.36f},{width*.55f,.30f},{width*.5f,.22f}};
             for(int i=0;i<segments;i++)for(int j=0;j<sections-1;j++) {
                 double a=i*Math.PI*2/segments,b=(i+1)*Math.PI*2/segments;
                 Vector3f p=radial(0,0,0,profile[j][1],profile[j][0],a,true),q=radial(0,0,0,profile[j][1],profile[j][0],b,true);
                 Vector3f r=radial(0,0,0,profile[j+1][1],profile[j+1][0],b,true),t=radial(0,0,0,profile[j+1][1],profile[j+1][0],a,true);
-                quad(p,q,r,t);
+                Vector3f[] vertices={p,q,r,t},normal={tyreNormal(profile,j,a),tyreNormal(profile,j,b),tyreNormal(profile,j+1,b),tyreNormal(profile,j+1,a)};
+                float[][] uv={{i*3f/segments,j/(float)(sections-1)},{(i+1)*3f/segments,j/(float)(sections-1)},
+                        {(i+1)*3f/segments,(j+1)/(float)(sections-1)},{i*3f/segments,(j+1)/(float)(sections-1)}};
+                for(int vertex:new int[]{0,1,2,0,2,3}) {
+                    Vector3f point=vertices[vertex],n=normal[vertex];
+                    Collections.addAll(points,point.x,point.y,point.z);Collections.addAll(normals,n.x,n.y,n.z);
+                    Collections.addAll(uvs,uv[vertex][0],uv[vertex][1]);
+                }
             }
+        }
+        Vector3f tyreNormal(float[][] profile,int section,double angle) {
+            float[] before=profile[Math.max(0,section-1)],after=profile[Math.min(profile.length-1,section+1)];
+            float nx=before[1]-after[1],radial=after[0]-before[0];
+            return v(nx,radial*(float)Math.cos(angle),radial*(float)Math.sin(angle)).normalizeLocal();
         }
         void cylinderZ(float x,float y,float z,float radius,float length,int count) {
             cylinder(x,y,z,radius,length,count,false);

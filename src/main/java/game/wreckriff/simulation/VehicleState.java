@@ -9,6 +9,7 @@ public final class VehicleState {
     public final String name;
     public final boolean player;
     public final float maximumHp;
+    public final float repairFraction;
     public float hp;
     private final EnumMap<WeaponType,WeaponSlot> weapons=new EnumMap<>(WeaponType.class);
     private final EnumMap<AbilityId,Integer> abilityCooldowns=new EnumMap<>(AbilityId.class);
@@ -21,9 +22,10 @@ public final class VehicleState {
     public int eliminations, recoveries;
     public int lastAttacker = -1;
     public long lastAttackTick = Long.MIN_VALUE;
-    public VehicleState(int id, String name, boolean player) {
+    public VehicleState(int id, String name, boolean player,CombatRules rules) {
         this.id=id; this.name=name; this.player=player;
-        maximumHp=player?800:400; hp=maximumHp;
+        maximumHp=player?rules.health().playerMaximumHp():rules.health().botMaximumHp();hp=maximumHp;
+        repairFraction=rules.health().repairFraction();initializeArsenal(rules);
     }
     public void initializeWeapon(WeaponType type,int ammunition,int maximum) { weapons.put(type,new WeaponSlot(ammunition,maximum)); }
     public void initializeArsenal(CombatRules rules) {

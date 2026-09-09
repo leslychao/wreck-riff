@@ -25,6 +25,7 @@ class NativeCombatTest {
     private final CombatSystem combat = new CombatSystem(session, rules);
 
     private PhysicsWorld world() {
+        session.vehicles.forEach(v->v.hp=200); // Damaged-hull fixtures exercise geometry independently of spawn health.
         PhysicsWorld world = new PhysicsWorld(VehicleRules.load());
         world.addStatic(new BoxCollisionShape(new Vector3f(300, 0.5f, 300)), new Vector3f(0, -0.5f, 0), new Quaternion());
         world.addVehicle(0, new Vector3f(0, 1, 0), new Quaternion());
@@ -49,7 +50,7 @@ class NativeCombatTest {
             session.vehicle(0).pulseCooldown = 0;
             step(world, pulse());
             assertEquals(200, session.vehicle(0).hp);
-            assertEquals(180, session.vehicle(1).hp);
+            assertEquals(110, session.vehicle(1).hp);
             assertTrue(world.velocity(1).z > 0, "Pulse must apply an outward native impulse");
             assertTrue(world.velocity(1).z <= 4.0001f);
             assertTrue(world.velocity(1).y < 0.1f, "Pulse must not launch the vehicle upwards");

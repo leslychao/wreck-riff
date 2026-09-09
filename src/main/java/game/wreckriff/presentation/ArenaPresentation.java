@@ -20,14 +20,14 @@ public final class ArenaPresentation extends AbstractControl {
     private final Material indicator;
     private final Geometry arcs;
 
-    public static ArenaPresentation attach(AssetManager assets,Node arenaVisual,WorldQuery world,
+    public static ArenaPresentation attach(AssetManager assets,Node arenaVisual,
             MatchSession session,ArenaDefinition definition,ArenaSystems arenaSystems) {
-        ArenaPresentation presentation=new ArenaPresentation(assets,world,session,definition.hazard(),arenaSystems);
+        ArenaPresentation presentation=new ArenaPresentation(assets,session,definition.hazard(),arenaSystems);
         arenaVisual.attachChild(presentation.decoration);arenaVisual.addControl(presentation);
         presentation.controlUpdate(0);
         return presentation;
     }
-    private ArenaPresentation(AssetManager assets,WorldQuery world,MatchSession session,
+    private ArenaPresentation(AssetManager assets,MatchSession session,
             ArenaDefinition.Hazard hazard,ArenaSystems arenaSystems) {
         this.session=session;this.hazard=hazard;this.arenaSystems=arenaSystems;
         indicator=unlit(assets,new ColorRGBA(.15f,.105f,.025f,1));

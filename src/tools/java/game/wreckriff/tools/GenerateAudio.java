@@ -101,13 +101,15 @@ public final class GenerateAudio {
     }
 
     private static void effect(Path output, String id) throws Exception {
-        boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active").contains(id);
+        boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active", "napalm-fire").contains(id);
         double seconds = switch (id) {
-            case "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active" -> 2;
+            case "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active", "napalm-fire" -> 2;
             case "destroyed", "victory", "defeat", "draw" -> 2.4;
             case "explosion", "pulse", "hazard-warning" -> 1.1;
             case "homing-launch", "power-launch", "low-hp" -> .65;
             case "machine-gun", "empty", "ui-nav" -> .11;
+            case "mine-detonate", "shield" -> 1.2;
+            case "freeze", "stun" -> .8;
             default -> .38;
         };
         Random random = new Random(SEED ^ id.hashCode());
@@ -128,6 +130,20 @@ public final class GenerateAudio {
                 case "tyre-slip" -> (n - low) * .38 + Math.sin(TAU * 1037 * t + 4 * Math.sin(TAU * 57 * t)) * .18;
                 case "hazard-active" -> Math.tanh(Math.sin(TAU * 50 * t) * 3) * .36
                         + n * Math.pow(Math.max(0, Math.sin(TAU * 13 * t)), 14) * .6;
+                case "napalm-fire" -> low * 2.8 * (.7 + .2 * Math.sin(TAU * 3 * t))
+                        + n * Math.pow(Math.max(0, Math.sin(TAU * 19 * t)), 24) * .35;
+                case "mine-place" -> (Math.sin(TAU * 267 * t) * .8 + n * .55) * Math.exp(-t * 24)
+                        + (t > .16 ? Math.sin(TAU * 1300 * (t - .16)) * Math.exp(-(t - .16) * 35) * .22 : 0);
+                case "mine-detonate" -> (low * 3.1 + Math.sin(TAU * 37 * t) * .7 + n * Math.exp(-t * 18) * .5)
+                        * Math.exp(-t * 5.5);
+                case "napalm-launch" -> (low * 2.9 + Math.sin(TAU * (130 * t - 85 * t * t)) * .5)
+                        * Math.exp(-t * 7) + (n - low) * Math.exp(-t * 65) * .4;
+                case "freeze" -> (Math.sin(TAU * (1300 * t - 460 * t * t))
+                        + .35 * Math.sin(TAU * 2309 * t) + .25 * (n - low)) * Math.exp(-t * 6);
+                case "stun" -> (Math.sin(TAU * 91 * t) * .6 + n * .5)
+                        * Math.exp(-t * 7) * (.6 + .4 * Math.cos(TAU * 31 * t));
+                case "shield" -> (Math.sin(TAU * (210 * t + 115 * t * t))
+                        + .4 * Math.sin(TAU * 631 * t)) * Math.exp(-t * 4);
                 case "machine-gun" -> (n * .8 + Math.sin(TAU * (130 * t + 3 * (1 - Math.exp(-t * 90))))) * decay;
                 case "homing-launch", "power-launch" -> {
                     boolean power = id.equals("power-launch");
