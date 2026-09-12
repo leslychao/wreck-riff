@@ -12,8 +12,11 @@ final class BossTactics {
     Phase phase=Phase.CRUISE;
     long beganTick,untilTick,chargeStartedTick,nextRamTick=360,nextProtocolTick=720,nextLaunchTick=1200,nextSearchTick;
     long lastContactTick=Long.MIN_VALUE/2,lastSeenTick=Long.MIN_VALUE/2;
-    long turnWindowTick,nextTurnTick,farSince=-1;
-    float turning;
+    long turnWindowTick,nextTurnTick,farSince=-1,nextRelocationTick=2880;
+    float turning,circuitAngle,circuitProgress,circuitRange;
+    boolean circuitStarted;
+    int relocationGoal=-1,circuitLevel=-1;
+    Vector3f circuitPosition;
     int mode=1,launchIndex,protocolIndex,side=1;
     Vector3f targetPoint,chargeDirection,lastSeen,lastForward;
     boolean completionPending;
@@ -58,7 +61,25 @@ final class BossTactics {
     }
     int protocolCooldown() {return profileId.equals("boss_prefect")?1680:profileId.equals("boss_emcee")?1440:1920;}
     float standOff() {
-        return switch(profileId){case "boss_prefect"->45;case "boss_ash_shepherd"->38;case "boss_director"->42;case "boss_emcee"->30;default->28;};
+        return switch(profileId){case "boss_prefect"->mode>=3?18:45;case "boss_ash_shepherd"->38;case "boss_director"->42;case "boss_emcee"->30;default->28;};
     }
+    /** Counts signed travel around the authored upper ring, never elapsed time or a requested route. */
+    boolean observedCircuit(Vector3f position,Vector3f center,int level,BotObservation.Opponent target) {
+        if(level<=0||target==null){resetCircuit();return false;}
+        float angle=(float)Math.atan2(position.z-center.z,position.x-center.x);
+        float range=position.subtract(target.position()).setY(0).length();
+        if(!circuitStarted||level!=circuitLevel||range<circuitRange-10
+                ||circuitPosition.distanceSquared(position)>900) {
+            circuitStarted=true;circuitLevel=level;circuitProgress=0;circuitRange=range;circuitAngle=angle;
+            circuitPosition=position.clone();return false;
+        }
+        float delta=(float)Math.atan2(Math.sin(angle-circuitAngle),Math.cos(angle-circuitAngle));
+        circuitAngle=angle;circuitPosition.set(position);
+        if(Math.abs(delta)>Math.PI/2){circuitProgress=0;return false;}
+        circuitProgress+=delta;
+        if(Math.abs(circuitProgress)>=Math.PI*4-.001f){resetCircuit();return true;}
+        return false;
+    }
+    void resetCircuit(){circuitStarted=false;circuitProgress=0;circuitPosition=null;}
     ArenaDefinition.Vec3 point() {return targetPoint==null?null:new ArenaDefinition.Vec3(targetPoint.x,targetPoint.y,targetPoint.z);}
 }

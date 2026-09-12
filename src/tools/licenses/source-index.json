@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 2,
+  "sources": [
+    {
+      "id": "openal-soft",
+      "version": "1.24.1",
+      "commit": "90191edd20bb877c5cbddfdac7ec0fe49ad93727",
+      "archive": "sources/openal-soft-1.24.1-90191edd.tar.gz",
+      "url": "https://codeload.github.com/LWJGL-CI/openal-soft/tar.gz/90191edd20bb877c5cbddfdac7ec0fe49ad93727",
+      "bytes": 1207485,
+      "sha256": "73136315f216b2a59ae975e1bbbbb359fe556f0f4cbff4b81f68a283b0554a21",
+      "prefix": "openal-soft-90191edd20bb877c5cbddfdac7ec0fe49ad93727/",
+      "requiredFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "d808ce217e5b611854da622b57ec29fe545584c48bc5352fae72a4b6e5074a15"
+        },
+        {
+          "path": "BSD-3Clause",
+          "sha256": "b5a08cf98996dd83aa906a72c163600f6cb17a65ce546a553815a1267abd43ff"
+        },
+        {
+          "path": "LICENSE-pffft",
+          "sha256": "64056328b3e7bc104e24ef96accc1a7abead156f0c02d1b87c97e3f3a28030de"
+        },
+        {
+          "path": "fmt-11.0.2/LICENSE",
+          "sha256": "07580f2a3b35709ce703d523f447b242f6dfec7582a8c0df102c7fa2849375f8"
+        },
+        {
+          "path": "CMakeLists.txt",
+          "sha256": "226bcb4784b262e43a7a9d995e0ec27fa9d1715cea7da1ae27ab3475b47e5a90"
+        },
+        {
+          "path": "alc/alc.cpp",
+          "sha256": "c25b1bce12c36da7ec88b1e21bb30a948c06b9ee10db1b36e86244e4010a4022"
+        },
+        {
+          "path": "appveyor.yml",
+          "sha256": "9969f552471b4eaab72f60c564a09f75a5385360a2bddf29b387772ad225dfe0"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "sha256": "ab3e1ca4a3ba32ca706d375b24bb5e0748d1222747f7c32b3f87cb7c14f92255"
+        }
+      ],
+      "parts": [
+        {
+          "path": "sources/openal-soft-1.24.1-90191edd.tar.gz",
+          "bytes": 1207485,
+          "sha256": "73136315f216b2a59ae975e1bbbbb359fe556f0f4cbff4b81f68a283b0554a21"
+        }
+      ]
+    },
+    {
+      "id": "microsoft-openjdk",
+      "version": "21.0.11+10-LTS",
+      "commit": "87e312d6724906796bbeb1ce86b7598183e1fab9",
+      "archive": "sources/microsoft-openjdk-21.0.11+10-87e312d6.tar.gz",
+      "url": "https://codeload.github.com/microsoft/openjdk-jdk21u/tar.gz/87e312d6724906796bbeb1ce86b7598183e1fab9",
+      "bytes": 114108771,
+      "sha256": "a4c061628930772a6ae4898fed125d7e4408fd0b4ad1ee5b5b37dc347a695a70",
+      "prefix": "openjdk-jdk21u-87e312d6724906796bbeb1ce86b7598183e1fab9/",
+      "requiredFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726"
+        },
+        {
+          "path": "ADDITIONAL_LICENSE_INFO",
+          "sha256": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916"
+        },
+        {
+          "path": "ASSEMBLY_EXCEPTION",
+          "sha256": "75292f03bf23d3db7c985aecc191029b93883200721ed23ed34a2e601463df33"
+        },
+        {
+          "path": "configure",
+          "sha256": "016a47a32111371a07f8ccf9ce249ef3ae94a862978fc9ffff13b5658cc457c1"
+        },
+        {
+          "path": "doc/building.md",
+          "sha256": "db818045738baf1ef5d6c81a9b7fe7c344fef7f7f3e8b28811ed1b648a365178"
+        },
+        {
+          "path": "src/hotspot/share/runtime/os.cpp",
+          "sha256": "ccf88b8de6275a983e7beb9661e7a360d90bb8bf0c90c6af462c131fa2a6507f"
+        }
+      ],
+      "parts": [
+        {
+          "path": "sources/microsoft-openjdk-21.0.11+10-87e312d6.tar.gz.part001",
+          "bytes": 33554432,
+          "sha256": "630d4a21c70d01c5e3b2857e5037cfb080cfc9837ab24c4925beeda1bd3640e3"
+        },
+        {
+          "path": "sources/microsoft-openjdk-21.0.11+10-87e312d6.tar.gz.part002",
+          "bytes": 33554432,
+          "sha256": "475dbc3d45e57bf5859f6734d61e747c42157174936ad50400e0c659ea1b029c"
+        },
+        {
+          "path": "sources/microsoft-openjdk-21.0.11+10-87e312d6.tar.gz.part003",
+          "bytes": 33554432,
+          "sha256": "5344c81060e456f8f327ce5f6a6ed93c099587317610f3b8721b64ac08b9a0a1"
+        },
+        {
+          "path": "sources/microsoft-openjdk-21.0.11+10-87e312d6.tar.gz.part004",
+          "bytes": 13445475,
+          "sha256": "125468bd7a1f541229239feec535ec87713b3d7ae76e1699c9e8bed2cb632872"
+        }
+      ]
+    }
+  ],
+  "nativeLibrary": {
+    "sourceId": "openal-soft",
+    "jar": "lwjgl-openal-3.3.6-natives-windows.jar",
+    "jarSha256": "8ebb63e8014872709671161a896a720e2f09d038b0d3a33692218f7746504b35",
+    "entry": "windows/x64/org/lwjgl/openal/OpenAL.dll",
+    "sha256": "1e4fe04805bc7b9d2488250aaa12b01ea8230cc9b51a356bb1376e180e6b1816",
+    "gitEntry": "META-INF/windows/x64/org/lwjgl/openal/OpenAL.dll.git"
+  },
+  "runtime": {
+    "sourceId": "microsoft-openjdk",
+    "releaseFile": "runtime/microsoft-jdk-release.txt",
+    "implementor": "Microsoft",
+    "implementorVersion": "Microsoft-13877171",
+    "runtimeVersion": "21.0.11+10-LTS",
+    "javaVersion": "21.0.11",
+    "source": "87e312d67249",
+    "jlinkModules": [
+      "java.base",
+      "java.desktop",
+      "java.logging",
+      "java.management",
+      "jdk.unsupported",
+      "jdk.crypto.ec",
+      "jdk.jfr"
+    ]
+  },
+  "documents": [
+    {
+      "path": "openal/COPYING",
+      "sha256": "d808ce217e5b611854da622b57ec29fe545584c48bc5352fae72a4b6e5074a15",
+      "source": "https://raw.githubusercontent.com/LWJGL-CI/openal-soft/90191edd20bb877c5cbddfdac7ec0fe49ad93727/COPYING"
+    },
+    {
+      "path": "openal/BSD-3Clause",
+      "sha256": "b5a08cf98996dd83aa906a72c163600f6cb17a65ce546a553815a1267abd43ff",
+      "source": "https://raw.githubusercontent.com/LWJGL-CI/openal-soft/90191edd20bb877c5cbddfdac7ec0fe49ad93727/BSD-3Clause"
+    },
+    {
+      "path": "openal/LICENSE-pffft",
+      "sha256": "64056328b3e7bc104e24ef96accc1a7abead156f0c02d1b87c97e3f3a28030de",
+      "source": "https://raw.githubusercontent.com/LWJGL-CI/openal-soft/90191edd20bb877c5cbddfdac7ec0fe49ad93727/LICENSE-pffft"
+    },
+    {
+      "path": "openal/fmt-LICENSE",
+      "sha256": "07580f2a3b35709ce703d523f447b242f6dfec7582a8c0df102c7fa2849375f8",
+      "source": "https://raw.githubusercontent.com/LWJGL-CI/openal-soft/90191edd20bb877c5cbddfdac7ec0fe49ad93727/fmt-11.0.2/LICENSE"
+    },
+    {
+      "path": "runtime/LICENSE",
+      "sha256": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726",
+      "source": "https://raw.githubusercontent.com/microsoft/openjdk-jdk21u/87e312d6724906796bbeb1ce86b7598183e1fab9/LICENSE"
+    },
+    {
+      "path": "runtime/ADDITIONAL_LICENSE_INFO",
+      "sha256": "a69bce275ba7a3570af6579cb0f55682cd75fedfcd49e0e8e9022270c447c916",
+      "source": "https://raw.githubusercontent.com/microsoft/openjdk-jdk21u/87e312d6724906796bbeb1ce86b7598183e1fab9/ADDITIONAL_LICENSE_INFO"
+    },
+    {
+      "path": "runtime/ASSEMBLY_EXCEPTION",
+      "sha256": "75292f03bf23d3db7c985aecc191029b93883200721ed23ed34a2e601463df33",
+      "source": "https://raw.githubusercontent.com/microsoft/openjdk-jdk21u/87e312d6724906796bbeb1ce86b7598183e1fab9/ASSEMBLY_EXCEPTION"
+    },
+    {
+      "path": "runtime/microsoft-jdk-release.txt",
+      "sha256": "60b10f15dddd3854328ddfe731457f33a67ff86a515edf92d44fda5a4ed427eb",
+      "source": "Microsoft Build of OpenJDK 21.0.11+10-LTS installed release metadata; source commit 87e312d6724906796bbeb1ce86b7598183e1fab9"
+    },
+    {
+      "path": "README.md",
+      "sha256": "e83df051235696ebe72cfb2c7735c94aa1aa37467297e6f03be0701d9d85199b",
+      "source": "Wreck Riff distribution instructions; upstream references embedded in this document"
+    },
+    {
+      "path": "openal/REPLACEMENT.md",
+      "sha256": "810456c84a53ef0e5f121579910d766202611d9aa0b5067d04f995dcde4e2b91",
+      "source": "Wreck Riff distribution instructions; upstream references embedded in this document"
+    },
+    {
+      "path": "runtime/README.md",
+      "sha256": "1a778c259946677e5de78c416c1d48aac37af7ab930be0e64d6b15b6ebe06a13",
+      "source": "Wreck Riff distribution instructions; upstream references embedded in this document"
+    }
+  ]
+}

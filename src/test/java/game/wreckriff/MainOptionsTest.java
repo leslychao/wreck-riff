@@ -4,6 +4,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MainOptionsTest {
+    @Test void soakHasExplicitDurationAndCannotCompeteWithAnotherDiagnostic() {
+        assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--soak-seconds=1800"}));
+        var soak=Main.Options.parse(new String[]{"--dev","--soak-seconds=1800"});
+        assertEquals(1800,soak.soakSeconds());assertTrue(soak.automated());assertFalse(soak.profile());
+        for(String bad:new String[]{"0","-1","3601","garbage"})assertThrows(IllegalArgumentException.class,
+                ()->Main.Options.parse(new String[]{"--dev","--soak-seconds="+bad}));
+        for(String other:new String[]{"--smoke-seconds=1","--benchmark-seconds=1","--showcase","--art-showcase","--vehicle-showcase"})
+            assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--soak-seconds=1800",other}));
+    }
     @Test void everyDiagnosticSwitchRequiresExplicitDevMode() {
         for(String flag:new String[]{"--seed=42","--no-audio","--ai-player","--smoke-seconds=45","--benchmark-seconds=60","--config-dir=.","--showcase",
                 "--art-showcase","--arena=construction_17","--resolution=720p","--no-glow","--profile"}) {

@@ -30,7 +30,7 @@ public final class SceneLighting {
         // Objects alone opt in with GlowColor. Road paint, warning frames and bright sky never bloom.
         BloomFilter bloom=new BloomFilter(BloomFilter.GlowMode.Objects);
         bloom.setDownSamplingFactor(4);bloom.setBlurScale(1.2f);bloom.setBloomIntensity(.65f);
-        FilterPostProcessor post=new FilterPostProcessor(assets);post.addFilter(bloom);viewport.addProcessor(post);
+        GlowPostProcessor post=new GlowPostProcessor(assets);post.addFilter(bloom);viewport.addProcessor(post);
         Handle handle=new Handle(ambient,sun,rim,shadows,bloom,post,viewport);
         handle.apply(Theme.INDUSTRIAL_YARD,true);return handle;
     }
@@ -49,18 +49,27 @@ public final class SceneLighting {
     }
     private static ColorRGBA c(float red,float green,float blue) {return new ColorRGBA(red,green,blue,1);}
 
+    private static final class GlowPostProcessor extends FilterPostProcessor {
+        GlowPostProcessor(AssetManager assets) {super(assets);}
+        void setGlowEnabled(BloomFilter bloom,boolean enabled) {
+            // Before initialize(), Filter.setEnabled only changes its own flag: jME has not
+            // linked it to this processor yet. Keep the active-filter index in sync as well.
+            setFilterState(bloom,enabled);
+        }
+    }
+
     public static final class Handle {
         private final AmbientLight ambient;
         private final DirectionalLight key,rim;
         private final DirectionalLightShadowRenderer shadows;
         private final BloomFilter bloom;
-        private final FilterPostProcessor post;
+        private final GlowPostProcessor post;
         private final ViewPort viewport;
         private Theme theme;
         private boolean glowEnabled;
         private int samples=-1;
         private Handle(AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
-                DirectionalLightShadowRenderer shadows,BloomFilter bloom,FilterPostProcessor post,ViewPort viewport) {
+                DirectionalLightShadowRenderer shadows,BloomFilter bloom,GlowPostProcessor post,ViewPort viewport) {
             this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.post=post;this.viewport=viewport;
         }
         public void apply(Theme theme,boolean glowEnabled) {
@@ -68,7 +77,7 @@ public final class SceneLighting {
             Profile colors=profile(theme);this.theme=theme;this.glowEnabled=glowEnabled;
             ambient.setColor(colors.ambient());key.setColor(colors.key());rim.setColor(colors.rim());
             viewport.setBackgroundColor(colors.sky());shadows.setShadowIntensity(.57f);
-            bloom.setBloomIntensity(colors.glow());bloom.setEnabled(glowEnabled);
+            bloom.setBloomIntensity(colors.glow());post.setGlowEnabled(bloom,glowEnabled);
         }
         public Theme theme() {return theme;}
         public boolean glowEnabled() {return glowEnabled;}
@@ -76,7 +85,8 @@ public final class SceneLighting {
             if(samples!=0&&samples!=2&&samples!=4&&samples!=8)throw new IllegalArgumentException("Invalid MSAA samples");
             if(this.samples==samples)return;
             this.samples=samples;
-            post.setNumSamples(samples);
+            // UI/native-window 0 means MSAA off; post-processing represents that as one sample.
+            post.setNumSamples(Math.max(1,samples));
         }
     }
 }

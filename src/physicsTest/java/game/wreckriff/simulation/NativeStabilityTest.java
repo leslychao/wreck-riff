@@ -13,7 +13,10 @@ import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.vehicle.VehicleController;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,9 +52,10 @@ class NativeStabilityTest {
         final PhysicsWorld world=new PhysicsWorld(rules);
         final VehicleController driver;
 
-        Rig() {
+        Rig() {this("rivet");}
+        Rig(String profileId) {
             world.addStatic(new BoxCollisionShape(new Vector3f(300,.5f,300)),new Vector3f(0,-.5f,0),new Quaternion());
-            world.addVehicle(0,new Vector3f(0,1,0),new Quaternion());
+            world.addVehicle(0,new Vector3f(0,1,0),new Quaternion(),VehicleProfile.player(profileId,rules));
             for(int tick=0;tick<360;tick++)world.step();
             driver=driver(0);
             assertEquals(4,world.wheelContacts(0),"Fixture must start on all four native wheels");
@@ -67,10 +71,15 @@ class NativeStabilityTest {
         @Override public void close() {world.close();}
     }
 
-    @ParameterizedTest @ValueSource(booleans={false,true})
-    void repeatedNormalAndTurboTurnsStayUprightInBothDirections(boolean turbo) {
-        for(int direction:new int[]{-1,1})try(var rig=new Rig()) {
-            float speed=turbo?rig.rules.turboSpeed():rig.rules.maxSpeed();
+    private static Stream<Arguments> playerSpeeds() {
+        return Stream.of("rivet","grinder","spark").flatMap(profile->
+                Stream.of(Arguments.of(profile,false),Arguments.of(profile,true)));
+    }
+    @ParameterizedTest(name="{0}, turbo={1}") @MethodSource("playerSpeeds")
+    void repeatedNormalAndTurboTurnsStayUprightInBothDirections(String profileId,boolean turbo) {
+        for(int direction:new int[]{-1,1})try(var rig=new Rig(profileId)) {
+            VehicleProfile profile=rig.world.profile(0);
+            float speed=turbo?rig.rules.turboSpeed()*profile.turboMultiplier():rig.rules.maxSpeed()*profile.speedMultiplier();
             rig.world.vehicle(0).setLinearVelocity(new Vector3f(0,0,speed));
             float minimumUp=1,totalYaw=0,distance=0;
             int turboTicks=0;

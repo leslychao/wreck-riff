@@ -25,21 +25,28 @@ class NativeLaunchPlatformsTest {
 
     static Stream<Arguments> launches() {
         List<Arguments> rows=new ArrayList<>();
-        for(String arena:REGISTRY.campaignIds())for(int pad=0;pad<2;pad++)for(float speed:new float[]{2,RULES.maxSpeed()/2,RULES.maxSpeed(),RULES.turboSpeed()})
-            for(int angle:new int[]{0,-25,25,-50,50})rows.add(Arguments.of(arena,pad,speed,angle));
+        for(var vehicle:VehicleDefinition.values()) {
+            var profile=vehicle.profile(RULES);
+            float maximum=RULES.maxSpeed()*profile.speedMultiplier(),turbo=RULES.turboSpeed()*profile.turboMultiplier();
+            for(String arena:REGISTRY.campaignIds())for(int pad=0;pad<2;pad++)for(float speed:new float[]{2,maximum/2,maximum,turbo})
+                for(int angle:new int[]{0,-25,25,-50,50})for(int fps:new int[]{30,60,120})
+                    rows.add(Arguments.of(vehicle.id(),arena,pad,speed,angle,fps));
+        }
         return rows.stream();
     }
     static Stream<Arguments> renderRates() {
         return REGISTRY.campaignIds().stream().flatMap(a->Stream.of(0,1).flatMap(p->Stream.of(30,60,120).map(fps->Arguments.of(a,p,fps))));
     }
 
-    @ParameterizedTest(name="{0} pad={1} speed={2} angle={3}") @MethodSource("launches")
-    void allPlatformsDeliverTheCompleteOrdinaryChassis(String arenaId,int padIndex,float speed,int angle) {
-        try(var rig=new Rig(REGISTRY.definition(arenaId),false)) {
+    @ParameterizedTest(name="{0} {1} pad={2} speed={3} angle={4} fps={5}") @MethodSource("launches")
+    void allPlatformsDeliverTheCompleteOrdinaryChassis(String profileId,String arenaId,int padIndex,float speed,int angle,int fps) {
+        try(var rig=new Rig(REGISTRY.definition(arenaId),false,profileId)) {
             rig.place(0,padIndex,speed,angle);
             assertEquals(4,rig.world.wheelContacts(0));
             assertTrue(rig.world.roadContext(0).known());
-            rig.fly(0,padIndex,60);
+            rig.fly(0,padIndex,fps);
+            assertEquals(12,rig.launchTick,"Compression remains .1s for every chassis and render rate");
+            assertEquals(0,rig.loop.droppedSimulationTime());
         }
     }
     @ParameterizedTest @ValueSource(ints={0,1})
@@ -171,8 +178,11 @@ class NativeLaunchPlatformsTest {
         final int focus;
         long launchTick=-1;
         Rig(ArenaDefinition arena,boolean boss) {
+            this(arena,boss,"rivet");
+        }
+        Rig(ArenaDefinition arena,boolean boss,String profileId) {
             this.arena=arena;
-            session=new MatchSession(42,arena,boss?MatchSession.Mode.BOSS_DUEL:MatchSession.Mode.ARENA,COMBAT);
+            session=new MatchSession(42,arena,boss?MatchSession.Mode.BOSS_DUEL:MatchSession.Mode.ARENA,COMBAT,UUID.randomUUID(),false,0,profileId);
             focus=boss?session.registerBoss(arena.bosses().getFirst()).id:0;
             ArenaContent content=CONTENT.computeIfAbsent(arena.id(),key->new ArenaFactory(NativeArenaAssets.MANAGER).build(arena));
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
@@ -180,7 +190,7 @@ class NativeLaunchPlatformsTest {
         }
         void place(int id,int padIndex,float speed,float angle) {
             var pad=arena.launchPads().get(padIndex);var state=session.vehicle(id);
-            var profile=state.boss?VehicleProfile.boss(state.profileId,RULES):VehicleProfile.rivet(RULES);
+            var profile=state.boss?VehicleProfile.boss(state.profileId,RULES):VehicleProfile.player(state.profileId,RULES);
             float yaw=(float)Math.atan2(pad.direction().x,pad.direction().z)+(float)Math.toRadians(angle);
             world.addVehicle(id,pad.source().vector().add(0,profile.roadOffset()+.3f,0),new Quaternion().fromAngleAxis(yaw,Vector3f.UNIT_Y),profile);
             for(int tick=0;tick<360;tick++)world.step();
@@ -189,12 +199,12 @@ class NativeLaunchPlatformsTest {
         }
         void placeMovingSecond(int id,int padIndex) {
             var pad=arena.launchPads().get(padIndex);
-            var profile=VehicleProfile.rivet(RULES);
+            var profile=VehicleProfile.player(session.vehicle(id).profileId,RULES);
             float yaw=(float)Math.atan2(pad.direction().x,pad.direction().z);
             // Native suspension starts close to its established loaded road height;
             // this helper must not advance the first car while creating the second.
             Vector3f side=new Vector3f(-pad.direction().z,0,pad.direction().x).multLocal(3.2f);
-            world.addVehicle(id,pad.source().vector().add(side).addLocal(0,profile.roadOffset()-.08f,0),new Quaternion().fromAngleAxis(yaw,Vector3f.UNIT_Y));
+            world.addVehicle(id,pad.source().vector().add(side).addLocal(0,profile.roadOffset()-.08f,0),new Quaternion().fromAngleAxis(yaw,Vector3f.UNIT_Y),profile);
             drivers.put(id,new VehicleController(world,session.vehicle(id),RULES,arena.bounds(),0));
             world.vehicle(id).setLinearVelocity(pad.direction().mult(14));
         }

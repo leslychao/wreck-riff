@@ -14,6 +14,7 @@ public final class AudioDirector implements AutoCloseable {
     private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
     private record DelayedImpact(GameEvent event,double due) {}
+    private record BossWarning(long beganTick,Voice voice) {}
     private static final class Voice {
         final AudioNode node;
         final Group group;
@@ -40,6 +41,9 @@ public final class AudioDirector implements AutoCloseable {
     private final Map<String,Voice> loops = new HashMap<>();
     /** References to already-budgeted one shots, keyed by the authoritative arena object. */
     private final Map<String,Voice> hazardWarnings=new HashMap<>();
+    /** One last start per participant, retained after playback so dropped/expired cues cannot replay. */
+    private final Map<Integer,BossWarning> bossWarnings=new HashMap<>();
+    private static final int BOSS_WARNING_PARTICIPANT_LIMIT=32;
     private static final class Motion { float priorSpeed,priorTurbo=100,enginePitch=1; }
     private final Map<Integer,Motion> motion=new HashMap<>();
     private AudioNode music,bossTrack;
@@ -92,6 +96,29 @@ public final class AudioDirector implements AutoCloseable {
         if(closed||!matchActive||bossTrack==null)return;
         bossTarget=active?1:0;
         if(!paused)ensureMusicSources();
+    }
+
+    /** Real TELEGRAPH transitions only; checkpoint snapshots are seeded silently by presentation. */
+    public void bossTelegraph(UUID sourceSessionId,int subjectId,long beganTick,Vector3f position,boolean active) {
+        if(closed||renderer==null||!matchActive||!Objects.equals(sessionId,sourceSessionId)||subjectId<=0||beganTick<0)return;
+        BossWarning previous=bossWarnings.get(subjectId);
+        if(!active) {
+            if(previous!=null&&previous.beganTick==beganTick&&previous.voice!=null) {
+                remove(previous.voice);applyVolumes();
+            }
+            return;
+        }
+        if(paused||position==null||!Float.isFinite(position.x)||!Float.isFinite(position.y)||!Float.isFinite(position.z))return;
+        if(previous!=null&&beganTick<=previous.beganTick)return;
+        if(previous==null&&bossWarnings.size()>=BOSS_WARNING_PARTICIPANT_LIMIT)return;
+        if(previous!=null&&previous.voice!=null)remove(previous.voice);
+        prune();
+        // Consume valid starts even when distance or higher-priority sources suppress the sound.
+        // This API never queues a late warning or recreates a naturally finished one shot.
+        Voice voice=allocate("boss-telegraph",Group.THREAT,104,null,position,.92f,1);
+        bossWarnings.put(subjectId,new BossWarning(beganTick,voice));
+        if(voice!=null)duck=config.musicDuckSeconds();
+        applyVolumes();
     }
 
     private AudioNode loadMusic(String path,String name)throws IOException {
@@ -159,7 +186,7 @@ public final class AudioDirector implements AutoCloseable {
         // replaces it explicitly before receiving any events; no event can bind audio itself.
         matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
         nextTake.clear(); acceptedEvents.clear(); delayedImpacts.clear();impactClock=0;
-        motion.clear();
+        motion.clear();bossWarnings.clear();
     }
 
     public void update(MatchSession session, WorldQuery world, float dt) {
@@ -495,6 +522,7 @@ public final class AudioDirector implements AutoCloseable {
         renderer.stopSource(voice.node); voice.node.removeFromParent(); voices.remove(voice);
         if (voice.loopKey!=null) loops.remove(voice.loopKey);
         hazardWarnings.values().removeIf(warning->warning==voice);
+        bossWarnings.replaceAll((subject,warning)->warning.voice==voice?new BossWarning(warning.beganTick,null):warning);
     }
     @Override public void close() {
         if (closed) return;

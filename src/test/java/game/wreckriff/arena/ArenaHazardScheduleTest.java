@@ -27,10 +27,12 @@ class ArenaHazardScheduleTest {
         assertFalse(schedule.request("show-electric",ArenaSystems.BossAction.PROTOCOL));
         match.phase=MatchSession.Phase.BOSS_COMBAT;match.bossMode=3;
         assertTrue(schedule.request("show-electric",ArenaSystems.BossAction.PROTOCOL));assertEquals(2,schedule.pendingDamage());
-        assertFalse(schedule.request("show-fire",ArenaSystems.BossAction.PROTOCOL));
+        assertTrue(schedule.request("show-fire",ArenaSystems.BossAction.PROTOCOL),"One future intention is accepted without starting a third hazard");
+        assertEquals(2,schedule.pendingDamage());
         schedule.cancelPreparedAndActive(1440);assertEquals(0,schedule.pendingDamage());
         steps(schedule,match,1439);assertEquals(0,schedule.pendingDamage());
-        assertFalse(schedule.request("show-fire",ArenaSystems.BossAction.PROTOCOL));
+        assertTrue(schedule.request("show-fire",ArenaSystems.BossAction.PROTOCOL),"Requests during suppression wait; they do not start a warning");
+        assertEquals(ProgressStore.HazardPhase.COOLDOWN,schedule.state("show-fire").phase);
         steps(schedule,match,1);assertEquals(0,schedule.pendingDamage(),"Shield does not shorten the already longer ordinary event interval");
         steps(schedule,match,480);assertEquals(1,schedule.pendingDamage());
         assertTrue(schedule.drainActions().isEmpty(),"Cancelled protocols never open a boss panel");

@@ -385,7 +385,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         }
     }
     private void observeArenaContact(PhysicsCollisionEvent event,Integer a,Integer b) {
-        if(!(event.getDistance1()<=.001f)||(a==null)==(b==null))return;
+        if((a==null)==(b==null))return;
         int vehicle=a!=null?a:b;
         Integer surface=staticIdentities.get(a!=null?event.getObjectB():event.getObjectA());
         if(surface==null)return;
@@ -396,14 +396,19 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         Vector3f arenaVelocity=moving==null?new Vector3f():moving.velocityAt(point);
         float closing=Math.max(0,-preStepVelocity.getOrDefault(vehicle,new Vector3f()).subtract(arenaVelocity).dot(normal));
         ArenaPair key=new ArenaPair(surface,vehicle);ArenaContact previous=arenaContacts.get(key);
-        if(previous==null||closing>previous.closingSpeed())
+        if(event.getDistance1()<=.001f&&(previous==null||closing>previous.closingSpeed()))
             arenaContacts.put(key,new ArenaContact(staticNames.get(surface),vehicle,closing,point,normal));
         if(moving!=null&&arenaVelocity.lengthSquared()>.000001f) {
+            // The solver also responds to its retained/speculative manifold
+            // points just outside touching distance. They contribute momentum
+            // even though they must not produce a gameplay damage contact.
             Vector3f impulse=event.getNormalWorldOnB().mult(event.getAppliedImpulse());
-            if(event.isLateralFrictionInitialized()) {
-                impulse.addLocal(event.getLateralFrictionDir1(null).multLocal(event.getAppliedImpulseLateral1()));
-                impulse.addLocal(event.getLateralFrictionDir2(null).multLocal(event.getAppliedImpulseLateral2()));
-            }
+            // Bullet's INITIALIZED flag selects cached/custom friction axes;
+            // the default solver still applies freshly computed lateral friction
+            // without setting it. Include those impulses in the mechanism cap.
+            float lateral1=event.getAppliedImpulseLateral1(),lateral2=event.getAppliedImpulseLateral2();
+            if(lateral1!=0)impulse.addLocal(event.getLateralFrictionDir1(null).multLocal(lateral1));
+            if(lateral2!=0)impulse.addLocal(event.getLateralFrictionDir2(null).multLocal(lateral2));
             // New and ongoing listeners can report the same manifold point.
             // Its native ID deduplicates that impulse without dropping other points.
             movingContactImpulses.put(event.nativeId(),new MovingImpulse(vehicle,impulse.multLocal(sign)));

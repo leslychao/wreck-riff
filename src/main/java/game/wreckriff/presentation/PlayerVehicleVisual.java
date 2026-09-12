@@ -134,6 +134,11 @@ final class PlayerVehicleVisual {
         }
         for(int barrel=0;barrel<2;barrel++) {
             Vector3f tip=profile.machineGunMuzzle(barrel);
+            if(profile.id().equals("grinder")) {
+                // Cantilever brackets join the forward barrels to the cab roof without moving the firing sockets.
+                steel.box(tip.x,tip.y-.08f,2.02f,.11f,.065f,.70f);
+                steel.box(tip.x,tip.y,2.47f,.095f,.095f,.16f);
+            }
             steel.cylinderZ(tip.x,tip.y,tip.z-.23f,.068f,.44f,10);
             rubber.cylinderZ(tip.x,tip.y,tip.z-.005f,.045f,.01f,10);
             Node anchor=new Node("machine-gun-muzzle-"+barrel);anchor.setLocalTranslation(tip);root.attachChild(anchor);

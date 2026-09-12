@@ -20,6 +20,9 @@ final class ArenaHazardSchedule {
     private final List<String> completed=new ArrayList<>();
     private final List<ArenaSystems.BossAction> completedActions=new ArrayList<>();
     private long cooldown,cursor,lastTick=Long.MIN_VALUE;
+    private record Request(String id,ArenaSystems.BossAction completion) {}
+    // A queued AI intention is discarded with the old boss on retry; only already telegraphed map events persist.
+    private Request requested;
 
     ArenaHazardSchedule(MatchSession session,ArenaDefinition arena) {
         this.arena=arena;this.session=session;cursor=Math.floorMod(session.seed,Integer.MAX_VALUE);
@@ -36,6 +39,16 @@ final class ArenaHazardSchedule {
     int pendingDamage() {return (int)states.entrySet().stream().filter(e->!timing(e.getKey()).barrier()&&pending(e.getValue())).count();}
     private int budget() {return arena.id().equals("doomsday_arena")&&session.phase==MatchSession.Phase.BOSS_COMBAT&&session.bossMode==3?2:1;}
     boolean request(String id,ArenaSystems.BossAction completion) {
+        timing(id); // Unknown IDs are programmer/configuration errors, never queue entries.
+        if(completion!=null&&session.phase==MatchSession.Phase.BOSS_COMBAT&&session.outcome==MatchSession.Outcome.NONE) {
+            if(requested!=null)return requested.id().equals(id)&&requested.completion()==completion;
+            if(start(id,completion))return true;
+            if(timing(id).statue())return false;
+            requested=new Request(id,completion);return true;
+        }
+        return start(id,completion);
+    }
+    private boolean start(String id,ArenaSystems.BossAction completion) {
         var value=timing(id);var state=state(id);
         if(!session.combatPhase()||session.outcome!=MatchSession.Outcome.NONE||state.phase!=ProgressStore.HazardPhase.READY||value.statue())return false;
         if(cooldown>0&&pendingDamage()==0)return false;
@@ -59,6 +72,7 @@ final class ArenaHazardSchedule {
     void cancel(String id) {var state=state(id);state.phase=ProgressStore.HazardPhase.COOLDOWN;state.remaining=timing(id).rest();state.completion=null;}
     void statue(String id) {cancelPreparedAndActive(0);begin(id,null);}
     void cancelPreparedAndActive(long ticks) {
+        requested=null;
         cooldown=Math.max(cooldown,ticks);
         for(var entry:states.entrySet()) {
             if(timing(entry.getKey()).statue())continue;
@@ -89,7 +103,8 @@ final class ArenaHazardSchedule {
                 default -> { }
             }
         }
-        if(cooldown==0&&pendingDamage()==0&&!arena.hazards().isEmpty()) {
+        if(requested!=null&&session.phase==MatchSession.Phase.BOSS_COMBAT&&start(requested.id(),requested.completion()))requested=null;
+        if(requested==null&&cooldown==0&&pendingDamage()==0&&!arena.hazards().isEmpty()) {
             for(int i=0;i<arena.hazards().size();i++) {
                 String id=arena.hazards().get(Math.floorMod(cursor++,arena.hazards().size())).id();
                 if(request(id,null))break;
@@ -109,7 +124,9 @@ final class ArenaHazardSchedule {
         for(var entry:saved.hazards().entrySet()) {
             var value=entry.getValue();var timing=timing(entry.getKey());
             long limit=switch(value.phase()) {case WARNING->timing.warning();case ACTIVE->timing.active();case COOLDOWN->Math.max(timing.rest(),1440);default->0;};
-            if(value.remainingTicks()>limit||value.cooldownTicks()!=0||(value.phase()==ProgressStore.HazardPhase.DISABLED&&!timing.statue()))
+            var hazard=arena.hazards().stream().filter(h->h.id().equals(entry.getKey())).findFirst();
+            long damageLimit=value.phase()==ProgressStore.HazardPhase.ACTIVE&&hazard.isPresent()?hazard.get().damageIntervalTicks():0;
+            if(value.remainingTicks()>limit||value.cooldownTicks()>damageLimit||(value.phase()==ProgressStore.HazardPhase.DISABLED&&!timing.statue()))
                 throw new IllegalArgumentException("Invalid saved arena event duration: "+entry.getKey());
         }
         var pending=saved.hazards().entrySet().stream().filter(e->e.getValue().phase()==ProgressStore.HazardPhase.WARNING||e.getValue().phase()==ProgressStore.HazardPhase.ACTIVE).toList();
@@ -127,6 +144,6 @@ final class ArenaHazardSchedule {
         long maximumRest=timing.values().stream().mapToLong(Timing::rest).max().orElse(0);
         if(saved.eventCooldownTicks()>Math.max(1440,maximumRest))throw new IllegalArgumentException("Invalid saved arena cooldown");
         saved.hazards().forEach((id,value)->{var state=state(id);state.phase=value.phase();state.remaining=value.remainingTicks();state.cycle=value.cycle();state.completion=null;state.beganTick=Long.MIN_VALUE;});
-        cooldown=saved.eventCooldownTicks();cursor=saved.randomState();lastTick=Long.MIN_VALUE;
+        cooldown=saved.eventCooldownTicks();cursor=saved.randomState();lastTick=Long.MIN_VALUE;requested=null;
     }
 }

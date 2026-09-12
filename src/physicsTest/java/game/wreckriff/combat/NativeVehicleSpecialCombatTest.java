@@ -146,6 +146,36 @@ class NativeVehicleSpecialCombatTest {
     }
 
     @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"side","wall"})
+    void ordinaryTruckPitchCorrectionCannotTurnTowardSideCarsOrShootThroughWalls(String obstruction) {
+        try(var fight=new Fight("grinder","rivet")) {
+            fight.place(0,0,0,0);fight.place(1,obstruction.equals("side")?5:0,15,0);
+            if(obstruction.equals("wall"))fight.box("gun-lane-wall",new Vector3f(6,3,.25f),new Vector3f(0,3,8));
+            fight.settle();
+            if(obstruction.equals("wall")) {
+                var line=fight.world.ray(fight.world.muzzle(0),fight.world.position(1).add(0,.2f,0),0);
+                assertNotNull(line);assertEquals(-1,line.vehicleId(),"Native wall must occlude the direct firing lane");
+            }
+            var stationaryFire=new VehicleCommand(0,0,0,false,false,true,true,WeaponType.POWER,0,false,false,AbilityId.NONE);
+            fight.tick(Map.of(0,stationaryFire));
+            var rocket=fight.combat.projectiles().stream().filter(p->p.ownerId()==0&&p.kind().equals("power")).findFirst().orElseThrow();
+            Vector3f driverYaw=fight.world.forward(0).setY(0).normalizeLocal();
+            assertTrue(driverYaw.distance(rocket.direction().setY(0).normalizeLocal())<.0001f,
+                    "Roof correction must preserve the driver's horizontal direction, including when another car is off-axis");
+            for(int tick=1;tick<60;tick++)fight.tick(Map.of(0,stationaryFire));
+            for(int tick=0;tick<=ticks(COMBAT.power().ttlSeconds())&&!fight.combat.projectiles().isEmpty();tick++)fight.tick();
+            assertEquals(5,fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("machine-gun")).count());
+            assertEquals(1,fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("power")).count());
+            if(obstruction.equals("wall"))assertTrue(fight.events.stream().anyMatch(e->e.type()==GameEvent.Type.IMPACT
+                    &&e.sourceId()==0&&e.subjectId()<0&&e.kind().equals("power")),"The actual rocket must strike static cover");
+            assertEquals(0,fight.damage("machine-gun",1),obstruction+" must prevent MG damage");
+            assertEquals(0,fight.damage("power",1),obstruction+" must prevent Power damage");
+            assertEquals(fight.target().maximumHp,fight.target().hp,.001f);
+            assertFalse(fight.player().specialActive());assertEquals(0,fight.world.grabCount());
+        }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings={"rivet","spark"})
     void fullGrinderMachineGunPowerComboUsesRealHitsAmmoSelfSplashAndBoundedDamage(String targetProfile) {
         try(var fight=new Fight("grinder",targetProfile)) {

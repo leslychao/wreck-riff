@@ -25,12 +25,17 @@ class ArenaDynamicPresentationTest {
                     for(int i=0;i<positions.limit();i+=3) {
                         Vector3f p=geometry.localToWorld(new Vector3f(positions.get(i),positions.get(i+1),positions.get(i+2)),null);
                         p=node.worldToLocal(p,null);
-                        assertTrue(Math.abs(p.x)<=pad.width()/2+.001f);
-                        assertTrue(Math.abs(p.z)<=pad.length()/2+.001f);
-                        assertTrue(p.y>=0&&p.y<=.065f,"A decal must not imply a new physical curb");
+                        assertTrue(Math.abs(p.x)<=pad.width()/2+.001f,pad.id()+": local width exceeded at "+p);
+                        assertTrue(Math.abs(p.z)<=pad.length()/2+.001f,pad.id()+": local length exceeded at "+p);
+                        assertTrue(p.y>=0&&p.y<=.065f,pad.id()+": a decal must not imply a new physical curb at "+p);
                     }
                 }});
                 assertEquals("READY",node.getUserData("launchPhase"));
+                var indicator=geometries(node).stream().map(Geometry::getMaterial)
+                        .filter(material->material.getParam("Color")!=null).findFirst().orElseThrow();
+                indicator.setColor("Color",ColorRGBA.Black);f.presentation.update(0);
+                assertEquals(new ColorRGBA(.42f,.82f,.95f,1),indicator.getParam("Color").getValue(),
+                        "The merged arrows must retain the live indicator material");
                 var pose=node.getChild("launch-deck").getLocalTransform().clone();
                 for(int n=0;n<100;n++)f.presentation.update(.1f);
                 assertEquals(pose,node.getChild("launch-deck").getLocalTransform());
@@ -112,8 +117,10 @@ class ArenaDynamicPresentationTest {
         assertEquals(2,geometries(gateNode).size(),"The static material is batched independently of the live motion group");
         Geometry gateLamp=(Geometry)root.getChild("gate-lamp");
         ColorRGBA before=((ColorRGBA)gateLamp.getMaterial().getParam("Color").getValue()).clone();
+        f.steps(1680);assertTrue(f.systems.requestHazard(f.arena.barriers().getFirst().id(),null));
+        f.steps(f.arena.barriers().getFirst().warningTicks());
         var presentation=ArenaPresentation.attach(assets,root,f.session,f.arena,f.systems);
-        f.session.tick=300;presentation.update(0);
+        f.session.tick+=300;presentation.update(0);
         assertNotEquals(before,gateLamp.getMaterial().getParam("Color").getValue());
         gateNode.setCullHint(Spatial.CullHint.Always);
         assertTrue(geometries(gateNode).stream().allMatch(g->g.getCullHint()==Spatial.CullHint.Always));

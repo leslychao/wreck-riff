@@ -315,6 +315,20 @@ public final class BotController {
         if(policy.phase==BossTactics.Phase.TELEGRAPH||policy.phase==BossTactics.Phase.CHARGE) {
             brain.state=State.ATTACK;brain.destination=policy.targetPoint.clone();return true;
         }
+        if(policy.relocationGoal>=0) {
+            var goal=graph.position(policy.relocationGoal);
+            if(horizontalDistance(position,goal)>7||Math.abs(position.y-roadOffset(world,self.id)-goal.y)>2) {
+                if((brain.routeRevision!=graph.revision()||brain.path.isEmpty()||brain.goalNode!=policy.relocationGoal)
+                        &&!planBossRelocation(self,brain,world,avoidHazards,policy.relocationGoal)) {
+                    policy.relocationGoal=-1;policy.nextRelocationTick=session.tick+360;return false;
+                }
+                // A supply request during a committed ramp preserves the traversals but changes
+                // their final connector. Restore that connector when the manoeuvre resumes.
+                brain.destination=goal;
+                brain.state=State.SEEK_TARGET;return true;
+            }
+            policy.relocationGoal=-1;policy.nextRelocationTick=session.tick+(session.bossMode>=2?1440:2880);policy.resetCircuit();
+        }
         var known=brain.observation.known(brain.target);
         if(self.profileId.equals("boss_prefect")&&known!=null&&position.distance(known.position())>75) {
             if(policy.farSince<0)policy.farSince=session.tick;
@@ -333,10 +347,16 @@ public final class BotController {
             return false;
         }
         boolean sameLevel=sameObservedLevel(self.id,target.id(),position,target.position(),world);
+        var road=world.roadContext(self.id);
+        if(self.profileId.equals("boss_emcee")&&road.known()&&!road.flying()
+                &&policy.observedCircuit(position,upperRingCenter(),road.level(),target)
+                &&beginBossRelocation(self,brain,world,avoidHazards))return true;
+        if(self.profileId.equals("boss_director")&&session.tick>=policy.nextRelocationTick
+                &&beginBossRelocation(self,brain,world,avoidHazards))return true;
         boolean ramCorridor=policy.canRam(session.tick,session.bossMode)&&session.tick-brain.landedAt>=84&&sameLevel
                 &&horizontalDistance(position,target.position())>=policy.timing.minimumRange()
                 &&horizontalDistance(position,target.position())<=policy.timing.maximumRange()
-                &&world.sweep(position.add(0,1.2f,0),target.position().add(0,1.2f,0),halfWidth(world,self.id),self.id)==null
+                &&clearRamCorridor(self.id,target.id(),position,target.position(),world)
                 &&supportedRoadConnection(self.id,position,target.position(),world);
         if(ramCorridor&&angleDegrees(world.forward(self.id),target.position().subtract(position).setY(0))<=12) {
             policy.beginRam(session.tick,position,target.position());brain.state=State.ATTACK;
@@ -380,7 +400,6 @@ public final class BotController {
         var policy=brain.boss;
         if(session.tick<policy.nextProtocolTick||policy.phase!=BossTactics.Phase.CRUISE)return;
         if((selfBossHeavy(self)||self.profileId.equals("boss_ash_shepherd"))&&session.bossMode<2)return;
-        if(self.profileId.equals("boss_ash_shepherd")&&(world.roadContext(self.id).level()==0||world.roadContext(target.id()).level()==0))return;
         Vector3f predicted=target.position().add(target.velocity().mult(.6f));
         if(self.profileId.equals("boss_prefect")&&!arena.barriers().isEmpty()&&(session.bossMode==1||policy.protocolIndex%2==0)) {
             var barrier=arena.barriers().stream().min(Comparator.comparingDouble(b->arena.boxes().stream()
@@ -391,11 +410,58 @@ public final class BotController {
         }
         var selected=arena.hazards().stream().filter(h->!selfBossHeavy(self)||h.type()==ArenaDefinition.HazardType.CRANE)
                 .filter(h->!self.profileId.equals("boss_ash_shepherd")||h.type()==ArenaDefinition.HazardType.FIRE)
+                .filter(h->!self.profileId.equals("boss_ash_shepherd")||allowedRite(h,self,target,world))
                 .min(Comparator.comparingDouble(h->h.center().vector().distanceSquared(predicted))).orElse(null);
         if(selected==null)return;
         emitBoss(policy,self.profileId.equals("boss_ash_shepherd")?BossCommandKind.RITE:BossCommandKind.PROTOCOL,
                 BossCommandStage.BEGIN,selected.id(),self.id,target.position());
         policy.nextProtocolTick=session.tick+policy.protocolCooldown();policy.protocolIndex++;policy.side=-policy.side;
+    }
+    private boolean allowedRite(ArenaDefinition.Hazard hazard,VehicleState self,BotObservation.Opponent target,WorldQuery world) {
+        var surface=arena.surfaceAt(new Vector3f(hazard.center().x(),hazard.minY()+.1f,hazard.center().z()),0,.3f);
+        if(surface.isEmpty()||surface.get().level()==0)return true;
+        var own=world.roadContext(self.id);var other=world.roadContext(target.id());
+        // An active launch/landing never counts as an approach to the upper fire strip.
+        if(other.flying()||session.tick-brains.get(target.id()).landedAt<84)return false;
+        if(own.known()&&other.known()&&own.level()>0&&other.level()>0)return true;
+        return other.motion()==RoadContext.Motion.RAMP&&target.velocity().y>.15f
+                &&arena.ramps().stream().anyMatch(r->r.containsXZ(target.position().x,target.position().z,0)
+                &&Math.max(r.startY(),r.endY())-r.heightAt(target.position().x,target.position().z)<2);
+    }
+    private Vector3f upperRingCenter() {
+        var upper=arena.nodes().stream().filter(n->arena.surfaces().stream()
+                .anyMatch(s->s.id().equals(n.surfaceId())&&s.level()>0)).toList();
+        float minX=Float.POSITIVE_INFINITY,maxX=Float.NEGATIVE_INFINITY,minZ=minX,maxZ=maxX;
+        for(var node:upper){minX=Math.min(minX,node.position().x());maxX=Math.max(maxX,node.position().x());
+            minZ=Math.min(minZ,node.position().z());maxZ=Math.max(maxZ,node.position().z());}
+        return new Vector3f((minX+maxX)*.5f,0,(minZ+maxZ)*.5f);
+    }
+    private boolean beginBossRelocation(VehicleState self,Brain brain,WorldQuery world,boolean avoidHazards) {
+        var road=world.roadContext(self.id);if(!road.known()||road.flying())return false;
+        var policy=brain.boss;var position=world.position(self.id);var center=upperRingCenter();
+        Vector3f opposite=new Vector3f(2*center.x-position.x,0,2*center.z-position.z);
+        int level=road.level()>0?0:1;
+        var candidates=arena.nodes().stream().filter(n->arena.surfaces().stream()
+                .anyMatch(s->s.id().equals(n.surfaceId())&&s.level()==level))
+                .sorted(Comparator.comparingDouble(n->horizontalDistance(n.position().vector(),opposite))).toList();
+        for(var goal:candidates) {
+            if(!planBossRelocation(self,brain,world,avoidHazards,goal.id()))continue;
+            brain.state=State.SEEK_TARGET;policy.relocationGoal=goal.id();policy.side=-policy.side;
+            return true;
+        }
+        policy.relocationGoal=-1;policy.nextRelocationTick=session.tick+360;return false;
+    }
+    private boolean planBossRelocation(VehicleState self,Brain brain,WorldQuery world,boolean avoidHazards,int goal) {
+        var current=mobility(self.id,world);
+        // Recovery or a barrier revision replans the same committed destination using the shared ramp.
+        var rampsOnly=new NavGraph.Mobility(current.width(),current.height(),current.speed(),false,false,Set.of());
+        Set<String> hazards=avoidHazards?activeHazards.get().stream().filter(h->hazardVisible(self.id,h,world))
+                .map(ArenaDefinition.Hazard::id).collect(java.util.stream.Collectors.toSet()):Set.of();
+        var route=graph.route(navigationStart(world.position(self.id),world,self.id),goal,rampsOnly,hazards,rules.turnPenalty(),rules.activeHazardPenalty());
+        if(!route.found())return false;
+        brain.path=route.nodes();brain.traversals=route.traversals();brain.routeRevision=graph.revision();brain.pathIndex=0;
+        brain.goalNode=goal;brain.destination=graph.position(goal);brain.transition=null;brain.passingDestination=null;
+        return true;
     }
     private static boolean selfBossHeavy(VehicleState self) {return self.profileId.equals("boss_foreman");}
     private void emitBoss(BossTactics policy,BossCommandKind kind,BossCommandStage stage,String hazard,int id,Vector3f point) {
@@ -404,7 +470,7 @@ public final class BotController {
     }
     public List<BossCommand> drainBossCommands() {var commands=List.copyOf(bossCommands);bossCommands.clear();return commands;}
     public Optional<BossActionView> bossAction(int id) {
-        var boss=brains.get(id).boss;
+        var brain=brains.get(id);var boss=brain==null?null:brain.boss;
         return boss==null?Optional.empty():Optional.of(new BossActionView(boss.phase.name(),boss.mode,boss.beganTick,boss.untilTick,boss.point()));
     }
     public void confirmRamContact(int bossId,long tick) {
@@ -719,8 +785,8 @@ public final class BotController {
             if(policy.phase==BossTactics.Phase.CHARGE) {
                 brain.requiredMovement=true;brain.progressDirection=policy.chargeDirection;
                 float aim=signedAngle(forward,policy.chargeDirection);
-                var blocked=world.sweep(position.add(0,1.2f,0),position.add(0,1.2f,0).add(forward.mult(8)),halfWidth,self.id);
-                if(blocked!=null&&blocked.vehicleId()<0&&!drivableRampHit(blocked)||supportedDistance(self.id,position,forward,world)<3) {
+                if(!clearRamCorridor(self.id,brain.target,position,position.add(forward.mult(8)),world)
+                        ||supportedDistance(self.id,position,forward,world)<3) {
                     policy.finishCharge(session.tick);
                     return new VehicleCommand(0,velocity.dot(forward)>.5f?1:0,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
                 }
@@ -801,7 +867,8 @@ public final class BotController {
         WeaponType directWeapon=null;
         if (target!=null && session.tick>=brain.reactionUntil && self.protectionTicks==0) {
             Vector3f toTarget=target.position().subtract(world.muzzle(self.id));
-            float distance=toTarget.length(),angle=angleDegrees(forward,toTarget);
+            float distance=toTarget.length(),angle=self.profileId.equals("grinder")&&world.grounded(self.id)
+                    ?angleDegrees(forward.clone().setY(0),toTarget.clone().setY(0)):angleDegrees(forward,toTarget);
             boolean visible=lineOfSight(world,world.muzzle(self.id),target.position(),self.id,target.id());
             machineGun=visible && distance<=rules.machineGunRange() && angle<=rules.machineGunAngleDegrees()&&self.machineGunCooldown==0;
             var targeting=session.combatRules.targeting();
@@ -812,7 +879,10 @@ public final class BotController {
         if(self.grinding()&&self.specialTargetId>=0&&session.vehicle(self.specialTargetId).grabbedBy==self.id) {
             // The elevated mounts tilt into the physical receiver in CombatSystem.
             machineGun=self.machineGunCooldown==0;
-            if(self.weapon(WeaponType.POWER).ammo>0&&self.weapon(WeaponType.POWER).cooldownTicks==0) {
+            // Use the non-displacing gun during the hold; finish with Power so its
+            // normal lift does not release a healthy victim at the start of the attack.
+            rocket=false;directWeapon=null;
+            if(self.specialTicks<=12&&self.weapon(WeaponType.POWER).ammo>0&&self.weapon(WeaponType.POWER).cooldownTicks==0) {
                 rocket=true;directWeapon=WeaponType.POWER;
             }
         }
@@ -882,8 +952,8 @@ public final class BotController {
             float height=previous;
             for (int side:new int[]{0,-1,1}) {
                 Vector3f point=center.add(right.mult(side*(halfWidth(world,id)+.05f)));point.y=previous+roadOffset(world,id);
-                WorldQuery.Hit surface=world.ray(point.add(0,1.5f,0),point.add(0,-2,0),id);
-                if (surface==null || surface.vehicleId()>=0 || surface.normal().y<.65f
+                WorldQuery.Support surface=world.support(point.add(0,1.5f,0),3.5f);
+                if (surface==null || surface.normal().y<.65f
                         || !roadSurface(surface.point(),true) || Math.abs(surface.point().y-previous)>.8f) return distance-1;
                 if (side==0) height=surface.point().y;
             }
@@ -1024,6 +1094,12 @@ public final class BotController {
             brain.passingDestination=null;
             brain.backingToRoute=false;brain.recoveryDetourAttempted=false;
         }
+        if(!brain.requiredMovement) {
+            // A telegraph/landing pause is intentional. Give the following acceleration
+            // a complete movement sample instead of reversing 0.3 s into a valid charge.
+            brain.lastPosition=position.clone();brain.progress=0;brain.progressWindowStart=session.tick;
+            brain.stationaryTicks=0;return;
+        }
         if (brain.lastPosition!=null) {
             Vector3f displacement=position.subtract(brain.lastPosition); displacement.y=0;
             if (brain.requiredMovement) {
@@ -1092,12 +1168,37 @@ public final class BotController {
         float previousHeight=position.y-roadOffset(world,id);
         for (int step=1;step<=samples;step++) {
             Vector3f point=position.clone().interpolateLocal(candidate,step/(float)samples);
-            WorldQuery.Hit surface=world.ray(point.add(0,2,0),point.add(0,-3,0),id);
-            if (surface==null || surface.vehicleId()>=0 || surface.normal().y<.65f
+            WorldQuery.Support surface=world.support(point.add(0,2,0),5);
+            if (surface==null || surface.normal().y<.65f
                     || !roadSurface(surface.point()) || Math.abs(surface.point().y-previousHeight)>1.3f) return false;
             previousHeight=surface.point().y;
         }
         return true;
+    }
+    private boolean clearRamCorridor(int id,int target,Vector3f from,Vector3f to,WorldQuery world) {
+        var startRoad=world.support(from.add(0,2,0),5);var endRoad=world.support(to.add(0,2,0),5);
+        if(startRoad==null||endRoad==null)return false;
+        var profile=world.profile(id);float radius=profile.width()/2;
+        var direction=to.subtract(from).setY(0).normalizeLocal();var right=new Vector3f(direction.z,0,-direction.x);
+        // The wide sphere follows road height, not the much lower centre of the target car.
+        // A fixed COM+1.2 probe starts below the road for the two widest boss profiles.
+        var start=new Vector3f(from.x,startRoad.point().y+radius+.12f,from.z);
+        var end=new Vector3f(to.x,endRoad.point().y+radius+.12f,to.z);
+        if(ramBlocked(world.sweep(start,end,radius,id),target))return false;
+        // Retain the actual low bumper/outer-wheel corridor and tall cabin clearance.
+        // Raising the wide sphere alone would miss a low block near its left/right edge.
+        for(int side:new int[]{-1,0,1}) {
+            var offset=right.mult(side*(radius-.4f));
+            start.set(from.x,startRoad.point().y+.75f,from.z).addLocal(offset);
+            end.set(to.x,endRoad.point().y+.75f,to.z).addLocal(offset);
+            if(ramBlocked(world.sweep(start,end,.4f,id),target))return false;
+        }
+        float roof=profile.roadOffset()+profile.hullBounds().maxY()-.3f;
+        start.set(from.x,startRoad.point().y+roof,from.z);end.set(to.x,endRoad.point().y+roof,to.z);
+        return !ramBlocked(world.sweep(start,end,.35f,id),target);
+    }
+    private boolean ramBlocked(WorldQuery.Hit hit,int target) {
+        return hit!=null&&!(hit.vehicleId()>=0&&hit.vehicleId()==target)&&!drivableRampHit(hit);
     }
     private boolean drivableRampHit(WorldQuery.Hit hit) {
         if (hit==null || hit.vehicleId()>=0 || hit.normal().y<.65f) return false;

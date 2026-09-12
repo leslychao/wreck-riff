@@ -16,22 +16,39 @@ Missing license evidence fails `verifyAssets`. Artistic approval is separate.
 | Libbulletjme 22.0.3 | [Combined BSD, zlib and MIT notices](https://github.com/stephengold/Libbulletjme/blob/22.0.3/LICENSE) for glue, Bullet and decomposition code |
 | Gson 2.13.1 / Error Prone annotations 2.38.0 | Pinned Apache 2.0 texts |
 | sim-math 1.6.0 / lwjgl3-awt 0.2.3 | Notices extracted from their original JAR entries |
-| LWJGL 3.3.6 | [BSD notice](https://github.com/LWJGL/lwjgl3/blob/3.3.6/LICENSE.md), and upstream notices for libffi, liburing, GLFW, jemalloc, OpenAL Soft and Khronos headers |
+| LWJGL 3.3.6 | [BSD notice](https://github.com/LWJGL/lwjgl3/blob/3.3.6/LICENSE.md), and upstream notices for libffi, liburing, GLFW, jemalloc, OpenAL Soft and Khronos headers; additional OpenAL BSD/PFFFT/fmt notices in `licenses/openal` |
 | SLF4J 1.7.32 | Pinned MIT notice |
-| Microsoft OpenJDK 21 runtime | Original `runtime/legal` directory and runtime `release` metadata retained by jpackage |
+| Microsoft OpenJDK 21 runtime | Original `runtime/legal` directory, original JDK metadata in `licenses/runtime/microsoft-jdk-release.txt`, corresponding sources and jlink instructions in `licenses/runtime/README.md` |
 
 The checked-in `src/main/resources/licenses/license-index.json` gives the exact
 pinned source URL and checksum of every captured upstream document. The maintenance
 command `tools/refresh-license-evidence.ps1` can refresh this evidence deliberately;
 normal builds never access the network to retrieve license text.
 
-OpenAL Soft is a dynamically loaded LGPL library. The upstream LWJGL distribution
-includes its [GNU Library GPL text](https://github.com/LWJGL/lwjgl3/blob/3.3.6/modules/lwjgl/openal/openal_soft_license.txt).
-Before external publication, the distributor must verify the corresponding-source
-delivery arrangement for the exact native build and preserve recipients' ability
-to replace/debug the library. This project does not make an unsupported source
-offer on the owner's behalf. Local packaging reports keep this item as
-`REVIEW_REQUIRED`; a technical ZIP is not an approval to publish it.
+OpenAL Soft 1.24.1 is a dynamically loaded LGPL library. The upstream LWJGL
+distribution includes its [GNU Library GPL text](https://github.com/LWJGL/lwjgl3/blob/3.3.6/modules/lwjgl/openal/openal_soft_license.txt).
+The complete source archive at commit `90191edd20bb877c5cbddfdac7ec0fe49ad93727`,
+including build scripts and embedded components, is supplied under `licenses/sources`.
+`licenses/openal/REPLACEMENT.md` explains rebuilding and selecting a compatible
+replacement through LWJGL's existing library override. The native JAR and DLL are
+unmodified; their hashes and original `.git` provenance are bound to the source
+archive in `licenses/source-index.json`.
+
+The complete Microsoft OpenJDK 21.0.11+10-LTS source archive is also supplied under
+`licenses/sources`, at commit `87e312d6724906796bbeb1ce86b7598183e1fab9` identified
+by the original Microsoft JDK metadata. This includes native HotSpot sources and
+build scripts, rather than only the Java files in the developer JDK's `lib/src.zip`.
+Source and notice materials are vendored in `src/tools/licenses` and verified
+offline by `SourceDistributionVerifier`. The repository stores the large JDK
+archive as ordered parts of at most 32 MiB, with part and complete-archive hashes.
+The verifier produces full archives and the package index in
+`build/reports/assets/source-distribution-materials`; that verified output is
+copied beside the application, not embedded in its JAR. No future written source offer is made on the owner's
+behalf. `reports/source-distribution.json` records
+`SOURCE_AND_NOTICE_MATERIALS_VERIFIED` only after the actual archives, notices,
+selected JDK and native dependency match. Human distribution review and a test
+of the replacement mechanism remain separate; a technical ZIP is not approval
+to publish it.
 
 ## Licensed game assets in 0.2
 

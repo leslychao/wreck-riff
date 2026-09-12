@@ -8,6 +8,7 @@ import com.jme3.scene.*;
 import game.wreckriff.arena.*;
 import game.wreckriff.simulation.MatchSession;
 import java.util.*;
+import jme3tools.optimize.GeometryBatchFactory;
 
 /** Flush launch arrows read the real per-participant compression/flight state. No timer or collider. */
 final class LaunchPadPresentation {
@@ -22,7 +23,7 @@ final class LaunchPadPresentation {
             Vector3f direction=definition.direction();
             node.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.atan2(direction.x,direction.z),Vector3f.UNIT_Y));
             node.setShadowMode(RenderQueue.ShadowMode.Off);
-            Node deck=new Node("launch-deck");node.attachChild(deck);
+            Node deck=new Node("launch-deck");
             float x=definition.width()/2,z=definition.length()/2;
             plate(deck,"launch-inset",0,.014f,0,x,.012f,z,materials.material("black"));
             Material indicator=materials.emissive(new ColorRGBA(.42f,.82f,.95f,1));
@@ -43,7 +44,10 @@ final class LaunchPadPresentation {
             }
             Geometry arrow=new Geometry("launch-direction-arrows",SurfaceMesh.triangles(arrows,4));
             indicator.getAdditionalRenderState().setFaceCullMode(com.jme3.material.RenderState.FaceCullMode.Off);
-            arrow.setMaterial(indicator);deck.attachChild(arrow);root.attachChild(node);pads.add(new Pad(definition,node,deck,indicator));
+            arrow.setMaterial(indicator);deck.attachChild(arrow);
+            // Batch in pad-local space before inheriting the platform's world position and heading.
+            deck.updateGeometricState();GeometryBatchFactory.optimize(deck,false);node.attachChild(deck);
+            root.attachChild(node);pads.add(new Pad(definition,node,deck,indicator));
         }
         update();
     }

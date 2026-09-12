@@ -30,10 +30,9 @@ public final class SessionReport {
     }
     public void write(Path output,MatchSession session,SimulationLoop loop,String gpu,int width,int height,boolean vsync,boolean audio,int voices,int bodies) throws IOException {
         Map<String,Object> data=new LinkedHashMap<>();
-        Properties build=new Properties();
-        try(InputStream input=SessionReport.class.getResourceAsStream("/build-info.properties")) { if(input!=null) build.load(input); }
-        data.put("version",build.getProperty("version","unknown")); data.put("commit",build.getProperty("commit","unknown")); data.put("seed",session.seed);
-        data.put("sourceSha256",build.getProperty("sourceSha256","unknown"));
+        var build=game.wreckriff.config.BuildInfo.current();
+        data.put("version",build.version()); data.put("commit",build.commit()); data.put("seed",session.seed);
+        data.put("sourceSha256",build.sourceSha256());
         data.put("os",System.getProperty("os.name")+" "+System.getProperty("os.version"));
         data.put("jdk",System.getProperty("java.runtime.version")); data.put("gpu",gpu);
         data.put("width",width); data.put("height",height); data.put("vsync",vsync); data.put("audioEnabled",audio);

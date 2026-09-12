@@ -16,6 +16,109 @@ import static org.junit.jupiter.api.Assertions.*;
 class AudioDirectorTest {
     private static final UUID SESSION_ID=new UUID(0,101);
     private static final String MUSIC="audio/metalmania.wav";
+    @Test void arenaHazardTypesUseTheirExactPositionalPhaseCuesOnlyOnce() {
+        Node scene=new Node();Vector3f upperDeck=new Vector3f(12,8,6);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            long id=1;
+            for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue")) {
+                director.startMatch(SESSION_ID,MUSIC,MUSIC);
+                assertEquals(1,director.voiceCount(),"Initial loading must not synthesize a phase event");
+                GameEvent warning=hazard(GameEvent.Type.ARENA_HAZARD_WARNING,id++,"socket-"+kind,kind,upperDeck,2);
+                director.accept(List.of(warning,warning));
+                AudioNode alert=find(scene,"sound-hazard-"+kind+"-warning");assertNotNull(alert,kind);
+                assertTrue(alert.isPositional());assertFalse(alert.isLooping());assertEquals(upperDeck,alert.getLocalTranslation());
+                assertEquals(2,director.voiceCount());
+                GameEvent active=hazard(GameEvent.Type.ARENA_HAZARD_ACTIVE,id++,"socket-"+kind,kind,upperDeck,3);
+                director.accept(List.of(active,active));
+                AudioNode activation=find(scene,"sound-hazard-"+kind+"-active");assertNotNull(activation,kind);
+                assertEquals(AudioSource.Status.Stopped,alert.getStatus());assertNull(alert.getParent());
+                assertTrue(activation.isPositional());assertFalse(activation.isLooping());assertEquals(upperDeck,activation.getLocalTranslation());
+                assertEquals(2,director.voiceCount());assertEquals(0,director.pendingImpactCount());
+                assertNull(find(scene,"sound-hazard-warning"));assertNull(find(scene,"sound-hazard-active"));
+            }
+            int before=director.voiceCount();
+            director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_WARNING,id++,"unknown","decor",Vector3f.ZERO,1),
+                    hazard(GameEvent.Type.ARENA_HAZARD_WARNING,id++,null,"crane",Vector3f.ZERO,1),
+                    hazard(GameEvent.Type.ARENA_HAZARD_WARNING,id++,"empty","crane",Vector3f.ZERO,0),
+                    hazard(GameEvent.Type.ARENA_HAZARD_WARNING,id++,"nan","crane",Vector3f.ZERO,Float.NaN),
+                    hazard(GameEvent.Type.ARENA_HAZARD_WARNING,id,"remote","crane",new Vector3f(121,0,0),1)));
+            assertEquals(before,director.voiceCount(),"Unknown, expired or inaudible zones must not use generic fallback audio");
+        }
+    }
+
+    @Test void cancellingOneArenaObjectStopsOnlyItsWarningAndNeverAnotherWarningOrAnActiveImpact() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
+            director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_WARNING,1,"gate-left","barrier",Vector3f.ZERO,1)));
+            AudioNode left=find(scene,"sound-hazard-barrier-warning");
+            director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_WARNING,2,"gate-right","barrier",Vector3f.UNIT_X,1)));
+            AudioNode right=find(scene,"sound-hazard-barrier-warning");assertNotSame(left,right);
+            GameEvent cancel=hazard(GameEvent.Type.ARENA_HAZARD_CANCELLED,3,"gate-left","barrier",Vector3f.ZERO,0);
+            director.accept(List.of(cancel,cancel));assertEquals(2,director.voiceCount());
+            assertEquals(AudioSource.Status.Stopped,left.getStatus());assertNull(left.getParent());
+            assertSame(right,find(scene,"sound-hazard-barrier-warning"));assertEquals(AudioSource.Status.Playing,right.getStatus());
+            director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_ACTIVE,4,"gate-right","barrier",Vector3f.UNIT_X,2)));
+            AudioNode impact=find(scene,"sound-hazard-barrier-active");assertNotNull(impact);
+            director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_CANCELLED,5,"gate-right","barrier",Vector3f.UNIT_X,0),
+                    hazard(GameEvent.Type.ARENA_HAZARD_CANCELLED,6,"missing","barrier",Vector3f.ZERO,0)));
+            assertSame(impact,find(scene,"sound-hazard-barrier-active"));assertEquals(AudioSource.Status.Playing,impact.getStatus());
+            assertEquals(2,director.voiceCount());
+            impact.setStatus(AudioSource.Status.Stopped);director.updateTail(.1f);assertEquals(1,director.voiceCount());
+        }
+    }
+
+    @Test void arenaHazardWarningsOutrankPickupFloodAndShareTheThirtyTwoSourceCrossfadeBudget() {
+        Node scene=new Node();
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch(SESSION_ID,"audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
+            director.bossMusic(true);assertEquals(2,director.musicSourceCount());
+            for(int i=0;i<80;i++)director.accept(List.of(event(GameEvent.Type.PICKUP,i,0,0,"homing-ammo",1)));
+            assertEquals(32,director.voiceCount());
+            director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_WARNING,90,"hoist","crane",Vector3f.ZERO,1),
+                    hazard(GameEvent.Type.ARENA_HAZARD_ACTIVE,91,"road","traffic",Vector3f.UNIT_X,2)));
+            AudioNode warning=find(scene,"sound-hazard-crane-warning"),active=find(scene,"sound-hazard-traffic-active");
+            assertNotNull(warning);assertNotNull(active);
+            for(int i=100;i<300;i++)director.accept(List.of(event(GameEvent.Type.PICKUP,i,0,0,"power-ammo",1)));
+            assertEquals(32,director.voiceCount());assertEquals(2,director.musicSourceCount());
+            assertSame(warning,find(scene,"sound-hazard-crane-warning"));assertSame(active,find(scene,"sound-hazard-traffic-active"));
+            double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
+            assertTrue(total[0]<=1.000001);assertEquals(0,director.pendingImpactCount());
+        }
+    }
+
+    @Test void arenaWarningCancellationIsSessionBoundAndPauseRetryCleanupCannotReplayQueuedHazards() {
+        Node scene=new Node();UUID retry=new UUID(0,404);
+        try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);
+            GameEvent warning=hazard(GameEvent.Type.ARENA_HAZARD_WARNING,1,"stone","statue",Vector3f.ZERO,1);
+            GameEvent retryWarning=hazard(GameEvent.Type.ARENA_HAZARD_WARNING,1,"stone","statue",Vector3f.ZERO,1,retry);
+            director.accept(List.of(retryWarning));assertEquals(1,director.voiceCount());
+            director.accept(List.of(warning));AudioNode original=find(scene,"sound-hazard-statue-warning");assertNotNull(original);
+            GameEvent cancel=hazard(GameEvent.Type.ARENA_HAZARD_CANCELLED,2,"stone","statue",Vector3f.ZERO,0);
+            GameEvent retryCancel=hazard(GameEvent.Type.ARENA_HAZARD_CANCELLED,2,"stone","statue",Vector3f.ZERO,0,retry);
+            director.accept(List.of(retryCancel));assertSame(original,find(scene,"sound-hazard-statue-warning"));
+            director.accept(List.of(cancel));assertEquals(1,director.voiceCount(),"Foreign cancel cannot poison current dedupe");
+            director.pause();director.accept(List.of(hazard(GameEvent.Type.ARENA_HAZARD_WARNING,3,"fire","fire",Vector3f.ZERO,1)));
+            director.resume();director.updateTail(.1f);assertEquals(1,director.voiceCount());
+            director.startMatch(retry,MUSIC,MUSIC);director.accept(List.of(warning,cancel));assertEquals(1,director.voiceCount());
+            director.accept(List.of(retryWarning));assertEquals(2,director.voiceCount());
+            director.stopMatch();assertEquals(0,director.voiceCount());assertNull(find(scene,"sound-hazard-statue-warning"));
+            director.accept(List.of(retryWarning));director.updateTail(.1f);assertEquals(0,director.voiceCount());
+            director.startMatch(SESSION_ID,MUSIC,MUSIC);director.accept(List.of(cancel));assertEquals(1,director.voiceCount());
+            director.accept(List.of(warning));assertEquals(2,director.voiceCount(),"Checkpoint-style loading has no success sounds; only a fresh authoritative event starts one");
+        }
+        assertEquals(0,scene.getQuantity());
+    }
+
+    private static GameEvent hazard(GameEvent.Type type,long id,String objectId,String kind,Vector3f position,float remaining) {
+        return hazard(type,id,objectId,kind,position,remaining,SESSION_ID);
+    }
+
+    private static GameEvent hazard(GameEvent.Type type,long id,String objectId,String kind,Vector3f position,float remaining,UUID sessionId) {
+        return new GameEvent(type,id,-1,-1,position,kind,remaining,Vector3f.ZERO,Vector3f.ZERO,sessionId,objectId);
+    }
+
     @Test void explicitSessionBindingRejectsOldOrUnboundPickupsBeforeTheyCanPoisonDedupe() {
         Node scene=new Node();UUID foreign=new UUID(0,202);
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {

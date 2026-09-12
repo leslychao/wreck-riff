@@ -199,6 +199,10 @@ public final class ProgressStore implements AutoCloseable {
     public synchronized Snapshot snapshot() { return snapshot; }
     public synchronized boolean writable() { return !readOnly; }
     public synchronized boolean savePending() { return snapshot.revision()>persistedRevision; }
+    public record WriterDiagnostics(int pendingSnapshotCount,boolean workerScheduled,long revision,long persistedRevision) {}
+    public synchronized WriterDiagnostics diagnostics() {
+        return new WriterDiagnostics(pending==null?0:1,workerScheduled,snapshot.revision(),persistedRevision);
+    }
     public synchronized String warning() { return warning; }
     public Path directory() { return directory; }
 

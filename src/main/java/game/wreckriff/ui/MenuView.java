@@ -3,13 +3,13 @@ package game.wreckriff.ui;
 import com.jme3.font.BitmapText;
 import com.jme3.math.ColorRGBA;
 import com.jme3.bounding.BoundingBox;
-import com.jme3.light.AmbientLight;
-import com.jme3.light.DirectionalLight;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import java.util.function.Supplier;
 import game.wreckriff.arena.ArenaDefinition;
+import game.wreckriff.presentation.VehiclePreviewVisual;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -233,16 +233,13 @@ public final class MenuView {
     }
     private void vehiclePreview(Spatial model,UiBounds bounds) {
         ui.rect("vehicle-preview",bounds.x(),bounds.y(),bounds.width(),bounds.height(),new ColorRGBA(.085f,.11f,.13f,1),1);
-        Node anchor=new Node("vehicle-preview-model");anchor.attachChild(model);ui.root().attachChild(anchor);
-        anchor.addLight(new AmbientLight(new ColorRGBA(.85f,.85f,.85f,1)));
-        anchor.addLight(new DirectionalLight(new Vector3f(-1,-1,-1).normalizeLocal(),ColorRGBA.White));
-        model.rotate(.28f,.65f,0);model.updateGeometricState();
-        if(model.getWorldBound() instanceof BoundingBox box) {
+        Spatial preview=VehiclePreviewVisual.create(model,new Quaternion().fromAngles(.28f,.65f,0));
+        Node anchor=new Node("vehicle-preview-model");anchor.attachChild(preview);ui.root().attachChild(anchor);
+        if(preview.getWorldBound() instanceof BoundingBox box) {
             float factor=Math.min((bounds.width()-12)/(2*box.getXExtent()),(bounds.height()-12)/(2*box.getYExtent()));
-            Vector3f center=box.getCenter().clone();model.setLocalScale(factor);
-            model.setLocalTranslation(bounds.centerX()-center.x*factor,bounds.centerY()-center.y*factor,100-center.z*factor);
+            Vector3f center=box.getCenter().clone();preview.setLocalScale(factor);
+            preview.setLocalTranslation(bounds.centerX()-center.x*factor,bounds.centerY()-center.y*factor,100-center.z*factor);
         }
-        model.setShadowMode(com.jme3.renderer.queue.RenderQueue.ShadowMode.Off);
     }
     private void preview(ArenaDefinition arena,UiBounds bounds) {
         ui.rect("preview-"+arena.id(),bounds.x(),bounds.y(),bounds.width(),bounds.height(),new ColorRGBA(.085f,.11f,.13f,1),1);

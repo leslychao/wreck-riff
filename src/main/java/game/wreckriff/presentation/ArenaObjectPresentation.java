@@ -7,6 +7,7 @@ import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.*;
 import game.wreckriff.arena.*;
 import java.util.*;
+import jme3tools.optimize.GeometryBatchFactory;
 
 /** One visual binding for the original solid and all its authored overlays, driven by ArenaSystems. */
 final class ArenaObjectPresentation {
@@ -46,6 +47,7 @@ final class ArenaObjectPresentation {
             LaunchPadPresentation.plate(marker,"object-footprint",0,.035f,side*(z-.04f),x,.008f,.04f,lamp);
             LaunchPadPresentation.plate(marker,"object-footprint",side*(x-.04f),.035f,0,.04f,.008f,z,lamp);
         }
+        marker.updateGeometricState();GeometryBatchFactory.optimize(marker,false);
         root.attachChild(marker);return marker;
     }
     void update() {

@@ -12,6 +12,8 @@ public final class DiagnosticEvidence {
     private final FrameMetrics frames=new FrameMetrics();
     private final PhaseMetrics phaseMetrics=new PhaseMetrics();
     private final boolean benchmark;
+    private SoakSchedule soak;
+    private ResourceRetention resources;
     private double warmupActiveSeconds;
     private boolean invalidWindowObserved;
     private double measuredArenaSeconds,measuredBossSeconds;
@@ -28,20 +30,24 @@ public final class DiagnosticEvidence {
         data.put("logicalProcessors",Runtime.getRuntime().availableProcessors());
         data.put("jdk",System.getProperty("java.runtime.version"));
         data.put("javaHome",System.getProperty("java.home"));
-        Properties build=new Properties();
-        try(InputStream in=getClass().getResourceAsStream("/build-info.properties")){if(in!=null)build.load(in);}
-        catch(IOException e){errors.add("Build info: "+e.getMessage());}
-        data.put("version",build.getProperty("version","unknown"));data.put("commit",build.getProperty("commit","unknown"));
-        data.put("sourceSha256",build.getProperty("sourceSha256","unknown"));
+        var build=game.wreckriff.config.BuildInfo.current();
+        data.put("version",build.version());data.put("commit",build.commit());
+        data.put("sourceSha256",build.sourceSha256());
         data.put("transitions",transitions);data.put("retryCycles",cycles);data.put("errors",errors);
         data.put("hardwareController","PENDING_MANUAL");data.put("feelApproval","PENDING_MANUAL");
     }
     public synchronized void put(String key,Object value) { data.put(key,value); }
+    public void configureSoak(SoakSchedule schedule,ResourceRetention retention) {
+        if(benchmark)throw new IllegalStateException("Benchmark and soak cannot share a run");
+        soak=Objects.requireNonNull(schedule);resources=Objects.requireNonNull(retention);data.put("mode","soak");
+        data.put("progressFixture","Fresh isolated profile with all arenas/duels unlocked; zero initial statistics. Only real subsequent results are recorded.");
+    }
     public void observeWindow(int width,int height,boolean visible) {
         if(benchmark&&(width!=1920||height!=1080||!visible))invalidWindowObserved=true;
     }
     public synchronized void frame(FrameSample sample) {
         phaseMetrics.add(sample);
+        if(soak!=null)soak.frame(sample);
         if(!benchmark||!sample.drawable()||!sample.phase().combat())return;
         // The boundary frame belongs wholly to warmup: no slow first frame can be partly discarded.
         if(warmupActiveSeconds<BenchmarkGate.WARMUP_ACTIVE_SECONDS)warmupActiveSeconds+=sample.seconds();
@@ -58,6 +64,9 @@ public final class DiagnosticEvidence {
     public synchronized Map<String,Object> snapshot(String status) {
         var result=new LinkedHashMap<String,Object>(data);result.put("status",status);
         result.put("phaseMetrics",phaseMetrics.snapshot());result.put("activeCombatFrames",frames.snapshot());
+        if(soak!=null) {
+            result.put("soakCoverage",soak.evidence());result.put("resourceSnapshots",resources.samples());result.put("resourceChecks",resources.evidence());
+        }
         if(benchmark) {
             var environment=new BenchmarkGate.Environment(number("width").intValue(),number("height").intValue(),number("msaaSamples").intValue(),
                     Boolean.TRUE.equals(data.get("vsync")),Boolean.TRUE.equals(data.get("audioEnabled")),
@@ -76,7 +85,8 @@ public final class DiagnosticEvidence {
     }
     private Number number(String key) {return data.get(key) instanceof Number number?number:0;}
     public String completionStatus(boolean completed) {
-        if(!completed)return "FAIL";
+        if(!completed||!errors.isEmpty())return "FAIL";
+        if(soak!=null)return soak.coverageComplete()&&resources.passed()?"SOAK_MEASURED":"DIAGNOSTIC_COMPLETE";
         if(!benchmark)return "PASS";
         return measuredActiveSeconds()>=BenchmarkGate.MINIMUM_MEASURED_ACTIVE_SECONDS?"BENCHMARK_MEASURED":"DIAGNOSTIC_COMPLETE";
     }

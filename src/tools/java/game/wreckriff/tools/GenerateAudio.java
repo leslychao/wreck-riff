@@ -32,6 +32,7 @@ public final class GenerateAudio {
         preparePickups(output);
         prepareSpecials(output);
         prepareArenaHazards(output);
+        prepareBossTelegraph(output);
         for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
                 "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-turbo",
                 "ui-nav","ui-confirm","mine-place"))effect(output,id);
@@ -59,6 +60,8 @@ public final class GenerateAudio {
                 Arena hazards: seven original warning/activation pairs; crane, traffic, carousel, electricity, fire, barrier, statue.
                 Authoritative phase events trigger one shots; warning cancellation targets the same arena object.
                 Recipes and exact output/source hashes: arena-hazard-provenance.json. No external samples.
+                Boss telegraph: original 0.85 second rising mechanical alarm, three tightening pulses and motor tension.
+                One positional warning per actual boss action start; recipe/source/output hashes: boss-telegraph-provenance.json.
                 Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
                 Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
                 """,StandardCharsets.UTF_8);
@@ -432,6 +435,30 @@ public final class GenerateAudio {
                 "mastering":"Silent tapered edges; DC cleanup; RMS target 0.16 and linear peak ceiling 0.82",
                 "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
                 """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
+    }
+
+    /** Original boss windup, shorter than the minimum 0.9 second attack telegraph. */
+    private static void prepareBossTelegraph(Path output)throws Exception {
+        String id="boss-telegraph",generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        float[] pcm=new float[40800];Random random=new Random(SEED^id.hashCode());double low=0;
+        for(int frame=0;frame<pcm.length;frame++) {
+            double t=frame/(double)RATE,n=random.nextDouble()*2-1;low+=.055*(n-low);
+            pcm[frame]=(float)(pickupTone(t,.01,.21,270,210,.72)+pickupTone(t,.29,.17,405,300,.74)
+                    +pickupTone(t,.53,.22,625,390,.77)
+                    +(Math.sin(TAU*(62*t+80*t*t))*.22+low*.5)*pickupEnvelope(t,.01,.81)
+                    +metal(t,.012,184,17,n)*.16);
+        }
+        masterPickup(pcm);write(output,id,new float[][]{pcm});
+        Files.writeString(output.resolve("boss-telegraph-provenance.json"),"""
+                {"schemaVersion":1,"origin":"ORIGINAL_PROJECT_CONTENT","externalSamples":false,
+                "generator":"%s","generatorSha256":"%s","seed":"0x5249464657415645",
+                "sampleRate":48000,"channels":1,"bits":16,"looping":false,
+                "mastering":"Silent tapered edges; DC cleanup; RMS target 0.16 and linear peak ceiling 0.82",
+                "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[{
+                "path":"audio/boss-telegraph.wav","frames":40800,"sha256":"%s",
+                "recipe":"Three tightening rising alarm pulses at 0.01, 0.29 and 0.53 seconds over low motor tension and a short steel latch; original deterministic synthesis; 0.85 seconds"}]}
+                """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),
+                        hash(Files.readAllBytes(output.resolve(id+".wav")))),StandardCharsets.UTF_8);
     }
 
     private static double pickupEnvelope(double t,double start,double duration) {

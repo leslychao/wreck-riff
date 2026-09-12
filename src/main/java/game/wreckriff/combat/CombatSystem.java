@@ -568,14 +568,19 @@ public final class CombatSystem {
         var owner=session.vehicle(intent.ownerId);
         boolean aimedIntoGrinder=owner.grinding()&&owner.specialTargetId>=0
                 &&session.vehicle(owner.specialTargetId).grabbedBy==owner.id;
+        boolean elevatedRoofAim=false;
         if(aimedIntoGrinder) {
             int targetId=owner.specialTargetId;
             Vector3f point=world.position(targetId).add(world.rotation(targetId).mult(world.profile(targetId).hullBoxes().getFirst().center()));
             forward=point.subtract(muzzle).normalizeLocal();
+        } else if(owner.profileId.equals("grinder")&&world.grounded(owner.id)
+                &&Set.of("machine-gun","power","homing","freeze").contains(intent.kind)) {
+            Vector3f aligned=roofFiringDirection(owner.id,muzzle,forward,world);
+            if(aligned!=null){forward=aligned;elevatedRoofAim=true;}
         }
         if (intent.kind.equals("machine-gun")) {
             Quaternion spread = new Quaternion().fromAngles(intent.pitch, intent.yaw, 0);
-            Quaternion orientation=aimedIntoGrinder?new Quaternion().lookAt(forward,Vector3f.UNIT_Y):world.rotation(intent.ownerId);
+            Quaternion orientation=aimedIntoGrinder||elevatedRoofAim?new Quaternion().lookAt(forward,Vector3f.UNIT_Y):world.rotation(intent.ownerId);
             Vector3f direction = orientation.mult(spread.mult(Vector3f.UNIT_Z)).normalizeLocal();
             Vector3f end = muzzle.add(direction.mult(rules.machineGun().range()));
             WorldQuery.Hit hit = blocked == null ? world.ray(muzzle, end, intent.ownerId) : blocked;
@@ -613,6 +618,25 @@ public final class CombatSystem {
             else if(intent.kind.equals("freeze")||intent.kind.equals("napalm"))utilityImpact(projectile,blocked,world);
             else explode(projectile, blocked, world);
         }
+    }
+
+    /** Roof mounts pitch towards a hull already in the driver's firing lane; they never correct yaw. */
+    private Vector3f roofFiringDirection(int ownerId,Vector3f muzzle,Vector3f forward,WorldQuery world) {
+        Vector3f horizontal=forward.clone().setY(0);
+        if(horizontal.lengthSquared()<.01f)return null;
+        horizontal.normalizeLocal();Vector3f chosen=null;float nearest=rules.machineGun().range();
+        for(var target:orderedVehicles) {
+            if(target.id==ownerId||!target.alive())continue;
+            Vector3f center=world.position(target.id).add(world.rotation(target.id).mult(world.profile(target.id).hullBoxes().getFirst().center()));
+            float along=horizontal.dot(center.subtract(muzzle));
+            if(along<=.1f||along>=nearest)continue;
+            Vector3f lanePoint=muzzle.add(horizontal.mult(along));lanePoint.y=center.y;
+            if(world.distanceToHull(target.id,lanePoint)>.01f)continue;
+            var hit=world.ray(muzzle,lanePoint,ownerId);
+            if(hit!=null&&hit.vehicleId()!=target.id)continue;
+            nearest=along;chosen=horizontal.clone().setY((center.y-muzzle.y)/along).normalizeLocal();
+        }
+        return chosen;
     }
 
     private void advanceUtilityProjectile(ProjectileState projectile,WorldQuery world) {

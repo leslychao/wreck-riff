@@ -7,6 +7,7 @@ import game.wreckriff.combat.CombatRules;
 import game.wreckriff.config.*;
 import game.wreckriff.vehicle.VehicleController;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.*;
 import java.util.*;
 import java.util.stream.Stream;
@@ -28,6 +29,41 @@ class NativeCampaignBotNavigationTest {
     }
     @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"})
     void allBossesUseTheirActualHullToDriveTheRamp(String arenaId) {assertRamp(arenaId,-1,true);}
+
+    @Test void directorChangesFloorAndReachesTheOppositeRingWhileThePlayerStaysBelow() {
+        var arena=repairFixture(REGISTRY.definition("doomsday_arena"),new ArenaDefinition.Pickup(
+                "relocation-repair",ArenaDefinition.PickupType.REPAIR,new ArenaDefinition.Vec3(80,0,40),3600));
+        try(var rig=new Rig(arena,-1,true,new Vector3f(120,0,40),Vector3f.UNIT_Z)) {
+            rig.session.vehicle(rig.id).hp=rig.session.vehicle(rig.id).maximumHp;
+            rig.session.vehicle(0).hp=rig.session.vehicle(0).maximumHp;
+            rig.world.addVehicle(0,new Vector3f(144,VehicleProfile.rivet(RULES).roadOffset()+.3f,42),new Quaternion());
+            for(int settle=0;settle<120;settle++)rig.world.step();
+            rig.session.tick=2880;
+            rig.tick();
+            var goal=rig.bots.metrics(rig.id).destination();
+            assertTrue(goal.y>=8&&goal.z>=200,"Independent relocation must choose the far upper side: "+goal);
+            var route=rig.bots.navigation(rig.id).nodes();
+            assertTrue(route.stream().anyMatch(id->arena.nodes().stream().anyMatch(n->n.id()==id&&n.surfaceId().equals("upper-ramp"))));
+            // A higher-priority supply route may interrupt the manoeuvre, but must not replace its committed goal.
+            rig.session.vehicle(rig.id).hp=rig.session.vehicle(rig.id).maximumHp*.1f;
+            for(int step=0;step<24;step++)rig.tick();
+            assertEquals(BotController.State.SEEK_PICKUP,rig.bots.state(rig.id));
+            assertNotEquals(goal,rig.bots.metrics(rig.id).destination());
+            rig.session.vehicle(rig.id).hp=rig.session.vehicle(rig.id).maximumHp;
+            for(int step=0;step<24;step++)rig.tick();
+            assertEquals(goal,rig.bots.metrics(rig.id).destination(),"Supply completion must resume the same opposite-side goal: "
+                    +rig.bots.metrics(rig.id)+" road="+rig.world.roadContext(rig.id)+" hp="+rig.session.vehicle(rig.id).hp
+                    +" / "+rig.bots.bossAction(rig.id)+" / "+rig.bots.navigation(rig.id));
+            boolean arrived=false;
+            for(int step=0;step<7200&&!arrived;step++) {
+                rig.tick();arrived=rig.world.roadContext(rig.id).level()==1
+                        &&rig.world.position(rig.id).subtract(goal).setY(0).length()<8;
+            }
+            assertTrue(arrived,"Director failed its actual opposite-side relocation: "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id));
+            assertEquals(0,rig.world.teleportGeneration(rig.id));
+            assertEquals(0,rig.world.roadContext(0).level());
+        }
+    }
 
     private void assertRamp(String arenaId,int participant,boolean boss) {
         var arena=REGISTRY.definition(arenaId);

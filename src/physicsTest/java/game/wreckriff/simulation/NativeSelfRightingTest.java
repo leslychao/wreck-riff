@@ -19,20 +19,24 @@ class NativeSelfRightingTest {
     }
     private static final VehicleCommand GAS=command(1,0,0),REVERSE=command(0,1,0),LEFT=command(0,0,-1),RIGHT=command(0,0,1);
     private static Stream<Arguments> overturnedInputs() {
-        return Stream.of(90f,-90f,180f).flatMap(angle->Stream.of(
-                Arguments.of(angle,"gas",GAS),Arguments.of(angle,"reverse",REVERSE),
-                Arguments.of(angle,"left",LEFT),Arguments.of(angle,"right",RIGHT)));
+        return Stream.of("rivet","grinder","spark").flatMap(profile->
+                Stream.of(90f,-90f,180f).flatMap(angle->Stream.of(
+                        Arguments.of(profile,angle,"gas",GAS),Arguments.of(profile,angle,"reverse",REVERSE),
+                        Arguments.of(profile,angle,"left",LEFT),Arguments.of(profile,angle,"right",RIGHT))));
     }
     private static final class Rig implements AutoCloseable {
         final VehicleRules rules=VehicleRules.load();
         final PhysicsWorld world=new PhysicsWorld(rules);
         final VehicleProfile profile;
-        final VehicleState state=new VehicleState(0,"Righting",true,Configs.load("combat",CombatRules.class));
+        final VehicleState state;
         final VehicleController driver;
         int ticks;
         Rig(float roll) {this(roll,"rivet");}
         Rig(float roll,String profileId) {
-            profile=profileId.equals("rivet")?VehicleProfile.rivet(rules):VehicleProfile.boss(profileId,rules);
+            boolean boss=profileId.startsWith("boss_");
+            profile=boss?VehicleProfile.boss(profileId,rules):VehicleProfile.player(profileId,rules);
+            CombatRules combat=Configs.load("combat",CombatRules.class);
+            state=new VehicleState(0,"Righting",!boss,profileId,0,boss,combat.health().playerMaximumHp(),combat);
             world.addStatic("floor",new BoxCollisionShape(new Vector3f(300,.5f,300)),new Vector3f(0,-.5f,0),new Quaternion());
             Quaternion rotation=new Quaternion().fromAngleAxis(.4f,Vector3f.UNIT_Y)
                     .mult(new Quaternion().fromAngleAxis(roll*FastMath.DEG_TO_RAD,Vector3f.UNIT_Z));
@@ -70,21 +74,60 @@ class NativeSelfRightingTest {
         }
         @Override public void close() {world.close();}
     }
-    @ParameterizedTest(name="{0} degrees, {1}") @MethodSource("overturnedInputs")
-    void ordinaryHeldInputRightsBothSidesAndExactRoofThenCarCanDrive(float roll,String name,VehicleCommand input) {
-        try(var rig=new Rig(roll)) {
+    @ParameterizedTest(name="{0}, {1} degrees, {2}") @MethodSource("overturnedInputs")
+    void ordinaryHeldInputRightsBothSidesAndExactRoofThenCarCanDrive(String profileId,float roll,String name,VehicleCommand input) {
+        try(var rig=new Rig(roll,profileId)) {
             float hp=rig.state.hp;long generation=rig.world.teleportGeneration(0);
             var ammunition=rig.state.weapons().stream().map(weapon->weapon.ammo).toList();
             int elapsed=rig.right(input,240);
-            System.out.printf(Locale.ROOT,"RIGHTING roll=%.0f input=%s seconds=%.3f%n",roll,name,elapsed*MatchSession.DT);
+            System.out.printf(Locale.ROOT,"RIGHTING profile=%s roll=%.0f input=%s seconds=%.3f%n",profileId,roll,name,elapsed*MatchSession.DT);
             assertEquals(hp,rig.state.hp);assertEquals(100,rig.state.turbo);
             assertEquals(ammunition,rig.state.weapons().stream().map(weapon->weapon.ammo).toList());
             assertEquals(0,rig.state.recoveries);assertEquals(0,rig.state.recoveryCooldown);assertEquals(0,rig.state.protectionTicks);
             assertEquals(generation,rig.world.teleportGeneration(0));
             for(int tick=0;tick<120;tick++) {rig.step(input);assertTrue(rig.up()>.85f,"No second roll while held");}
-            Vector3f before=rig.world.position(0);
-            for(int tick=0;tick<120;tick++)rig.step(GAS);
-            assertTrue(rig.world.position(0).distance(before)>1,"Must be able to drive away");
+            float beforeSpeed=rig.world.velocity(0).dot(rig.world.forward(0));
+            Vector3f forwardStart=null,forwardDirection=null;
+            boolean brakedBeforeForward=false;
+            int directionTicks=0;
+            while(forwardStart==null&&directionTicks<120) {
+                directionTicks++;
+                Vector3f previous=rig.world.position(0);rig.step(GAS);
+                float speed=rig.world.velocity(0).dot(rig.world.forward(0));
+                var wheel=rig.world.vehicle(0).getWheel(0);
+                brakedBeforeForward|=speed<0&&wheel.getBrake()>0&&wheel.getEngineForce()==0;
+                if(forwardStart==null&&speed>0&&wheel.getEngineForce()>0) {
+                    // Reverse input has already driven the recovered car backwards.
+                    // Measure the ensuing forward leg from its own start: net
+                    // displacement across both legs can cancel despite real motion.
+                    forwardStart=previous;
+                    forwardDirection=rig.world.forward(0).setY(0).normalizeLocal();
+                }
+                assertTrue(rig.up()>.85f,"Driving away must not overturn the recovered car");
+                assertFalse(rig.driver.rightingActive(),"Driving away must use ordinary wheel traction");
+            }
+            assertNotNull(forwardStart,"Gas must engage forward drive within one second, including braking and direction delay");
+            // Give every profile the same one second of actual forward drive;
+            // a faster preceding reverse requires a longer braking phase.
+            int supportedForwardTicks=rig.world.supportedWheelContacts(0)==4?1:0;
+            for(int tick=1;tick<120;tick++) {
+                rig.step(GAS);
+                supportedForwardTicks=rig.world.supportedWheelContacts(0)==4?supportedForwardTicks+1:0;
+                assertTrue(rig.up()>.85f,"Driving away must not overturn the recovered car");
+                assertFalse(rig.driver.rightingActive(),"Driving away must use ordinary wheel traction");
+            }
+            float forwardTravel=rig.world.position(0).subtract(forwardStart).dot(forwardDirection);
+            float afterSpeed=rig.world.velocity(0).dot(rig.world.forward(0));
+            System.out.printf(Locale.ROOT,"RIGHTING_DRIVE profile=%s roll=%.0f input=%s directionTicks=%d forward=%.4f speedBefore=%.4f speedAfter=%.4f supportedForwardTicks=%d%n",
+                    profileId,roll,name,directionTicks,forwardTravel,beforeSpeed,afterSpeed,supportedForwardTicks);
+            assertTrue(forwardTravel>1,"Must drive forward by more than one metre: "+forwardTravel);
+            assertTrue(afterSpeed>1,"Must finish driving forwards, not merely slide: "+afterSpeed);
+            assertTrue(supportedForwardTicks>=18,"Must finish on all four static wheel contacts for at least 0.15 seconds");
+            if(input==REVERSE) {
+                assertTrue(beforeSpeed< -1,"Held reverse must drive backwards after righting");
+                assertTrue(brakedBeforeForward,"Changing from reverse to gas must brake before accelerating forwards");
+            }
+            assertEquals(generation,rig.world.teleportGeneration(0),"Driving away must not teleport");
         }
     }
     @ParameterizedTest @ValueSource(strings={"boss_foreman","boss_prefect","boss_emcee","boss_ash_shepherd","boss_director"})

@@ -38,4 +38,30 @@ class BossTacticsTest {
         assertFalse(prefect.canRam(1000,1));assertFalse(prefect.canRam(1000,2));assertTrue(prefect.canRam(1000,3));
         assertEquals(1680,prefect.protocolCooldown());assertEquals(1920,new BossTactics("boss_foreman").protocolCooldown());
     }
+    @Test void prefectStopsHoldingItsLongDistanceInTheLastHealthMode() {
+        var policy=new BossTactics("boss_prefect");assertEquals(45,policy.standOff());
+        policy.advance(0,2);assertEquals(45,policy.standOff());
+        policy.advance(0,3);assertEquals(18,policy.standOff());
+    }
+    @Test void emceeChangesRouteOnlyAfterTwoPhysicallyObservedCircuitsWithoutClosingDistance() {
+        var policy=new BossTactics("boss_emcee");var center=new Vector3f();
+        for(int sample=0;sample<=72;sample++) {
+            float angle=(float)(sample*Math.PI/18);var position=new Vector3f(40*(float)Math.cos(angle),8,40*(float)Math.sin(angle));
+            var target=new BotObservation.Opponent(0,position.mult(1.8f),Vector3f.ZERO,sample*12);
+            assertEquals(sample==72,policy.observedCircuit(position,center,1,target),"sample "+sample);
+        }
+    }
+    @Test void backtrackingClosingDistanceAndChangingFloorCannotProduceTwoFailedCircuits() {
+        var policy=new BossTactics("boss_emcee");var center=new Vector3f();
+        for(int sample=0;sample<100;sample++) {
+            float angle=(sample%2==0?0:.2f);var point=new Vector3f(40*(float)Math.cos(angle),8,40*(float)Math.sin(angle));
+            assertFalse(policy.observedCircuit(point,center,1,new BotObservation.Opponent(0,point.mult(1.8f),Vector3f.ZERO,sample)));
+        }
+        for(int sample=0;sample<=72;sample++) {
+            float angle=(float)(sample*Math.PI/18);var point=new Vector3f(40*(float)Math.cos(angle),8,40*(float)Math.sin(angle));
+            float range=sample<36?40:20;
+            var target=point.add(point.clone().setY(0).normalizeLocal().multLocal(range));
+            assertFalse(policy.observedCircuit(point,center,sample==54?0:1,new BotObservation.Opponent(0,target,Vector3f.ZERO,sample)));
+        }
+    }
 }

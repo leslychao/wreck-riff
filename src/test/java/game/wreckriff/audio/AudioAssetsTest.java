@@ -44,7 +44,7 @@ class AudioAssetsTest {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
         Map<String,Integer> resultFrames=Map.of("victory",172_800,"defeat",124_800,"draw",96_000);
-        assertEquals(112,config.effects().size());
+        assertEquals(113,config.effects().size());
         assertTrue(config.effects().containsAll(List.of("special-pulse-charge","special-pulse-hit","special-grinder-start",
                 "special-grinder-loop","special-dash","special-bomb-warning")));
         for(String effect:config.effects()) {

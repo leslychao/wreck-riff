@@ -1,69 +1,86 @@
-param([ValidateRange(60,900)][int]$TimeoutSeconds=660)
+param(
+    [Parameter(Mandatory=$true)][string]$ZipPath,
+    [ValidateSet('Smoke','Soak','NormalNew','NormalMigrated','NormalContinue')][string]$Mode='Smoke',
+    [ValidateRange(60,3600)][int]$Seconds=600,
+    [ValidateRange(60,7200)][int]$TimeoutSeconds=2400,
+    [string]$ProfileDirectory
+)
 $ErrorActionPreference='Stop'
-$projectRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$buildRoot=Join-Path $projectRoot 'build'
-$source=Join-Path $buildRoot 'distributions/WreckRiff'
-# Unique local copy preserves the deliverable and any previous diagnostic evidence.
-$testRoot=Join-Path $buildRoot ('package-tests/Проверка пакета '+[Guid]::NewGuid().ToString('N'))
-[IO.Directory]::CreateDirectory($testRoot) | Out-Null
-Copy-Item -LiteralPath $source -Destination (Join-Path $testRoot 'Wreck Riff') -Recurse
-$image=Join-Path $testRoot 'Wreck Riff'
-$originalAcl=Get-Acl -LiteralPath $image
-$restrictedAcl=Get-Acl -LiteralPath $image
-$identity=[Security.Principal.WindowsIdentity]::GetCurrent().User
-$deny=[Security.AccessControl.FileSystemAccessRule]::new($identity,
-    [Security.AccessControl.FileSystemRights]::Write,
-    [Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit',
-    [Security.AccessControl.PropagationFlags]::None,[Security.AccessControl.AccessControlType]::Deny)
-$restrictedAcl.AddAccessRule($deny)
-$savedJava=$env:JAVA_HOME
-$savedPath=$env:PATH
-$process=$null
-$started=[DateTime]::UtcNow
-$writeDenied=$false
-$exitCode=$null
+. (Join-Path $PSScriptRoot 'release-evidence.ps1')
+$root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+# Escape literals keep Windows PowerShell 5.1 compatible with UTF-8 without BOM.
+$cyrillic=([char]0x041F).ToString()+[char]0x0440+[char]0x043E+[char]0x0432+[char]0x0435+[char]0x0440+[char]0x043A+[char]0x0430
+$runRoot=Join-Path $root ("build/package-tests/$cyrillic final ZIP "+[Guid]::NewGuid().ToString('N'))
+[IO.Directory]::CreateDirectory($runRoot) | Out-Null
+$package=Expand-ReleasePackage $ZipPath (Join-Path $runRoot 'extracted')
+$identity=$package.identity;$image=$package.image
+$result=[ordered]@{schemaVersion=3;status='FAIL';mode=$Mode;version=$identity.version;sourceSha256=$identity.sourceSha256;mainJarSha256=$identity.mainJarSha256;
+    verificationInputsSha256=$identity.verificationInputsSha256;zipSha256=$identity.zipSha256;zipPath=$identity.zipPath;imagePath=$image;runRoot=$runRoot;
+    installationWriteDenied=$false;noExternalJavaOnPath=$true;javaHomePointedToMissingDirectory=$true}
+$originalAcl=$null
 try {
-    Set-Acl -LiteralPath $image -AclObject $restrictedAcl
-    try { [IO.File]::WriteAllText((Join-Path $image 'must-not-be-writable.tmp'),'probe') }
-    catch [UnauthorizedAccessException] { $writeDenied=$true }
-    if (-not $writeDenied) { throw 'The test installation directory still permits writes.' }
-    $env:JAVA_HOME=Join-Path $testRoot 'Java is not installed'
-    $env:PATH="$env:SystemRoot\System32;$env:SystemRoot"
-    $process=Start-Process -FilePath (Join-Path $image 'WreckRiff.exe') -WorkingDirectory $image -WindowStyle Hidden -PassThru `
-        -ArgumentList @('--dev','--seed=42','--smoke-seconds=600') `
-        -RedirectStandardOutput (Join-Path $testRoot 'stdout.log') -RedirectStandardError (Join-Path $testRoot 'stderr.log')
-    $null=$process.Handle
-    if (-not $process.WaitForExit($TimeoutSeconds*1000)) { $process.Kill();throw 'Packaged graphical smoke timed out.' }
-    $exitCode=$process.ExitCode
-    if ($exitCode -ne 0) { throw "Packaged executable failed with exit code $exitCode. See $testRoot" }
-} finally {
-    $env:JAVA_HOME=$savedJava;$env:PATH=$savedPath
-    Set-Acl -LiteralPath $image -AclObject $originalAcl
+    $profile=Join-Path $runRoot 'user-data/WreckRiff'
+    [IO.Directory]::CreateDirectory($profile) | Out-Null
+    $result.profileDirectory=$profile;$result.profileInputs=@()
+    if($Mode -in @('NormalMigrated','NormalContinue')) {
+        if([string]::IsNullOrWhiteSpace($ProfileDirectory)){throw "$Mode needs an existing explicit -ProfileDirectory; it is copied, never modified."}
+        $beforeDirectory=Join-Path $runRoot 'profile-inputs';[IO.Directory]::CreateDirectory($beforeDirectory) | Out-Null
+        foreach($name in @('settings.json','stats.json')) {
+            $inputFile=Join-Path $ProfileDirectory $name
+            if(!(Test-Path -LiteralPath $inputFile -PathType Leaf)){throw "Profile lacks $name"}
+            $preservedInput=Join-Path $beforeDirectory $name
+            Copy-Item -LiteralPath $inputFile -Destination $preservedInput
+            $result.profileInputs+=Get-ReleaseArtifact $preservedInput
+            Copy-Item -LiteralPath $preservedInput -Destination (Join-Path $profile $name)
+        }
+        $result.profileBefore=[ordered]@{settings=(Read-ReleaseJson (Join-Path $profile 'settings.json'));stats=(Read-ReleaseJson (Join-Path $profile 'stats.json'))}
+    } elseif($ProfileDirectory){throw '-ProfileDirectory is only valid for NormalMigrated or NormalContinue.'}
+    Assert-ReleaseImage $identity.zipPath $image
+    $originalAcl=Get-Acl -LiteralPath $image;$restrictedAcl=Get-Acl -LiteralPath $image
+    $userSid=[Security.Principal.WindowsIdentity]::GetCurrent().User
+    $deny=[Security.AccessControl.FileSystemAccessRule]::new($userSid,[Security.AccessControl.FileSystemRights]::Write,
+        [Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit',[Security.AccessControl.PropagationFlags]::None,[Security.AccessControl.AccessControlType]::Deny)
+    $restrictedAcl.AddAccessRule($deny);Set-Acl -LiteralPath $image -AclObject $restrictedAcl
+    try {[IO.File]::WriteAllText((Join-Path $image 'must-not-be-writable.tmp'),'probe')}
+    catch [UnauthorizedAccessException] {$result.installationWriteDenied=$true}
+    if(!$result.installationWriteDenied){throw 'Extracted installation directory still allows writes.'}
+    $arguments=@();$diagnosticMode='normal'
+    if($Mode -eq 'Smoke') {$arguments=@('--dev','--seed=42','--ai-player',"--smoke-seconds=$Seconds");$diagnosticMode='graphics-smoke'}
+    elseif($Mode -eq 'Soak') {$arguments=@('--dev','--seed=42','--ai-player',"--soak-seconds=$Seconds");$diagnosticMode='soak'}
+    else {Write-Output "Normal launch: complete the $Mode scenario and exit through the game menu; no diagnostic arguments are passed."}
+    $result.arguments=$arguments
+    $run=Invoke-ReleaseProcess $image $runRoot $arguments $diagnosticMode $TimeoutSeconds $identity
+    $result.gamePid=$run.gamePid;$result.launcherPid=$run.launcherPid;$result.processStartTimeUtc=$run.processStartTimeUtc
+    $result.startedAtUtc=$run.startedAtUtc;$result.completedAtUtc=$run.completedAtUtc;$result.launcherExitCode=$run.exitCode
+    $result.diagnostic=Get-ReleaseArtifact (Join-Path $runRoot 'diagnostic-result.json')
+    $result.memory=Get-ReleaseArtifact (Join-Path $runRoot 'memory.json')
+    $result.stdout=Get-ReleaseArtifact (Join-Path $runRoot 'stdout.log');$result.stderr=Get-ReleaseArtifact (Join-Path $runRoot 'stderr.log')
+    if($Mode -eq 'Soak') {
+        $result.status='PASS';Assert-ReleaseSoak ([pscustomobject]$result) $run.diagnostic $run.memory
+    } elseif($Mode -eq 'Smoke' -and $run.diagnostic.status -ne 'PASS'){throw 'Executable scenario did not report successful completion.'}
+    if($Mode -eq 'Smoke') {
+        if($run.diagnostic.menuCleanupVerified -ne $true -or $run.diagnostic.pauseTickPreserved -ne $true -or $run.diagnostic.retryCycles.Count -lt 20){throw 'Smoke omitted pause, cleanup or twenty retry checks.'}
+    }
+    if($Mode.StartsWith('Normal')) {
+        Assert-ReleaseNormal $run.diagnostic
+        if($run.diagnostic.dev -ne $false -or $arguments.Count -ne 0){throw 'Normal launch was not a real launch without --dev.'}
+        $result.profileOutputs=@()
+        foreach($name in @('settings.json','stats.json')) {
+            $path=Join-Path $profile $name
+            if(!(Test-Path -LiteralPath $path)){throw "Normal scenario did not persist $name"}
+            $result.profileOutputs+=Get-ReleaseArtifact $path
+        }
+        $result.profileAfter=[ordered]@{settings=(Read-ReleaseJson (Join-Path $profile 'settings.json'));stats=(Read-ReleaseJson (Join-Path $profile 'stats.json'))}
+        $result.scenarioAcceptance='REQUIRES_REVIEW'
+    }
+    Set-Acl -LiteralPath $image -AclObject $originalAcl;$originalAcl=$null
+    Assert-ReleaseImage $identity.zipPath $image
+    if((Get-ReleaseSha256 $identity.zipPath) -ne $identity.zipSha256){throw 'Final ZIP changed during executable verification.'}
+    $result.status='PASS'
+} catch {$result.status='FAIL';$result.failure=$_.Exception.Message;throw}
+finally {
+    if($null -ne $originalAcl){Set-Acl -LiteralPath $image -AclObject $originalAcl}
+    Write-ReleaseJson (Join-Path $runRoot 'package-launch-verification.json') $result
+    Write-ReleaseJson (Join-Path $root "build/reports/windows-package-$Mode.json") $result
 }
-$evidence=$null
-$diagnostics=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'WreckRiff/diagnostics'))
-# The jpackage Windows launcher can delegate to another process. Correlate the
-# exact report emitted to this launch's redirected stdout, not the launcher PID.
-$reportLine=Get-Content -LiteralPath (Join-Path $testRoot 'stdout.log') | Where-Object { $_.StartsWith('DIAGNOSTIC_REPORT: ') } | Select-Object -Last 1
-if ($null -ne $reportLine) {
-    $reportPath=[IO.Path]::GetFullPath($reportLine.Substring('DIAGNOSTIC_REPORT: '.Length).Trim())
-    if (-not $reportPath.StartsWith($diagnostics+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { throw 'Report path escapes the diagnostic directory.' }
-    $reportFile=Get-Item -LiteralPath $reportPath
-    if ($reportFile.LastWriteTimeUtc -lt $started) { throw 'The reported evidence predates this launch.' }
-    $evidence=Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-    Copy-Item -LiteralPath $reportPath -Destination (Join-Path $testRoot 'diagnostic-result.json')
-}
-if ($null -eq $evidence -or $evidence.status -ne 'PASS') { throw 'The executable exited without a passing diagnostic report.' }
-$expectedRuntime=[IO.Path]::GetFullPath((Join-Path $image 'runtime'))
-if ([string]::IsNullOrWhiteSpace($evidence.javaHome) -or -not [IO.Path]::GetFullPath($evidence.javaHome).Equals($expectedRuntime,[StringComparison]::OrdinalIgnoreCase)) {
-    throw 'The reported JVM home is not this test image bundled runtime.'
-}
-$result=[ordered]@{
-    schemaVersion=1;status='PASS';testPath=$image;exitCode=$exitCode;installationWriteDenied=$writeDenied
-    launcherPid=$process.Id;gamePid=$evidence.pid
-    noExternalJavaOnPath=$true;javaHomePointedToMissingDirectory=$true;bundledJava=$evidence.jdk
-    javaHome=$evidence.javaHome;sourceSha256=$evidence.sourceSha256
-    controller='PENDING_MANUAL';freshWindowsInstallation='NOT_AVAILABLE; external Java was isolated for this test'
-}
-[IO.File]::WriteAllText((Join-Path $buildRoot 'reports/packaged-launch.json'),($result|ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
-Write-Output "Packaged real-window smoke PASS: $image"
+Write-Output "$($result.status): $Mode from the final ZIP; $runRoot"

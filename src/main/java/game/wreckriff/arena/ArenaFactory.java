@@ -78,29 +78,32 @@ public final class ArenaFactory {
     }
     private void addDecoration(Node root,ArenaDefinition definition) {
         Node structure=new Node("authored-industrial-details");
+        Node markings=new Node("static-road-markings");
+        markings.setShadowMode(RenderQueue.ShadowMode.Off);
         // Static details are outside the driving volume or flush on existing solid faces.
         if(definition.metadata().theme()==ArenaDefinition.Theme.INDUSTRIAL_YARD) {
         addIndustrialDetails(structure);
         addBackdrop(root,structure);
         // Markings have no collision: these thin surfaces cannot turn into invisible curbs.
         for (int z=-60;z<=60;z+=12) {
-            box(root,"west-lane-"+z,new Vector3f(-64,.008f,z),new Vector3f(.16f,.008f,2.2f),"ivory");
-            box(root,"east-lane-"+z,new Vector3f(74,.008f,z),new Vector3f(.16f,.008f,2.2f),"ivory");
+            box(markings,"west-lane-"+z,new Vector3f(-64,.008f,z),new Vector3f(.16f,.008f,2.2f),"ivory");
+            box(markings,"east-lane-"+z,new Vector3f(74,.008f,z),new Vector3f(.16f,.008f,2.2f),"ivory");
         }
         for (int x=-70;x<=70;x+=14) {
-            box(root,"south-lane-"+x,new Vector3f(x,.008f,-59),new Vector3f(2.2f,.008f,.16f),"yellow");
-            box(root,"north-lane-"+x,new Vector3f(x,.008f,59),new Vector3f(2.2f,.008f,.16f),"yellow");
+            box(markings,"south-lane-"+x,new Vector3f(x,.008f,-59),new Vector3f(2.2f,.008f,.16f),"yellow");
+            box(markings,"north-lane-"+x,new Vector3f(x,.008f,59),new Vector3f(2.2f,.008f,.16f),"yellow");
         }
         }
         for(var hazard:definition.hazards()) {
         float surfaceY=ArenaPresentation.surfaceHeight(definition,hazard);
-        box(root,"hazard-surface",new Vector3f((hazard.minX()+hazard.maxX())*.5f,surfaceY+.012f,
+        box(markings,"hazard-surface",new Vector3f((hazard.minX()+hazard.maxX())*.5f,surfaceY+.012f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f((hazard.maxX()-hazard.minX())*.5f,.012f,
                 (hazard.maxZ()-hazard.minZ())*.5f),"black");
-        for (float x=hazard.minX()+1;x<hazard.maxX();x+=2) box(root,"hazard-stripe",new Vector3f(x,surfaceY+.03f,
+        for (float x=hazard.minX()+1;x<hazard.maxX();x+=2) box(markings,"hazard-stripe",new Vector3f(x,surfaceY+.03f,
                 (hazard.minZ()+hazard.maxZ())*.5f),new Vector3f(.32f,.02f,(hazard.maxZ()-hazard.minZ())*.5f-.2f),"yellow");
         }
         structure.updateGeometricState();GeometryBatchFactory.optimize(structure,false);root.attachChild(structure);
+        markings.updateGeometricState();GeometryBatchFactory.optimize(markings,false);root.attachChild(markings);
         if(definition.metadata().theme()==ArenaDefinition.Theme.INDUSTRIAL_YARD)addSigns(root);
         ArenaArt.attach(assets,root,definition,materials);
     }

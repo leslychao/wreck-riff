@@ -137,8 +137,8 @@ public final class ArenaSystems {
                 for(var contact:physics.arenaContacts()) {
                     var mechanism=mechanisms.get(contact.objectId());
                     if(mechanism==null||!mechanism.hazardId().equals(hazard.id()))continue;
-                    int id=contact.vehicleId();if(!session.vehicle(id).alive()||session.tick<ready.getOrDefault(id,Long.MIN_VALUE))continue;
-                    ready.put(id,session.tick+hazard.damageIntervalTicks());
+                    int id=contact.vehicleId();if(!session.vehicle(id).alive()||hazardTicks<ready.getOrDefault(id,Long.MIN_VALUE))continue;
+                    ready.put(id,hazardTicks+hazard.damageIntervalTicks());
                     if(session.vehicle(id).protectionTicks==0)sink.damage(id,hazard.damage(),"hazard",Long.MIN_VALUE+session.tick*16+id+(long)sequence*(1L<<48));
                 }
             }
@@ -164,8 +164,23 @@ public final class ArenaSystems {
     public ProgressStore.ArenaState snapshot() {
         Map<String,ProgressStore.PickupState> pickups=new LinkedHashMap<>();
         definition.pickups().forEach(p->pickups.put(p.id(),new ProgressStore.PickupState(Math.max(0,returnsAt.getOrDefault(p.id(),0L)-session.tick))));
-        return new ProgressStore.ArenaState(pickups,objects,session.mode==MatchSession.Mode.LEGACY?hazardSnapshot(hazardClock()):schedule.snapshot(),
+        return new ProgressStore.ArenaState(pickups,objects,session.mode==MatchSession.Mode.LEGACY?hazardSnapshot(hazardClock()):checkpointHazards(),
                 session.mode==MatchSession.Mode.LEGACY?0:schedule.cooldown(),session.mode==MatchSession.Mode.LEGACY?session.seed:schedule.cursor());
+    }
+    private Map<String,ProgressStore.HazardState> checkpointHazards() {
+        var result=new LinkedHashMap<>(schedule.snapshot());
+        // Only the continuing player's damage interval survives. A retried boss is a fresh participant.
+        for(var hazard:definition.hazards()) {
+            var state=result.get(hazard.id());long remaining=0;
+            if(state.phase()==ProgressStore.HazardPhase.ACTIVE) {
+                if(hazard.type()==ArenaDefinition.HazardType.ELECTRIC||hazard.type()==ArenaDefinition.HazardType.FIRE) {
+                    int exposure=hazardExposure.getOrDefault(hazard.id(),Map.of()).getOrDefault(0,0);
+                    if(exposure>0)remaining=hazard.damageIntervalTicks()-exposure;
+                } else remaining=Math.max(0,mechanicalReadyAt.getOrDefault(hazard.id(),Map.of()).getOrDefault(0,0L)-hazardTicks);
+            }
+            result.put(hazard.id(),new ProgressStore.HazardState(state.phase(),state.remainingTicks(),remaining,state.cycle()));
+        }
+        return result;
     }
     private Map<String,ProgressStore.HazardState> hazardSnapshot(long clock) {
         Map<String,ProgressStore.HazardState> result=new LinkedHashMap<>();
@@ -184,7 +199,14 @@ public final class ArenaSystems {
         if(session.mode!=MatchSession.Mode.LEGACY) {
             schedule.restore(state);
             returnsAt.clear();state.pickups().forEach((id,p)->returnsAt.put(id,Math.addExact(session.tick,p.respawnTicks())));
-            objects.clear();objects.putAll(state.objects());hazardExposure.clear();removedGeometry.clear();
+            objects.clear();objects.putAll(state.objects());hazardExposure.clear();mechanicalReadyAt.clear();removedGeometry.clear();hazardTicks=0;
+            lastHazardTick=lastPickupTick=Long.MIN_VALUE;
+            for(var hazard:definition.hazards()) {
+                long remaining=state.hazards().get(hazard.id()).cooldownTicks();if(remaining==0)continue;
+                if(hazard.type()==ArenaDefinition.HazardType.ELECTRIC||hazard.type()==ArenaDefinition.HazardType.FIRE)
+                    hazardExposure.computeIfAbsent(hazard.id(),key->new HashMap<>()).put(0,hazard.damageIntervalTicks()-Math.toIntExact(remaining));
+                else mechanicalReadyAt.computeIfAbsent(hazard.id(),key->new HashMap<>()).put(0,remaining);
+            }
             restoreGeometry(state,world,graph,definition);syncMechanisms(world);schedule.snapshot().keySet().forEach(id->announcedPhases.put(id,hazardPhase(id)));return;
         }
         long restored=0;

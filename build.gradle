@@ -65,6 +65,16 @@ application {
     mainClass = 'game.wreckriff.Main'
     applicationDefaultJvmArgs = ['-Xms128m', '-Xmx768m']
 }
+tasks.named('startScripts') {
+    // A full list of absolute dependency paths can exceed cmd.exe's 8191-character limit.
+    // Customize Gradle's input template so every generated Windows launcher stays short.
+    def windowsTemplate = windowsStartScriptGenerator.template.asString()
+    if (!windowsTemplate.contains('set CLASSPATH=$classpath')) {
+        throw new GradleException('Windows start-script template changed; review wildcard classpath generation')
+    }
+    windowsStartScriptGenerator.template = resources.text.fromString(
+            windowsTemplate.replace('set CLASSPATH=$classpath', 'set CLASSPATH=%APP_HOME%/lib/*'))
+}
 tasks.withType(JavaExec).configureEach { minHeapSize='128m';maxHeapSize='768m' }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.withType(Test).configureEach {
@@ -140,6 +150,7 @@ tasks.register('verifyAssets', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'game.wreckriff.diagnostics.VerifyAssets'
+    doFirst { systemProperty 'wreckriff.assetsReportDirectory', layout.buildDirectory.dir('reports/assets').get().asFile.absolutePath }
 }
 tasks.register('smokeTest', JavaExec) {
     dependsOn tasks.named('classes')
@@ -153,9 +164,10 @@ tasks.register('packageWindows', Exec) {
         if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
             throw new GradleException('packageWindows requires Windows and a Windows JDK 21')
         }
+        commandLine 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            'tools/package-windows.ps1', '-Version', project.version.toString(),
+            '-JdkHome', javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile.absolutePath,
+            '-BuildRoot', layout.buildDirectory.get().asFile.absolutePath
     }
-    commandLine 'powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-        'tools/package-windows.ps1', '-Version', project.version.toString(),
-        '-JdkHome', javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile.absolutePath
 }
 tasks.named('check') { dependsOn tasks.named('physicsTest'), tasks.named('verifyAssets') }

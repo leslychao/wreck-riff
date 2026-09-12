@@ -58,7 +58,7 @@ public final class VehicleShowcase {
         if(stage==1) {
             boolean searching=state.specialPhase==VehicleState.SpecialPhase.GRINDER_SEARCH;
             boolean held=state.grinding()&&session.vehicle(targetId).grabbedBy==actor;
-            boolean power=held&&!powerSent;if(power)powerSent=true;
+            boolean power=held&&state.specialTicks<=12&&!powerSent;if(power)powerSent=true;
             return Map.of(actor,command(searching||held?1:0,!searching&&!held,held,power,AbilityId.NONE));
         }
         return Map.of();

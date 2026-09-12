@@ -180,13 +180,38 @@ public final class VehicleVisual {
         vehicle.getChild("boss-panels").setCullHint(phase==2?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
         vehicle.getChild("service-cover").setCullHint(vulnerable?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
         vehicle.getChild("service-core").setCullHint(vulnerable?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
-        // Screens and work lights share one emissive draw; their colour follows the real boss phase.
-        Geometry screens=(Geometry)vehicle.getChild("headlights");
-        if(screens!=null) {
-            ColorRGBA color=!alive?new ColorRGBA(.025f,.025f,.025f,1):phase==0?new ColorRGBA(.13f,.64f,.80f,1):phase==1?new ColorRGBA(1,.50f,.10f,1):new ColorRGBA(.9f,.12f,.045f,1);
-            screens.getMaterial().setColor("Color",color);screens.getMaterial().setColor("GlowColor",color.mult(.35f));
-        }
         vehicle.setUserData("bossVisualPhase",phase);vehicle.setUserData("servicePanelOpen",vulnerable);
+        clearBossTelegraph(vehicle,true);
+    }
+
+    /** Continuous preparation on existing lamps: no flashes, extra draws, or weak-point changes. */
+    public static void updateBossTelegraph(Node vehicle,long tick,long beganTick,long untilTick,boolean glow) {
+        if(vehicle.getChild("boss-panels")==null)return;
+        boolean alive=!Integer.valueOf(4).equals(vehicle.getUserData("damageStage"));
+        if(!alive||beganTick<0||untilTick<=beganTick||tick<beganTick||tick>=untilTick) {
+            clearBossTelegraph(vehicle,glow);return;
+        }
+        float progress=(float)((tick-beganTick)/(double)(untilTick-beganTick));
+        // The ordinary visible colour carries the warning when bloom and flash intensity are both off.
+        bossLights(vehicle,new ColorRGBA(.80f+.20f*progress,.32f+.55f*progress,.045f+.40f*progress,1),glow,true);
+    }
+
+    static void clearBossTelegraph(Node vehicle,boolean glow) {
+        if(vehicle.getChild("boss-panels")==null)return;
+        boolean alive=!Integer.valueOf(4).equals(vehicle.getUserData("damageStage"));
+        Integer phase=vehicle.getUserData("bossVisualPhase");
+        ColorRGBA color=!alive?new ColorRGBA(.025f,.025f,.025f,1):phase==null||phase==0
+                ?new ColorRGBA(.13f,.64f,.80f,1):phase==1?new ColorRGBA(1,.50f,.10f,1):new ColorRGBA(.9f,.12f,.045f,1);
+        bossLights(vehicle,color,glow&&alive,false);
+    }
+    private static void bossLights(Node vehicle,ColorRGBA color,boolean glow,boolean warning) {
+        Geometry lights=(Geometry)vehicle.getChild("headlights");
+        if(lights==null)return;
+        // Keep the damaged mesh intact, but never dim a gameplay warning to the broken lamps' 1.5%.
+        // Ordinary per-lamp blackout returns as soon as the preparation ends.
+        lights.getMaterial().setBoolean("VertexColor",!warning);
+        lights.getMaterial().setColor("Color",color);
+        lights.getMaterial().setColor("GlowColor",glow?color.mult(.35f):ColorRGBA.Black);
     }
 
     public static void updateDamage(Node vehicle,float hpFraction) {vehicle.getControl(VehicleDamageVisual.class).damage(hpFraction);}

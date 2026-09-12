@@ -43,13 +43,16 @@ class NativeArenaMechanismsTest {
                 Vector3f before=world.velocity(0);
                 x+=48*MatchSession.DT;world.moveArenaBody("service-truck",new Vector3f(x,1.2f,0),new Quaternion());
                 world.step();
+                Vector3f velocity=world.velocity(0);
+                // Native speculative points can transfer momentum before the
+                // stricter touching-distance gameplay contact is published.
+                assertTrue(velocity.x-before.x<=8.05f,"Moving-body delta at tick "+tick+": "+before+" -> "+velocity+"; "+trace);
                 var contacts=world.arenaContacts().stream().filter(c->c.objectId().equals("service-truck")&&c.vehicleId()==0).toList();
                 assertTrue(contacts.size()<=1,"One strongest contact per native object/vehicle step");
                 if(!contacts.isEmpty()) {
-                    contact=true;Vector3f velocity=world.velocity(0);
+                    contact=true;
                     trace.append("tick=").append(tick).append(" car=").append(before.x).append("->").append(velocity.x)
                             .append(" closing=").append(contacts.getFirst().closingSpeed()).append(';');
-                    assertTrue(velocity.x-before.x<=8.05f,"Moving-body delta: "+trace);
                     existingSpeedPreserved|=velocity.x>initialSpeed;
                     assertTrue(contacts.getFirst().normal().x>.8f);
                     assertTrue(contacts.getFirst().closingSpeed()>=0);

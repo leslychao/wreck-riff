@@ -49,7 +49,7 @@ public final class ArenaArt {
         Node art=new Node("authored-arena-art");
         art.setUserData("source",scene.source());art.setUserData("arenaId",scene.arenaId());
         art.setUserData("authoredPartCount",scene.parts().size());
-        Map<String,Node> groups=new HashMap<>(),cells=new LinkedHashMap<>(),anchors=new LinkedHashMap<>();
+        Map<String,Node> groups=new HashMap<>(),cells=new LinkedHashMap<>(),anchors=new LinkedHashMap<>(),anchorStatics=new LinkedHashMap<>();
         Map<String,Group> definitions=new HashMap<>();for(var group:scene.groups())definitions.put(group.id(),group);
         Set<String> dynamic=new HashSet<>();
         definition.destructibles().forEach(object->dynamic.add(object.geometryId()));
@@ -90,7 +90,10 @@ public final class ArenaArt {
             if(part.group().isEmpty()&&anchor==art) {
                 String cell=(int)Math.floor(part.position().x()/40)+":"+(int)Math.floor(part.position().z()/40);
                 Node node=cells.computeIfAbsent(cell,ignored->new Node("art-cell-"+cell));node.attachChild(visual);
-            } else if(part.group().isEmpty())anchor.attachChild(visual);
+            } else if(part.group().isEmpty()) {
+                Node statics=anchorStatics.computeIfAbsent(part.anchor(),id->new Node("art-anchor-static-"+id));
+                statics.attachChild(visual);
+            }
             else {
                 // A motion group may contain parts belonging to independent breakable objects.
                 // Split it by lifetime owner so hiding one gate cannot hide a neighbouring facade.
@@ -105,6 +108,10 @@ public final class ArenaArt {
             }
         }
         for(var cell:cells.values()) {cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);art.attachChild(cell);}
+        for(var entry:anchorStatics.entrySet()) {
+            Node statics=entry.getValue();statics.updateGeometricState();GeometryBatchFactory.optimize(statics,false);
+            anchors.get(entry.getKey()).attachChild(statics);
+        }
         root.attachChild(art);
     }
     private static Mesh patchMesh(ArenaDefinition.Vec3 size) {

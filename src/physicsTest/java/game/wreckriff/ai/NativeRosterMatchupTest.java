@@ -7,6 +7,7 @@ import game.wreckriff.arena.ArenaDefinition;
 import game.wreckriff.arena.NavGraph;
 import game.wreckriff.combat.AbilityId;
 import game.wreckriff.combat.CombatRules;
+import game.wreckriff.combat.WeaponType;
 import game.wreckriff.config.Configs;
 import game.wreckriff.config.VehicleDefinition;
 import game.wreckriff.config.VehicleRules;
@@ -43,6 +44,48 @@ class NativeRosterMatchupTest {
             fight.session.vehicle(0).abilityCooldown(AbilityId.FREEZE,10_000);
             fight.arsenal="depleted; MG and Freeze on cooldown";
             assertAiCapture(fight,"rivet with ranged attacks unavailable");
+        }
+    }
+
+    @Test void grinderBotUsesMachineGunThroughTheHoldAndSavesPowerForItsFinish() {
+        try(var fight=new Fight("rivet")) {
+            for(var weapon:fight.session.vehicle(0).weapons())assertTrue(weapon.ammo>0,
+                    "The production bot must choose its combo with the full selectable arsenal available");
+            assertAiCapture(fight,"rivet with full arsenal for the complete hold");
+            long latePowerId=-1;
+            int heldPowerShots=0;
+            float heldMachineGunDamage=0,powerDamage=0;
+            // At most 1.7 s after the existing, bounded six-second capture approach.
+            // Observe real commands and their events; never force a weapon or alter a cooldown.
+            for(int tick=0;tick<204;tick++) {
+                var truck=fight.session.vehicle(0);
+                boolean heldBefore=truck.grinding()&&fight.session.vehicle(1).grabbedBy==truck.id;
+                int remainingBefore=truck.specialTicks;
+                List<GameEvent> events=fight.tick();
+                for(var event:events) {
+                    if(event.type()!=GameEvent.Type.SHOT||event.sourceId()!=0)continue;
+                    boolean selectedWeapon=false;
+                    for(var type:WeaponType.values())selectedWeapon|=type.id().equals(event.kind());
+                    if(heldBefore&&remainingBefore>24)assertFalse(selectedWeapon,
+                            ()->"The bot must preserve at least the first 1.3 s of its hold instead of lifting the target with an early explosive; pre-tick remaining="
+                                    +remainingBefore+fight.trace());
+                    if(heldBefore&&event.kind().equals("power")) {
+                        assertTrue(remainingBefore>0&&remainingBefore<=24,
+                                ()->"Power must finish an existing hold, after sustained contact damage"+fight.trace());
+                        heldPowerShots++;latePowerId=event.eventId();
+                    }
+                }
+                for(var event:events) {
+                    if(event.type()!=GameEvent.Type.DAMAGE||event.sourceId()!=0||event.subjectId()!=1)continue;
+                    if(heldBefore&&event.kind().equals("machine-gun"))heldMachineGunDamage+=event.value();
+                    if(event.eventId()==latePowerId&&event.kind().equals("power"))powerDamage+=event.value();
+                }
+            }
+            assertTrue(heldMachineGunDamage>0,()->"The bot's roof machine gun must actually damage the held native hull"+fight.trace());
+            assertEquals(1,heldPowerShots,()->"The bot must finish its sustained hold with one actual Power launch"+fight.trace());
+            long finishingShot=latePowerId;
+            assertTrue(powerDamage>0||fight.runtime.combat().projectiles().stream().anyMatch(projectile->projectile.id()==finishingShot),
+                    ()->"The finishing Power must reach the target or remain a real projectile in its flight tail"+fight.trace());
         }
     }
 

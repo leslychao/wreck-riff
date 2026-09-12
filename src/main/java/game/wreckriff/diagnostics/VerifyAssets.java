@@ -56,7 +56,7 @@ public final class VerifyAssets {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 0) throw new IllegalArgumentException("verifyAssets takes no arguments");
-        Report report = verify(Path.of("build", "reports", "assets"));
+        Report report = verify(Path.of(System.getProperty("wreckriff.assetsReportDirectory", "build/reports/assets")));
         System.out.printf("Assets: %s; %d files; %d dependencies; %d Windows x64 native entries.%n",
                 report.status, report.assets.size(), report.dependencies.size(), report.windowsX64Natives.size());
         for (String review : report.reviewItems) System.out.println("REVIEW: " + review);
@@ -65,6 +65,7 @@ public final class VerifyAssets {
 
     public static Report verify(Path output) throws IOException {
         Files.createDirectories(output);
+        Files.deleteIfExists(output.resolve("verification.json"));
         List<Asset> assets = new ArrayList<>();
         List<Dependency> dependencies = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -139,6 +140,7 @@ public final class VerifyAssets {
         assets.sort(Comparator.comparing(Asset::path));
         dependencies.sort(Comparator.comparing(Dependency::jar));
         Collections.sort(nativeEntries);
+        attempt(errors, "corresponding source and notice materials", () -> SourceDistributionVerifier.verify(output));
         Report report = new Report(1, errors.isEmpty() ? "TECHNICAL_PASS" : "FAIL", "NEEDS_CREATIVE_REVIEW",
                 "REVIEW_REQUIRED", List.copyOf(assets), List.copyOf(dependencies), List.copyOf(nativeEntries), List.copyOf(errors), List.copyOf(reviews));
         Files.writeString(output.resolve("verification.json"), Configs.gson().toJson(report), StandardCharsets.UTF_8);
@@ -159,7 +161,7 @@ public final class VerifyAssets {
             String id = runtimeGeometry ? "runtime/" + Path.of(asset.path).getFileName().toString().replace(".java", "") : asset.path;
             String packaged = source ? "" : "app/wreck-riff-" + version + ".jar!/" + asset.path;
             String origin = source ? asset.path : asset.source;
-            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "special-provenance", "arena-hazard-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
+            if (Set.of("music", "licensed-music", "licensed-result", "result-provenance", "pickup-provenance", "special-provenance", "arena-hazard-provenance", "boss-telegraph-provenance", "sound-effect", "audio-metrics", "score", "music-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateAudio.java; " + origin;
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
                 origin = "src/tools/java/game/wreckriff/tools/GenerateFont.java; " + origin;
@@ -243,6 +245,7 @@ public final class VerifyAssets {
         Map<String,String> specials = verifySpecialEffects(config,assets);
         Map<String,String> authored=new HashMap<>(pickups);authored.putAll(specials);
         authored.putAll(verifyArenaHazardEffects(config,assets));
+        authored.putAll(verifyBossTelegraph(config,assets));
         byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
         JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
         JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
@@ -426,6 +429,29 @@ public final class VerifyAssets {
         if(!required.isEmpty())throw new IOException("Missing arena hazard cue provenance: "+required);
         assets.add(asset(path,"arena-hazard-provenance",bytes,generator+"; original event-driven warning/activation cues","VERIFIED"));
         return Map.copyOf(origins);
+    }
+
+    private static Map<String,String> verifyBossTelegraph(AudioConfig config,List<Asset> assets)throws Exception {
+        String path="audio/boss-telegraph-provenance.json",audio="audio/boss-telegraph.wav";
+        String generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        byte[] bytes=resource(path);JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()||evidence.get("looping").getAsBoolean()
+                ||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
+                ||!generator.equals(evidence.get("generator").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(generator))).equals(evidence.get("generatorSha256").getAsString())
+                ||!"0x5249464657415645".equals(evidence.get("seed").getAsString())
+                ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString())
+                ||evidence.get("sampleRate").getAsInt()!=48000||evidence.get("channels").getAsInt()!=1||evidence.get("bits").getAsInt()!=16
+                ||!List.of("boss-telegraph").equals(config.cueBanks().get("boss-telegraph"))
+                ||evidence.getAsJsonArray("assets").size()!=1)
+            throw new IOException("Boss telegraph audio source/provenance mismatch");
+        JsonObject item=evidence.getAsJsonArray("assets").get(0).getAsJsonObject();WaveMetrics metrics=inspectWave(uniqueResource(audio));
+        if(!audio.equals(item.get("path").getAsString())||metrics.frames!=40800||metrics.frames!=item.get("frames").getAsLong()
+                ||metrics.channels!=1||metrics.rate!=48000||metrics.bits!=16||!metrics.sha256.equals(item.get("sha256").getAsString())
+                ||metrics.peak>.82004||metrics.rms<.12||metrics.rms>.16004||item.get("recipe").getAsString().isBlank())
+            throw new IOException("Invalid boss telegraph cue timing/hash/signal");
+        assets.add(asset(path,"boss-telegraph-provenance",bytes,generator+"; original boss action warning","VERIFIED"));
+        return Map.of(audio,"Original boss telegraph synthesis; "+item.get("recipe").getAsString()+"; "+path);
     }
 
     private static Map<String,String> verifySpecialEffects(AudioConfig config,List<Asset> assets)throws Exception {

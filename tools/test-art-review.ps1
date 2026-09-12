@@ -27,7 +27,7 @@ foreach($arena in $Arenas) {
     $null=New-Item -ItemType Directory -Path $destination
     $stdout=Join-Path $destination 'stdout.log'
     $stderr=Join-Path $destination 'stderr.log'
-    $arguments=@('-Xms128m','-Xmx768m','-cp',('"'+(Join-Path $install 'lib/*')+'"'),'game.wreckriff.Main','--dev','--seed=42',('--arena='+$arena),'--art-showcase',('--resolution='+$Resolution))
+    $arguments=@('-ea','-Xms128m','-Xmx768m','-cp',('"'+(Join-Path $install 'lib/*')+'"'),'game.wreckriff.Main','--dev','--seed=42',('--arena='+$arena),'--art-showcase',('--resolution='+$Resolution))
     if($NoGlow) {$arguments+='--no-glow'}
     $started=[DateTime]::UtcNow
     $process=Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $install -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
@@ -38,6 +38,8 @@ foreach($arena in $Arenas) {
     }
     $process.WaitForExit()
     $exitCode=$process.ExitCode
+    # An uncaught decoder/worker failure can coexist with a zero process exit and a render-thread PASS.
+    $uncaughtFailures=@(Select-String -LiteralPath $stdout,$stderr -Pattern 'Exception in thread |AssertionError|FATAL ERROR|A fatal error has been detected')
     $line=Get-Content -LiteralPath $stdout | Where-Object {$_.StartsWith('DIAGNOSTIC_REPORT: ')} | Select-Object -Last 1
     if(!$line) {throw "No diagnostic report: $destination"}
     $reportPath=[IO.Path]::GetFullPath($line.Substring(19).Trim())
@@ -46,8 +48,32 @@ foreach($arena in $Arenas) {
     if((Get-Item -LiteralPath $reportPath).LastWriteTimeUtc -lt $started) {throw 'Stale diagnostic report'}
     $report=Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     $source=Split-Path -Parent $reportPath
+    if($report.status -ne 'PASS' -or !$report.PSObject.Properties['artShowcase']) {
+        foreach($name in @('diagnostic-result.json','audio.wav','audio-events.json','AUDIO_README.txt')) {
+            $artifact=Join-Path $source $name
+            if(Test-Path -LiteralPath $artifact) {Copy-Item -LiteralPath $artifact -Destination $destination}
+        }
+        if(Test-Path -LiteralPath (Join-Path $source 'captures')) {Copy-Item -LiteralPath (Join-Path $source 'captures') -Destination $destination -Recurse}
+        $results += [ordered]@{arena=$arena;resolution=$Resolution;glow=(!$NoGlow);status='FAIL';pid=$process.Id;sourceSha256=$report.sourceSha256;jarSha256=$jarHash;rawArtifactDirectory=$source;reviewDirectory=$destination;elapsedSeconds=([DateTime]::UtcNow-$started).TotalSeconds;performance='NOT_MEASURED';feel='PENDING_OWNER';reason='Game ended without complete passing art evidence'}
+        [IO.File]::WriteAllText((Join-Path $runRoot 'matrix.json'),(ConvertTo-Json -InputObject $results -Depth 8),[Text.UTF8Encoding]::new($false))
+        throw "Incomplete art run (exit $exitCode); original report and captures preserved: $destination"
+    }
     $height=if($Resolution -eq '720p'){720}else{1080}
     $passed=$exitCode -eq 0 -and $report.status -eq 'PASS' -and $report.mode -eq 'art-showcase' -and $report.arenaId -eq $arena -and $report.pid -eq $process.Id -and $report.height -eq $height -and $report.width -eq ($height*16/9) -and $report.audioEnabled -and $report.windowVisible -and $report.artShowcase.collectedTypes.Count -eq 8 -and $report.artShowcase.failures.Count -eq 0
+    $expectedTypes=@('HOMING_AMMO','POWER_AMMO','MINE_AMMO','NAPALM_AMMO','BALLISTIC_AMMO','CANNON_AMMO','REPAIR','TURBO_CELL')
+    $missingTypes=@($expectedTypes | Where-Object {$_ -notin $report.artShowcase.collectedTypes})
+    $requiredCaptures=@('art-overview','art-upper-route','art-launch-approach','art-landmark')
+    foreach($type in $expectedTypes) {
+        $requiredCaptures+='pickup-available-'+$type.ToLowerInvariant()
+        $requiredCaptures+='pickup-collected-'+$type.ToLowerInvariant()
+    }
+    $missingCaptures=@($requiredCaptures | Where-Object {
+        !(Get-ChildItem -LiteralPath (Join-Path $source 'captures') -Filter ('*-'+$_+'-*.png') -File)
+    })
+    $cannon=@($report.artShowcase.events | Where-Object {$_.type -eq 'PICKUP' -and $_.kind -eq 'cannon-ammo'})
+    $passed=$passed -and $uncaughtFailures.Count -eq 0 -and $missingTypes.Count -eq 0 -and $missingCaptures.Count -eq 0 -and $cannon.Count -eq 1 -and $cannon[0].amount -eq 1 `
+        -and $report.glow -eq (!$NoGlow) -and $report.undrawableSeconds -eq 0 -and $report.sourceSha256 -match '^[a-fA-F0-9]{64}$'
+    if($arena -ne 'dead-air-yard') {$passed=$passed -and $report.artShowcase.nativeLaunch -and $report.artShowcase.nativeLanding}
     foreach($name in @('diagnostic-result.json','audio.wav','audio-events.json','AUDIO_README.txt')) {Copy-Item -LiteralPath (Join-Path $source $name) -Destination $destination}
     Copy-Item -LiteralPath (Join-Path $source 'captures') -Destination $destination -Recurse
     $movie=Join-Path $destination 'pickups.mp4'
