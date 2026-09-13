@@ -46,15 +46,8 @@ public final class ArenaPresentation extends AbstractControl {
         float x=(hazard.minX()+hazard.maxX())*.5f,z=(hazard.minZ()+hazard.maxZ())*.5f;
         float result=hazard.minY(),distance=Float.MAX_VALUE;
         for(var surface:definition.surfaces()) {
-            for(var box:definition.boxes())if(box.id().equals(surface.geometryId())
-                    &&Math.abs(x-box.center().x())<=box.size().x()/2&&Math.abs(z-box.center().z())<=box.size().z()/2) {
-                float y=box.center().y()+box.size().y()/2,d=Math.abs(y-hazard.minY());
-                if(d<distance&&d<=1) {result=y;distance=d;}
-            }
-            for(var ramp:definition.ramps())if(ramp.id().equals(surface.geometryId())&&ramp.containsXZ(x,z,0)) {
-                float y=ramp.heightAt(x,z),d=Math.abs(y-hazard.minY());
-                if(d<distance&&d<=1) {result=y;distance=d;}
-            }
+            float y=definition.surfaceHeight(surface.id(),x,z),d=Math.abs(y-hazard.minY());
+            if(d<distance&&d<=1) {result=y;distance=d;}
         }
         return result;
     }

@@ -13,9 +13,9 @@ class AudioCaptureTest {
     @Test void reconstructsAllLocalCampaignMusicPathsAndKeepsTheirExactAssetIdentity()throws Exception {
         double[] time={0};java.util.Set<String> expected=new java.util.HashSet<>();
         try(AudioCapture capture=new AudioCapture(directory,()->time[0],.12)) {
-            for(String arena:java.util.List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"))
+            for(String arena:java.util.List.of("construction_17","neon_zero","euphoria_park"))
                 for(String mix:java.util.List.of("normal","boss")) {
-                    String asset="audio/campaign/"+arena+"-"+mix+".wav";expected.add(asset);
+                    String asset="audio/music/"+arena+"-"+mix+".wav";expected.add(asset);
                     capture.observe(new Object(),asset,true,false,.02f,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,8,120,.5);
                 }
             time[0]=.12;
@@ -32,10 +32,10 @@ class AudioCaptureTest {
 
     @Test void campaignSupportCannotAdmitTraversalNestedFoldersOrUnrecognisedMusicFilenameShapes()throws Exception {
         try(AudioCapture capture=new AudioCapture(directory,()->0,.01)) {
-            for(String path:java.util.List.of("audio/campaign/../metalmania.wav","audio/campaign/../../escape-normal.wav",
-                    "audio/campaign/sub/arena-normal.wav","audio/campaign/arena.wav","audio/campaign/arena-other.wav",
-                    "audio/campaign/arena-normal.wav/extra","audio/campaign\\arena-normal.wav","audio//arena.wav",
-                    "https://example.test/audio/campaign/arena-normal.wav"))
+            for(String path:java.util.List.of("audio/music/../metalmania.wav","audio/music/../../escape-normal.wav",
+                    "audio/music/sub/arena-normal.wav","audio/music/arena.wav","audio/music/arena-other.wav",
+                    "audio/music/arena-normal.wav/extra","audio/campaign\\arena-normal.wav","audio//arena.wav",
+                    "https://example.test/audio/music/arena-normal.wav"))
                 assertThrows(IllegalArgumentException.class,()->observe(capture,new Object(),path,.1f),path);
             assertThrows(IllegalArgumentException.class,()->observe(capture,new Object(),null,.1f));
         }
@@ -69,11 +69,15 @@ class AudioCaptureTest {
     }
     @Test void includesLoopingEngineAndStereoMusicAcrossItsLoopSeamWithVolumeUpdates() throws Exception {
         double[] time={0};Object engine=new Object(),music=new Object();
+        float duration;
+        try(InputStream input=getClass().getClassLoader().getResourceAsStream(AudioConfig.load().menuMusicAsset())) {
+            duration=PcmWave.header(input).seconds();
+        }
         try(AudioCapture capture=new AudioCapture(directory,()->time[0],1)) {
             capture.observe(engine,"audio/engine-idle.wav",true,true,.1f,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,10,100,0);
-            capture.observe(music,AudioConfig.load().musicAsset(),true,false,.2f,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,10,100,179.1);
+            capture.observe(music,AudioConfig.load().menuMusicAsset(),true,false,.2f,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,10,100,duration-.1);
             time[0]=.6;
-            capture.observe(music,AudioConfig.load().musicAsset(),true,false,0,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,10,100,.5);
+            capture.observe(music,AudioConfig.load().menuMusicAsset(),true,false,0,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,10,100,.5);
             time[0]=.8;capture.stop(engine);time[0]=1;
         }
         byte[] rendered=pcm(directory.resolve("audio.wav"));

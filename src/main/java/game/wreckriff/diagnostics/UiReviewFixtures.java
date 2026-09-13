@@ -13,8 +13,8 @@ public final class UiReviewFixtures {
     private UiReviewFixtures() {}
     public static ProgressStore.Snapshot fresh() {
         String first=ProgressStore.CAMPAIGN_ARENAS.getFirst();
-        return new ProgressStore.Snapshot(ProgressStore.SCHEMA_VERSION,0,0,new ProgressStore.Stats(0,0,0,0,0,0),
-                new ProgressStore.Campaign(first,Set.of(first),Set.of(),null),null,Map.of());
+        return new ProgressStore.Snapshot(ProgressStore.SCHEMA_VERSION,ProgressStore.CURRENT_LAYOUT_REVISION,0,0,new ProgressStore.Stats(0,0,0,0,0,0),
+                new ProgressStore.Campaign(first,Set.of(first),Set.of(),null),null,Map.of(),Map.of());
     }
     public static HudView.Snapshot hud(String profileId,int variant) {
         if(variant<0||variant>=6)throw new IllegalArgumentException("Unknown HUD fixture");
@@ -33,6 +33,7 @@ public final class UiReviewFixtures {
                 variant%3==1?HudView.Effect.SHIELDED:variant%3==2?HudView.Effect.FROZEN:HudView.Effect.NONE),
                 WeaponType.values()[variant],weapons,abilities,"Уничтожьте противников: 4 / 6",
                 variant>=3?new HudView.BossStatus("Хранитель последнего перекрёстка",725,1800,1+variant%3):null,
-                true,"RMB",variant%2==0?"Контрольная точка сохранена. Босс уже приближается к арене.":"",observer,radar);
+                variant==0?HudView.TargetState.LOCKED:variant==3||variant==4?HudView.TargetState.ASSIST:HudView.TargetState.NONE,
+                "RMB",variant%2==0?"Контрольная точка сохранена. Босс уже приближается к арене.":"",observer,radar);
     }
 }

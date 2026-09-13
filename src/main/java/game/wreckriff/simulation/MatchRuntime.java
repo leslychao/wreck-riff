@@ -154,11 +154,11 @@ public final class MatchRuntime implements AutoCloseable {
         Vector3f forward=pose.rotation().mult(Vector3f.UNIT_Z);double yaw=Math.atan2(forward.x,forward.z);
         var safe=new ProgressStore.SafePose(position.x,position.y,position.z,yaw,road.id(),"node-"+anchor.id());
         var player=session.vehicle(0);
-        return new ProgressStore.Checkpoint(arena.id(),player.profileId,player.liveryId,session.seed,"normal",stage,
+        return new ProgressStore.Checkpoint(arena.id(),arena.layoutRevision(),player.profileId,player.liveryId,session.seed,"normal",stage,
                 MatchCheckpoint.player(player),safe,arenaSystems.snapshot(),session.activeTicks);
     }
     public void restoreCheckpoint(ProgressStore.Checkpoint checkpoint) {
-        if(session.tick!=0||!session.arenaId.equals(checkpoint.arenaId())||session.seed!=checkpoint.seed())
+        if(session.tick!=0||!session.arenaId.equals(checkpoint.arenaId())||session.seed!=checkpoint.seed()||arena.layoutRevision()!=checkpoint.layoutRevision())
             throw new IllegalStateException("Checkpoint can only restore its fresh match");
         if(checkpoint.stage()==ProgressStore.CheckpointStage.BOSS&&session.normalRivalsAlive()!=0)
             throw new IllegalStateException("Boss checkpoint must not restore ordinary rivals");
@@ -209,7 +209,7 @@ public final class MatchRuntime implements AutoCloseable {
         Vector3f player=world.position(0);
         for(var spawn:candidates) {
             Vector3f surface=spawn.position().vector();
-            if(surface.y!=0||surface.subtract(player).setY(0).length()<30)continue;
+            if(surface.subtract(player).setY(0).length()<30)continue;
             Quaternion rotation=new Quaternion().fromAngleAxis(spawn.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y);
             Vector3f position=surface.add(0,bossProfile.roadOffset(),0);
             boolean supported=true;

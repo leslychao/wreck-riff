@@ -13,16 +13,17 @@ class NativeArenaBarrierRestoreTest {
         var arena=ArenaRegistry.load().definition("neon_zero");
         var session=new MatchSession(42,arena,MatchSession.Mode.ARENA,Configs.load("combat",CombatRules.class));
         var systems=new ArenaSystems(session,arena);
-        var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
         var barrier=arena.barriers().getFirst();
         var box=arena.boxes().stream().filter(b->b.id().equals(barrier.geometryId())).findFirst().orElseThrow();
         var initial=systems.snapshot();var hazards=new LinkedHashMap<>(initial.hazards());
         hazards.put(barrier.id(),new ProgressStore.HazardState(ProgressStore.HazardPhase.ACTIVE,barrier.activeTicks()/2,0,1));
         var checkpoint=new ProgressStore.ArenaState(initial.pickups(),initial.objects(),hazards,initial.eventCooldownTicks(),initial.randomState());
         try(var world=new PhysicsWorld(VehicleRules.load())) {
+            var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
             Vector3f center=box.center().vector();
-            Vector3f from=center.add(-3,0,0),to=center.add(3,0,0);
+            Vector3f localFrom=new Vector3f(-box.size().x()/2-2,0,0),localTo=localFrom.negate();
+            Vector3f from=center.add(box.rotation().mult(localFrom)),to=center.add(box.rotation().mult(localTo));
             ArenaSystems.restoreGeometry(checkpoint,world,content.graph(),arena);
             assertFalse(content.graph().isOpen(barrier.id()));
             var hit=world.ray(from,to,-1);

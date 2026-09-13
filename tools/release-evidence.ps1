@@ -238,7 +238,7 @@ This document is a factual hardware record, not an owner approval.
 RELEASE_CANDIDATE - PACKAGE_CANDIDATE_SNAPSHOT
 This immutable package records structure/material integrity and its source/JAR identity.
 It was assembled before final EXE scenarios; it cannot contain their future results.
-Graphical launch / normal profiles / six benchmarks / 1800-second soak:
+Graphical launch / normal profiles / four benchmarks / 1800-second soak:
 NOT_RUN_BY_PACKAGING. Physical controller and another Windows installation:
 NOT_VERIFIED_BY_PACKAGING. Owner feel: OWNER_REVIEW_NOT_RECORDED_BY_PACKAGING.
 Documentation completeness is a technical check, separate from owner feel.
@@ -492,7 +492,7 @@ function Get-ReleaseUiReviewRequest([string]$Resolution,[double]$UiScale,[bool]$
 }
 function Get-ReleaseUiReviewCaseIds {
     # Fixed current UiReview.catalogue, not a count-only acceptance of arbitrary images.
-    $arenas=@('construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')
+    $arenas=@('construction_17','neon_zero','euphoria_park')
     @('fresh-main','fresh-maps')
     foreach($arena in $arenas){"fresh-maps-$arena"}
     @('fresh-statistics','fresh-statistics-bottom','vehicles-rivet','vehicles-grinder','vehicles-spark',
@@ -503,7 +503,12 @@ function Get-ReleaseUiReviewCaseIds {
     foreach($arena in $arenas){"unlocked-maps-$arena"}
     @('unlocked-statistics','unlocked-statistics-bottom','loading','error','error-return','results-defeat','results-draw','results-victory')
     foreach($profile in @('rivet','grinder','spark')){foreach($variant in 0..5){"hud-$profile-$variant"}}
-    @('pause','pause-settings','pause-return','hardware-controller')
+    @('pause','pause-settings','pause-return','actual-launch-menu')
+    foreach($profile in @('rivet','grinder','spark')) {
+        foreach($action in @('start','repeat-accept','retry','leave')){"actual-$action-$profile"}
+    }
+    @('actual-campaign-start','actual-campaign-pause','actual-map-open','actual-map-zoom-pan','actual-map-height',
+      'actual-map-fit','actual-map-return','actual-campaign-resume','actual-campaign-menu','actual-campaign-continue','actual-campaign-finished-review','hardware-controller')
 }
 function Assert-ReleaseUiPng([string]$Path,[int]$Width,[int]$Height) {
     $file=Get-Item -LiteralPath $Path
@@ -517,7 +522,8 @@ function Assert-ReleaseUiPng([string]$Path,[int]$Width,[int]$Height) {
 function Get-ReleaseUiReviewEvidence([string]$ManifestPath,$Diagnostic,$Request) {
     if((Get-Item -LiteralPath $ManifestPath).Length -gt 2MB){throw 'UI manifest exceeds its bounded size.'}
     $manifest=Read-ReleaseJson $ManifestPath;$directory=[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($ManifestPath))
-    if($manifest.cases.Count -ne 68){throw 'UI manifest has an unexpected case count.'}
+    $required=@(Get-ReleaseUiReviewCaseIds)
+    if($manifest.cases.Count -ne $required.Count){throw 'UI manifest has an unexpected case count.'}
     $captures=@(foreach($case in $manifest.cases) {
         if($case.status -eq 'CAPTURED') {
             if($case.captureFile -cnotmatch '^captures/[A-Za-z0-9_.-]+\.png$'){throw 'Unsafe UI capture path.'}
@@ -548,12 +554,14 @@ function Assert-ReleaseUiReview($Evidence,$Diagnostic,$Request) {
     $file=Get-Item -LiteralPath $Evidence.manifest.path
     if($file.Name -ne 'ui-review-manifest.json' -or $file.Length -gt 2MB -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Invalid UI manifest file.'}
     $manifest=Read-ReleaseJson $file.FullName
+    $required=@(Get-ReleaseUiReviewCaseIds)
+    $captureCount=@($required | Where-Object {$_ -cne 'hardware-controller'}).Count
     if($manifest.schemaVersion -ne 1 -or $manifest.mode -ne 'ui-review' -or $manifest.status -ne 'CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING' -or
-       $manifest.ownerAcceptance -ne 'NOT_GRANTED' -or $manifest.releaseEligible -isnot [bool] -or $manifest.releaseEligible -ne $false -or $manifest.plannedCases -ne 68 -or
-       $manifest.cases.Count -ne 68 -or $manifest.remainingCaseIds.Count -ne 0 -or $Evidence.captures.Count -ne 67){throw 'Incomplete UI manifest or invalid acceptance state.'}
+       $manifest.ownerAcceptance -ne 'NOT_GRANTED' -or $manifest.releaseEligible -isnot [bool] -or $manifest.releaseEligible -ne $false -or $manifest.plannedCases -ne $required.Count -or
+       $manifest.cases.Count -ne $required.Count -or $manifest.remainingCaseIds.Count -ne 0 -or $Evidence.captures.Count -ne $captureCount){throw 'Incomplete UI manifest or invalid acceptance state.'}
     if($manifest.requestedFramebuffer.width -ne $Request.width -or $manifest.requestedFramebuffer.height -ne $Request.height){throw 'UI manifest framebuffer differs from the request.'}
     Assert-ReleaseNumber $manifest.requestedFramebuffer.uiScale ($Request.uiScale-.000001) ($Request.uiScale+.000001) 'manifest UI scale'
-    $required=@(Get-ReleaseUiReviewCaseIds);$caseIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $caseIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $captureIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $capturePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach($capture in $Evidence.captures) {
@@ -581,13 +589,21 @@ function Assert-ReleaseUiReview($Evidence,$Diagnostic,$Request) {
         Assert-ReleaseArtifact $matching[0]
         Assert-ReleaseUiPng $path $Request.width $Request.height
     }
-    if(@(Get-ChildItem -LiteralPath $captureDirectory -File -Filter '*.png').Count -ne 67){throw 'UI capture directory does not contain exactly 67 PNG files.'}
+    if(@(Get-ChildItem -LiteralPath $captureDirectory -File -Filter '*.png').Count -ne $captureCount){throw "UI capture directory must contain exactly $captureCount required PNG files."}
 }
 
 function Assert-ReleaseNormal($Diagnostic) {
     if($Diagnostic.status -ne 'CLOSED' -or $Diagnostic.dev -ne $false -or $Diagnostic.shutdownComplete -ne $true -or $Diagnostic.progressFlushed -ne $true){throw 'Normal executable did not shut down and flush progress successfully.'}
     Assert-ReleaseNumber $Diagnostic.renderedFrames 1 ([double]::MaxValue) 'normal rendered frames'
     if([DateTime]$Diagnostic.closedAtUtc -lt [DateTime]$Diagnostic.startedAtUtc){throw 'Normal launch chronology is invalid.'}
+}
+function Assert-ReleaseProfileMigration($Before,$After) {
+    Assert-ReleaseNumber $Before.stats.schemaVersion 1 4 'original statistics schema'
+    Assert-ReleaseNumber $Before.settings.schemaVersion 1 4 'original settings schema'
+    if($Before.stats.schemaVersion -ge 4 -and $Before.settings.schemaVersion -ge 4){throw 'Migration scenario started with an already-current profile.'}
+    Assert-ReleaseNumber $After.stats.schemaVersion 4 4 'migrated statistics schema'
+    Assert-ReleaseNumber $After.stats.layoutRevision 2 2 'migrated campaign layout'
+    Assert-ReleaseNumber $After.settings.schemaVersion 4 4 'migrated settings schema'
 }
 function Assert-ReleaseObserved($Observations,[string[]]$Fields) {
     foreach($field in $Fields){if($Observations.$field -isnot [bool] -or !$Observations.$field){throw "Unconfirmed observation: $field"}}
@@ -638,11 +654,13 @@ function Assert-ReleaseReview([string]$Name,$Review,$Identity) {
             Assert-ReleaseNumber $facts.openBlockingDefects 0 0 'open blocking UX defects'
         }
         'arenaRoutes' {
-            foreach($arena in @('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')) {
+            if(@($facts.arenas).Count -ne 4){throw 'Route review must contain exactly the four current maps.'}
+            foreach($arena in @('dead-air-yard','construction_17','neon_zero','euphoria_park')) {
                 $rows=@($facts.arenas | Where-Object {$_.id -eq $arena})
                 if($rows.Count -ne 1){throw "Missing/duplicate route observations for $arena"}
-                $required=@('lower','upper-combat','pickup','descent')
-                if($arena -ne 'dead-air-yard'){$required+=@('launch','boss-lower','boss-upper')}
+                $required=if($arena -eq 'dead-air-yard'){@('lower','upper-combat','pickup','descent')}else{
+                    @('district-connections','through-interiors','elevation-transitions','destructible-shortcuts','pickup','boss-routes','full-map','all-three-chassis')
+                }
                 Assert-ReleaseObservedList $rows[0].checks $required "route $arena"
             }
         }
@@ -662,14 +680,15 @@ function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
     Assert-ReleaseNumber $Diagnostic.soakCoverage.measuredSeconds 1800 7200 'measured soak duration'
     Assert-ReleaseNumber $Diagnostic.soakCoverage.mapChanges 10 1000 'map changes'
     Assert-ReleaseNumber $Diagnostic.soakCoverage.retries 20 1000 'retry count'
-    foreach($arena in @('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')) {
+    if(@($Diagnostic.soakCoverage.arenaIds).Count -ne 4){throw 'Soak must identify exactly the four current maps.'}
+    foreach($arena in @('dead-air-yard','construction_17','neon_zero','euphoria_park')) {
         if($Diagnostic.soakCoverage.arenaIds -notcontains $arena){throw "Soak omitted $arena"}
     }
     if($Diagnostic.soakCoverage.resourcesWarmed -ne $true -or $Diagnostic.soakCoverage.coverageComplete -ne $true -or $Diagnostic.resourceChecks.status -ne 'PASS' -or $Diagnostic.resourceChecks.errors.Count -ne 0){throw 'Soak resource checks did not pass.'}
     Assert-ReleaseMemory $Report $Diagnostic $Memory 1800
     $unloads=@($Diagnostic.resourceSnapshots | Where-Object {$_.stage -eq 'UNLOAD'})
     if($unloads.Count -lt 10){throw 'Soak lacks repeated unload resource observations.'}
-    $requiredModes=@('dead-air-yard/LEGACY')+@(@('construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena') | ForEach-Object {"$_/ARENA";"$_/BOSS_DUEL"})
+    $requiredModes=@('dead-air-yard/LEGACY')+@(@('construction_17','neon_zero','euphoria_park') | ForEach-Object {"$_/ARENA";"$_/BOSS_DUEL"})
     $modes=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $baselines=@{};$baseline=$null;$handleBaseline=$null;$comparisons=0;$previousSeconds=-1.0
     $timedSamples=@($Memory.samples | ForEach-Object {[pscustomobject]@{sample=$_;utc=([DateTimeOffset]$_.observedAtUtc).UtcDateTime}})

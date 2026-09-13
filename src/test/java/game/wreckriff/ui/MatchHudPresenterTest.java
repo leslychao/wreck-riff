@@ -19,6 +19,16 @@ import org.junit.jupiter.params.provider.CsvSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MatchHudPresenterTest {
+    @Test void onlyHomingHasALockWhileAssistedWeaponsUseASeparateReticleState() {
+        var session=new MatchSession(12,360);var presenter=new MatchHudPresenter();
+        for(var weapon:WeaponType.values()) {
+            session.vehicle(0).selectedWeapon=weapon;
+            var state=presenter.snapshot(session,observations(1),new MatchHudPresenter.Targeting(1,1,1),"RMB","",0);
+            var expected=switch(weapon){case HOMING->HudView.TargetState.LOCKED;case NAPALM,BALLISTIC->HudView.TargetState.ASSIST;default->HudView.TargetState.NONE;};
+            assertEquals(expected,state.targetState(),weapon.name());
+            assertEquals(HudView.TargetState.NONE,presenter.snapshot(session,observations(1),new MatchHudPresenter.Targeting(-1,-1,-1),"RMB","",0).targetState());
+        }
+    }
     @Test void airborneHudStopsUsingTheOldYawBranchOnceTheCarIsUprightWithoutRecovery() {
         var session=new MatchSession(12,360);var presenter=new MatchHudPresenter();var rotation=new Quaternion();
         WorldQuery world=(WorldQuery)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->switch(method.getName()) {
@@ -58,7 +68,7 @@ class MatchHudPresenterTest {
         assertEquals(0,session.tick,"Presentation never advances simulation");
     }
     @ParameterizedTest
-    @CsvSource({"rivet,14", "grinder,20", "spark,12"})
+    @CsvSource({"rivet,18", "grinder,26", "spark,16"})
     void playerSpecialReadsProfileCooldownAndActiveStateWithoutAdvancingEither(String profileId,float duration) {
         var session=new MatchSession(12,ArenaRegistry.load().definition("construction_17"),MatchSession.Mode.ARENA,
                 Configs.load("combat",CombatRules.class),java.util.UUID.randomUUID(),false,0,profileId);
@@ -71,7 +81,7 @@ class MatchHudPresenterTest {
         assertEquals(30,player.specialTicks);assertEquals(600,player.abilityCooldown(AbilityId.SPECIAL));
     }
     @ParameterizedTest
-    @CsvSource({"HOMING,60", "POWER,84", "MINE,84", "NAPALM,108", "CANNON,168", "BALLISTIC,360"})
+    @CsvSource({"HOMING,78", "POWER,108", "MINE,120", "NAPALM,144", "CANNON,216", "BALLISTIC,480"})
     void weaponHudUsesApprovedDurationAndRemainingSimulationTicks(WeaponType type, int intervalTicks) {
         var session = new MatchSession(12, 360);
         var slot = session.vehicle(0).weapon(type);
@@ -115,9 +125,9 @@ class MatchHudPresenterTest {
         session.phase=MatchSession.Phase.ARENA_COMBAT;
         var presenter=new MatchHudPresenter();var targeting=new MatchHudPresenter.Targeting(-1,-1,-1);
         var first=presenter.snapshot(session,observations(2),targeting,"RMB","",0);
-        assertEquals(6,first.radarTargets().size());assertEquals("6 RIVALS",first.objective());
+        assertEquals(8,first.radarTargets().size());assertEquals("8 RIVALS",first.objective());
         session.vehicle(5).hp=0;
         var next=presenter.snapshot(session,observations(2),targeting,"RMB","",1);
-        assertEquals(5,next.radarTargets().size());assertEquals("5 RIVALS",next.objective());
+        assertEquals(7,next.radarTargets().size());assertEquals("7 RIVALS",next.objective());
     }
 }

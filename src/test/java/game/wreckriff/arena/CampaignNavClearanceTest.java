@@ -3,112 +3,97 @@ package game.wreckriff.arena;
 import com.jme3.math.Vector3f;
 import game.wreckriff.config.*;
 import java.util.*;
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
-import java.awt.geom.Rectangle2D;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Independent AWT polygon intersections and actual boss routing validate authored headroom. */
+/** Real collision corridors and boss routes, independent of authored landmark coordinates. */
 class CampaignNavClearanceTest {
-    @Test void eachRoadCorridorAdvertisesItsRealUndersideOrOpenSky() {
+    @Test void roadCentrelinesAndBossWidthClearAllStaticSolids() {
         var registry=ArenaRegistry.load();
         for(String id:registry.campaignIds()) {
-            var arena=registry.definition(id);
-            Map<Integer,Vector3f> nodes=new HashMap<>();arena.nodes().forEach(n->nodes.put(n.id(),n.position().vector()));
-            int covered=0,open=0;
+            var arena=registry.definition(id);var nodes=new HashMap<Integer,Vector3f>();arena.nodes().forEach(n->nodes.put(n.id(),n.position().vector()));
+            boolean covered=false,open=false;
             for(var edge:arena.edges()) {
-                if(edge.type()==ArenaDefinition.Transition.LAUNCH||edge.type()==ArenaDefinition.Transition.DROP)continue;
-                float measured=measuredClearance(arena,edge,nodes);
-                assertEquals(measured,edge.clearance(),.001f,id+" "+edge.id());
-                if(measured<30)covered++;else open++;
+                if(edge.type()==ArenaDefinition.Transition.LAUNCH||edge.type()==ArenaDefinition.Transition.OPENABLE)continue;
+                Vector3f a=nodes.get(edge.from()),b=nodes.get(edge.to());int count=(int)Math.ceil(a.distance(b)/2);
+                covered|=edge.clearance()<40;open|=edge.clearance()>=40;
+                assertTrue(edge.clearance()>=5,id+" "+edge.id());
+                for(int i=0;i<=count;i++) {
+                    Vector3f p=a.clone().interpolateLocal(b,i/(float)Math.max(1,count));
+                    assertTrue(arena.surfaceAt(p,0,.06f).isPresent(),id+" unsupported "+edge.id()+" "+p);
+                    for(var box:arena.boxes())if(box.collision()&&box.containsXZ(p.x,p.z,-2.3f)) {
+                        float top=box.center().y()+box.size().y()/2,bottom=box.center().y()-box.size().y()/2;
+                        if(top<=p.y+.65f)continue;
+                        assertTrue(bottom-p.y>=5,id+" blocked "+edge.id()+" / "+box.id()+" at "+p);
+                    }
+                }
             }
-            assertTrue(covered>0,id+" must retain real covered routes");
-            assertTrue(open>0,id+" must expose real open routes");
+            assertTrue(covered&&open,id+" requires both covered and open routes");
         }
     }
-    @Test void thinRailOverhangIsDetectedEvenBetweenSamplingColumns() {
-        var arena=ArenaRegistry.load().definition("construction_17");
-        var edge=arena.edges().stream().filter(e->e.id().equals("road-north-east-north-mid")).findFirst().orElseThrow();
-        var rail=arena.boxes().stream().filter(b->b.id().equals("parking-north-0")).findFirst().orElseThrow();
-        assertEquals(8,rail.center().y()-rail.size().y()/2,.0001f);
-        Map<Integer,Vector3f> nodes=new HashMap<>();arena.nodes().forEach(n->nodes.put(n.id(),n.position().vector()));
-        assertEquals(8,measuredClearance(arena,edge,nodes),.0001f);
-    }
-    @Test void everyFullBossCanUseTheAuthoredRampFromItsEntranceWithLaunchesDisabled() {
+    @Test void bossesCanReachEveryDistrictAndRaisedRoadWithoutLaunches() {
         var registry=ArenaRegistry.load();var rules=VehicleRules.load();
         for(String id:registry.campaignIds()) {
-            var arena=registry.definition(id);var boss=arena.bosses().getFirst();
-            var profile=VehicleProfile.boss(boss.profileId(),rules);var bounds=profile.fullBounds();
-            var graph=new NavGraph(arena);
+            var arena=registry.definition(id);var boss=arena.bosses().getFirst();var profile=VehicleProfile.boss(boss.profileId(),rules);var size=profile.fullBounds();var graph=new NavGraph(arena);
             int start=graph.nearest(boss.entrances().getFirst().position().vector());
-            var ramp=arena.ramps().stream().filter(r->r.id().equals("upper-ramp")).findFirst().orElseThrow();
-            int goal=graph.nearest(new Vector3f((ramp.minX()+ramp.maxX())/2,8,ramp.maxZ()+12));
-            var mobility=new NavGraph.Mobility(bounds.maxX()-bounds.minX(),profile.roadOffset()+bounds.maxY(),14,false,true,Set.of());
-            var route=graph.route(start,goal,mobility,Set.of(),2,10);
-            assertFalse(route.nodes().isEmpty(),id+" full "+profile.id()+" requires a physical upper route");
-            assertTrue(route.traversals().stream().anyMatch(s->s.type()==ArenaDefinition.Transition.RAMP),id);
-            assertTrue(route.traversals().stream().noneMatch(s->s.type()==ArenaDefinition.Transition.LAUNCH),id);
-            for(var edge:arena.edges())if(edge.type()==ArenaDefinition.Transition.RAMP&&edge.objectId().equals("upper-ramp")) {
-                assertEquals(30,edge.clearance(),id+" "+edge.id()+" is open sky");
-                assertEquals(24,edge.width());
+            var mobility=new NavGraph.Mobility(size.maxX()-size.minX(),profile.roadOffset()+size.maxY(),14,false,true,Set.of());
+            for(var district:arena.districts()) {
+                int goal=district.patrolNodeIds().getFirst();assertTrue(graph.route(start,goal,mobility,Set.of(),2,10).found(),id+" "+district.id());
+            }
+            var raised=arena.nodes().stream().filter(n->n.position().y()>2).findFirst().orElseThrow();
+            var route=graph.route(start,raised.id(),mobility,Set.of(),2,10);assertTrue(route.found(),id);
+            assertTrue(route.traversals().stream().anyMatch(t->t.type()==ArenaDefinition.Transition.RAMP),id);
+            assertTrue(route.traversals().stream().noneMatch(t->t.type()==ArenaDefinition.Transition.LAUNCH),id);
+        }
+    }
+    @Test void temporarilyClosedAndDestructibleShortcutsNeverDisconnectTheMap() {
+        var registry=ArenaRegistry.load();
+        for(String id:registry.campaignIds()) {
+            var arena=registry.definition(id);var graph=new NavGraph(arena);
+            for(var barrier:arena.barriers())graph.setOpen(barrier.id(),false);
+            assertEquals(arena.nodes().size(),graph.reachable(arena.nodes().getFirst().id()).size(),id);
+        }
+    }
+    @Test void districtCentresAndEachDriveThroughInteriorHaveTwoEdgeDisjointApproaches() {
+        var registry=ArenaRegistry.load();
+        for(String id:registry.campaignIds()) {
+            var arena=registry.definition(id);var graph=new NavGraph(arena);
+            // Undirected pairs collapse duplicate authored links on the SAME physical corridor.
+            Map<Integer,Set<Integer>> adjacency=new HashMap<>();for(var node:arena.nodes())adjacency.put(node.id(),new HashSet<>());
+            Set<Long> roads=new HashSet<>();
+            for(var edge:arena.edges())if(edge.bidirectional()&&(edge.type()==ArenaDefinition.Transition.ROAD||edge.type()==ArenaDefinition.Transition.RAMP)) {
+                adjacency.get(edge.from()).add(edge.to());adjacency.get(edge.to()).add(edge.from());roads.add(pair(edge.from(),edge.to()));
+            }
+            List<Integer> districtCentres=arena.districts().stream().map(d->graph.nearest(d.center().vector())).toList();
+            for(int i=0;i<districtCentres.size();i++)for(int j=i+1;j<districtCentres.size();j++)
+                assertTwoRoutes(adjacency,roads,districtCentres.get(i),districtCentres.get(j),id+" districts "+i+" / "+j);
+            List<String> halls=switch(id) {
+                case "construction_17" -> List.of("unfinished-apartments","concrete-plant","warehouse");
+                case "neon_zero" -> List.of("shopping-passage","technical-complex","parking-ground-floor");
+                case "euphoria_park" -> List.of("circus","ride-pavilion","repair-depot");
+                default -> throw new AssertionError(id);
+            };
+            for(String hall:halls) {
+                var roof=arena.boxes().stream().filter(b->b.id().equals(hall+"-roof")).findFirst().orElseThrow();
+                int inside=graph.nearest(new Vector3f(roof.center().x(),0,roof.center().z()));
+                Vector3f point=graph.position(inside);assertTrue(roof.containsXZ(point.x,point.z,8),hall+" needs an actual interior route node");
+                assertTrue(Math.abs(point.y)<.01f,hall+" must be reached inside, not via its roof");
+                for(int target:districtCentres)if(target!=inside)assertTwoRoutes(adjacency,roads,inside,target,id+" "+hall);
             }
         }
     }
-    @Test void finalShortcutWidthAccountsForItsActualControlShield() {
-        var arena=ArenaRegistry.load().definition("doomsday_arena");
-        var edge=arena.edges().stream().filter(e->e.id().equals("openable-short-cut-before-short-cut-after")).findFirst().orElseThrow();
-        var shield=arena.boxes().stream().filter(b->b.id().equals("control-shield-south-panel")).findFirst().orElseThrow();
-        float centre=arena.nodes().stream().filter(n->n.id()==edge.from()).findFirst().orElseThrow().position().z();
-        assertEquals(2*(shield.center().z()-shield.size().z()/2-centre),edge.width());
-        assertEquals(6,edge.width());
+    private static void assertTwoRoutes(Map<Integer,Set<Integer>> graph,Set<Long> edges,int from,int to,String label) {
+        assertTrue(reachableWithout(graph,from,to,-1),label+" disconnected");
+        // Menger: if removing ANY single physical edge leaves the pair connected, two edge-disjoint paths exist.
+        for(long blocked:edges)assertTrue(reachableWithout(graph,from,to,blocked),label+" has a single required corridor "+blocked);
     }
-    private static float measuredClearance(ArenaDefinition arena,ArenaDefinition.NavEdge edge,Map<Integer,Vector3f> nodes) {
-        Vector3f a=nodes.get(edge.from()),b=nodes.get(edge.to()),direction=b.subtract(a).setY(0);
-        double length=direction.length(),half=edge.width()/2;
-        Area corridor;
-        if(length<.0001) {
-            corridor=new Area(new Rectangle2D.Double(a.x-half,a.z-half,2*half,2*half));
-        } else {
-            double nx=-direction.z/length*half,nz=direction.x/length*half;
-            var path=new Path2D.Double();path.moveTo(a.x+nx,a.z+nz);path.lineTo(a.x-nx,a.z-nz);
-            path.lineTo(b.x-nx,b.z-nz);path.lineTo(b.x+nx,b.z+nz);path.closePath();corridor=new Area(path);
+    private static boolean reachableWithout(Map<Integer,Set<Integer>> graph,int from,int to,long blocked) {
+        Set<Integer> seen=new HashSet<>();ArrayDeque<Integer> queue=new ArrayDeque<>();queue.add(from);
+        while(!queue.isEmpty()) {
+            int current=queue.remove();if(current==to)return true;if(!seen.add(current))continue;
+            for(int next:graph.get(current))if(pair(current,next)!=blocked&&!seen.contains(next))queue.add(next);
         }
-        Set<String> ignored=new HashSet<>();
-        if(edge.type()==ArenaDefinition.Transition.OPENABLE) {
-            arena.destructibles().stream().filter(d->d.id().equals(edge.objectId())).forEach(d->ignored.add(d.geometryId()));
-            arena.barriers().stream().filter(d->d.id().equals(edge.objectId())).forEach(d->ignored.add(d.geometryId()));
-        }
-        double measured=30;
-        for(var box:arena.boxes()) {
-            if(!box.collision()||ignored.contains(box.id()))continue;
-            var c=box.center();var s=box.size();
-            double[] height=overlapHeights(corridor,new Rectangle2D.Double(c.x()-s.x()/2,c.z()-s.z()/2,s.x(),s.z()),a,b);
-            if(height==null||c.y()+s.y()/2<=height[0]+.05)continue;
-            double gap=c.y()-s.y()/2-height[1];
-            assertTrue(gap>0,arena.id()+" "+edge.id()+" crosses "+box.id());
-            measured=Math.min(measured,gap);
-        }
-        for(var ramp:arena.ramps()) {
-            double[] height=overlapHeights(corridor,new Rectangle2D.Double(ramp.minX(),ramp.minZ(),ramp.maxX()-ramp.minX(),ramp.maxZ()-ramp.minZ()),a,b);
-            if(height!=null&&ramp.bottomY()>height[1])measured=Math.min(measured,ramp.bottomY()-height[1]);
-        }
-        return (float)measured;
+        return false;
     }
-    private static double[] overlapHeights(Area corridor,Rectangle2D rectangle,Vector3f a,Vector3f b) {
-        var overlap=(Area)corridor.clone();overlap.intersect(new Area(rectangle));if(overlap.isEmpty())return null;
-        double minimum=Double.POSITIVE_INFINITY,maximum=Double.NEGATIVE_INFINITY;
-        double dx=b.x-a.x,dz=b.z-a.z,squared=dx*dx+dz*dz;
-        double[] point=new double[6];var iterator=overlap.getPathIterator(null);
-        while(!iterator.isDone()) {
-            int kind=iterator.currentSegment(point);
-            if(kind!=PathIterator.SEG_CLOSE) {
-                double t=squared<1e-8?0:Math.clamp(((point[0]-a.x)*dx+(point[1]-a.z)*dz)/squared,0,1);
-                double y=a.y+(b.y-a.y)*t;minimum=Math.min(minimum,y);maximum=Math.max(maximum,y);
-            }
-            iterator.next();
-        }
-        return new double[]{minimum,maximum};
-    }
+    private static long pair(int a,int b) {return ((long)Math.min(a,b)<<32)|(Math.max(a,b)&0xffffffffL);}
 }

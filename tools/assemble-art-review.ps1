@@ -12,7 +12,7 @@ if(Test-Path -LiteralPath $reviewRoot) {throw 'Review collection already exists'
 $null=New-Item -ItemType Directory -Path $reviewRoot
 function Escape-Html([string]$value) {[Net.WebUtility]::HtmlEncode($value)}
 function Arena-Title([string]$id) {
-    $titles=@{'dead-air-yard'='Dead Air Yard';construction_17='МЕГАСТРОЙ-17';neon_zero='НЕОН-РАЙОН ZERO';euphoria_park='ЛУНАПАРК ЭЙФОРИЯ';ash_necropolis='НЕКРОПОЛЬ ПЕПЛА';doomsday_arena='АРЕНА СУДНОГО ДНЯ'}
+    $titles=@{'dead-air-yard'='Dead Air Yard';construction_17='МЕГАСТРОЙ-17';neon_zero='НЕОН-РАЙОН ZERO';euphoria_park='ЛУНАПАРК ЭЙФОРИЯ'}
     if($titles.ContainsKey($id)) {$titles[$id]} else {$id}
 }
 function Asset-Link([string]$path) {

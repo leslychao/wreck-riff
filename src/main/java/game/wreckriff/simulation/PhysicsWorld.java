@@ -518,7 +518,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         String selected=votes.keySet().stream().max(Comparator.<String>comparingInt(votes::get).thenComparing(Comparator.reverseOrder())).orElse(null);
         if(selected==null) {roadContexts.put(id,previous.airborne());return;}
         var surface=found.get(selected);
-        boolean ramp=arenaDefinition.ramps().stream().anyMatch(r->r.id().equals(surface.geometryId()));
+        Vector3f position=position(id);
+        boolean ramp=arenaDefinition.ramps().stream().anyMatch(r->r.id().equals(surface.geometryId()))
+                ||arenaDefinition.surfaceNormal(surface.id(),position.x,position.z).y<.995f;
         roadContexts.put(id,new RoadContext(surface.id(),surface.level(),surface.grip(),ramp?RoadContext.Motion.RAMP:RoadContext.Motion.ROAD,
                 ramp?surface.geometryId():"","",surface.level()));
     }

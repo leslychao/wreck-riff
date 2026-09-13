@@ -23,7 +23,7 @@ class VehicleSpecialsTest {
         var fight=new Fight("rivet","rivet","rivet","rivet");
         fight.world.place(1,0,8);fight.world.place(2,0,12);fight.world.place(3,8,0);
         fight.tick(Map.of(0,special()));
-        assertEquals(1680,fight.player().abilityCooldown(AbilityId.SPECIAL));
+        assertEquals(2160,fight.player().abilityCooldown(AbilityId.SPECIAL));
         fight.idle(34);assertEquals(800,fight.target().hp);
         fight.tick();assertEquals(740,fight.target().hp,.001f);
         assertEquals(800,fight.session.vehicle(2).hp);assertEquals(800,fight.session.vehicle(3).hp);
@@ -35,7 +35,7 @@ class VehicleSpecialsTest {
         var miss=new Fight("rivet","rivet");miss.world.place(1,20,2);
         miss.tick(Map.of(0,special()));miss.idle(35);
         assertEquals(800,miss.target().hp);assertTrue(miss.world.impulses.isEmpty());
-        assertEquals(1645,miss.player().abilityCooldown(AbilityId.SPECIAL));
+        assertEquals(2125,miss.player().abilityCooldown(AbilityId.SPECIAL));
     }
 
     @Test void pulseRespectsConeRangeOcclusionAndUsesClosestVisibleCandidate() {
@@ -163,7 +163,7 @@ class VehicleSpecialsTest {
         for(float steering:new float[]{-1,0,1}) {
             var fight=new Fight("spark","rivet");fight.tick(Map.of(0,new VehicleCommand(0,0,steering,false,false,false,false,null,0,false,false,AbilityId.SPECIAL)));
             assertEquals(steering<0?1:-1,fight.player().dashDirection.x,.001f);
-            assertEquals(1440,fight.player().abilityCooldown(AbilityId.SPECIAL));
+            assertEquals(1920,fight.player().abilityCooldown(AbilityId.SPECIAL));
             assertEquals(0,fight.player().dashDirection.z,.001f);
             fight.idle(41);assertFalse(fight.player().specialActive());assertTrue(fight.world.endedDash.contains(0));
             assertEquals(1,fight.combat.specialBombs().size(),"Dash duration is independent of the bomb fuse");
@@ -183,7 +183,7 @@ class VehicleSpecialsTest {
         var fight=new Fight("spark","rivet");fight.tick(Map.of(0,special()));
         assertTrue(fight.player().dashing());fight.world.endedDash.add(0);fight.tick();
         assertFalse(fight.player().specialActive());assertEquals(1,fight.combat.specialBombs().size());
-        assertEquals(1439,fight.player().abilityCooldown(AbilityId.SPECIAL));
+        assertEquals(1919,fight.player().abilityCooldown(AbilityId.SPECIAL));
     }
 
     @Test void clearAndDestructionReleaseCapturesAndRemoveTransientBombsWithoutRefundingCooldowns() {

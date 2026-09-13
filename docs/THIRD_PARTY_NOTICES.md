@@ -51,19 +51,39 @@ selected JDK and native dependency match. Human distribution review and a test
 of the replacement mechanism remain separate; a technical ZIP is not approval
 to publish it.
 
-## Licensed game assets in 0.2
+## Licensed game assets
 
-**Metalmania** by **Kevin MacLeod** (incompetech.com), ISRC USUAN1700023.
-Source: https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1700023
-License: **Creative Commons Attribution 4.0 International**,
-https://creativecommons.org/licenses/by/4.0/ ; full text: `licenses/assets/CC-BY-4.0.txt`.
-Changes: MP3 decoded to stereo PCM 48 kHz / 16-bit; edited to a 179.2-second loop with
-100 ms equal-power crossfade; DC removed; linear peak normalized to 0.84.
-The original MP3, decoded local PCM and creator catalog entry are retained in
-`src/tools/assets/audio`; generated `audio/music-source.json` and
-`audio/music-provenance.json` bind sources and output by SHA-256. This attribution
-does not suggest that Kevin MacLeod endorses Wreck Riff. Retain this credit, source,
-license and modification notice when redistributing the music or the game.
+**Music by Alexander Nakarada** (https://creatorchords.com), licensed under
+**Creative Commons Attribution 4.0 International (CC BY 4.0)**:
+https://creativecommons.org/licenses/by/4.0/ . Full legal text is retained in
+`licenses/assets/CC-BY-4.0.txt`.
+
+| Recording | Creator source |
+|---|---|
+| Riffs | https://creatorchords.com/music/riffs/ |
+| Metal Interlude | https://creatorchords.com/music/metal-interlude/ |
+| Construction | https://creatorchords.com/music/construction/ |
+| The Collapse | https://creatorchords.com/music/the-collapse/ |
+| Circuits | https://creatorchords.com/music/circuits/ |
+| Chaotic | https://creatorchords.com/music/chaotic/ |
+| Hall of the Metal King | https://creatorchords.com/music/hall-of-the-metal-king/ |
+| Bloodmoon Ritual | https://creatorchords.com/music/bloodmoon-ritual/ |
+
+Changes: MP3 decoded to stereo PCM 48 kHz / 16-bit; loudness normalized toward
+-16 LUFS, active musical portions trimmed, cyclic 125 ms loop crossfade,
+DC removal, 3 ms boundary de-click and peak ceiling 0.84. Original MP3s and
+creator license pages remain under `src/tools/assets/audio/music`.
+Packaged `audio/music/provenance.json` binds source/evidence/output by SHA-256.
+This credit does not imply endorsement by Alexander Nakarada. Retain this track
+list, creator links, license and modification notice when redistributing the
+recordings or game. See `docs/campaign-music.md` for the authoring recipe.
+
+Replaced **Metalmania**, Kevin MacLeod (incompetech.com), ISRC USUAN1700023,
+is preserved only as authoring history in
+`src/tools/assets/history/music-before-nakarada`, under CC BY 4.0. Source:
+https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1700023 .
+It is absent from runtime music and result stings. Keep this notice if distributing
+that historical source archive.
 
 **Poly Haven textures, CC0 1.0**. Source files may be redistributed and adapted under
 https://creativecommons.org/publicdomain/zero/1.0/ ; retained legal text:
@@ -143,9 +163,11 @@ The generated registry distinguishes licensed recordings/textures/fonts from the
 original recipes. Technical evidence does not grant artistic or legal approval;
 owner creative review and the existing native-library distribution review remain.
 
-Result stings (Victory, Defeat, Draw) also adapt **Metalmania**, Kevin MacLeod,
+Result stings (Victory, Defeat, Draw) adapt **Riffs**, Alexander Nakarada,
 CC BY 4.0: short mono guitar/drum excerpts, filtering, release envelopes and a
-continuous slowdown for Defeat, mixed with a CC0 recorded metal impact. The
-main music loop is unchanged. Source/output hashes and exact transformations
-are retained in `audio/result-provenance.json`; retain the Metalmania credit,
-source URL and license notice above when redistributing these stings.
+continuous slowdown for Defeat, mixed with a CC0 recorded metal impact.
+Source/output hashes and exact transformations remain in
+`audio/result-provenance.json`; retain the Riffs credit, creator URL and license
+notice above when redistributing these stings. Original UI metal cues and the
+workshop ambience contain no external samples; their deterministic recipe and
+hashes are in `audio/menu-provenance.json`.

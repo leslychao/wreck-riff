@@ -46,7 +46,7 @@ class NativeVehicleSpecialCombatTest {
                 var delta=fight.world.velocity(1).subtract(fight.velocityBeforeDamage.get(1));
                 float expected=Math.min(8800/fight.world.mass(1),9)*(shield?.3f:1);
                 assertEquals(expected,delta.clone().setY(0).length(),.015f,definition+" shield="+shield);
-                assertEquals(0,delta.y,.001f);assertEquals(1645,fight.player().abilityCooldown(AbilityId.SPECIAL));
+                assertEquals(0,delta.y,.001f);assertEquals(2125,fight.player().abilityCooldown(AbilityId.SPECIAL));
             }
     }
 
@@ -197,7 +197,7 @@ class NativeVehicleSpecialCombatTest {
             long machineGunShots=fight.events.stream().filter(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==0&&e.kind().equals("machine-gun")).count();
             int expectedPower=1+(fireTicks-1)/ticks(COMBAT.power().cooldownSeconds());
             int expectedMachineGun=1+(fireTicks-1)/COMBAT.machineGun().cooldownTicks();
-            assertEquals(3,expectedPower,"Current shared 0.7s Power cooldown permits three shots in this window");
+            assertEquals(2,expectedPower,"Shared 0.9s Power cooldown permits two shots during the hold");
             assertEquals(expectedPower,powerShots);assertEquals(expectedMachineGun,machineGunShots);
             assertEquals(COMBAT.power().initialAmmo()-expectedPower,fight.player().weapon(WeaponType.POWER).ammo);
             assertTrue(fight.combat.projectiles().isEmpty(),"Every projectile from the measured volley must resolve");
@@ -215,7 +215,7 @@ class NativeVehicleSpecialCombatTest {
             if(nativeHeldTicks==ticks(SpecialRules.GRINDER_CONTACT))assertEquals(120,grinder,.02f,"Unbroken full hold deals exactly120");
             assertTrue(machineGunHits>0&&machineGun>0,targetProfile+" roof MG must hit real hull");
             assertTrue(powerHits>0&&power>=COMBAT.power().directDamage(),targetProfile+" Power must hit real hull");
-            assertEquals(315,ceiling,.001f,"Current shared weapon tuning changes the original two-Power estimate");
+            assertEquals(256,ceiling,.001f,"Hold + fifteen 2.4-damage bullets + two Power rockets");
             assertTrue(grinder+machineGun+power<=ceiling+.02f,targetProfile+" non-ram combo cap");
             assertEquals(grinder+machineGun+power+ram,fight.target().maximumHp-fight.target().hp,.06f,
                     "Actual victim HP loss must equal all emitted damage, with ram accounted separately");

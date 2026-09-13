@@ -36,7 +36,7 @@ class CombatVisualsTest {
                     }
                 }
             }});
-            assertEquals(4,draws[0]);
+            assertEquals(3,draws[0],"Three effect batches; ordnance geometry exists only for live IDs");
             for(int frame=0;frame<200;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),session,.02f);
             assertEquals(0,visuals.effectCount());
         }
@@ -133,10 +133,10 @@ class CombatVisualsTest {
                 assertEquals(6.028f,positions.get(i+1),.0001f,"Scorch stays on the supported floor");
                 assertTrue(positions.get(i)>=1.5f && positions.get(i)<=3.5f,"No whole-radius disc through unsupported walls or edges");
             }
-            assertTrue(((Geometry)root.getChild("rocket-models")).getMesh().getVertexCount()>0,"Persistent mine is visible");
+            assertEquals(1,((Node)root.getChild("ordnance-models")).getQuantity(),"Persistent mine is visible");
             visuals.update(List.of(),List.of(),List.of(),List.of(),session,.016f);
             assertEquals(0,fields.getMesh().getVertexCount());
-            assertEquals(0,((Geometry)root.getChild("rocket-models")).getMesh().getVertexCount());
+            assertEquals(0,((Node)root.getChild("ordnance-models")).getQuantity());
         }
     }
     @Test void everyThirdShotPerCarHasTravellingShortTracerClampedToAuthoritativeEndpoint() {

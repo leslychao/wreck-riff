@@ -1,0 +1,74 @@
+[
+  {
+    "sourceSha256": "6df0550bb32dd47b53cfdcc6e7b5d458d33eb13566f9d15fb9c78028d967aeb3",
+    "pageSha256": "b9afe163420b12fc97c3f92710f202701a321223d234a27c11bf982bad717b2b",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/data/mp3s/Riffs.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/riffs/",
+    "slug": "riffs"
+  },
+  {
+    "sourceSha256": "851fb404a85e88c34da116b2ce0c524aeefabc14499eeadc7eb1540b35291ecc",
+    "pageSha256": "c8e0bf2ed1da9055be2e92878bebc781f2e426cae6c41bad1ff3490d63335a67",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/data/mp3s/Metal_Interlude.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/metal-interlude/",
+    "slug": "metal-interlude"
+  },
+  {
+    "sourceSha256": "d8fce5b97709ed87ceb080270800cc2f41f533ef329c69176411419a0d2e9e4f",
+    "pageSha256": "19908e76917a4365b417d194e71b27f3831c97f3120fa44d563ad8fca215c417",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/data/mp3s/Construction.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/construction/",
+    "slug": "construction"
+  },
+  {
+    "sourceSha256": "2a3c2d6d608d0dc8e30642fc63ec066066cf6d286346c28a88acb70194be0ef7",
+    "pageSha256": "b61aea142d9c69c8543be3859d5ec8b6222d944c62c4752bdb75329a39df5a4e",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/The_Collapse.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/the-collapse/",
+    "slug": "the-collapse"
+  },
+  {
+    "sourceSha256": "3cb72e3c187f39ab4c76aee619a55fda80ea391fd489bd96a17d55211122ba47",
+    "pageSha256": "116d1392ca52f8380c74375d167d2403752d029bd28c6dea294c068dce2eea4a",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/data/mp3s/Circuits.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/circuits/",
+    "slug": "circuits"
+  },
+  {
+    "sourceSha256": "b33301778593286e3a5186c2b3401b0a87d45c9f5517150414261395205c89a9",
+    "pageSha256": "d9b0f6211290a769d15fe44cd6777f8753ccd8b20dcfecc8d58743924cf9f9ff",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/Chaotic.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/chaotic/",
+    "slug": "chaotic"
+  },
+  {
+    "sourceSha256": "0f9082bd4369f7612d4fa1ae7b555d5c87005ee3dde64e8e955b0f2777dc026c",
+    "pageSha256": "ab65d8e49059e0d5b1832d8a977ba28a7d12a59c34ec6f4c25a647b7be6cd509",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/data/mp3s/Hall_of_the_Metal_King.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/hall-of-the-metal-king/",
+    "slug": "hall-of-the-metal-king"
+  },
+  {
+    "sourceSha256": "a9f191a67335a23c4cab9fe05231e50474c17560ecb3dd743dbc5b063e8e5f86",
+    "pageSha256": "d1b8521173423169bdb4409dbe8d96cfe7798e9775c6d7719ec3c447d57b65ac",
+    "license": "CC-BY-4.0",
+    "sourceUrl": "https://d19p7hqu4j8vx0.cloudfront.net/media/media/Bloodmoon_Ritual.mp3",
+    "acquired": "2026-09-13",
+    "creatorPage": "https://creatorchords.com/music/bloodmoon-ritual/",
+    "slug": "bloodmoon-ritual"
+  }
+]

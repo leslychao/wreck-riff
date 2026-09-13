@@ -24,7 +24,7 @@ class RosterHudTest {
         try(var view=new HudView(new DesktopAssetManager(true),new Node())) {
             view.resize(1920,1080,1);view.setSpecial("grinder","Мясорубка","C");
             var state=new HudView.Snapshot(new HudView.Vitals(1040,1040,1,HudView.Effect.NONE),WeaponType.HOMING,Map.of(),
-                    Map.of(AbilityId.SPECIAL,new HudView.AbilityStatus(1,19.5f,20)),"",null,false,"","",
+                    Map.of(AbilityId.SPECIAL,new HudView.AbilityStatus(1,19.5f,20)),"",null,HudView.TargetState.NONE,"","",
                     new RadarProjection.Observer(0,0,new RadarProjection.Heading(0,1),0),List.of());
             view.update(state);
             assertInstanceOf(Geometry.class,view.root().getChild("ability-special-icon"));

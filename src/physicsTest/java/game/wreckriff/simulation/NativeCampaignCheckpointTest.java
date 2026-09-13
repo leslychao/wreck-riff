@@ -6,6 +6,7 @@ import game.wreckriff.combat.*;
 import game.wreckriff.config.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,7 +15,7 @@ class NativeCampaignCheckpointTest {
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
     private static final ArenaRegistry REGISTRY=ArenaRegistry.load();
 
-    @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"})
+    @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park"})
     void bossRetryRestoresAnActualRoadPoseAndResourcesIntoACleanNativeAttempt(String arenaId) {
         var arena=REGISTRY.definition(arenaId);ProgressStore.Checkpoint checkpoint;
         try(var original=new Rig(arena,null)) {
@@ -46,12 +47,33 @@ class NativeCampaignCheckpointTest {
             assertEquals(MatchSession.Mode.CAMPAIGN,retry.session.mode);
         }
     }
+    @ParameterizedTest @CsvSource({"construction_17,rivet","construction_17,grinder","construction_17,spark",
+            "neon_zero,rivet","neon_zero,grinder","neon_zero,spark","euphoria_park,rivet","euphoria_park,grinder","euphoria_park,spark"})
+    void migratedBossCheckpointHasClearNativeSupportForEveryChassis(String arenaId,String profileId) {
+        var arena=REGISTRY.definition(arenaId);
+        var source=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),true,2,profileId);
+        source.vehicle(0).hp=300;source.vehicle(0).turbo=37;
+        var old=new ProgressStore.Checkpoint(arenaId,1,profileId,2,42,"normal",ProgressStore.CheckpointStage.BOSS,
+                MatchCheckpoint.player(source.vehicle(0)),new ProgressStore.SafePose(12,1.25,14,.2,"old-road","old-spawn"),
+                new ProgressStore.ArenaState(Map.of(),Map.of(),Map.of(),0,71),720);
+        var checkpoint=MatchCheckpoint.rebase(REGISTRY,old);
+        try(var restored=new Rig(arena,checkpoint)) {
+            assertEquals(profileId,restored.session.vehicle(0).profileId);assertEquals(2,restored.session.vehicle(0).liveryId);
+            assertEquals(1,restored.session.vehicles.size());assertEquals(checkpoint.player(),MatchCheckpoint.player(restored.session.vehicle(0)));
+            assertEquals(4,restored.world.wheelContacts(0));
+            assertTrue(restored.world.rotation(0).mult(Vector3f.UNIT_Y).y>.98f);
+            var pose=checkpoint.safePose();var position=restored.world.position(0);
+            assertTrue(Math.abs(position.x-pose.x())<.15&&Math.abs(position.z-pose.z())<.15,"Migrated start must not be pushed out of geometry");
+            restored.runtime.tick(Map.of(),false);assertTrue(restored.session.bossParticipantId>=0);
+        }
+    }
     private static final class Rig implements AutoCloseable {
         final MatchSession session;
         final PhysicsWorld world=new PhysicsWorld(RULES);
         final MatchRuntime runtime;
         Rig(ArenaDefinition arena,ProgressStore.Checkpoint checkpoint) {
-            session=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),checkpoint!=null,0);
+            session=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),checkpoint!=null,
+                    checkpoint==null?0:checkpoint.liveryId(),checkpoint==null?"rivet":checkpoint.profileId());
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
             if(checkpoint!=null)ArenaSystems.restoreGeometry(checkpoint.arena(),world,content.graph(),arena);

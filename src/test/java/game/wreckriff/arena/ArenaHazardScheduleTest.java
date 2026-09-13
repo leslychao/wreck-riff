@@ -15,26 +15,27 @@ class ArenaHazardScheduleTest {
     private void steps(ArenaHazardSchedule schedule,MatchSession session,int count) {for(int i=0;i<count;i++){schedule.advance(id->true);session.tick++;}}
     @Test void warningHasFullDurationAndOnlyCombatTicksAdvanceTheSchedule() {
         var match=session("construction_17");var schedule=new ArenaHazardSchedule(match,registry.definition(match.arenaId));
+        int warning=registry.definition(match.arenaId).hazards().getFirst().warningTicks();
         steps(schedule,match,1680);assertEquals(ProgressStore.HazardPhase.WARNING,schedule.state("crane-1").phase);
-        assertEquals(240,schedule.state("crane-1").remaining);
-        match.phase=MatchSession.Phase.BOSS_ENTRY;steps(schedule,match,360);assertEquals(240,schedule.state("crane-1").remaining);
-        match.phase=MatchSession.Phase.BOSS_COMBAT;steps(schedule,match,239);assertEquals(ProgressStore.HazardPhase.WARNING,schedule.state("crane-1").phase);
+        assertEquals(warning,schedule.state("crane-1").remaining);
+        match.phase=MatchSession.Phase.BOSS_ENTRY;steps(schedule,match,360);assertEquals(warning,schedule.state("crane-1").remaining);
+        match.phase=MatchSession.Phase.BOSS_COMBAT;steps(schedule,match,warning-1);assertEquals(ProgressStore.HazardPhase.WARNING,schedule.state("crane-1").phase);
         steps(schedule,match,1);assertEquals(ProgressStore.HazardPhase.ACTIVE,schedule.state("crane-1").phase);
     }
-    @Test void directorThirdModeAllowsTwoDisjointSectorsAndShieldCancelsBothBeforeImpact() {
-        var match=session("doomsday_arena");var schedule=new ArenaHazardSchedule(match,registry.definition(match.arenaId));
-        steps(schedule,match,1920);assertEquals(1,schedule.pendingDamage());
-        assertFalse(schedule.request("show-electric",ArenaSystems.BossAction.PROTOCOL));
+    @Test void bossModesKeepOneDamageHazardAndStoppingCancelsTheQueuedProtocolBeforeImpact() {
+        var match=session("construction_17");var schedule=new ArenaHazardSchedule(match,registry.definition(match.arenaId));
+        steps(schedule,match,1680);assertEquals(1,schedule.pendingDamage());
+        assertFalse(schedule.request("crane-2",ArenaSystems.BossAction.HEAVY_STRIKE));
         match.phase=MatchSession.Phase.BOSS_COMBAT;match.bossMode=3;
-        assertTrue(schedule.request("show-electric",ArenaSystems.BossAction.PROTOCOL));assertEquals(2,schedule.pendingDamage());
-        assertTrue(schedule.request("show-fire",ArenaSystems.BossAction.PROTOCOL),"One future intention is accepted without starting a third hazard");
-        assertEquals(2,schedule.pendingDamage());
-        schedule.cancelPreparedAndActive(1440);assertEquals(0,schedule.pendingDamage());
-        steps(schedule,match,1439);assertEquals(0,schedule.pendingDamage());
-        assertTrue(schedule.request("show-fire",ArenaSystems.BossAction.PROTOCOL),"Requests during suppression wait; they do not start a warning");
-        assertEquals(ProgressStore.HazardPhase.COOLDOWN,schedule.state("show-fire").phase);
-        steps(schedule,match,1);assertEquals(0,schedule.pendingDamage(),"Shield does not shorten the already longer ordinary event interval");
-        steps(schedule,match,480);assertEquals(1,schedule.pendingDamage());
+        assertTrue(schedule.request("crane-2",ArenaSystems.BossAction.HEAVY_STRIKE),"One future intention waits for the active hazard");
+        assertEquals(1,schedule.pendingDamage());
+        assertFalse(schedule.request("crane-3",ArenaSystems.BossAction.HEAVY_STRIKE),"Only one queued intention is retained");
+        schedule.cancelAll();assertEquals(0,schedule.pendingDamage());
+        steps(schedule,match,1679);assertEquals(0,schedule.pendingDamage());
+        assertTrue(schedule.request("crane-3",ArenaSystems.BossAction.HEAVY_STRIKE),"Requests during cooldown wait; they do not start a warning");
+        assertEquals(0,schedule.pendingDamage());
+        steps(schedule,match,1);assertEquals(1,schedule.pendingDamage());
+        assertEquals(ProgressStore.HazardPhase.WARNING,schedule.state("crane-3").phase);
         assertTrue(schedule.drainActions().isEmpty(),"Cancelled protocols never open a boss panel");
     }
     @Test void onlyOneBarrierCanPrepareAndOccupiedVolumeCancelsItsRise() {
@@ -46,13 +47,15 @@ class ArenaHazardScheduleTest {
         assertEquals(ProgressStore.HazardPhase.COOLDOWN,schedule.state("city-barrier-west").phase);
         assertTrue(schedule.drainActions().isEmpty());
     }
-    @Test void snapshotRestoresExactTimersAndStatueWaitsTwoSecondsBeforeOpening() {
-        var match=session("ash_necropolis");var arena=registry.definition(match.arenaId);var schedule=new ArenaHazardSchedule(match,arena);
-        schedule.statue("short-cut");steps(schedule,match,120);
+    @Test void snapshotRestoresExactRemainingWarningAndDoesNotStartDamageEarly() {
+        var match=session("construction_17");var arena=registry.definition(match.arenaId);var schedule=new ArenaHazardSchedule(match,arena);
+        steps(schedule,match,1680+120);
         var saved=new ProgressStore.ArenaState(java.util.Map.of(),java.util.Map.of(),schedule.snapshot(),schedule.cooldown(),schedule.cursor());
         var restored=new ArenaHazardSchedule(match,arena);restored.restore(saved);assertEquals(schedule.snapshot(),restored.snapshot());
-        steps(restored,match,119);assertTrue(restored.drainCompleted().isEmpty());
-        steps(restored,match,2);assertEquals(java.util.List.of("short-cut"),restored.drainCompleted());
-        assertEquals(ProgressStore.HazardPhase.DISABLED,restored.state("short-cut").phase);
+        steps(restored,match,Math.toIntExact(saved.hazards().get("crane-1").remainingTicks())-1);
+        assertEquals(ProgressStore.HazardPhase.WARNING,restored.state("crane-1").phase);
+        assertEquals(1,restored.state("crane-1").remaining);assertTrue(restored.drainActions().isEmpty());
+        steps(restored,match,1);assertEquals(ProgressStore.HazardPhase.ACTIVE,restored.state("crane-1").phase);
+        assertEquals(arena.hazards().getFirst().activeTicks(),restored.state("crane-1").remaining);
     }
 }

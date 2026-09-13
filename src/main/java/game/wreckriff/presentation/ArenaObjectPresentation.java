@@ -40,7 +40,6 @@ final class ArenaObjectPresentation {
     private static Node marker(Node root,String id,ArenaDefinition.BoxPart box,Material lamp) {
         Node marker=new Node(id);marker.setShadowMode(RenderQueue.ShadowMode.Off);
         float bottom=box.center().y()-box.size().y()/2;
-        marker.setLocalTranslation(box.center().x(),Math.max(0,bottom),box.center().z());
         float x=box.size().x()/2,z=box.size().z()/2;
         // Mark only the exact collider footprint. Empty/retracted barriers never retain a visual wall.
         for(float side:new float[]{-1,1}) {
@@ -48,15 +47,15 @@ final class ArenaObjectPresentation {
             LaunchPadPresentation.plate(marker,"object-footprint",side*(x-.04f),.035f,0,.04f,.008f,z,lamp);
         }
         marker.updateGeometricState();GeometryBatchFactory.optimize(marker,false);
+        marker.setLocalTranslation(box.center().x(),bottom,box.center().z());marker.setLocalRotation(box.rotation());
         root.attachChild(marker);return marker;
     }
     void update() {
         for(var object:objects) {
-            var state=systems.objectState(object.definition.id());boolean warning=state.destroyed()&&!state.open();
+            var state=systems.objectState(object.definition.id());
             visible(object.solids,!state.open());
-            object.marker.setUserData("objectPhase",state.open()?"OPEN":warning?"WARNING":"INTACT");
-            color(object.lamp,warning?new ColorRGBA(1,.35f+.3f*systems.warningProgress(object.definition.id()),.045f,1):
-                    state.open()?new ColorRGBA(.13f,.13f,.12f,1):new ColorRGBA(.28f,.16f,.04f,1));
+            object.marker.setUserData("objectPhase",state.open()?"OPEN":"INTACT");
+            color(object.lamp,state.open()?new ColorRGBA(.13f,.13f,.12f,1):new ColorRGBA(.28f,.16f,.04f,1));
         }
         for(var barrier:barriers) {
             var phase=systems.barrierPhase(barrier.definition.id());visible(barrier.solids,phase==ArenaSystems.HazardPhase.ACTIVE);

@@ -52,10 +52,10 @@ class ControlAndArsenalTest {
     }
     @Test void freezeDoesNotRefreshAndPostControlImmunityExpiresAtExactBoundary() {
         world.positions[1].set(0,1,8);world.nextSweep=new WorldQuery.Hit(1,world.positions[1],Vector3f.UNIT_Y,.5f);
-        tick(ability(AbilityId.FREEZE));assertEquals(240,session.vehicle(1).frozenTicks);assertTrue(world.frozen.contains(1));
+        tick(ability(AbilityId.FREEZE));assertEquals(180,session.vehicle(1).frozenTicks);assertTrue(world.frozen.contains(1));
         session.vehicle(0).abilityCooldown(AbilityId.FREEZE,0);world.nextSweep=new WorldQuery.Hit(1,world.positions[1],Vector3f.UNIT_Y,.5f);
-        tick(ability(AbilityId.FREEZE));assertEquals(239,session.vehicle(1).frozenTicks);
-        for(int i=0;i<239;i++)tick(VehicleCommand.NONE);
+        tick(ability(AbilityId.FREEZE));assertEquals(179,session.vehicle(1).frozenTicks);
+        for(int i=0;i<179;i++)tick(VehicleCommand.NONE);
         assertEquals(0,session.vehicle(1).frozenTicks);assertEquals(360,session.vehicle(1).controlImmunityTicks);assertFalse(world.frozen.contains(1));
         for(int i=0;i<360;i++)tick(VehicleCommand.NONE);
         assertEquals(0,session.vehicle(1).controlImmunityTicks);
@@ -118,7 +118,7 @@ class ControlAndArsenalTest {
         world.positions[1].set(0,1,10);world.positions[2].set(1,7,10);world.surfaceIds[2]=1;
         world.positions[3].set(-1,1,10);world.hidden.add(3);
         combat.drainEvents();for(int i=0;i<30;i++)tick(VehicleCommand.NONE);
-        assertEquals(392.5f,session.vehicle(1).hp,.001f);
+        assertEquals(393.75f,session.vehicle(1).hp,.001f);
         assertEquals(session.vehicle(2).maximumHp,session.vehicle(2).hp);
         assertEquals(session.vehicle(3).maximumHp,session.vehicle(3).hp);
         assertEquals(1,combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.DAMAGE&&e.kind().equals("napalm-fire")).count());
@@ -142,14 +142,14 @@ class ControlAndArsenalTest {
         float playerHp=session.vehicle(0).hp,botHp=session.vehicle(2).hp;
         combat.drainEvents();
         for(int i=0;i<30;i++)tick(VehicleCommand.NONE);
-        assertEquals(playerHp-7.5f,session.vehicle(0).hp,.001f);
-        assertEquals(botHp-7.5f,session.vehicle(2).hp,.001f);
+        assertEquals(playerHp-6.25f,session.vehicle(0).hp,.001f);
+        assertEquals(botHp-6.25f,session.vehicle(2).hp,.001f);
         var fireDamage=combat.drainEvents().stream()
                 .filter(e->e.type()==GameEvent.Type.DAMAGE&&e.kind().equals("napalm-fire")).toList();
         assertEquals(2,fireDamage.size());
         for(GameEvent damage:fireDamage) {
             assertEquals(firstOwner,damage.sourceId(),"Attribution follows the oldest covering zone independently of damage");
-            assertEquals(7.5f,damage.value(),.001f);
+            assertEquals(6.25f,damage.value(),.001f);
         }
     }
     private static class FlatWorld implements WorldQuery {

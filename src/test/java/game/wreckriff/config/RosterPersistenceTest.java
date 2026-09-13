@@ -49,6 +49,8 @@ class RosterPersistenceTest {
         }
         JsonObject old=JsonParser.parseString(Files.readString(directory.resolve("stats.json"))).getAsJsonObject();
         old.addProperty("schemaVersion",2);
+        old.remove("layoutRevision");old.remove("historicalLayouts");
+        old.getAsJsonObject("campaign").getAsJsonObject("checkpoint").remove("layoutRevision");
         JsonObject player=old.getAsJsonObject("campaign").getAsJsonObject("checkpoint").getAsJsonObject("player");
         player.getAsJsonObject("abilityCooldownTicks").remove("special");
         // Earlier serialized enum IDs may be uppercase; migration writes the current canonical IDs.
@@ -59,10 +61,10 @@ class RosterPersistenceTest {
             player.add(field,upper);
         }
         String original=old.toString();Files.writeString(directory.resolve("stats.json"),original);
-        try(var loaded=new ProgressStore(directory)) {
+        try(var loaded=new ProgressStore(directory,game.wreckriff.simulation.MatchCheckpoint.references(game.wreckriff.arena.ArenaRegistry.load()))) {
             assertEquals(previous.revision()+1,loaded.snapshot().revision());
             assertEquals(previous.attemptSequence(),loaded.snapshot().attemptSequence());
-            assertEquals(previous.activeAttempt(),loaded.snapshot().activeAttempt());
+            assertNull(loaded.snapshot().activeAttempt());
             assertEquals(previous.stats(),loaded.snapshot().stats());
             var saved=loaded.snapshot().campaign().checkpoint();
             assertEquals("rivet",saved.profileId());assertEquals(730,saved.player().hp());
@@ -71,7 +73,7 @@ class RosterPersistenceTest {
             assertTrue(loaded.flush(Duration.ofSeconds(5)));
             assertEquals(original,Files.readString(directory.resolve("stats.json.v2.bak")));
         }
-        try(var loaded=new ProgressStore(directory)) {assertEquals(previous.activeAttempt(),loaded.snapshot().activeAttempt());}
+        try(var loaded=new ProgressStore(directory)) {assertNull(loaded.snapshot().activeAttempt());}
     }
 
     @Test void settingsMigrationPreservesAnExistingCBindingAndVisualPreferences() throws Exception {
@@ -95,7 +97,7 @@ class RosterPersistenceTest {
         for(var type:WeaponType.values())weapons.put(type.id(),new WeaponResource(2,17));
         var resources=new PlayerResources(hp,38,"homing",weapons,Map.of("freeze",51L,"shield",31L,"special",875L),
                 new ResourceTimers(3,5,7,9,11,13,15,17));
-        return new Checkpoint("construction_17",profile,0,42,"normal",CheckpointStage.BOSS,resources,
+        return new Checkpoint("construction_17",CURRENT_LAYOUT_REVISION,profile,0,42,"normal",CheckpointStage.BOSS,resources,
                 new SafePose(12,1.25,14,.2,"lower-road","player-spawn"),new ArenaState(Map.of(),Map.of(),Map.of(),12,71),1234);
     }
 }

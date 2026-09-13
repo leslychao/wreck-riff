@@ -9,26 +9,34 @@ import game.wreckriff.diagnostics.ArtShowcase;
 import game.wreckriff.presentation.ArenaPresentation;
 import com.jme3.scene.Node;
 import java.util.*;
+import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Verifies scripted drives against the real roads. It does not substitute for the required real-window capture. */
 class NativeArtShowcaseTest {
+    private static final ArenaRegistry REGISTRY=ArenaRegistry.load();
+    static Stream<String> arenas() { return REGISTRY.entries().stream().map(ArenaRegistry.Entry::id); }
     @ParameterizedTest
-    @ValueSource(strings={"dead-air-yard","construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"})
+    @MethodSource("arenas")
     void allEightPickupsComeFromActualRuntimeDrivesAndLaunchesUseNativePhysics(String arenaId) {
-        var arena=ArenaRegistry.load().definition(arenaId);var rules=VehicleRules.load();
+        var arena=REGISTRY.definition(arenaId);var rules=VehicleRules.load();
         var session=new MatchSession(42,arena,arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA,
                 Configs.load("combat",CombatRules.class));
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
-            var spawns=arena.shuffledSpawns(42);
+            for(var pickup:arena.pickups()) {
+                var surface=pickup.position().vector();var support=world.support(surface.add(0,2,0),4);
+                assertNotNull(support,"Existing pickup must have a real road underneath: "+arena.id()+"/"+pickup.id());
+                assertEquals(surface.y,support.point().y,.05f,"Pickup cannot be buried beneath an intersecting ramp: "+arena.id()+"/"+pickup.id());
+            }
+            world.configureArena(arena);var spawns=MatchSpawns.ordered(arena,42);
             for(var state:session.vehicles) {
-                var spawn=spawns.get(state.id);var profile=VehicleProfile.rivet(rules);
-                world.addVehicle(state.id,spawn.position().vector().add(0,profile.roadOffset(),0),
-                        new Quaternion().fromAngleAxis(spawn.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y),profile);
+                var profile=VehicleDefinition.forId(state.profileId).profile(rules);
+                var pose=MatchSpawns.select(world,profile,spawns,state.id,null);
+                world.addVehicle(state.id,pose.position(),pose.rotation(),profile);
             }
             try(var runtime=new MatchRuntime(session,world,arena,content.graph(),rules)) {
                 for(int tick=0;tick<360;tick++)world.step();

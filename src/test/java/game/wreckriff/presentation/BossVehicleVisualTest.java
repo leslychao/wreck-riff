@@ -51,7 +51,7 @@ class BossVehicleVisualTest {
             }});
             assertBudgetAndFinite(model);
         }
-        assertEquals(5,paintHashes.size(),"Each boss has independently authored panel coordinates");
+        assertEquals(3,paintHashes.size(),"Each boss has independently authored panel coordinates");
     }
     @Test void allBossDamageStagesUseOwnMeshesAndStatusSurfacesWithoutMovingWeaponsOrWheels() {
         for(var profile:VehicleProfile.bosses(RULES)) {
@@ -86,7 +86,7 @@ class BossVehicleVisualTest {
         }
     }
     @Test void bossPresentationFollowsAuthoritativePhaseAndVulnerabilityIndependentlyOfDamage() {
-        for(String id:List.of("boss_emcee","boss_ash_shepherd","boss_director")) {
+        for(String id:List.of("boss_foreman","boss_prefect","boss_emcee")) {
             Node model=VehicleVisual.create(PresentationTestAssets.shared(),VehicleProfile.boss(id,RULES),0);
             for(int phase:new int[]{0,1,2,0}) {
                 VehicleVisual.updateBossPhase(model,phase,phase==1);

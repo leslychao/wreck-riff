@@ -26,92 +26,54 @@ public final class GenerateAudio {
         }
         METRICS.clear();METRICS.add("asset,frames,channels,sample_rate,bits,peak,rms,sha256");
         prepareMusic(output,sources);
-        prepareCampaignMusic(output,sources.resolve("campaign"));
         prepareRecordedEffects(output,sources.resolve("recorded"));
         prepareResults(output,sources);
         preparePickups(output);
         prepareSpecials(output);
         prepareArenaHazards(output);
         prepareBossTelegraph(output);
+        prepareMenuEffects(output);
         for(String id:List.of("engine-idle","engine-drive","turbo-loop","tyre-slip","empty",
                 "low-hp","hazard-warning","hazard-active","pickup-repair","pickup-turbo",
-                "ui-nav","ui-confirm","mine-place"))effect(output,id);
+                "mine-place"))effect(output,id);
         Files.write(output.resolve("audio-metrics.csv"),METRICS,StandardCharsets.UTF_8);
-        Files.writeString(output.resolve("score.txt"), """
-                WRECK RIFF / METALMANIA
-                Metalmania by Kevin MacLeod (incompetech.com), ISRC USUAN1700023, CC BY 4.0.
-                https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1700023
-                https://creativecommons.org/licenses/by/4.0/
-                Creator instrumentation: Drums, Bass, Guitar. 150 BPM; source duration about 190 seconds.
-                Imported creator MP3 decoded once to local stereo PCM 48000Hz / 16-bit.
-                Loop edit: source 0..179.3s; final 100ms equal-power crossfade into source 0..0.1s;
-                output starts at source 0.1s, yielding 179.2s (112 bars at 150 BPM), no ending fade gap.
-                DC removal and linear peak normalization to 0.84; no synthesized replacement music.
-                Combat effects: recorded CC0 firearms/fireworks; source/hash/prebaked layer evidence in sfx-provenance.json.
-                Victory/defeat/draw: short Metalmania guitar/drum excerpts with a recorded metal impact.
-                These result edits retain Kevin MacLeod credit and CC BY 4.0; see result-provenance.json.
-                Ancillary engine/UI sound effects: original deterministic synthesis seed 0x5249464657415645.
-                Weapon pickups: six original mechanical/electronic cue banks with three distinct takes each.
-                Homing latch/rise; Power heavy latch; Mine double click; Napalm liquid/valve/hiss;
-                Ballistic cassette/four tones; Cannon paired metal clunks. See pickup-provenance.json.
-                Pickup takes are mono 48kHz/16-bit; edge/DC cleanup; common RMS target 0.16; peak ceiling 0.82.
-                Player specials: six original local cues; pulse charge/hit, grinder start/periodic loop, dash hiss and bomb warning.
-                No external samples in these cues. Exact timing, recipes and hashes: special-provenance.json.
-                Arena hazards: seven original warning/activation pairs; crane, traffic, carousel, electricity, fire, barrier, statue.
-                Authoritative phase events trigger one shots; warning cancellation targets the same arena object.
-                Recipes and exact output/source hashes: arena-hazard-provenance.json. No external samples.
-                Boss telegraph: original 0.85 second rising mechanical alarm, three tightening pulses and motor tension.
-                One positional warning per actual boss action start; recipe/source/output hashes: boss-telegraph-provenance.json.
-                Original rejected 0.1 score/glyph recipes retained in docs/asset-history, excluded from runtime.
-                Artistic status: NEEDS_CREATIVE_REVIEW. Signal/spectral metrics do not prove listening approval.
-                """,StandardCharsets.UTF_8);
-        System.out.println("Prepared licensed guitar track, recorded combat variants and original ancillary effects in "+output);
+        Files.copy(sources.resolve("music/score.txt"),output.resolve("score.txt"),StandardCopyOption.REPLACE_EXISTING);
+        System.out.println("Prepared eight licensed metal recordings, recorded combat variants and original menu effects in "+output);
     }
 
+    /** Explicit authoring lives in import_menu_music.py; builds only verify/copy local prepared recordings. */
     private static void prepareMusic(Path output,Path sources)throws Exception {
-        Path source=sources.resolve("Metalmania-source.wav");
-        byte[] bytes;
-        try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(source.toFile())) {
-            var format=input.getFormat();
-            if(format.getChannels()!=2 || format.getSampleRate()!=RATE || format.getSampleSizeInBits()!=16
-                    || format.isBigEndian() || !format.getEncoding().equals(javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED))
-                throw new IllegalArgumentException("Music source must be stereo signed little-endian PCM48k/16");
-            bytes=input.readNBytes(RATE*4*211+1);
+        Path source=sources.resolve("music"),target=output.resolve("music");
+        Files.createDirectories(target);
+        // Generated output belongs to this task. Retired music cannot remain on incremental builds.
+        Path retired=output.resolve("campaign");
+        if(Files.exists(retired))try(var paths=Files.walk(retired)) {
+            for(Path path:paths.sorted(Comparator.reverseOrder()).toList())Files.delete(path);
         }
-        if(bytes.length<180*RATE*4 || bytes.length>210*RATE*4 || bytes.length%4!=0)
-            throw new IllegalArgumentException("Unexpected source music duration");
-        int cross=RATE/10,frames=(int)Math.round(179.2*RATE),end=frames+cross;
-        float[][] pcm=new float[2][frames];
-        for(int frame=0;frame<frames;frame++)for(int channel=0;channel<2;channel++) {
-            int sourceFrame=frame+cross;
-            double value=sample(bytes,sourceFrame,channel);
-            if(sourceFrame>=end-cross) {
-                int offset=sourceFrame-(end-cross);
-                double blend=offset/(double)(cross-1);
-                value=value*Math.cos(blend*Math.PI/2)+sample(bytes,offset,channel)*Math.sin(blend*Math.PI/2);
+        for(String name:List.of("music-source.json","music-provenance.json"))Files.deleteIfExists(output.resolve(name));
+        Set<String> required=new HashSet<>(List.of("menu.wav","dead-air-yard.wav","construction_17-normal.wav",
+                "construction_17-boss.wav","neon_zero-normal.wav","neon_zero-boss.wav","euphoria_park-normal.wav","euphoria_park-boss.wav"));
+        try(var prior=Files.list(target)) {
+            for(Path file:prior.filter(p->p.getFileName().toString().endsWith(".wav")).toList())Files.delete(file);
+        }
+        List<String> rows=Files.readAllLines(source.resolve("audio-metrics.csv"),StandardCharsets.UTF_8);
+        if(rows.size()!=9||!rows.getFirst().equals(METRICS.getFirst()))throw new IOException("Exactly eight soundtrack recordings are required");
+        for(String row:rows.subList(1,rows.size())) {
+            String[] columns=row.split(",",-1);
+            if(columns.length!=8||!required.remove(columns[0])||!columns[2].equals("2")||!columns[3].equals("48000")||!columns[4].equals("16"))
+                throw new IOException("Invalid soundtrack metric row: "+row);
+            Path prepared=source.resolve(columns[0]);
+            if(!hash(Files.readAllBytes(prepared)).equals(columns[7]))throw new IOException("Soundtrack checksum mismatch: "+prepared);
+            try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(prepared.toFile())) {
+                var format=input.getFormat();
+                if(format.getChannels()!=2||format.getSampleRate()!=RATE||format.getSampleSizeInBits()!=16||format.isBigEndian()
+                        ||!format.getEncoding().equals(javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED)
+                        ||input.getFrameLength()!=Long.parseLong(columns[1]))throw new IOException("Invalid soundtrack PCM: "+prepared);
             }
-            pcm[channel][frame]=(float)value;
+            Files.copy(prepared,target.resolve(columns[0]),StandardCopyOption.REPLACE_EXISTING);
         }
-        double peak=0;
-        for(float[] channel:pcm) {
-            double mean=0;for(float value:channel)mean+=value;mean/=channel.length;
-            for(int i=0;i<channel.length;i++){channel[i]-=(float)mean;peak=Math.max(peak,Math.abs(channel[i]));}
-        }
-        if(peak==0)throw new IllegalArgumentException("Silent music source");
-        for(float[] channel:pcm)for(int i=0;i<channel.length;i++)channel[i]*=.84/peak;
-        write(output,"metalmania",pcm);
-        String sourceEvidence=Files.readString(sources.resolve("source.json"),StandardCharsets.UTF_8);
-        Files.writeString(output.resolve("music-source.json"),sourceEvidence,StandardCharsets.UTF_8);
-        Files.writeString(output.resolve("music-provenance.json"),"""
-                {"schemaVersion":1,"title":"Metalmania","author":"Kevin MacLeod","license":"CC-BY-4.0",
-                "licensePath":"licenses/assets/CC-BY-4.0.txt",
-                "sourceUrl":"https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3",
-                "sourcePath":"src/tools/assets/audio/Metalmania-source.wav","sourceSha256":"%s",
-                "sourceEvidenceSha256":"%s","sha256":"%s","frames":%d,"sampleRate":48000,"channels":2,
-                "edit":"179.2s / 112 bars at150BPM;100ms equal-power loop crossfade; DC removal; linear peak0.84",
-                "artisticStatus":"NEEDS_CREATIVE_REVIEW"}
-                """.formatted(hash(Files.readAllBytes(source)),hash(sourceEvidence.getBytes(StandardCharsets.UTF_8)),
-                hash(Files.readAllBytes(output.resolve("metalmania.wav"))),frames),StandardCharsets.UTF_8);
+        for(String name:List.of("audio-metrics.csv","provenance.json","sources.json","score.txt"))
+            Files.copy(source.resolve(name),target.resolve(name),StandardCopyOption.REPLACE_EXISTING);
     }
 
     private static void prepareRecordedEffects(Path output,Path source)throws Exception {
@@ -140,34 +102,9 @@ public final class GenerateAudio {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     }
 
-    /** Authoring happens explicitly in compose_campaign_music.py; offline builds only verify and copy the finished scores. */
-    private static void prepareCampaignMusic(Path output,Path source)throws Exception {
-        Path target=output.resolve("campaign");Files.createDirectories(target);
-        List<String> metrics=Files.readAllLines(source.resolve("audio-metrics.csv"),StandardCharsets.UTF_8);
-        if(metrics.size()!=11||!metrics.getFirst().equals(METRICS.getFirst()))throw new IOException("Exactly ten campaign mixes are required");
-        Set<String> required=new HashSet<>();
-        for(String arena:List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena"))
-            for(String mix:List.of("normal","boss"))required.add(arena+"-"+mix+".wav");
-        for(String row:metrics.subList(1,metrics.size())) {
-            String[] columns=row.split(",",-1);
-            if(columns.length!=8||!required.remove(columns[0])||!columns[2].equals("2")||!columns[3].equals("48000")||!columns[4].equals("16"))
-                throw new IOException("Invalid campaign audio metrics row: "+row);
-            Path file=source.resolve(columns[0]);
-            if(!hash(Files.readAllBytes(file)).equals(columns[7]))throw new IOException("Campaign music checksum mismatch: "+file);
-            try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(file.toFile())) {
-                var format=input.getFormat();
-                if(format.getChannels()!=2||format.getSampleRate()!=RATE||format.getSampleSizeInBits()!=16||format.isBigEndian()
-                        ||input.getFrameLength()!=Long.parseLong(columns[1]))throw new IOException("Invalid campaign PCM: "+file);
-            }
-            Files.copy(file,target.resolve(columns[0]),StandardCopyOption.REPLACE_EXISTING);
-        }
-        for(String file:List.of("audio-metrics.csv","provenance.json","score.txt"))
-            Files.copy(source.resolve(file),target.resolve(file),StandardCopyOption.REPLACE_EXISTING);
-    }
-
     /** Recorded rock punctuation; never a synthesized note ladder or a second music loop. */
     private static void prepareResults(Path output,Path sources)throws Exception {
-        Path musicSource=sources.resolve("Metalmania-source.wav");
+        Path musicSource=sources.resolve("music/menu.wav");
         Path impactSource=sources.resolve("recorded/processed/ram-hit-1.wav");
         byte[] music,impact;
         try(var input=javax.sound.sampled.AudioSystem.getAudioInputStream(musicSource.toFile())) {
@@ -206,14 +143,14 @@ public final class GenerateAudio {
             }
             float[][] channels={pcm};master(channels,.84);write(output,id,channels);
             String edit=defeat?"Recorded guitar/drum attack; continuous tape slowdown 1.0 to 0.12; lowpass follows speed; metal crush; 2.6s"
-                    :"Recorded 150BPM guitar/drum phrase from source start; mono fold; LP6500Hz; metal accent; short release; "+seconds+"s";
+                    :"Recorded Riffs guitar/drum phrase from prepared source start; mono fold; LP6500Hz; metal accent; short release; "+seconds+"s";
             evidence.add("{\"path\":\"audio/"+id+".wav\",\"sha256\":\""+hash(Files.readAllBytes(output.resolve(id+".wav")))
                     +"\",\"transformation\":\""+edit+"\"}");
         }
         Files.writeString(output.resolve("result-provenance.json"),"""
-                {"schemaVersion":1,"author":"Kevin MacLeod","title":"Metalmania",
+                {"schemaVersion":1,"author":"Alexander Nakarada","title":"Riffs",
                 "license":"CC-BY-4.0","licensePath":"licenses/assets/CC-BY-4.0.txt",
-                "sourcePath":"src/tools/assets/audio/Metalmania-source.wav","sourceSha256":"%s",
+                "sourcePath":"src/tools/assets/audio/music/menu.wav","sourceSha256":"%s",
                 "impactSourcePath":"src/tools/assets/audio/recorded/processed/ram-hit-1.wav","impactSourceSha256":"%s",
                 "impactLicense":"CC0-1.0","impactProvenance":"audio/sfx-provenance.json",
                 "generator":"src/tools/java/game/wreckriff/tools/GenerateAudio.java","assets":[%s]}
@@ -364,12 +301,12 @@ public final class GenerateAudio {
     private static void prepareArenaHazards(Path output)throws Exception {
         String generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
         List<String> evidence=new ArrayList<>();
-        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue"))
+        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier"))
             for(boolean warning:new boolean[]{true,false}) {
                 String id="hazard-"+kind+(warning?"-warning":"-active");
                 double seconds=warning?1.2:switch(kind) {
                     case "crane" -> .95;case "traffic" -> 1;case "carousel" -> 1.1;
-                    case "electric" -> .8;case "fire" -> 1.3;case "barrier" -> .9;case "statue" -> 1.4;
+                    case "electric" -> .8;case "fire" -> 1.3;case "barrier" -> .9;
                     default -> throw new IllegalArgumentException(kind);
                 };
                 String recipe=switch(kind) {
@@ -379,7 +316,6 @@ public final class GenerateAudio {
                     case "electric" -> warning?"Rising electrical charge with pulsed high-frequency ticks":"Sharp electric arc followed by decaying mains buzz";
                     case "fire" -> warning?"Pressure-valve rattle and rising pressurised hiss":"Low ignition whoosh with filtered crackling fire";
                     case "barrier" -> warning?"Two pneumatic gate alerts followed by servomotor tension":"Sliding gate grind with a mechanical end-stop";
-                    case "statue" -> warning?"Two stone stress cracks over a growing sub-bass rumble":"Heavy falling stone and staggered crumbling debris";
                     default -> throw new IllegalArgumentException(kind);
                 };
                 Random random=new Random(SEED^id.hashCode());float[] pcm=new float[(int)Math.round(seconds*RATE)];double low=0;
@@ -400,8 +336,6 @@ public final class GenerateAudio {
                                 +metal(t,.05,380,21,n)*.5+metal(t,.28,540,24,n)*.35;
                         case "barrier" -> pickupTone(t,.02,.14,820,0,.58)+pickupTone(t,.33,.14,590,0,.58)
                                 +Math.sin(TAU*(95*t+90*t*t))*.23*pickupEnvelope(t,.45,.62)+(n-low)*.10*pickupEnvelope(t,.05,.8);
-                        case "statue" -> metal(t,.05,210,25,n)*.6+metal(t,.54,156,20,n)*.7
-                                +(Math.sin(TAU*54*t)*.40+low)*(.18+t*.5)*pickupEnvelope(t,.01,1.15);
                         default -> throw new IllegalArgumentException(kind);
                     };
                     else value=switch(kind) {
@@ -417,8 +351,6 @@ public final class GenerateAudio {
                                 +Math.sin(TAU*(94*t-20*t*t))*.55*Math.exp(-t*6);
                         case "barrier" -> Math.sin(TAU*(115*t+23*t*t))*.35*pickupEnvelope(t,.01,.68)
                                 +low*1.3*pickupEnvelope(t,.01,.68)+metal(t,.65,290,20,n)*.65;
-                        case "statue" -> metal(t,.02,72,4,n)*.85+low*2*Math.exp(-t*3)
-                                +metal(t,.21,141,13,n)*.4+metal(t,.45,270,18,n)*.23;
                         default -> throw new IllegalArgumentException(kind);
                     };
                     pcm[frame]=(float)value;
@@ -498,13 +430,64 @@ public final class GenerateAudio {
         for(int i=0;i<pcm.length;i++)pcm[i]*=(float)gain;
     }
 
+    /** Mechanical UI vocabulary and workshop bed, independent of paused gameplay notifications. */
+    private static void prepareMenuEffects(Path output)throws Exception {
+        List<String> evidence=new ArrayList<>();
+        for(String cue:List.of("ui-nav","ui-change","ui-confirm","ui-back","ui-vehicle","menu-ambience")) {
+            boolean ambience=cue.equals("menu-ambience");
+            double seconds=switch(cue) {
+                case "ui-nav" -> .11;case "ui-change" -> .16;case "ui-confirm" -> .30;
+                case "ui-back" -> .24;case "ui-vehicle" -> .48;default -> 16;
+            };
+            double pitch=switch(cue) {
+                case "ui-nav" -> 880;case "ui-change" -> 560;case "ui-confirm" -> 300;
+                case "ui-back" -> 420;case "ui-vehicle" -> 145;default -> 60;
+            };
+            float[] pcm=new float[(int)Math.round(seconds*RATE)];
+            Random noise=new Random(SEED^cue.hashCode());double low=0;
+            for(int i=0;i<pcm.length;i++) {
+                double t=i/(double)RATE,n=noise.nextDouble()*2-1;low+=.018*(n-low);
+                double sound;
+                if(ambience) {
+                    // Fan, transformer hum, slow air movement and a distant cyclic tool rattle.
+                    sound=.32*Math.sin(TAU*60*t)+.10*Math.sin(TAU*120*t)+.06*Math.sin(TAU*181*t)
+                            +low*.9*(.8+.2*Math.sin(TAU*t/8))
+                            +.045*Math.sin(TAU*733*t)*Math.pow(Math.max(0,Math.sin(TAU*t/4)),24);
+                } else {
+                    sound=metal(t,0,pitch,35,n)*.65;
+                    if(cue.equals("ui-confirm"))sound+=metal(t,.065,pitch*1.51,22,n)*.50;
+                    if(cue.equals("ui-back"))sound+=metal(t,.045,pitch*.63,35,n)*.36;
+                    if(cue.equals("ui-vehicle"))sound+=metal(t,.095,92,14,n)*.7
+                            +low*Math.exp(-t*9)*2.5;
+                    sound*=Math.min(1,i/72.0)*Math.min(1,(pcm.length-1-i)/240.0);
+                }
+                pcm[i]=(float)sound;
+            }
+            if(ambience) {
+                // Tiny de-click fades, with whole-number oscillator periods in the 16s bed.
+                for(int i=0;i<240;i++){pcm[i]*=i/239f;pcm[pcm.length-1-i]*=i/239f;}
+            }
+            float[][] channels={pcm};master(channels,ambience?.62:.82);write(output,cue,channels);
+            evidence.add("{\"path\":\"audio/"+cue+".wav\",\"loop\":"+ambience+",\"frames\":"+pcm.length
+                    +",\"sha256\":\""+hash(Files.readAllBytes(output.resolve(cue+".wav")))
+                    +"\",\"recipe\":\""+(ambience?"Original fan hum and filtered air; quiet distant mechanical rattle"
+                    :"Original inharmonic steel modes and filtered latch noise; distinct timing and pitch for "+cue)+"\"}");
+        }
+        String generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        Files.writeString(output.resolve("menu-provenance.json"),"""
+                {"schemaVersion":1,"origin":"ORIGINAL_PROJECT_CONTENT","externalSamples":false,
+                "generator":"%s","generatorSha256":"%s","seed":"0x5249464657415645",
+                "artisticStatus":"NEEDS_CREATIVE_REVIEW","assets":[%s]}
+                """.formatted(generator,hash(Files.readAllBytes(Path.of(generator))),String.join(",",evidence)),StandardCharsets.UTF_8);
+    }
+
     private static void effect(Path output, String id) throws Exception {
         boolean loop = Set.of("engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active").contains(id);
         double seconds = switch (id) {
             case "engine-idle", "engine-drive", "turbo-loop", "tyre-slip", "hazard-active" -> 2;
             case "hazard-warning" -> 1.1;
             case "low-hp" -> .65;
-            case "empty", "ui-nav" -> .11;
+            case "empty" -> .11;
             default -> .38;
         };
         Random random = new Random(SEED ^ id.hashCode());
@@ -533,8 +516,6 @@ public final class GenerateAudio {
                         * (.35 + .2 * Math.sin(TAU * 5 * t)) * Math.min(1, (seconds - t) * 10);
                 case "pickup-repair" -> chime(t, 392, 523.25, 659.25);
                 case "pickup-turbo" -> Math.sin(TAU * (300 * t + 900 * t * t)) * Math.exp(-t * 6);
-                case "ui-nav" -> Math.sin(TAU * 740 * t) * Math.exp(-t * 45);
-                case "ui-confirm" -> chime(t, 493.88, 659.25, 987.77);
                 default -> throw new IllegalArgumentException(id);
             };
             if (!loop) sound *= Math.min(1, i / 96.0) * Math.min(1, (pcm.length - i - 1) / 480.0);

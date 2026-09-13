@@ -13,8 +13,8 @@ public final class SoakProfile {
     public static ProgressStore.Snapshot unlockedSnapshot() {
         var all=Set.copyOf(ProgressStore.CAMPAIGN_ARENAS);
         var campaign=new ProgressStore.Campaign(null,all,all,null);
-        return new ProgressStore.Snapshot(ProgressStore.SCHEMA_VERSION,0,0,
-                new ProgressStore.Stats(0,0,0,0,0,0),campaign,null,Map.of());
+        return new ProgressStore.Snapshot(ProgressStore.SCHEMA_VERSION,ProgressStore.CURRENT_LAYOUT_REVISION,0,0,
+                new ProgressStore.Stats(0,0,0,0,0,0),campaign,null,Map.of(),Map.of());
     }
     public static void prepare(Path directory) throws IOException {
         Files.createDirectories(directory);

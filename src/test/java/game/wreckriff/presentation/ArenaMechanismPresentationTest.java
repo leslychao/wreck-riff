@@ -83,7 +83,8 @@ class ArenaMechanismPresentationTest {
                 assertTrue(facing.dot(alongX?Vector3f.UNIT_X:Vector3f.UNIT_Z)>.9999f);
                 for(int end=0;end<2;end++) {
                     Node marker=(Node)f.parent.getChild("service-"+(end==0?"entry-":"exit-")+traffic.id());
-                    float along=34+end*64;Vector3f expected=alongX?new Vector3f(along,.008f,71):new Vector3f(71,.008f,along);
+                    float along=34+end*traffic.activeTicks()*MatchSession.DT*16;
+                    Vector3f expected=alongX?new Vector3f(along,traffic.minY()+.108f,71):new Vector3f(71,traffic.minY()+.108f,along);
                     assertEquals(expected.x,marker.getLocalTranslation().x,.0001f);assertEquals(expected.y,marker.getLocalTranslation().y,.0001f);
                     assertEquals(expected.z,marker.getLocalTranslation().z,.0001f);
                     assertEquals(1,marker.getQuantity());var mesh=((Geometry)marker.getChild(0)).getMesh();var p=mesh.getFloatBuffer(VertexBuffer.Type.Position);
@@ -109,7 +110,7 @@ class ArenaMechanismPresentationTest {
 
     private static ArenaDefinition withHazards(ArenaDefinition a,List<ArenaDefinition.Hazard> hazards) {
         return new ArenaDefinition(a.schemaVersion(),a.id(),a.metadata(),a.bounds(),a.boxes(),a.ramps(),a.spawns(),a.pickups(),hazards,a.nodes(),a.edges(),
-                a.surfaces(),a.launchPads(),a.drops(),a.destructibles(),a.secrets(),a.barriers(),a.bosses());
+                a.surfaces(),a.launchPads(),a.drops(),a.destructibles(),a.secrets(),a.barriers(),a.bosses(),a.layoutRevision(),a.meshes(),a.districts());
     }
     private static final class Fixture implements AutoCloseable {
         final ArenaDefinition arena;final MatchSession session=new MatchSession(42,360);final Node parent=new Node("arena");

@@ -67,6 +67,7 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
             case "Special"->buttonLabel(profile.special());
             case "Previous weapon"->buttonLabel(profile.previousWeapon());case "Next weapon"->buttonLabel(profile.nextWeapon());
             case "Rear view"->buttonLabel(profile.rearView());case "Recover"->buttonLabel(profile.recover());
+            case "Tactical map"->buttonLabel(profile.pause())+" / КАРТА";
             case "Pause"->buttonLabel(profile.pause());default->"UNBOUND";
         };
     }

@@ -1,19 +1,34 @@
-# Original campaign music
+# Heavy soundtrack and menu audio
 
-Five original scores are authored by `src/tools/compose_campaign_music.py`. The script uses Python 3 and NumPy; it reads no recordings, soundfonts, MIDI files or external melodies. Finished 48 kHz, 16-bit stereo WAV files are stored in `src/tools/assets/audio/campaign`. Normal builds verify and copy those files through the existing `GenerateAudio`; they do not run the authoring script or download anything.
+The menu, four arenas and three campaign bosses use eight independent recordings by **Alexander Nakarada**, licensed by the author under **Creative Commons Attribution 4.0 International (CC BY 4.0)**. Sources were acquired from CreatorChords on 2026-09-13. The grant and attribution text are retained from each creator page; this credit does not imply endorsement.
 
-| Arena | Score | Tempo | Duration | Musical identity |
-|---|---|---:|---:|---|
-| construction_17 | Rebar Oath | 126 BPM | 91.429 s | D-based chromatic low guitar riff, metallic offbeats, bell punctuation |
-| neon_zero | Last Service Lane | 138 BPM | 83.478 s | E-based syncopation, driving kick, stereo electronic lead |
-| euphoria_park | Crooked Midway | 144 BPM | 80.000 s | A-based minor/tritone motif, short carnival organ, displaced accents |
-| ash_necropolis | Cinders Remember | 108 BPM | 106.667 s | Low C, half-time passages, minor-second movement, bells and sustained organ |
-| doomsday_arena | The Last Broadcast | 132 BPM | 87.273 s | New D-based arrangement combining motifs from the four original campaign scores |
+| Use | Recording / creator page | Runtime path |
+|---|---|---|
+| Menu and garage | [Riffs](https://creatorchords.com/music/riffs/) | `audio/music/menu.wav` |
+| Dead Air Yard | [Metal Interlude](https://creatorchords.com/music/metal-interlude/) | `audio/music/dead-air-yard.wav` |
+| Construction 17 | [Construction](https://creatorchords.com/music/construction/) | `audio/music/construction_17-normal.wav` |
+| Construction boss | [The Collapse](https://creatorchords.com/music/the-collapse/) | `audio/music/construction_17-boss.wav` |
+| Neon Zero | [Circuits](https://creatorchords.com/music/circuits/) | `audio/music/neon_zero-normal.wav` |
+| Neon boss | [Chaotic](https://creatorchords.com/music/chaotic/) | `audio/music/neon_zero-boss.wav` |
+| Euphoria Park | [Hall of the Metal King](https://creatorchords.com/music/hall-of-the-metal-king/) | `audio/music/euphoria_park-normal.wav` |
+| Euphoria boss | [Bloodmoon Ritual](https://creatorchords.com/music/bloodmoon-ritual/) | `audio/music/euphoria_park-boss.wav` |
 
-Each score has six eight-bar sections: introduction, lead, riff variation, half-time bridge, lead variation and final refrain. Instruments are synthesized percussion, bass, two detuned/panned distorted plucked-string guitars and a thematic lead. Circular note tails and delays preserve the loop boundary. Normal and boss mixes have identical sample counts and note timing; the boss mix adds double kicks, offbeat guitar and melodic counterpoint.
+## Offline preparation and distribution
 
-To intentionally re-author all ten source WAV files, run `python src/tools/compose_campaign_music.py` with a Python environment containing NumPy. This rewrites only that script's campaign outputs. `provenance.json` records the recipe hash, NumPy version, seed, score data, per-file hashes and signal measurements; `score.txt` and `audio-metrics.csv` are packaged with the tracks. The original Metalmania track and all its licensed provenance remain unchanged.
+`src/tools/assets/audio/music/originals` preserves the original MP3 bytes. `evidence` preserves each creator page with its free CC BY 4.0 grant. `sources.json` records the exact MP3 URLs, acquisition date and source/page hashes. `provenance.json` binds every output to that source, license evidence and the importer SHA-256. The runtime contains the eight prepared WAV files and small manifests; original MP3s and HTML pages remain outside the runtime.
 
-`AudioDirector.startMatch(normalAsset, bossAsset)` opens both streams during loading. `bossMusic(true)` requests a two-second crossfade and starts the prepared boss mix at the current musical position. Repeated requests keep the same stream. Pause freezes both playback and crossfade; resumption does not reset the score. A completed transition stops the outgoing source. All music and effects share the existing 32-source limit and conservative summed-gain headroom. Leaving/retrying a match clears active sources; changing maps disposes the prior streams.
+`src/tools/import_menu_music.py` is an explicit authoring operation with Python/NumPy and FFmpeg; `--ffmpeg` identifies the executable. It has no download code. Preparation uses FFmpeg `loudnorm` with target -16 LUFS, -1.5 dBTP and LRA 11, 50 ms windows to remove inactive entrance/release, a cyclic 125 ms crossfade, DC removal, a 3 ms de-click and a 0.84 peak ceiling. Stereo PCM is rounded to signed little-endian 48 kHz / 16-bit WAV. The manifest records exact trim times, frames, decoder/NumPy versions, measured loudness and safety gain. Complete active musical sections are retained: durations are about 149-345 seconds.
 
-Signal checks and tests cannot establish musical appeal. These scores remain `NEEDS_CREATIVE_REVIEW` until the owner listens in the game, including weapon masking, transitions and repeated loops.
+Normal Gradle builds use `GenerateAudio` to validate and copy prepared WAVs. They neither invoke FFmpeg nor download assets. Arena metadata owns battle music paths; `AudioConfig` owns menu music and the workshop bed. Each recording begins at zero when selected; unrelated normal/boss compositions have independent lengths. Menu music stays alive between front-end pages. Runtime mixing and pause behavior are documented in [AUDIO_DESIGN](AUDIO_DESIGN.md).
+
+The five UI cues (`ui-nav`, `ui-change`, `ui-confirm`, `ui-back`, `ui-vehicle`) and 16-second mono `menu-ambience` are original deterministic mechanical synthesis in `GenerateAudio.java`: inharmonic metal modes, latch noise, transformer/fan hum and filtered air. They contain no external samples. `audio/menu-provenance.json` records source/output hashes. The ambience is its own SFX-controlled looping bed, outside the one-shot effects list.
+
+Victory, defeat and draw use short **Riffs** guitar/drum excerpts, mono fold, filtering and release envelopes, plus the existing CC0 metal impact. Defeat adds continuous tape slowdown. Durations remain 3.6, 2.6 and 2.0 seconds. `audio/result-provenance.json` records source/output hashes and modifications.
+
+## Preserved history and checks
+
+The replaced Metalmania originals, six procedural campaign WAVs, score/provenance and generators are preserved in `src/tools/assets/history/music-before-nakarada`, outside runtime. Earlier retired arenas remain in `src/tools/assets/retired-campaign-20260913`. `GenerateAudio` and incremental resource processing remove old runtime paths; there is no fallback or same-length/seek contract.
+
+`AudioAssetsTest` checks eight unique recordings, independent lengths, stereo energy, PCM format, entrance/end energy and seam continuity. `VerifyAssets` binds packaged PCM to sources, recipe and license evidence; it verifies preserved procedural history and original menu cues. These are technical checks. Track selection and the final game mix remain **NEEDS_CREATIVE_REVIEW** until the owner listens.
+
+Retain the complete track list, creator links, modification notice and [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) when redistributing the music or game. See [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).

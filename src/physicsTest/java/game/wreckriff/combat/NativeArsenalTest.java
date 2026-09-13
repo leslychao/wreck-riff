@@ -24,14 +24,14 @@ class NativeArsenalTest {
     }
     private static VehicleCommand ability(AbilityId ability) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,ability);}
     private static VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,null,0,false,false,AbilityId.NONE);}
-    @Test void realFreezeBoltHitsCompoundHullAndMaintainsExactly240ConstrainedSteps() {
+    @Test void realFreezeBoltHitsCompoundHullAndMaintainsExactly180ConstrainedSteps() {
         try(var world=world()) {
             world.teleport(1,new Vector3f(0,.5f,8),new Quaternion());
             tick(world,Map.of(0,ability(AbilityId.FREEZE)));
             for(int tick=0;tick<30&&session.vehicle(1).frozenTicks==0;tick++)tick(world,Map.of());
-            assertEquals(240,session.vehicle(1).frozenTicks);assertEquals(1,world.immobilizerCount());assertEquals(400,session.vehicle(1).hp);
+            assertEquals(180,session.vehicle(1).frozenTicks);assertEquals(1,world.immobilizerCount());assertEquals(400,session.vehicle(1).hp);
             Vector3f start=world.position(1);
-            for(int tick=0;tick<239;tick++) {
+            for(int tick=0;tick<179;tick++) {
                 world.impulse(1,new Vector3f(1000,0,0),Vector3f.ZERO,2);tick(world,Map.of());
                 assertEquals(1,world.immobilizerCount());assertTrue(Math.abs(world.position(1).x-start.x)<.15f);
             }

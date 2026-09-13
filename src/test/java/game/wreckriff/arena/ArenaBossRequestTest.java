@@ -20,14 +20,15 @@ class ArenaBossRequestTest {
         advance(1679);assertEquals(0,schedule.pendingDamage());
         advance(1);assertEquals(ProgressStore.HazardPhase.WARNING,schedule.state("crane-3").phase);
         assertEquals(ProgressStore.HazardPhase.READY,schedule.state("crane-1").phase);
-        assertEquals(240,schedule.state("crane-3").remaining);
-        advance(240+360);assertEquals(List.of(ArenaSystems.BossAction.PROTOCOL),schedule.drainActions());
+        var crane=arena.hazards().stream().filter(h->h.id().equals("crane-3")).findFirst().orElseThrow();
+        assertEquals(crane.warningTicks(),schedule.state("crane-3").remaining);
+        advance(crane.warningTicks()+crane.activeTicks());assertEquals(List.of(ArenaSystems.BossAction.PROTOCOL),schedule.drainActions());
         assertTrue(schedule.drainActions().isEmpty());
     }
-    @Test void shieldCancellationAlsoRemovesTheUnannouncedBossIntention() {
+    @Test void stoppedArenaAlsoRemovesTheUnannouncedBossIntention() {
         match.phase=MatchSession.Phase.BOSS_COMBAT;
         assertTrue(schedule.request("crane-3",ArenaSystems.BossAction.PROTOCOL));
-        schedule.cancelPreparedAndActive(1440);advance(1680);
+        schedule.cancelAll();advance(1680);
         assertEquals(ProgressStore.HazardPhase.WARNING,schedule.state("crane-1").phase,"The cancelled boss choice must not execute later");
         assertEquals(ProgressStore.HazardPhase.READY,schedule.state("crane-3").phase);
         assertTrue(schedule.drainActions().isEmpty());

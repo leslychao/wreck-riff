@@ -3,7 +3,8 @@ package game.wreckriff.audio;
 import game.wreckriff.config.Configs;
 import java.util.*;
 
-public record AudioConfig(String musicAsset, float musicGain, float engineGain, float weaponsGain,
+public record AudioConfig(String menuMusicAsset, String menuAmbienceAsset, float menuAmbienceGain,
+        float musicGain, float engineGain, float weaponsGain,
         float threatsGain, float interfaceGain, float masterHeadroom, int sourceLimit,
         float referenceDistance, float maximumDistance, float enginePitchMin, float enginePitchMax,
         float engineSmoothingSeconds, float musicDuckGain, float musicDuckSeconds, List<String> effects) {
@@ -17,9 +18,10 @@ public record AudioConfig(String musicAsset, float musicGain, float engineGain, 
         return Collections.unmodifiableMap(banks);
     }
     public AudioConfig {
-        if (musicAsset == null || !musicAsset.startsWith("audio/") || !musicAsset.endsWith(".wav")
-                || musicAsset.contains("..")) throw new IllegalArgumentException("Invalid music asset path");
-        for (float gain : new float[]{musicGain,engineGain,weaponsGain,threatsGain,interfaceGain,masterHeadroom,musicDuckGain})
+        if (menuMusicAsset == null || !menuMusicAsset.matches("audio/music/[a-z0-9_-]+\\.wav")
+                || menuAmbienceAsset == null || !menuAmbienceAsset.matches("audio/[a-z0-9-]+\\.wav"))
+            throw new IllegalArgumentException("Invalid menu audio asset path");
+        for (float gain : new float[]{menuAmbienceGain,musicGain,engineGain,weaponsGain,threatsGain,interfaceGain,masterHeadroom,musicDuckGain})
             if (!Float.isFinite(gain) || gain < 0 || gain > 1) throw new IllegalArgumentException("Audio gain must be 0..1");
         if (sourceLimit < 20 || sourceLimit > 32 || referenceDistance <= 0 || maximumDistance <= referenceDistance
                 || enginePitchMin < .5 || enginePitchMax > 2 || enginePitchMin > enginePitchMax

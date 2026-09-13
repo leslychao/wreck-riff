@@ -809,10 +809,13 @@ public final class CombatSystem {
     public static int selectBallisticTarget(MatchSession session,int owner,WorldQuery world) {
         Vector3f origin=world.position(owner),muzzle=world.muzzle(owner),forward=forwardXZ(owner,world);
         float bestDistance=Float.POSITIVE_INFINITY,range=session.combatRules.ballistic().maximumRange();int best=-1;
+        float minimumCosine=(float)Math.cos(radians(session.combatRules.ballistic().acquisitionConeDegrees()));
         for(var target:session.vehicles) {
             if(!target.alive()||target.id==owner)continue;
             Vector3f position=world.position(target.id),delta=position.subtract(origin);float distance=delta.lengthSquared();
-            if(distance>range*range||forward.dot(delta)<=0||!world.visible(muzzle,position,target.id))continue;
+            Vector3f horizontal=horizontal(delta);float horizontalDistance=horizontal.length();
+            if(distance>range*range||horizontalDistance<.001f||forward.dot(horizontal)/horizontalDistance<minimumCosine
+                    ||!world.visible(muzzle,position,target.id))continue;
             if(distance<bestDistance||(Float.compare(distance,bestDistance)==0&&(best<0||target.id<best))) {
                 best=target.id;bestDistance=distance;
             }
@@ -997,15 +1000,15 @@ public final class CombatSystem {
         var ballistic=rules.ballistic();
         if(salvo.targetId>=0) {
             if(!session.vehicle(salvo.targetId).alive()||!world.visible(salvo.carrier.position,world.position(salvo.targetId),salvo.targetId))salvo.targetId=-1;
-            else salvo.area.set(groundPoint(world.position(salvo.targetId),world));
+            else if(salvo.planned==0)salvo.area.set(groundPoint(ballisticAim(salvo.targetId,world),world));
         }
         float spread=ballistic.spread();Vector3f offset=switch(salvo.planned) {
             case 0->new Vector3f(-spread,0,0);case 1->new Vector3f(0,0,spread);
             case 2->new Vector3f(spread,0,0);default->new Vector3f(0,0,-spread);
         };
         Vector3f origin=salvo.carrier.position.clone();
-        Vector3f aim=groundPoint(salvo.targetId<0?salvo.area.add(offset)
-                :ballisticAim(salvo.targetId,origin,0,ballistic.minimumWarningSeconds(),offset,world),world)
+        // The first warning commits the whole salvo. Later charges never move its centre.
+        Vector3f aim=groundPoint(salvo.area.add(offset),world)
                 .addLocal(0,rules.projectileRadius(),0);
         float duration=Math.max(.5f,(float)Math.sqrt(2*Math.max(.1f,origin.y-aim.y)/ballistic.gravity()));
         Vector3f velocity=aim.subtract(origin).divide(duration).addLocal(0,.5f*ballistic.gravity()*duration,0);
@@ -1040,7 +1043,7 @@ public final class CombatSystem {
             if(target>=0&&(!session.vehicle(target).alive()||!world.visible(charge.origin,world.position(target),target)))target=-1;
             ProjectileState projectile=new ProjectileState(charge.id,charge.ownerId,"ballistic-fall",charge.origin,
                     charge.velocity,charge.lifeTicks,target);
-            projectile.velocity.set(charge.velocity);projectiles.add(projectile);
+            projectile.velocity.set(charge.velocity);projectile.originalVelocity.set(charge.velocity);projectiles.add(projectile);
             events.add(new GameEvent(GameEvent.Type.SHOT,charge.id,charge.ownerId,charge.ownerId,charge.origin,
                     "ballistic-fall",0,charge.origin,Vector3f.ZERO));
             reservedCharges--;salvo.released++;iterator.remove();
@@ -1049,7 +1052,7 @@ public final class CombatSystem {
     }
     private void advanceCharge(ProjectileState charge,WorldQuery world) {
         FallingCharge warning=warnings.get(charge.id());
-        guideCharge(charge,warning.offset,world);
+        guideCharge(charge,warning,world);
         Vector3f end=charge.position.add(charge.velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
         WorldQuery.Hit hit=world.sweep(charge.position,end,rules.projectileRadius(),charge.ownerId());
         charge.remainingTicks--;charge.ageTicks++;charge.velocity.y-=rules.ballistic().gravity()*MatchSession.DT;
@@ -1067,33 +1070,45 @@ public final class CombatSystem {
             }
         }
     }
-    private void guideCharge(ProjectileState charge,Vector3f offset,WorldQuery world) {
+    private void guideCharge(ProjectileState charge,FallingCharge warning,WorldQuery world) {
         if(charge.targetId<0)return;
-        int target=charge.targetId;
-        if(!session.vehicle(target).alive()||!world.visible(charge.position,world.position(target),target)) {
+        var ballistic=rules.ballistic();int target=charge.targetId;
+        if(charge.ageTicks>=ticks(ballistic.maximumGuidanceSeconds())
+                ||warning.impactTick-session.tick<=ticks(ballistic.guidanceCutoffSeconds())
+                ||!session.vehicle(target).alive()||!world.visible(charge.position,world.position(target),target)) {
             charge.targetId=-1;return;
         }
-        Vector3f aim=ballisticAim(target,charge.position,charge.velocity.y,0,offset,world);
-        // It remains a falling charge: no climbing back to a target that has jumped over it.
-        aim.y=Math.min(aim.y,charge.position.y-.1f);
-        Vector3f desired=aim.subtract(charge.position).normalizeLocal();
-        float speed=charge.velocity.length();if(speed<.0001f)return;
-        Vector3f direction=charge.velocity.divide(speed);
-        float angle=(float)Math.acos(Math.clamp(direction.dot(desired),-1,1));
-        float permitted=radians(rules.ballistic().turnDegreesPerSecond())*MatchSession.DT;
-        if(angle<=permitted)charge.velocity.set(desired).multLocal(speed);
-        else {
-            Vector3f axis=direction.cross(desired).normalizeLocal();
-            if(axis.lengthSquared()>0)new Quaternion().fromAngleAxis(permitted,axis).mult(charge.velocity,charge.velocity);
+        Vector3f aim=ballisticAim(target,world).addLocal(warning.offset).subtractLocal(charge.position);
+        float speed=horizontal(charge.originalVelocity).length();if(speed<.0001f)return;
+        float heading=(float)Math.atan2(charge.velocity.x,charge.velocity.z);
+        float desired=(float)Math.atan2(aim.x,aim.z),turn=radians(ballistic.turnDegreesPerSecond())*MatchSession.DT;
+        float candidate=heading+Math.clamp(angleDifference(desired,heading),-turn,turn);
+        if(!chargeHeadingFits(charge,candidate,speed,ballistic.maximumDeviation())) {
+            float low=0,high=1;
+            for(int i=0;i<12;i++) {
+                float middle=(low+high)*.5f,trial=heading+angleDifference(candidate,heading)*middle;
+                if(chargeHeadingFits(charge,trial,speed,ballistic.maximumDeviation()))low=middle;else high=middle;
+            }
+            candidate=heading+angleDifference(candidate,heading)*low;
         }
+        // Gravity alone owns Y. Turning must not prolong the fall or postpone its terminal phase.
+        charge.velocity.x=(float)Math.sin(candidate)*speed;charge.velocity.z=(float)Math.cos(candidate)*speed;
     }
-    private Vector3f ballisticAim(int target,Vector3f origin,float verticalSpeed,float delay,Vector3f offset,WorldQuery world) {
+    private static boolean chargeHeadingFits(ProjectileState charge,float heading,float speed,float maximum) {
+        Vector3f velocity=new Vector3f((float)Math.sin(heading)*speed,0,(float)Math.cos(heading)*speed);
+        // Both ends bound the entire straight horizontal segment, including after guidance stops.
+        for(float remaining:new float[]{MatchSession.DT,charge.remainingTicks*MatchSession.DT}) {
+            Vector3f actual=charge.position.add(velocity.mult(remaining));
+            Vector3f free=charge.launchPosition.add(charge.originalVelocity.mult(charge.ageTicks*MatchSession.DT+remaining));
+            if(horizontal(actual.subtract(free)).length()>maximum-.01f)return false;
+        }
+        return true;
+    }
+    private Vector3f ballisticAim(int target,WorldQuery world) {
         var ballistic=rules.ballistic();Vector3f position=world.position(target);
-        float height=Math.max(.1f,origin.y-position.y),gravity=ballistic.gravity();
-        float flight=(verticalSpeed+(float)Math.sqrt(verticalSpeed*verticalSpeed+2*gravity*height))/gravity;
-        Vector3f lead=horizontal(world.velocity(target)).multLocal(Math.min(ballistic.maximumLeadSeconds(),flight+delay));
+        Vector3f lead=horizontal(world.velocity(target)).multLocal(ballistic.maximumLeadSeconds());
         if(lead.length()>ballistic.maximumLead())lead.normalizeLocal().multLocal(ballistic.maximumLead());
-        return position.add(lead).addLocal(offset);
+        return position.add(lead);
     }
     private void ballisticImpact(ProjectileState projectile,WorldQuery.Hit hit,WorldQuery world) {
         if(projectile.exploded)return;projectile.exploded=true;projectile.position.set(hit.point());

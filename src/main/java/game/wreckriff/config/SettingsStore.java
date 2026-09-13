@@ -144,6 +144,7 @@ public final class SettingsStore {
         keys.put("Select Mine",KeyInput.KEY_3); keys.put("Select Napalm",KeyInput.KEY_4);
         keys.put("Select Ballistic",KeyInput.KEY_5); keys.put("Select Cannon",KeyInput.KEY_6);
         keys.put("Rear view",KeyInput.KEY_V); keys.put("Recover",KeyInput.KEY_R);
+        keys.put("Tactical map",KeyInput.KEY_M);
         return keys;
     }
 }

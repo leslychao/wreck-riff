@@ -20,16 +20,6 @@
       "id": "euphoria_park",
       "resourceKey": "arena-euphoria-park",
       "campaign": true
-    },
-    {
-      "id": "ash_necropolis",
-      "resourceKey": "arena-ash-necropolis",
-      "campaign": true
-    },
-    {
-      "id": "doomsday_arena",
-      "resourceKey": "arena-doomsday",
-      "campaign": true
     }
   ]
 }

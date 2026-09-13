@@ -14,6 +14,6 @@ public final class SpecialRules {
     public static final int MAXIMUM_BOMBS=32;
     private SpecialRules() {}
     public static float cooldownSeconds(String profileId) {
-        return switch(VehicleDefinition.forId(profileId)) {case RIVET->14;case GRINDER->20;case SPARK->12;};
+        return switch(VehicleDefinition.forId(profileId)) {case RIVET->18;case GRINDER->26;case SPARK->16;};
     }
 }

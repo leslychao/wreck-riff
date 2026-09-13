@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BossTelegraphVisualTest {
-    @Test void allFiveBossesHaveContinuousAmberToWarmPreparationOnTheirExistingLightsAtMinimumEffects() {
+    @Test void allThreeBossesHaveContinuousAmberToWarmPreparationOnTheirExistingLightsAtMinimumEffects() {
         for(var profile:VehicleProfile.bosses(VehicleRules.load())) {
             Node model=VehicleVisual.create(PresentationTestAssets.shared(),profile,0);
             for(float hp:new float[]{1,.75f,.5f,.25f}) {

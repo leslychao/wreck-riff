@@ -3,6 +3,7 @@ package game.wreckriff.presentation;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.TextureKey;
 import com.jme3.material.Material;
+import com.jme3.material.MaterialDef;
 import com.jme3.material.MatParamTexture;
 import com.jme3.math.ColorRGBA;
 import com.jme3.texture.Texture;
@@ -54,9 +55,20 @@ public final class SurfaceMaterials {
             // becomes a conspicuously bright plate after gamma correction in the real renderer.
             case "road-patch" -> texturedRecipe("asphalt_02",new ColorRGBA(.19f,.20f,.21f,1),3,.018f);
             case "road-wet" -> texturedRecipe("asphalt_02",new ColorRGBA(.13f,.18f,.22f,1),88,.44f);
+            case "road-surface" -> texturedRecipe("asphalt_02",new ColorRGBA(.105f,.115f,.13f,1),5,.07f);
+            case "road-shoulder" -> texturedRecipe("cracked_concrete",new ColorRGBA(.60f,.56f,.46f,1),4,.035f);
+            case "road-marking" -> new Recipe(new ColorRGBA(.70f,.65f,.46f,1),3,.025f,false,List.of());
+            case "district-earth" -> texturedRecipe("asphalt_02",new ColorRGBA(.48f,.35f,.20f,1),2,.02f);
+            case "district-slate" -> texturedRecipe("cracked_concrete",new ColorRGBA(.32f,.39f,.47f,1),7,.08f);
+            case "district-warm" -> texturedRecipe("cracked_concrete",new ColorRGBA(.58f,.44f,.29f,1),6,.055f);
+            case "district-garden" -> texturedRecipe("cracked_concrete",new ColorRGBA(.29f,.40f,.25f,1),3,.035f);
+            case "district-service" -> texturedRecipe("cracked_concrete",new ColorRGBA(.42f,.43f,.40f,1),5,.04f);
+            case "district-fair" -> texturedRecipe("cracked_concrete",new ColorRGBA(.46f,.25f,.20f,1),5,.05f);
             case "roof-seam" -> new Recipe(new ColorRGBA(.022f,.026f,.031f,1),3,.01f,false,List.of());
             case "lane-paint" -> new Recipe(new ColorRGBA(.46f,.34f,.16f,1),4,.03f,false,List.of());
             case "stone" -> texturedRecipe("cracked_concrete",new ColorRGBA(.53f,.58f,.60f,1),9,.09f);
+            case "park-ground" -> texturedRecipe("asphalt_02",new ColorRGBA(.24f,.34f,.13f,1),2,.025f);
+            case "park-leaf" -> texturedRecipe("cracked_concrete",new ColorRGBA(.16f,.30f,.10f,1),2,.018f);
             case "dark-concrete" -> texturedRecipe("cracked_concrete",new ColorRGBA(.34f,.39f,.44f,1),6,.08f);
             case "purple" -> paintRecipe(new ColorRGBA(.44f,.12f,.38f,1));
             case "faded-red" -> paintRecipe(new ColorRGBA(.42f,.19f,.17f,1));
@@ -97,14 +109,19 @@ public final class SurfaceMaterials {
         return result;
     }
     public static Material lit(AssetManager assets,ColorRGBA color,float shininess,float specular) {
-        Material result=new Material(assets,"Common/MatDefs/Light/Lighting.j3md");
-        // This application supplies scalar roughness-derived specular masks, never sRGB specular colours.
-        // Declare that contract on the shared Phong definition before any texture is assigned, so jME
-        // validates the map as data instead of converting it to its default colour-map interpretation.
-        ((MatParamTexture)result.getMaterialDef().getMaterialParam("SpecularMap")).setColorSpace(ColorSpace.Linear);
+        Material result=new Material(lightingDefinition(assets));
         result.setFloat("NormalType",1); // Bundled maps use the OpenGL (+Y), not Phong's default DirectX convention.
         result.setBoolean("UseMaterialColors",true);result.setColor("Diffuse",color);
         result.setColor("Ambient",color);result.setColor("Specular",new ColorRGBA(specular,specular,specular,1));
         result.setFloat("Shininess",shininess);return result;
+    }
+    /** Prepare before importing j3o materials too: binary import applies the material definition's colour-space contract. */
+    public static MaterialDef lightingDefinition(AssetManager assets) {
+        MaterialDef definition=(MaterialDef)assets.loadAsset("Common/MatDefs/Light/Lighting.j3md");
+        // This application supplies scalar roughness-derived specular masks, never sRGB specular colours.
+        // Declare that contract on the shared Phong definition before any texture is assigned, so jME
+        // validates the map as data instead of converting it to its default colour-map interpretation.
+        ((MatParamTexture)definition.getMaterialParam("SpecularMap")).setColorSpace(ColorSpace.Linear);
+        return definition;
     }
 }

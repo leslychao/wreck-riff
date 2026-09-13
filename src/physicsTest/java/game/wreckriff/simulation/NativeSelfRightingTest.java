@@ -130,7 +130,7 @@ class NativeSelfRightingTest {
             assertEquals(generation,rig.world.teleportGeneration(0),"Driving away must not teleport");
         }
     }
-    @ParameterizedTest @ValueSource(strings={"boss_foreman","boss_prefect","boss_emcee","boss_ash_shepherd","boss_director"})
+    @ParameterizedTest @ValueSource(strings={"boss_foreman","boss_prefect","boss_emcee"})
     void realBossMassAndInertiaCanRightOnTheSameControls(String profileId) {
         for(float angle:new float[]{90,-90,180})try(var rig=new Rig(angle,profileId)) {
             int elapsed=rig.right(GAS,240);

@@ -14,6 +14,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Exercises the real jME post-processing lifecycle without claiming an OpenGL frame. */
 class SceneLightingTest {
+    @Test void everyRetainedLocationHasItsOwnFiniteLightingProfile() {
+        var profiles=java.util.Arrays.stream(Theme.values()).map(SceneLighting::profile).toList();
+        assertEquals(4,profiles.size());assertEquals(4,profiles.stream().map(SceneLighting.Profile::sky).distinct().count());
+        for(var profile:profiles) {
+            assertTrue(profile.ambient().r>0&&profile.ambient().g>0&&profile.ambient().b>0);
+            assertTrue(profile.key().r>0&&profile.key().g>0&&profile.key().b>0);
+            assertTrue(Float.isFinite(profile.glow())&&profile.glow()>0);
+        }
+    }
+    @Test void garageLightingReturnsToTheSameArenaWithoutAddingASecondPipeline() {
+        try(var fixture=new Fixture()) {
+            fixture.lighting.apply(Theme.NEON,false);
+            var arenaSky=fixture.viewport.getBackgroundColor().clone();
+            fixture.lighting.applyMenu(true);
+            assertNotEquals(arenaSky,fixture.viewport.getBackgroundColor());
+            assertTrue(fixture.bloom.isEnabled());
+            fixture.lighting.apply(Theme.NEON,false);
+            assertEquals(arenaSky,fixture.viewport.getBackgroundColor());
+            assertFalse(fixture.bloom.isEnabled());
+            assertSinglePipeline(fixture);
+        }
+    }
+
     @Test void startupWithoutGlowRoutesTheSameThemeToTheOriginalFramebuffer() {
         try(var fixture=new Fixture()) {
             fixture.lighting.apply(Theme.INDUSTRIAL_YARD,false);

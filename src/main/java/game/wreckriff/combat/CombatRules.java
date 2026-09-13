@@ -108,20 +108,24 @@ public record CombatRules(int maximumProjectiles, float projectileRadius, float 
         }
     }
     public record Ballistic(int initialAmmo,int maximumAmmo,float cooldownSeconds,int charges,float releaseIntervalSeconds,
-            float minimumWarningSeconds,float maximumRange,float fallbackRange,
+            float minimumWarningSeconds,float maximumRange,float fallbackRange,float acquisitionConeDegrees,
             float carrierHeight,float carrierSpeed,float minimumCarrierSeconds,float maximumCarrierSeconds,
             float gravity,float turnDegreesPerSecond,float maximumLeadSeconds,float maximumLead,
+            float maximumDeviation,float maximumGuidanceSeconds,float guidanceCutoffSeconds,
             float spread,float damage,float radius,Blast blast) {
         public Ballistic {
             ammo(initialAmmo,maximumAmmo);positive("ballistic.cooldown",cooldownSeconds);
             if(charges!=4)throw new IllegalArgumentException("Ballistic salvo must contain four charges");
             positive("ballistic.interval",releaseIntervalSeconds);range("ballistic.warning",minimumWarningSeconds,.5f,3);
             positive("ballistic.maximumRange",maximumRange);
+            range("ballistic.acquisitionConeDegrees",acquisitionConeDegrees,Float.MIN_NORMAL,90);
             positive("ballistic.fallback",fallbackRange);positive("ballistic.height",carrierHeight);positive("ballistic.speed",carrierSpeed);
             positive("ballistic.minimumCarrierTime",minimumCarrierSeconds);positive("ballistic.maximumCarrierTime",maximumCarrierSeconds);
             if(maximumCarrierSeconds<minimumCarrierSeconds)throw new IllegalArgumentException("Invalid carrier time");
             positive("ballistic.gravity",gravity);range("ballistic.turn",turnDegreesPerSecond,Float.MIN_NORMAL,180);
             positive("ballistic.maximumLeadSeconds",maximumLeadSeconds);positive("ballistic.maximumLead",maximumLead);
+            positive("ballistic.maximumDeviation",maximumDeviation);positive("ballistic.maximumGuidanceSeconds",maximumGuidanceSeconds);
+            positive("ballistic.guidanceCutoffSeconds",guidanceCutoffSeconds);
             positive("ballistic.spread",spread);
             positive("ballistic.damage",damage);positive("ballistic.radius",radius);Objects.requireNonNull(blast,"ballistic.blast");
         }

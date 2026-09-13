@@ -58,16 +58,13 @@ class ArenaDynamicPresentationTest {
         assertNotEquals(Spatial.CullHint.Always,neighbour.getCullHint());
         assertNotEquals(Spatial.CullHint.Always,body.getCullHint(),"Independent scene nodes are not modified");
     }
-    @Test void statueWarningUsesAuthoritativeTwoSecondsAndOpenStateNotRenderTime() {
-        var f=new Fixture("ash_necropolis");var object=f.arena.destructibles().stream()
-                .filter(d->d.effect()==ArenaDefinition.ObjectEffect.STATUE).findFirst().orElseThrow();
+    @Test void shortcutStateChangesOnlyAfterAuthoritativeDamageAndRenderingCannotAdvanceItsLifecycle() {
+        var f=new Fixture("construction_17");var object=f.arena.destructibles().getFirst();
         Node marker=(Node)f.root.getChild("arena-object-feedback-"+object.id());
-        f.systems.damageObject(object.geometryId(),0,object.maximumHp(),"test",1);f.presentation.update(0);
-        assertEquals("WARNING",marker.getUserData("objectPhase"));
         for(int i=0;i<100;i++)f.presentation.update(.2f);
         assertFalse(f.systems.objectState(object.id()).open());
         assertNotEquals(Spatial.CullHint.Always,f.root.getChild(object.geometryId()).getCullHint());
-        f.steps(object.delayTicks()+1);
+        f.systems.damageObject(object.geometryId(),0,object.maximumHp(),"test",1);f.presentation.update(0);
         assertTrue(f.systems.objectState(object.id()).open());
         assertEquals("OPEN",marker.getUserData("objectPhase"));
         assertEquals(Spatial.CullHint.Always,f.root.getChild(object.geometryId()).getCullHint());
@@ -79,6 +76,9 @@ class ArenaDynamicPresentationTest {
         f.steps(1680);assertTrue(f.systems.requestHazard(barrier.id(),null));f.presentation.update(0);
         assertEquals(Spatial.CullHint.Always,body.getCullHint());
         Node marker=(Node)f.root.getChild("arena-barrier-feedback-"+barrier.id());
+        var box=f.arena.boxes().stream().filter(b->b.id().equals(barrier.geometryId())).findFirst().orElseThrow();
+        assertEquals(box.rotation(),marker.getLocalRotation(),"Warning footprint and collider share the authored quarter-turn");
+        assertEquals(box.center().y()-box.size().y()/2,marker.getLocalTranslation().y,.0001f);
         assertEquals(1,geometries(marker).size(),"All four marker strips share one live material and one draw");
         var lamp=geometries(marker).getFirst().getMaterial();
         ColorRGBA warningColor=((ColorRGBA)lamp.getParam("Color").getValue()).clone();
@@ -90,17 +90,9 @@ class ArenaDynamicPresentationTest {
         assertNotEquals(Spatial.CullHint.Always,body.getCullHint());
         f.steps(barrier.activeTicks());assertEquals(Spatial.CullHint.Always,body.getCullHint());
     }
-    @Test void necropolisObelisksActuallyMeetTheirRoofInsteadOfFloatingInSky() {
-        var art=ArenaArt.load(ArenaRegistry.load().definition("ash_necropolis"));
-        for(var spire:art.parts().stream().filter(p->p.id().startsWith("tomb-obelisk")).toList()) {
-            var roof=art.parts().stream().filter(p->p.id().startsWith("setback-roof")
-                    &&Math.abs(p.position().x()-spire.position().x())<5&&p.position().z()==spire.position().z()).findFirst().orElseThrow();
-            assertTrue(spire.position().y()-spire.size().y()/2<=roof.position().y()+roof.size().y()/2);
-        }
-    }
     @Test void batchingSeparatesDynamicAnchorsEvenWhenTheyShareAnAnimatedGroup() {
-        var f=new Fixture("neon_zero");String gate=f.arena.destructibles().getFirst().geometryId();
-        String barrier=f.arena.barriers().getFirst().geometryId();
+        var f=new Fixture("neon_zero");String gate=f.arena.barriers().getFirst().geometryId();
+        String barrier=f.arena.barriers().getLast().geometryId();
         var v=new ArenaDefinition.Vec3(0,0,0);var size=new ArenaDefinition.Vec3(1,1,1);
         var group=new ArenaArt.Group("shared",v,ArenaArt.Motion.PULSE,12,0);
         var scene=new ArenaArt.Scene(1,f.arena.id(),"test","original",List.of(group),List.of(
@@ -117,8 +109,8 @@ class ArenaDynamicPresentationTest {
         assertEquals(2,geometries(gateNode).size(),"The static material is batched independently of the live motion group");
         Geometry gateLamp=(Geometry)root.getChild("gate-lamp");
         ColorRGBA before=((ColorRGBA)gateLamp.getMaterial().getParam("Color").getValue()).clone();
-        f.steps(1680);assertTrue(f.systems.requestHazard(f.arena.barriers().getFirst().id(),null));
-        f.steps(f.arena.barriers().getFirst().warningTicks());
+        f.steps(1680);assertTrue(f.systems.requestHazard(f.arena.barriers().getLast().id(),null));
+        f.steps(f.arena.barriers().getLast().warningTicks());
         var presentation=ArenaPresentation.attach(assets,root,f.session,f.arena,f.systems);
         f.session.tick+=300;presentation.update(0);
         assertNotEquals(before,gateLamp.getMaterial().getParam("Color").getValue());
@@ -144,7 +136,7 @@ class ArenaDynamicPresentationTest {
         Node geometry() {
             Node result=new Node("arena");
             for(var box:arena.boxes()) {Geometry geometry=new Geometry(box.id(),SurfaceMesh.box(box.size().x()/2,box.size().y()/2,box.size().z()/2,4));
-                geometry.setLocalTranslation(box.center().vector());result.attachChild(geometry);}
+                geometry.setLocalTranslation(box.center().vector());geometry.setLocalRotation(box.rotation());result.attachChild(geometry);}
             return result;
         }
         void steps(int count) {for(int i=0;i<count;i++){session.tick++;systems.updateHazard(null,(id,amount,cause,event)->{});presentation.update(0);}}

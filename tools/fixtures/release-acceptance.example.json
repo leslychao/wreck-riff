@@ -113,7 +113,7 @@
       "status": "PENDING",
       "reviewedBy": "",
       "reviewedAtUtc": "",
-      "summary": "All six maps: actual lower/launch/upper/pickup/drop routes and boss combat at both levels where applicable.",
+      "summary": "All four maps: actual connected districts, drive-through interiors, elevation changes, useful destructible shortcuts, resources, full map, all chassis and boss routes; retain classic-yard route checks.",
       "artifacts": [],
       "reviewerType": "agent",
       "observations": {
@@ -132,14 +132,6 @@
           },
           {
             "id": "euphoria_park",
-            "checks": []
-          },
-          {
-            "id": "ash_necropolis",
-            "checks": []
-          },
-          {
-            "id": "doomsday_arena",
             "checks": []
           }
         ]

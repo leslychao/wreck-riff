@@ -70,7 +70,7 @@ class ProgressStoreTest {
         Checkpoint source=checkpoint("construction_17");
         ArenaState arena=new ArenaState(pickups,Map.of("shortcut",new ObjectState(0,true,true)),
                 Map.of("crane",new HazardState(HazardPhase.WARNING,60,180,2)),37,4289);
-        Checkpoint checkpoint=new Checkpoint(source.arenaId(),source.profileId(),source.liveryId(),source.seed(),
+        Checkpoint checkpoint=new Checkpoint(source.arenaId(),source.layoutRevision(),source.profileId(),source.liveryId(),source.seed(),
                 "normal",CheckpointStage.BOSS,source.player(),source.safePose(),arena,1234);
         pickups.clear();
         try(var store=new ProgressStore(directory)) {
@@ -205,7 +205,7 @@ class ProgressStoreTest {
             Attempt attempt=store.beginAttempt("construction_17",Mode.CAMPAIGN,false);
             assertThrows(IllegalArgumentException.class,()->store.saveCheckpoint(attempt,checkpoint("neon_zero")));
             Checkpoint valid=checkpoint("construction_17");
-            Checkpoint bad=new Checkpoint(valid.arenaId(),valid.profileId(),valid.liveryId(),valid.seed(),valid.difficulty(),valid.stage(),
+            Checkpoint bad=new Checkpoint(valid.arenaId(),valid.layoutRevision(),valid.profileId(),valid.liveryId(),valid.seed(),valid.difficulty(),valid.stage(),
                     valid.player(),new SafePose(0,1,0,0,"missing","spawn"),valid.arena(),0);
             assertThrows(IllegalArgumentException.class,()->store.saveCheckpoint(attempt,bad));
         }
@@ -276,7 +276,7 @@ class ProgressStoreTest {
         for(WeaponType type:WeaponType.values()) weapons.put(type.id(),new WeaponResource(2,17));
         PlayerResources player=new PlayerResources(520,38,"homing",weapons,Map.of("freeze",401L,"shield",61L,"special",0L),
                 new ResourceTimers(3,5,7,9,11,13,15,17));
-        return new Checkpoint(arenaId,"rivet",2,812,"normal",CheckpointStage.BOSS,player,
+        return new Checkpoint(arenaId,CURRENT_LAYOUT_REVISION,"rivet",2,812,"normal",CheckpointStage.BOSS,player,
                 new SafePose(12,1.25,14,.2,"lower-road","player-spawn"),
                 new ArenaState(Map.of(),Map.of(),Map.of(),12,71),0);
     }

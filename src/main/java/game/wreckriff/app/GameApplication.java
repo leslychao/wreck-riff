@@ -12,6 +12,7 @@ import game.wreckriff.Main;
 import game.wreckriff.ai.*;
 import game.wreckriff.arena.*;
 import game.wreckriff.audio.AudioDirector;
+import game.wreckriff.audio.UiCue;
 import game.wreckriff.audio.AudioCapture;
 import game.wreckriff.combat.*;
 import game.wreckriff.config.*;
@@ -37,6 +38,8 @@ import game.wreckriff.ui.HudView;
 import game.wreckriff.ui.MatchHudPresenter;
 import game.wreckriff.ui.ProgressNotice;
 import game.wreckriff.ui.MenuView;
+import game.wreckriff.ui.TacticalMapView;
+import game.wreckriff.ui.VehicleSelectionModel;
 import game.wreckriff.ui.UiFocusModel;
 import game.wreckriff.ui.PickupFeedback;
 import game.wreckriff.ui.EncounterSubtitles;
@@ -61,7 +64,8 @@ public final class GameApplication extends SimpleApplication {
     private ProgressStore.Mode requestedMode=ProgressStore.Mode.LEGACY;
     private ProgressStore.Checkpoint retryCheckpoint;
     private final ScreenFlow flow=new ScreenFlow();
-    private final Node matchNode=new Node("match"),menuNode=new Node("menu-scene");
+    private final Node matchNode=new Node("match");
+    private GaragePresentation garage;
     private final Map<Integer,Node> vehicleModels=new HashMap<>();
     private final Map<Integer,Spatial[]> wheels=new HashMap<>();
     private final Map<Integer,VehicleController> drivers=new LinkedHashMap<>();
@@ -105,6 +109,7 @@ public final class GameApplication extends SimpleApplication {
     private FileHandler fileLog;
     private Handler warningLog;
     private HudView hud;
+    private TacticalMapView tacticalMap;
     private PickupFeedback pickupFeedback;
     private EncounterSubtitles encounterSubtitles;
     private final MatchHudPresenter hudPresenter=new MatchHudPresenter();
@@ -121,7 +126,9 @@ public final class GameApplication extends SimpleApplication {
     private SettingsStore.Settings previousVideo;
     private String message="",error="",rebinding;
     private String requestedProfileId="rivet";
-    private Runnable vehicleSelectionAction;
+    private record MatchLaunch(String arenaId,ProgressStore.Mode mode,boolean newCampaign) { }
+    private MatchLaunch vehicleLaunch;
+    private VehicleSelectionModel vehicleSelection;
     private Runnable confirmation;
     private String confirmationTitle;
     private boolean rearView;
@@ -167,7 +174,7 @@ public final class GameApplication extends SimpleApplication {
         }
         Path progressDirectory=options.dev()&&!options.automated()
                 ?store.directory().resolve("diagnostics").resolve("interactive-progress"):store.directory();
-        progress=new ProgressStore(progressDirectory,checkpoint->MatchCheckpoint.validateReferences(arenaRegistry,checkpoint));
+        progress=new ProgressStore(progressDirectory,MatchCheckpoint.references(arenaRegistry));
         launchReport=options.dev()?null:new LaunchReport(store.directory(),progress.snapshot().campaign().checkpoint()!=null);
     }
     @Override public void simpleInitApp() {
@@ -176,7 +183,7 @@ public final class GameApplication extends SimpleApplication {
         viewPort.setBackgroundColor(new ColorRGBA(0.033f,0.045f,0.065f,1));
         sceneLighting=SceneLighting.install(assetManager,rootNode,viewPort);
         sceneLighting.setSamples(store.settings().samples);
-        rootNode.attachChild(menuNode); rootNode.attachChild(matchNode);
+        rootNode.attachChild(matchNode);
         try {
             matchRules=MatchRules.load(); vehicleRules=VehicleRules.load(); loop=new SimulationLoop(matchRules);
             initializeLogging();
@@ -212,6 +219,8 @@ public final class GameApplication extends SimpleApplication {
             input=new InputSystem(inputManager,store::settings,GamepadProfile.load(store.directory())); input.onKey(this::key); input.onUi(this::uiAction);
             input.onDisconnect(()->pause("Controller disconnected. Reconnect or use the keyboard."));
             audio=new AudioDirector(assetManager,audioRenderer,listener,rootNode);
+            audio.setVolumes(store.settings().master,store.settings().music,store.settings().sfx);
+            menu.onFeedback(audio::ui);
             chase=new ChaseCamera(cam,CameraRules.load());
             createMenuScene();
             Path captures=store.directory().resolve("captures");
@@ -249,11 +258,8 @@ public final class GameApplication extends SimpleApplication {
         } catch(IOException e) { Logger.getLogger(getClass().getName()).warning("File logging unavailable: "+e.getMessage()); }
     }
     private void createMenuScene() {
-        menuNode.detachAllChildren();
-        Node hero=VehicleVisual.create(assetManager,VehicleDefinition.forId(store.settings().selectedVehicleId).profile(vehicleRules),0); hero.setLocalTranslation(2,1,0); hero.setLocalScale(1.35f); menuNode.attachChild(hero);
-        Geometry floor=new Geometry("show-floor",SurfaceMesh.box(30,0.1f,30,4));
-        floor.setMaterial(new SurfaceMaterials(assetManager).material("concrete"));
-        floor.setShadowMode(com.jme3.renderer.queue.RenderQueue.ShadowMode.Receive); menuNode.attachChild(floor);
+        if(garage==null){garage=new GaragePresentation(assetManager,vehicleRules);rootNode.attachChild(garage.node());}
+        garage.show(vehicleSelection==null?store.settings().selectedVehicleId:vehicleSelection.preview().id());
     }
     private void continueCampaign() {
         var campaign=progress.snapshot().campaign();
@@ -261,12 +267,9 @@ public final class GameApplication extends SimpleApplication {
         String profile=session!=null&&session.mode==MatchSession.Mode.CAMPAIGN?session.vehicle(0).profileId:store.settings().selectedVehicleId;
         startMatch(campaign.currentArenaId(),ProgressStore.Mode.CAMPAIGN,campaign.checkpoint(),profile);
     }
-    private void newCampaign() {
-        progress.beginNewCampaign();startMatch(progress.snapshot().campaign().currentArenaId(),ProgressStore.Mode.CAMPAIGN,null,store.settings().selectedVehicleId);
-    }
     private void startArena(String id,boolean bossDuel) {
-        chooseVehicle(()->startMatch(id,id.equals(ProgressStore.LEGACY_ARENA)?ProgressStore.Mode.LEGACY:
-                bossDuel?ProgressStore.Mode.BOSS_DUEL:ProgressStore.Mode.ARENA,null,store.settings().selectedVehicleId));
+        chooseVehicle(new MatchLaunch(id,id.equals(ProgressStore.LEGACY_ARENA)?ProgressStore.Mode.LEGACY:
+                bossDuel?ProgressStore.Mode.BOSS_DUEL:ProgressStore.Mode.ARENA,false));
     }
     private void startMatch() {
         startMatch(requestedArena,requestedMode,retryCheckpoint,requestedProfileId);
@@ -280,21 +283,21 @@ public final class GameApplication extends SimpleApplication {
         loadingStarted=System.nanoTime();
         long seed=checkpoint!=null?checkpoint.seed():options.fixedSeed()?options.seed():System.nanoTime();
         boolean bossCheckpoint=checkpoint!=null&&checkpoint.stage()==ProgressStore.CheckpointStage.BOSS;
-        List<ArenaDefinition.Spawn> spawns=new ArrayList<>(selected.spawns());
-        Collections.shuffle(spawns,new Random(seed));
+        List<ArenaDefinition.Spawn> spawns=MatchSpawns.ordered(selected,seed);
         var arenaFactory=new ArenaFactory(assetManager);
         ArenaArt.Scene arenaArt;
         List<SurfaceMaterials.TextureUse> textures;
         try {
             arenaArt=ArenaArt.load(selected);
-            textures=arenaFactory.textureRequirements(selected,arenaArt);
+            textures=new ArrayList<>(arenaFactory.textureRequirements(selected,arenaArt));
+            textures.addAll(OrdnanceStyle.textures("projectiles"));textures.addAll(OrdnanceStyle.textures("mines"));
         } catch(RuntimeException exception) {fail(exception);return;}
         // Strong references keep jME's cloned textures alive only until scene materials own their images.
         var decodedTextures=new ArrayList<com.jme3.texture.Texture>();
         List<MatchLoading.Stage> stages=new ArrayList<>();
         stages.add(new MatchLoading.Stage("Подготовка арены",()->{
-            cleanupMatch(false);arena=selected;
-            attempt=options.automated()&&soak==null?new ProgressStore.Attempt(1,UUID.randomUUID(),arenaId,mode,bossCheckpoint):
+            cleanupMatch(false);arena=selected;chase.configureMap(arena.bounds());
+            attempt=options.automated()&&soak==null&&!options.uiReview()?new ProgressStore.Attempt(1,UUID.randomUUID(),arenaId,mode,bossCheckpoint):
                     progress.beginAttempt(arenaId,mode,bossCheckpoint);
             session=new MatchSession(seed,arena,MatchSession.Mode.valueOf(mode.name()),Configs.load("combat",CombatRules.class),
                     attempt.id(),bossCheckpoint,checkpoint==null?0:checkpoint.liveryId(),requestedProfileId);
@@ -304,6 +307,8 @@ public final class GameApplication extends SimpleApplication {
             var texture=textures.get(i);
             stages.add(new MatchLoading.Stage("Текстуры: "+(i+1)+" / "+textures.size(),()->decodedTextures.add(texture.load(assetManager))));
         }
+        for(var style:OrdnanceStyle.values())
+            stages.add(new MatchLoading.Stage("Боеприпасы: "+style.name(),()->style.load(assetManager)));
         stages.add(new MatchLoading.Stage("Окружение",()->{
             try {
                 content=arenaFactory.build(arena,arenaArt);matchNode.attachChild(content.visual());
@@ -318,16 +323,10 @@ public final class GameApplication extends SimpleApplication {
         for(int id=0;id<count;id++) {
             final int participant=id;
             stages.add(new MatchLoading.Stage("Машины: "+(id+1)+" / "+count,()->{
-                var state=session.vehicle(participant);var spawn=spawns.get(participant);
+                var state=session.vehicle(participant);
                 var profile=VehicleDefinition.forId(state.profileId).profile(vehicleRules);
-                Vector3f position=spawn.position().vector().add(0,profile.roadOffset(),0);
-                Quaternion rotation=new Quaternion().fromAngleAxis(spawn.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y);
-                if(participant==0&&checkpoint!=null) {
-                    var pose=checkpoint.safePose();position.set((float)pose.x(),(float)pose.y(),(float)pose.z());
-                    rotation.fromAngleAxis((float)pose.yaw(),Vector3f.UNIT_Y);
-                    if(!world.freeSpawnPose(profile,position,rotation))throw new IllegalArgumentException("Контрольная точка перекрыта");
-                }
-                world.addVehicle(participant,position,rotation,profile);attachVehicleModel(state);
+                var pose=MatchSpawns.select(world,profile,spawns,participant,checkpoint);
+                world.addVehicle(participant,pose.position(),pose.rotation(),profile);attachVehicleModel(state);
             }));
         }
         stages.add(new MatchLoading.Stage("Системы боя",()->{
@@ -347,19 +346,20 @@ public final class GameApplication extends SimpleApplication {
             encounterSubtitles=new EncounterSubtitles(arena,session.sessionId);
             sceneLighting.apply(arena.metadata().theme(),store.settings().glow);
         }));
+        stages.add(new MatchLoading.Stage("Музыка",()->audio.prepareMatch(session.sessionId,arena.metadata().music(),arena.metadata().bossMusic())));
         loading=new MatchLoading(stages,()->world.step(),()->{
             // Restoring resource timers after suspension warmup cannot spend a saved cooldown.
             if(checkpoint!=null)MatchCheckpoint.restorePlayer(session.vehicle(0),checkpoint.player());
             drivers.values().forEach(driver->driver.recordSafePose(session.tick));
             if(mode==ProgressStore.Mode.CAMPAIGN&&checkpoint==null) {
                 retryCheckpoint=runtime.checkpoint(ProgressStore.CheckpointStage.ARENA);
-                if(!options.automated()||soak!=null)progress.saveCheckpoint(attempt,retryCheckpoint);
+                if(!options.automated()||soak!=null||options.uiReview())progress.saveCheckpoint(attempt,retryCheckpoint);
             }
-            chase.reset();menuNode.setCullHint(Spatial.CullHint.Always);createHud();
+            chase.reset();garage.node().setCullHint(Spatial.CullHint.Always);createHud();
         },()->{
             loop=new SimulationLoop(matchRules);
-            audio.startMatch(session.sessionId,arena.metadata().music(),arena.metadata().bossMusic());
             audio.bossMusic(session.phase==MatchSession.Phase.BOSS_ENTRY);
+            audio.startPreparedMatch();
             input.clear();flow.running();finishLoading(checkpoint!=null);
         });
         flow.loading();
@@ -455,21 +455,25 @@ public final class GameApplication extends SimpleApplication {
             }
             if(!diagnosticDrawable)undrawableSeconds+=dt;
             if(!drawable)pause("Window minimized. Resume when ready.");
-            if(flow.screen()!=Screen.RUNNING&&!options.uiReview())menu.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
+            if(flow.screen()==Screen.TACTICAL_MAP&&tacticalMap!=null) {
+                tacticalMap.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
+                tacticalMap.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
+            } else if(flow.screen()!=Screen.RUNNING&&!options.uiReview())menu.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
             if(previousVideo!=null && elapsed>=videoDeadline) restoreVideo();
             var volume=store.settings(); audio.setVolumes(volume.master,volume.music,volume.sfx);
-            sceneLighting.apply(world==null?ArenaDefinition.Theme.INDUSTRIAL_YARD:arena.metadata().theme(),volume.glow);
+            audio.updatePresentation(Math.min(dt,.1f));
+            if(world==null)sceneLighting.applyMenu(volume.glow);else sceneLighting.apply(arena.metadata().theme(),volume.glow);
             sceneLighting.setSamples(volume.samples);
             if(options.automated() && !options.uiReview() && !smokeStarted && elapsed>0.5) {
                 smokeStarted=true;
-                if(options.vehicleShowcase())chooseVehicle(this::startMatch);else startMatch();
+                if(options.vehicleShowcase())chooseVehicle(new MatchLaunch(requestedArena,requestedMode,false));else startMatch();
             }
             if(options.vehicleShowcase()&&flow.screen()==Screen.VEHICLES&&elapsed>1.5) {
                 if(!vehicleSelectionCaptured){capture("vehicle-selection");vehicleSelectionCaptured=true;}
-                if(elapsed>2.2)startMatch();
+                if(elapsed>2.2)selectVehicle();
             }
             if(flow.screen()==Screen.LOADING&&loading!=null)loading.advance();
-            if(flow.screen()==Screen.RUNNING&&!options.uiReview()) {
+            if(flow.screen()==Screen.RUNNING&&(!options.uiReview()||runtime!=null&&!uiReviewHud&&uiReviewProgress==null&&uiReviewResult==null)) {
                 long simulationStarted=profileStamp();
                 advanceRunningFrame(loop,startingLoop,dt,this::fixedTick);
                 profileStage(StageProfiler.Stage.SIMULATION,simulationStarted);
@@ -481,9 +485,8 @@ public final class GameApplication extends SimpleApplication {
                 renderMatch(loadingFramePrepared?0:Math.min(dt,0.1f));
             }
             else {
-                float rotation=(float)Math.sin(elapsed*0.16)*0.15f;
-                menuNode.setLocalRotation(new Quaternion().fromAngleAxis(rotation,Vector3f.UNIT_Y));
-                cam.setLocation(new Vector3f(-6,4.5f,10)); cam.lookAt(new Vector3f(0.5f,0.7f,0),Vector3f.UNIT_Y);
+                garage.update(Math.min(dt,.1f),cam,flow.screen()==Screen.RUNNING?0:menu.sceneLeftOcclusion(),
+                        flow.screen()==Screen.RUNNING?0:menu.sceneBottomOcclusion());
             }
             if(noticeTime>0)noticeTime-=dt;
             if(flow.screen()!=Screen.RUNNING)menu.setStatus(noticeTime>0?message:progressStatus);
@@ -566,7 +569,7 @@ public final class GameApplication extends SimpleApplication {
     }
     private FrameSample.Phase framePhase() {
         return switch(flow.screen()) {
-            case LOADING->FrameSample.Phase.LOADING;case PAUSED->FrameSample.Phase.PAUSED;
+            case LOADING->FrameSample.Phase.LOADING;case PAUSED,TACTICAL_MAP->FrameSample.Phase.PAUSED;
             case RESULTS->FrameSample.Phase.RESULTS;case ERROR->FrameSample.Phase.ERROR;
             case RUNNING->session==null?FrameSample.Phase.TRANSITION:switch(session.phase) {
                 case INTRO->FrameSample.Phase.INTRO;case ARENA_COMBAT->FrameSample.Phase.ARENA_COMBAT;
@@ -701,11 +704,13 @@ public final class GameApplication extends SimpleApplication {
         input.clear(); input.setGameplay(flow.screen()==Screen.RUNNING);
         if(world!=null && flow.screen()!=Screen.RUNNING && flow.screen()!=Screen.RESULTS) audio.pause();
         if(world!=null && flow.screen()==Screen.RUNNING) audio.resume();
-        menuNode.setCullHint(world==null?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
+        if(world==null && flow.screen()!=Screen.LOADING && flow.screen()!=Screen.ERROR) audio.startMenu();
+        garage.node().setCullHint(world==null?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
         loop.resetAccumulator(); redraw();
     }
     private void redraw() {
         ui.clear();ui.usePixelCoordinates();showcaseText=null;
+        if(tacticalMap!=null)tacticalMap.setVisible(false);
         if(hud!=null)hud.setVisible(false);
         if(flow.screen()!=Screen.RUNNING)menu.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
         switch(flow.screen()) {
@@ -715,21 +720,28 @@ public final class GameApplication extends SimpleApplication {
             case STATISTICS -> drawStatistics();
             case LOADING -> {loadingUiPercent=-1;drawLoading();}
             case RUNNING -> createHud();
+            case TACTICAL_MAP -> {
+                if(tacticalMap==null){tacticalMap=new TacticalMapView(assetManager,guiNode);tacticalMap.onFeedback(audio::ui);}
+                tacticalMap.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
+                tacticalMap.show(arena,session,world,arenaSystems.activePickups(),flow::back);
+            }
             case PAUSED -> menu.show("pause","ПАУЗА",!flow.pauseReason().isBlank()?flow.pauseReason():arena==null?"":arena.metadata().title(),List.of(),List.of(
-                    new MenuView.Action("resume","ПРОДОЛЖИТЬ",flow::resume),
+                    new MenuView.Action("resume","ПРОДОЛЖИТЬ",UiCue.BACK,flow::resume),
+                    new MenuView.Action("tactical-map","КАРТА МЕСТНОСТИ",flow::tacticalMap),
                     new MenuView.Action("settings","НАСТРОЙКИ",()->flow.open(Screen.SETTINGS)),
                     new MenuView.Action("controls","УПРАВЛЕНИЕ",()->flow.open(Screen.CONTROLS)),
                     new MenuView.Action("retry",retryCheckpoint!=null&&retryCheckpoint.stage()==ProgressStore.CheckpointStage.BOSS?"ПОВТОРИТЬ БОССА":"ПОВТОРИТЬ КАРТУ",
                             ()->confirm("Текущая попытка завершится. Начать снова с контрольной точки?",this::startMatch)),
                     new MenuView.Action("leave","ГЛАВНОЕ МЕНЮ",()->confirm(session.mode==MatchSession.Mode.CAMPAIGN?
-                            "Прогресс сохранён у последней контрольной точки. Покинуть бой?":"Текущая попытка завершится. Покинуть бой?",this::returnToMenu))),
-                    List.of(new MenuView.Action("resume-footer","НАЗАД В БОЙ",flow::resume)),"resume");
+                            "Прогресс сохранён у последней контрольной точки. Покинуть бой?":"Текущая попытка завершится. Покинуть бой?",this::returnToMenu)),
+                    new MenuView.Action("quit","ВЫЙТИ ИЗ ИГРЫ",()->confirm(quitQuestion(),this::stop))),
+                    List.of(new MenuView.Action("resume-footer","НАЗАД В БОЙ",UiCue.BACK,flow::resume)),"resume");
             case RESULTS -> drawResults();
             case SETTINGS -> drawSettings();
             case CONTROLS -> drawControls();
             case CREDITS -> drawCredits();
             case CONFIRM -> menu.show("confirm:"+confirmationTitle,"ПОДТВЕРЖДЕНИЕ","",List.of(),List.of(new MenuView.Text("question",confirmationTitle)),
-                    List.of(new MenuView.Action("cancel","ОТМЕНА",flow::back),new MenuView.Action("accept","ПОДТВЕРДИТЬ",()->{
+                    List.of(new MenuView.Action("cancel","ОТМЕНА",UiCue.BACK,flow::back),new MenuView.Action("accept","ПОДТВЕРДИТЬ",()->{
                         Runnable action=confirmation;confirmation=null;flow.back();if(action!=null)action.run();})),"cancel");
             case ERROR -> menu.show("error","НЕ УДАЛОСЬ ПРОДОЛЖИТЬ","Последнее корректное сохранение сохранено.",List.of(),
                     List.of(new MenuView.Text("error-detail",error)),List.of(new MenuView.Action("menu","ГЛАВНОЕ МЕНЮ",this::returnToMenu),
@@ -743,8 +755,9 @@ public final class GameApplication extends SimpleApplication {
         boolean canContinue=campaign.currentArenaId()!=null&&(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty());
         if(canContinue)rows.add(new MenuView.Action("continue","ПРОДОЛЖИТЬ",arenaRegistry.definition(campaign.currentArenaId()).metadata().title(),true,this::continueCampaign));
         rows.add(new MenuView.Action("new","НОВАЯ КАМПАНИЯ",()->{
-            if(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty())confirm("Начать кампанию заново? Открытые карты и статистика сохранятся.",()->chooseVehicle(this::newCampaign));
-            else chooseVehicle(this::newCampaign);}));
+            var launch=new MatchLaunch(ProgressStore.CAMPAIGN_ARENAS.getFirst(),ProgressStore.Mode.CAMPAIGN,true);
+            if(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty())confirm("Начать кампанию заново? Открытые карты и статистика сохранятся.",()->chooseVehicle(launch));
+            else chooseVehicle(launch);}));
         rows.add(new MenuView.Action("maps","ОТДЕЛЬНЫЙ БОЙ",flow::maps));
         rows.add(new MenuView.Action("stats","СТАТИСТИКА",flow::statistics));
         rows.add(new MenuView.Action("settings","НАСТРОЙКИ",()->flow.open(Screen.SETTINGS)));
@@ -761,7 +774,7 @@ public final class GameApplication extends SimpleApplication {
             rows.add(new MenuView.ArenaCard("arena:"+entry.id(),selected,detail,unlocked,()->startArena(entry.id(),false),entry.campaign()&&duels?()->startArena(entry.id(),true):null));
         }
         menu.show("maps","ВЫБОР АРЕНЫ",duels?"Дуэли с боссами открыты":"Дуэли с боссами откроются после кампании",List.of(),rows,
-                List.of(new MenuView.Action("back","НАЗАД",flow::menu)),null);
+                List.of(new MenuView.Action("back","НАЗАД",UiCue.BACK,flow::menu)),null);
     }
     private void drawStatistics() {
         var snapshot=displayProgress();var stats=snapshot.stats();var rows=new ArrayList<MenuView.Row>();
@@ -771,7 +784,18 @@ public final class GameApplication extends SimpleApplication {
             var record=snapshot.records().get(entry.id());String name=arenaRegistry.definition(entry.id()).metadata().title();
             rows.add(new MenuView.Text("record:"+entry.id(),name+"\nКарта: "+formatTicks(record==null?null:record.bestFullMapTicks())+"    Босс: "+formatTicks(record==null?null:record.bestBossDuelTicks())));
         }
-        menu.show("statistics","СТАТИСТИКА","Пройдено арен: "+snapshot.campaign().completedArenaIds().size()+" / 5",List.of(),rows,List.of(new MenuView.Action("back","НАЗАД",flow::menu)),"back");
+        for(var history:snapshot.historicalLayouts().entrySet()) {
+            rows.add(new MenuView.Text("history:"+history.getKey(),"ИСТОРИЯ · ПРЕЖНИЕ ПЛАНИРОВКИ\nЭти результаты сохранены отдельно от рекордов новых карт."));
+            for(var entry:history.getValue().records().entrySet()) {
+                String name=switch(entry.getKey()) {
+                    case "construction_17"->"МЕГАСТРОЙ-17";case "neon_zero"->"НЕОН-РАЙОН ZERO";case "euphoria_park"->"ЛУНАПАРК ЭЙФОРИЯ";
+                    case "ash_necropolis"->"НЕКРОПОЛЬ ПЕПЛА";case "doomsday_arena"->"АРЕНА СУДНОГО ДНЯ";default->"DEAD AIR YARD";
+                };
+                var record=entry.getValue();
+                rows.add(new MenuView.Text("history:"+history.getKey()+":"+entry.getKey(),name+"\nПобед: "+record.victories()+"    Карта: "+formatTicks(record.bestFullMapTicks())+"    Босс: "+formatTicks(record.bestBossDuelTicks())));
+            }
+        }
+        menu.show("statistics","СТАТИСТИКА","Пройдено арен: "+snapshot.campaign().completedArenaIds().size()+" / "+ProgressStore.CAMPAIGN_ARENAS.size(),List.of(),rows,List.of(new MenuView.Action("back","НАЗАД",UiCue.BACK,flow::menu)),"back");
     }
     private void drawResults() {
         MatchSession displayed=uiReviewResult==null?session:uiReviewResult;
@@ -803,11 +827,12 @@ public final class GameApplication extends SimpleApplication {
     private void drawCredits() {
         menu.show("credits","АВТОРЫ И ЛИЦЕНЗИИ","Wreck Riff "+BuildInfo.current().version(),List.of(),List.of(
                 new MenuView.Text("original","Оригинальные машины, арены, иконки и процедурные ресурсы: Wreck Riff."),
-                new MenuView.Text("music","METALMANIA — Kevin MacLeod (incompetech.com)\nCreative Commons: By Attribution 4.0. Запись обработана для игры."),
+                new MenuView.Text("music","Музыка — Alexander Nakarada (creatorchords.com)\nCreative Commons Attribution 4.0: creativecommons.org/licenses/by/4.0/\nЗаписи обработаны: громкость, петли и короткие окончания."),
+                new MenuView.Text("music-tracks","Riffs · Metal Interlude · Construction · The Collapse\nCircuits · Chaotic · Hall of the Metal King · Bloodmoon Ritual"),
                 new MenuView.Text("sfx","Combat SFX: Free Firearm Sound Library / CC0\n25 bang/firework SFX — rubberduck / CC0"),
                 new MenuView.Text("art","Текстуры: Poly Haven / CC0\nШрифт: Roboto Condensed / SIL OFL 1.1"),
                 new MenuView.Text("runtime","Java 21 / jMonkeyEngine / Minie / LWJGL / Gson"),
-                new MenuView.Text("licenses","Полные лицензии и источники поставляются в папке licenses.")),List.of(new MenuView.Action("back","НАЗАД",flow::back)),"back");
+                new MenuView.Text("licenses","Полные лицензии и источники поставляются в папке licenses.")),List.of(new MenuView.Action("back","НАЗАД",UiCue.BACK,flow::back)),"back");
     }
     private static String formatTicks(Long ticks) {
         if(ticks==null)return "—";long seconds=ticks/MatchSession.TICKS_PER_SECOND;
@@ -820,25 +845,32 @@ public final class GameApplication extends SimpleApplication {
         hudUsesGamepad=input.usingGamepad();
         hud.setHelp(showHelp?hudHelp():List.of());updateHud();
     }
-    private void chooseVehicle(Runnable action) {
-        vehicleSelectionAction=action;createMenuScene();flow.open(Screen.VEHICLES);
+    private void chooseVehicle(MatchLaunch launch) {
+        vehicleLaunch=Objects.requireNonNull(launch);
+        vehicleSelection=new VehicleSelectionModel(store.settings().selectedVehicleId);
+        createMenuScene();flow.open(Screen.VEHICLES);
     }
     private void drawVehicles() {
-        VehicleDefinition selected=VehicleDefinition.forId(store.settings().selectedVehicleId);
-        var rows=new ArrayList<MenuView.Row>();
-        for(var definition:VehicleDefinition.values()) {
-            var profile=definition.profile(vehicleRules);
-            String detail=String.format(Locale.ROOT,"%.0f HP  /  %.0f м/с  /  %s",definition.maximumHp(),vehicleRules.maxSpeed()*profile.speedMultiplier(),definition.specialName());
-            rows.add(new MenuView.VehicleCard("vehicle:"+definition.id(),definition.displayName(),detail,definition==selected,
-                    ()->VehicleVisual.create(assetManager,profile,0),()->{
-                store.settings().selectedVehicleId=definition.id();store.saveSettings();createMenuScene();redraw();
-            }));
-        }
-        rows.add(new MenuView.Text("vehicle-description",selected.specialName()+": "+selected.description()));
-        rows.add(new MenuView.Text("vehicle-control","Личный спешл: "+input.displayBinding("Special")+". Заморозка и щит доступны каждой машине."));
-        menu.show("vehicles","ВЫБОР МАШИНЫ","Все три машины доступны сразу. Повтор сохраняет ваш выбор.",List.of(),rows,
-                List.of(new MenuView.Action("back","НАЗАД",()->{vehicleSelectionAction=null;flow.back();}),
-                        new MenuView.Action("start","В БОЙ",()->{Runnable action=vehicleSelectionAction;vehicleSelectionAction=null;flow.back();if(action!=null)action.run();})),"vehicle:"+selected.id());
+        var selected=vehicleSelection.preview();
+        menu.showVehicleSelection(vehicleSelection,vehicleRules.maxSpeed()*selected.profile(vehicleRules).speedMultiplier(),
+                ()->browseVehicle(-1),()->browseVehicle(1),this::selectVehicle,this::cancelVehicleSelection);
+    }
+    private void browseVehicle(int direction) {
+        if(flow.screen()!=Screen.VEHICLES||vehicleSelection==null)return;
+        garage.show(vehicleSelection.browse(direction).id());drawVehicles();
+    }
+    private void selectVehicle() {
+        if(flow.screen()!=Screen.VEHICLES||vehicleSelection==null||vehicleLaunch==null)return;
+        vehicleSelection.commit().ifPresent(selected->{
+            MatchLaunch launch=vehicleLaunch;vehicleLaunch=null;vehicleSelection=null;
+            store.settings().selectedVehicleId=selected.id();store.saveSettings();
+            if(launch.newCampaign())progress.beginNewCampaign();
+            startMatch(launch.arenaId(),launch.mode(),null,selected.id());
+        });
+    }
+    private void cancelVehicleSelection() {
+        if(vehicleSelection!=null)vehicleSelection.cancel();vehicleSelection=null;vehicleLaunch=null;
+        createMenuScene();flow.back();
     }
     private void resizeHud() {
         if(hud!=null&&cam.getWidth()>=320&&cam.getHeight()>=240)hud.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
@@ -885,17 +917,22 @@ public final class GameApplication extends SimpleApplication {
         var s=store.settings();
         if(previousVideo!=null) {
             menu.show("video-confirm","ПРОВЕРКА ЭКРАНА","Через 10 секунд прежний режим вернётся автоматически.",List.of(),List.of(),
-                    List.of(new MenuView.Action("revert","ВЕРНУТЬ ПРЕЖНИЙ",this::restoreVideo),new MenuView.Action("keep","ОСТАВИТЬ",()->{previousVideo=null;store.saveSettings();redraw();})),"revert");return;
+                    List.of(new MenuView.Action("revert","ВЕРНУТЬ ПРЕЖНИЙ",UiCue.BACK,this::restoreVideo),new MenuView.Action("keep","ОСТАВИТЬ",()->{previousVideo=null;store.saveSettings();redraw();})),"revert");return;
         }
         String[] titles={"ВИДЕО","ЗВУК","ИНТЕРФЕЙС","ВВОД"};var tabs=new ArrayList<MenuView.Tab>();
         for(int i=0;i<titles.length;i++){int tab=i;tabs.add(new MenuView.Tab("settings-tab:"+i,titles[i],settingsTab==i,()->{settingsTab=tab;redraw();}));}
         var rows=new ArrayList<MenuView.Row>();
         switch(settingsTab) {
             case 0 -> {
-                rows.add(new MenuView.Action("fullscreen","Режим: "+(s.fullscreen?"полный экран":"окно"),()->videoChange(()->s.fullscreen=!s.fullscreen)));
-                rows.add(new MenuView.Action("resolution","Разрешение: "+s.width+" x "+s.height,()->videoChange(this::nextResolution)));
-                rows.add(new MenuView.Action("vsync","VSync: "+(s.vsync?"вкл.":"выкл."),()->videoChange(()->s.vsync=!s.vsync)));
-                rows.add(new MenuView.Action("samples","Сглаживание: "+(s.samples==0?"выкл.":"MSAA "+s.samples+"x"),()->videoChange(()->s.samples=s.samples==0?2:s.samples==2?4:s.samples==4?8:0)));
+                rows.add(new MenuView.Toggle("fullscreen","Полный экран",s.fullscreen,value->videoChange(()->s.fullscreen=value)));
+                var resolutions=availableResolutions();int currentResolution=0;
+                for(int i=0;i<resolutions.size();i++)if(resolutions.get(i)[0]==s.width&&resolutions.get(i)[1]==s.height)currentResolution=i;
+                rows.add(new MenuView.Choice("resolution","Разрешение",resolutions.stream().map(size->size[0]+" x "+size[1]).toList(),currentResolution,
+                        index->videoChange(()->{s.width=resolutions.get(index)[0];s.height=resolutions.get(index)[1];})));
+                rows.add(new MenuView.Toggle("vsync","VSync",s.vsync,value->videoChange(()->s.vsync=value)));
+                var samples=List.of(0,2,4,8);
+                rows.add(new MenuView.Choice("samples","Сглаживание",List.of("Выкл.","MSAA 2x","MSAA 4x","MSAA 8x"),samples.indexOf(s.samples),
+                        index->videoChange(()->s.samples=samples.get(index))));
             }
             case 1 -> {
                 rows.add(slider("master","Общая громкость",s.master,0,1,.05f,percent(s.master),value->s.master=(float)value));
@@ -905,9 +942,9 @@ public final class GameApplication extends SimpleApplication {
             case 2 -> {
                 rows.add(slider("ui-scale","Масштаб интерфейса",s.uiScale,.8f,1.5f,.1f,percent(s.uiScale),value->{s.uiScale=(float)value;resizeHud();}));
                 rows.add(slider("flashes","Интенсивность вспышек",s.flashes,0,1,.1f,percent(s.flashes),value->s.flashes=(float)value));
-                rows.add(new MenuView.Action("glow","Свечение: "+(s.glow?"вкл.":"выкл."),()->{s.glow=!s.glow;settingsChanged();}));
+                rows.add(new MenuView.Toggle("glow","Свечение",s.glow,value->{s.glow=value;settingsChanged();}));
                 rows.add(slider("shake","Тряска камеры",s.shake,0,1,.1f,percent(s.shake),value->s.shake=(float)value));
-                rows.add(new MenuView.Action("subtitles","Субтитры: "+(s.subtitles?"вкл.":"выкл."),()->{s.subtitles=!s.subtitles;settingsChanged();}));
+                rows.add(new MenuView.Toggle("subtitles","Субтитры",s.subtitles,value->{s.subtitles=value;settingsChanged();}));
             }
             default -> {
                 rows.add(slider("sensitivity","Чувствительность руля",s.sensitivity,.25f,2,.05f,String.format(Locale.ROOT,"%.2f",s.sensitivity),value->s.sensitivity=(float)value));
@@ -916,7 +953,7 @@ public final class GameApplication extends SimpleApplication {
             }
         }
         menu.show("settings:"+settingsTab,"НАСТРОЙКИ","Стрелки влево/вправо или мышь изменяют значение.",tabs,rows,List.of(
-                new MenuView.Action("back","НАЗАД",()->{flushSettings();flow.back();}),
+                new MenuView.Action("back","НАЗАД",UiCue.BACK,()->{flushSettings();flow.back();}),
                 new MenuView.Action("reset","СБРОСИТЬ",()->confirm("Вернуть настройки и назначения кнопок по умолчанию?",()->videoChange(()->store.useInMemory(new SettingsStore.Settings()))))),null);
     }
     private MenuView.Slider slider(String id,String label,float value,float minimum,float maximum,float step,String formatted,java.util.function.DoubleConsumer change) {
@@ -930,7 +967,7 @@ public final class GameApplication extends SimpleApplication {
         var rows=new ArrayList<MenuView.Row>();
         if(controlsGamepad) {
             rows.add(new MenuView.Text("pad-name",input.padName()));
-            for(String action:List.of("Throttle","Brake / reverse","Steer","Handbrake","Turbo","Machine gun","Selected weapon","Previous weapon","Next weapon","Freeze","Shield","Special","Rear view","Recover","Pause"))
+            for(String action:List.of("Throttle","Brake / reverse","Steer","Handbrake","Turbo","Machine gun","Selected weapon","Previous weapon","Next weapon","Freeze","Shield","Special","Rear view","Recover","Tactical map","Pause"))
                 rows.add(new MenuView.Text("pad:"+action,controlName(action)+"   "+input.displayBinding(action,true)));
         } else {
             rows.add(new MenuView.Text("mouse","Мышь: LMB — пулемёт, RMB — выбранное оружие."));
@@ -940,18 +977,18 @@ public final class GameApplication extends SimpleApplication {
             }
         }
         menu.show("controls:"+controlsGamepad,"УПРАВЛЕНИЕ",rebinding==null?"Выберите действие. ESC всегда возвращает назад.":"Нажмите клавишу: "+controlName(rebinding)+". ESC — отмена.",tabs,rows,
-                List.of(new MenuView.Action("back","НАЗАД",()->{rebinding=null;flow.back();})),null);
+                List.of(new MenuView.Action("back","НАЗАД",UiCue.BACK,()->{rebinding=null;flow.back();})),null);
     }
     private static String controlName(String action) {
         return switch(action) {
             case "Throttle"->"Газ";case "Brake / reverse"->"Тормоз / задний ход";case "Steer"->"Руль";case "Steer left"->"Руль влево";case "Steer right"->"Руль вправо";
             case "Handbrake"->"Ручник";case "Turbo"->"Турбо";case "Machine gun"->"Пулемёт";case "Selected weapon"->"Выстрел";
             case "Previous weapon"->"Предыдущее оружие";case "Next weapon"->"Следующее оружие";case "Freeze"->"Заморозка";case "Shield"->"Щит";case "Special"->"Личный спешл";
-            case "Rear view"->"Вид назад";case "Recover"->"Восстановление";case "Pause"->"Пауза";
+            case "Tactical map"->"Карта местности";case "Rear view"->"Вид назад";case "Recover"->"Восстановление";case "Pause"->"Пауза";
             default->action.startsWith("Select ")?"Выбрать "+action.substring(7):action;
         };
     }
-    private void nextResolution() {
+    private List<int[]> availableResolutions() {
         List<int[]> sizes=new ArrayList<>();
         var modes=org.lwjgl.glfw.GLFW.glfwGetVideoModes(org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor());
         if(modes!=null) for(int i=0;i<modes.limit();i++) {
@@ -959,11 +996,10 @@ public final class GameApplication extends SimpleApplication {
             if(width>=640 && height>=480 && sizes.stream().noneMatch(a->a[0]==width&&a[1]==height)) sizes.add(new int[]{width,height});
         }
         if(!store.settings().fullscreen&&sizes.stream().noneMatch(a->a[0]==640&&a[1]==480))sizes.add(new int[]{640,480});
-        if(sizes.isEmpty()) sizes.add(new int[]{1280,720});
+        var selected=store.settings();
+        if(sizes.stream().noneMatch(size->size[0]==selected.width&&size[1]==selected.height))sizes.add(new int[]{selected.width,selected.height});
         sizes.sort(Comparator.comparingInt(a->a[0]*a[1]));
-        var s=store.settings(); int index=-1;
-        for(int i=0;i<sizes.size();i++) if(sizes.get(i)[0]==s.width&&sizes.get(i)[1]==s.height) index=i;
-        int[] size=sizes.get((index+1)%sizes.size()); s.width=size[0];s.height=size[1];
+        return List.copyOf(sizes);
     }
     private void videoChange(Runnable change) {
         if(previousVideo==null) previousVideo=store.settings().copy();
@@ -979,15 +1015,35 @@ public final class GameApplication extends SimpleApplication {
     }
     private void key(int code) {
         if(options.automated()) return;
+        if(rebinding==null&&(flow.screen()==Screen.RUNNING||flow.screen()==Screen.PAUSED||flow.screen()==Screen.TACTICAL_MAP)
+                &&code>0&&Objects.equals(store.settings().keys.get("Tactical map"),code)) {
+            if(flow.screen()==Screen.TACTICAL_MAP)dispatchUiAction("back");
+            else {flow.tacticalMap();audio.ui(UiCue.CONFIRM);}return;
+        }
+        if(flow.screen()==Screen.TACTICAL_MAP&&tacticalMap!=null) {
+            switch(code) {
+                case KeyInput.KEY_LEFT -> tacticalMap.pan(-1,0);
+                case KeyInput.KEY_RIGHT -> tacticalMap.pan(1,0);
+                case KeyInput.KEY_UP -> tacticalMap.pan(0,1);
+                case KeyInput.KEY_DOWN -> tacticalMap.pan(0,-1);
+                case KeyInput.KEY_ADD,KeyInput.KEY_EQUALS -> tacticalMap.zoom(1);
+                case KeyInput.KEY_SUBTRACT,KeyInput.KEY_MINUS -> tacticalMap.zoom(-1);
+                case KeyInput.KEY_TAB -> tacticalMap.tab(input.shiftHeld());
+                case KeyInput.KEY_RETURN,KeyInput.KEY_NUMPADENTER -> tacticalMap.activate();
+                case KeyInput.KEY_ESCAPE -> dispatchUiAction("back");
+                default -> {return;}
+            }
+            return;
+        }
         if(flow.screen()==Screen.RUNNING&&session!=null&&session.phase==MatchSession.Phase.INTRO&&(code==KeyInput.KEY_RETURN||code==KeyInput.KEY_SPACE)) {
             runtime.skipIntro();input.clear();return;
         }
         if(rebinding!=null) {
-            if(code==KeyInput.KEY_ESCAPE) {rebinding=null;redraw();return;}
+            if(code==KeyInput.KEY_ESCAPE) {rebinding=null;redraw();audio.ui(UiCue.BACK);return;}
             String action=rebinding;
             boolean conflict=store.settings().keys.entrySet().stream().anyMatch(e->!e.getKey().equals(action)&&e.getValue()==code);
             if(conflict) { notice("That key is already assigned. Choose another key."); return; }
-            store.settings().keys.put(action,code);store.saveSettings();rebinding=null;redraw();return;
+            store.settings().keys.put(action,code);store.saveSettings();rebinding=null;redraw();audio.ui(UiCue.CHANGE);return;
         }
         if(code==KeyInput.KEY_ESCAPE) uiAction("back");
         else if(code==KeyInput.KEY_UP)uiAction("up");else if(code==KeyInput.KEY_DOWN)uiAction("down");
@@ -1009,19 +1065,37 @@ public final class GameApplication extends SimpleApplication {
         boolean driving=flow.screen()==Screen.RUNNING;
         if(driving&&action.equals("accept")&&session.phase==MatchSession.Phase.INTRO){runtime.skipIntro();input.clear();return;}
         if(action.equals("back") || action.equals("pause")) {
+            Screen before=flow.screen();
             if(driving) pause(""); else if(flow.screen()==Screen.PAUSED) flow.resume();
-            else if(flow.screen()==Screen.SETTINGS||flow.screen()==Screen.CONTROLS||flow.screen()==Screen.CREDITS||flow.screen()==Screen.CONFIRM||flow.screen()==Screen.VEHICLES) {rebinding=null;vehicleSelectionAction=null;flushSettings();if(previousVideo!=null)restoreVideo();flow.back();}
+            else if(flow.screen()==Screen.TACTICAL_MAP)flow.back();
+            else if(flow.screen()==Screen.VEHICLES)cancelVehicleSelection();
+            else if(flow.screen()==Screen.SETTINGS||flow.screen()==Screen.CONTROLS||flow.screen()==Screen.CREDITS||flow.screen()==Screen.CONFIRM) {rebinding=null;flushSettings();if(previousVideo!=null)restoreVideo();flow.back();}
             else if(flow.screen()==Screen.MAPS||flow.screen()==Screen.STATISTICS)flow.menu();
+            if(flow.screen()!=before)audio.ui(driving?UiCue.CONFIRM:UiCue.BACK);
             return;
         }
         if(driving) return;
+        if(flow.screen()==Screen.TACTICAL_MAP&&tacticalMap!=null) {
+            switch(action) {
+                case "up" -> tacticalMap.move(UiFocusModel.Direction.UP);
+                case "down" -> tacticalMap.move(UiFocusModel.Direction.DOWN);
+                case "left" -> tacticalMap.move(UiFocusModel.Direction.LEFT);
+                case "right" -> tacticalMap.move(UiFocusModel.Direction.RIGHT);
+                case "activate" -> tacticalMap.activate();
+                case "click" -> tacticalMap.click(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
+                case "scroll-up" -> tacticalMap.zoom(1);
+                case "scroll-down" -> tacticalMap.zoom(-1);
+                default -> {}
+            }
+            return;
+        }
         switch(action) {
-            case "up" -> {menu.move(UiFocusModel.Direction.UP);audio.ui(false);}
-            case "down" -> {menu.move(UiFocusModel.Direction.DOWN);audio.ui(false);}
-            case "left" -> {menu.move(UiFocusModel.Direction.LEFT);audio.ui(false);}
-            case "right" -> {menu.move(UiFocusModel.Direction.RIGHT);audio.ui(false);}
-            case "activate" -> {audio.ui(true);menu.activate();}
-            case "click" -> {audio.ui(true);menu.click(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);}
+            case "up" -> menu.move(UiFocusModel.Direction.UP);
+            case "down" -> menu.move(UiFocusModel.Direction.DOWN);
+            case "left" -> menu.move(UiFocusModel.Direction.LEFT);
+            case "right" -> menu.move(UiFocusModel.Direction.RIGHT);
+            case "activate" -> menu.activate();
+            case "click" -> menu.click(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
             case "pointer-move" -> menu.drag(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
             case "release" -> {menu.release();flushSettings();}
             case "scroll-up" -> menu.scroll(-64*store.settings().uiScale);
@@ -1030,9 +1104,14 @@ public final class GameApplication extends SimpleApplication {
         }
     }
     private void pause(String reason) { if(input==null)return;input.clear();flow.pause(reason); }
+    private String quitQuestion() {
+        return session!=null&&session.mode==MatchSession.Mode.CAMPAIGN
+                ?"Выйти из игры? Кампания продолжится с последней контрольной точки."
+                :"Выйти из игры? Текущая попытка завершится.";
+    }
     @Override public void loseFocus() { super.loseFocus(); enqueue(()->{pause("Focus lost. Resume when ready.");return null;}); }
     private void confirm(String title,Runnable action) { confirmationTitle=title;confirmation=action;flow.open(Screen.CONFIRM); }
-    private void returnToMenu() { cleanupMatch();flow.menu(); }
+    private void returnToMenu() { cleanupMatch();createMenuScene();flow.menu(); }
     private void notice(String text) {message=text;noticeTime=5;if(menu!=null&&flow.screen()!=Screen.RUNNING)menu.setStatus(text);}
     private void pollProgressStatus() {
         var status=progressNotice.update(progress.warning(),progress.savePending(),progress.writable(),elapsed);
@@ -1066,6 +1145,7 @@ public final class GameApplication extends SimpleApplication {
         cleanupMatch(true);
     }
     private void cleanupMatch(boolean cancelLoading) {
+        if(tacticalMap!=null){tacticalMap.close();tacticalMap=null;}
         if(cancelLoading&&loading!=null){loading.close();loading=null;}
         PhysicsWorld unloading=world;
         if(soak!=null&&world!=null)unloadedResourceKey=loadedResourceKey==null?resourceKey():loadedResourceKey;
@@ -1111,6 +1191,7 @@ public final class GameApplication extends SimpleApplication {
             if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
             writeReport();cleanupMatch();if(audio!=null)audio.close();if(input!=null)input.close();
             if(enemyHealthBars!=null)enemyHealthBars.close();
+            if(garage!=null)garage.close();
             super.destroy();
             shutdownComplete=true;
             diagnosticCompletion.shutdownCompleted();
@@ -1252,7 +1333,8 @@ public final class GameApplication extends SimpleApplication {
             if(diagnosticRetries<20) {pause("");diagnosticRetries++;startMatch();}
             else {
                 returnToMenu();
-                if(world!=null||!drivers.isEmpty()||matchNode.getQuantity()!=0||audio.voiceCount()!=0)
+                if(world!=null||!drivers.isEmpty()||matchNode.getQuantity()!=0||audio.gameplayVoiceCount()!=0
+                        ||audio.menuSourceCount()!=(audioRenderer==null?0:2))
                     throw new IllegalStateException("Resources survive return to menu");
                 diagnostic.put("menuCleanupVerified",true);finishDiagnostic(pauseChecked&&diagnosticResults>0);
             }
@@ -1344,8 +1426,8 @@ public final class GameApplication extends SimpleApplication {
             public void command(UiReview.Command command) {
                 switch(command.kind()) {
                     case FIXTURE->applyUiReviewFixture(command.value());
-                    case FOCUS->{if(!menu.focus(command.value()))throw new IllegalStateException("Missing focus target "+command.value()+" on "+menu.pageId());}
-                    case ACTIVATE->{if(!menu.focus(command.value()))throw new IllegalStateException("Missing action "+command.value()+" on "+menu.pageId());dispatchUiAction("activate");}
+                    case FOCUS->{if(!(flow.screen()==Screen.TACTICAL_MAP?tacticalMap.focus(command.value()):menu.focus(command.value())))throw new IllegalStateException("Missing focus target "+command.value()+" on "+flow.screen());}
+                    case ACTIVATE->{if(!(flow.screen()==Screen.TACTICAL_MAP?tacticalMap.focus(command.value()):menu.focus(command.value())))throw new IllegalStateException("Missing action "+command.value()+" on "+flow.screen());dispatchUiAction("activate");}
                     case DISPATCH->dispatchUiAction(command.value());
                 }
             }
@@ -1353,12 +1435,18 @@ public final class GameApplication extends SimpleApplication {
                 long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
                 boolean visible=window!=0&&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_VISIBLE)!=0
                         &&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_ICONIFIED)==0;
-                return new UiReview.Observation(flow.screen().name(),uiReviewHud&&flow.screen()==Screen.RUNNING?"hud":menu.pageId(),
-                        uiReviewHud&&flow.screen()==Screen.RUNNING?"":Objects.requireNonNullElse(menu.selectedId(),""),
-                        uiReviewHud&&flow.screen()==Screen.RUNNING?0:menu.scrollOffset(),cam.getWidth(),cam.getHeight(),store.settings().uiScale,visible,
-                        Map.of("vsync",store.settings().vsync,"fullscreen",store.settings().fullscreen,"videoConfirmationPending",previousVideo!=null,
-                                "storedWins",progress.snapshot().stats().wins(),"storedMatches",progress.snapshot().stats().completedMatches(),
-                                "settingsTab",settingsTab,"gamepadControlsTab",controlsGamepad));
+                var state=new LinkedHashMap<String,Object>();
+                state.put("vsync",store.settings().vsync);state.put("fullscreen",store.settings().fullscreen);state.put("videoConfirmationPending",previousVideo!=null);
+                state.put("storedWins",progress.snapshot().stats().wins());state.put("storedMatches",progress.snapshot().stats().completedMatches());
+                state.put("settingsTab",settingsTab);state.put("gamepadControlsTab",controlsGamepad);state.put("savedVehicle",store.settings().selectedVehicleId);
+                state.put("previewVehicle",vehicleSelection==null?"":vehicleSelection.preview().id());
+                state.put("sessionId",session==null?"":session.sessionId.toString());state.put("arenaId",session==null?"":session.arenaId);
+                state.put("activeVehicle",session==null?"":session.vehicle(0).profileId);state.put("mode",session==null?"":session.mode.name());
+                state.put("simulationTick",session==null?0:session.tick);
+                if(flow.screen()==Screen.TACTICAL_MAP)state.putAll(tacticalMap.observation());
+                return new UiReview.Observation(flow.screen().name(),flow.screen()==Screen.RUNNING?(uiReviewHud?"hud":"running:"+session.vehicle(0).profileId):flow.screen()==Screen.TACTICAL_MAP?"tactical-map":menu.pageId(),
+                        flow.screen()==Screen.RUNNING?"":Objects.requireNonNullElse(flow.screen()==Screen.TACTICAL_MAP?tacticalMap.selectedId():menu.selectedId(),""),
+                        flow.screen()==Screen.RUNNING?0:menu.scrollOffset(),cam.getWidth(),cam.getHeight(),store.settings().uiScale,visible,state);
             }
             public String capture(String caseId) {return requestCapture("ui-review-"+caseId);}
         };
@@ -1366,6 +1454,7 @@ public final class GameApplication extends SimpleApplication {
     private void applyUiReviewFixture(String fixture) {
         if(!options.uiReview())throw new IllegalStateException("UI fixtures require explicit --ui-review");
         uiReviewHud=false;uiReviewResult=null;noticeTime=0;message="";
+        if(fixture.equals("actual-progress")){uiReviewProgress=null;returnToMenu();return;}
         if(fixture.equals("fresh")||fixture.equals("unlocked")) {
             uiReviewProgress=fixture.equals("fresh")?UiReviewFixtures.fresh():SoakProfile.unlockedSnapshot();flow.menu();return;
         }
@@ -1381,6 +1470,7 @@ public final class GameApplication extends SimpleApplication {
         if(fixture.startsWith("hud:")) {
             String[] parts=fixture.split(":");var definition=VehicleDefinition.forId(parts[1]);int variant=Integer.parseInt(parts[2]);
             flow.running();uiReviewHud=true;
+            garage.show(definition.id());
             hud.setSpecial(definition.id(),definition.specialName(),input.displayBinding("Special"));
             hud.setPickupReceipt(variant%2==0?"+4 ракеты · +2 мины · +25 HP":"");
             hud.setSubtitles(variant%2==0?"Последний перекрёсток принадлежит мне. Попробуй пройти через эту арену!":"");

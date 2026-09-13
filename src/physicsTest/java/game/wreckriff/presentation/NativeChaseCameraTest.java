@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class NativeChaseCameraTest {
     private static final CameraRules CAMERA_RULES=CameraRules.load();
     private static final ArenaDefinition ARENA=ArenaRegistry.load().definition("construction_17");
+    private static final Vector3f ROAD_POINT=ARENA.spawns().getFirst().position().vector();
+    private static final ArenaDefinition.Surface ROAD_SURFACE=ARENA.surfaceAt(ROAD_POINT,3,.1f).orElseThrow();
     private static final int PLAYER=0;
     // Native suspension continues to settle by fractions of a millimetre while the camera is tracking it.
     private static final float CONTACT_HEIGHT_TOLERANCE=.001f;
@@ -196,13 +198,13 @@ class NativeChaseCameraTest {
 
         Rig(Quaternion rotation) {
             world.configureArena(ARENA);
-            var floor=ARENA.boxes().stream().filter(box->box.id().equals("floor-west")).findFirst().orElseThrow();
+            var floor=ARENA.boxes().stream().filter(box->box.id().equals(ROAD_SURFACE.geometryId())).findFirst().orElseThrow();
             assertTrue(floor.collision());
             world.addStatic(floor.id(),new BoxCollisionShape(floor.size().vector().mult(.5f)),floor.center().vector(),new Quaternion());
-            world.addVehicle(PLAYER,new Vector3f(20,2,70),rotation);
+            world.addVehicle(PLAYER,ROAD_POINT.add(0,2,0),rotation);
             for(int i=0;i<360;i++)world.step();
             assertEquals(4,world.supportedWheelContacts(PLAYER),"Fixture requires all four native wheels on the shipped floor");
-            assertEquals("floor-west",world.roadContext(PLAYER).surfaceId());
+            assertEquals(ROAD_SURFACE.id(),world.roadContext(PLAYER).surfaceId());
             assertEquals(RoadContext.Motion.ROAD,world.roadContext(PLAYER).motion());
         }
 
@@ -214,7 +216,7 @@ class NativeChaseCameraTest {
             assertEquals(RoadContext.Motion.LAUNCH,world.roadContext(PLAYER).motion());
         }
         void placeAirborne(Quaternion rotation) {
-            world.teleport(PLAYER,new Vector3f(20,20,70),rotation);
+            world.teleport(PLAYER,ROAD_POINT.add(0,20,0),rotation);
             beginLaunch();
         }
         void tickAndRender(int fps,boolean rear) {
@@ -230,10 +232,10 @@ class NativeChaseCameraTest {
         Vector3f offset() { return camera.getLocation().subtract(world.position(PLAYER)); }
         Vector3f pivot(float alpha) { return world.interpolatedPose(PLAYER,alpha).position().add(0,CAMERA_RULES.lookHeight(),0); }
         void addWall() {
-            world.addStatic("camera-wall",new BoxCollisionShape(new Vector3f(10,8,.3f)),new Vector3f(20,8,65),new Quaternion());
+            world.addStatic("camera-wall",new BoxCollisionShape(new Vector3f(10,8,.3f)),ROAD_POINT.add(0,8,-5),new Quaternion());
         }
         void assertWallClear(float alpha) {
-            assertTrue(camera.getLocation().z>65.3f+CAMERA_RULES.sweepRadius(),"Camera sphere must remain in front of the wall");
+            assertTrue(camera.getLocation().z>ROAD_POINT.z-4.7f+CAMERA_RULES.sweepRadius(),"Camera sphere must remain in front of the wall");
             assertNull(world.staticSweep(pivot(alpha),camera.getLocation(),CAMERA_RULES.sweepRadius()),
                     "The final camera segment must be clear in native physics");
             assertFiniteCamera(camera);

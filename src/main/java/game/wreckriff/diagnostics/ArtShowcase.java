@@ -149,21 +149,30 @@ public final class ArtShowcase {
     }
     public String frame(Camera camera) {
         float seconds=seconds();
-        camera.setFrustumPerspective(52,camera.getWidth()/(float)camera.getHeight(),.1f,650);
+        var bounds=arena.bounds();
+        float span=Math.max(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ());
+        float farDistance=Math.max(650,span*3);
+        camera.setFrustumPerspective(52,camera.getWidth()/(float)camera.getHeight(),seconds<8&&span>500?2f:.1f,farDistance);
         Vector3f target,offset;
         if(seconds<8) {
-            var bounds=arena.bounds();float cx=(bounds.minX()+bounds.maxX())/2,cz=(bounds.minZ()+bounds.maxZ())/2;
+            float cx=(bounds.minX()+bounds.maxX())/2,cz=(bounds.minZ()+bounds.maxZ())/2;
             int view=(int)(seconds/2);
             var upper=arena.boxes().stream().filter(b->arena.surfaces().stream().anyMatch(s->s.level()==1&&s.geometryId().equals(b.id())))
                     .findFirst().orElse(arena.boxes().getFirst());
-            target=switch(view) {
+            target=arena.districts().isEmpty()?switch(view) {
                 case 0 -> new Vector3f(cx,2,cz);
                 case 1 -> upper.center().vector().addLocal(0,1,0);
                 case 2 -> arena.launchPads().isEmpty()?world.position(0):arena.launchPads().getFirst().source().vector();
                 default -> new Vector3f(cx,18,bounds.maxZ()+14);
+            }:switch(view) {
+                case 0 -> new Vector3f(cx,0,cz);
+                case 1 -> arena.districts().getFirst().center().vector();
+                case 2 -> arena.districts().get(2).center().vector();
+                default -> arena.districts().getLast().center().vector();
             };
-            offset=switch(view) {case 0 -> new Vector3f(-65,47,-77);case 1 -> new Vector3f(34,19,-35);
-                case 2 -> new Vector3f(14,9,-18);default -> new Vector3f(-42,7,-76);};
+            offset=arena.districts().isEmpty()?switch(view) {case 0 -> new Vector3f(-65,47,-77);case 1 -> new Vector3f(34,19,-35);
+                case 2 -> new Vector3f(14,9,-18);default -> new Vector3f(-42,7,-76);}
+                :view==0?new Vector3f(-span*.08f,span*.88f,-span*.3f):new Vector3f(-95,85,-105);
             camera.setLocation(target.add(offset));camera.lookAt(target,Vector3f.UNIT_Y);
             String name=List.of("art-overview","art-upper-route","art-launch-approach","art-landmark").get(view);
             if(seconds-view*2>=.9f&&captures.add(name))return name;
@@ -171,7 +180,7 @@ public final class ArtShowcase {
             var pickup=pickups.get(activeSlot);target=pickup.position().vector().addLocal(0,.8f,0);
             Vector3f side=new Vector3f(approachDirection.z,0,-approachDirection.x);
             offset=approachDirection.mult(-7).addLocal(side.mult(5)).addLocal(0,3.7f,0);
-            camera.setFrustumPerspective(43,camera.getWidth()/(float)camera.getHeight(),.1f,650);
+            camera.setFrustumPerspective(43,camera.getWidth()/(float)camera.getHeight(),.1f,farDistance);
             camera.setLocation(target.add(offset));camera.lookAt(target,Vector3f.UNIT_Y);
             float within=seconds-INTRO_SECONDS-activeSlot*SLOT_SECONDS;String suffix=pickup.type().name().toLowerCase(Locale.ROOT);
             if(within>=.35f&&captures.add("pickup-available-"+suffix))return "pickup-available-"+suffix;

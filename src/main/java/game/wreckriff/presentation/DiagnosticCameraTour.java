@@ -11,14 +11,21 @@ public final class DiagnosticCameraTour {
     private enum Shot { CHASE, GARAGE, RAMP, CAR }
     private final EnumSet<Shot> captured=EnumSet.noneOf(Shot.class);
     private final Vector3f garageEye,garageAim,rampEye,rampAim;
+    private final float farDistance;
     public DiagnosticCameraTour(ArenaDefinition arena) {
-        var garage=arena.boxes().stream().filter(p->p.id().equals("garage-roof")).findFirst().orElseThrow();
-        Vector3f centre=garage.center().vector();
-        garageEye=centre.add(-garage.size().x()*.5f-12,0,-garage.size().z()*.5f);
-        garageAim=centre.add(0,-garage.center().y()*.6f,0);
-        var ramp=arena.ramps().stream().filter(r->r.endY()>r.startY()).findFirst().orElseThrow();
-        rampEye=new Vector3f(ramp.minX()-12,ramp.startY()+8,ramp.minZ()-15);
-        rampAim=new Vector3f((ramp.minX()+ramp.maxX())*.5f,ramp.startY()+(ramp.endY()-ramp.startY())*.6f,ramp.maxZ()-4);
+        farDistance=Math.max(500,(float)Math.hypot(arena.bounds().maxX()-arena.bounds().minX(),arena.bounds().maxZ()-arena.bounds().minZ())+200);
+        if(!arena.districts().isEmpty()) {
+            garageAim=arena.districts().getFirst().center().vector();garageEye=garageAim.add(-180,160,-200);
+            rampAim=arena.districts().get(arena.districts().size()-1).center().vector();rampEye=rampAim.add(100,90,-120);
+        } else {
+            var garage=arena.boxes().stream().filter(p->p.id().equals("garage-roof")).findFirst().orElseThrow();
+            var centre=garage.center().vector();
+            garageEye=centre.add(-garage.size().x()*.5f-12,0,-garage.size().z()*.18f);
+            garageAim=centre.add(0,-garage.center().y()*.6f,0);
+            var ramp=arena.ramps().stream().filter(r->r.endY()>r.startY()).findFirst().orElseThrow();
+            rampEye=new Vector3f(ramp.minX()-12,ramp.startY()+8,ramp.minZ()-15);
+            rampAim=new Vector3f((ramp.minX()+ramp.maxX())*.5f,ramp.startY()+(ramp.endY()-ramp.startY())*.6f,ramp.maxZ()-4);
+        }
     }
     /** Call after chase updates during automation warmup; each due shot is captured once, including after a frame gap. */
     public String apply(Camera camera,WorldQuery world,double seconds) {
@@ -46,8 +53,8 @@ public final class DiagnosticCameraTour {
         captured.add(shot);return shot.name().toLowerCase(java.util.Locale.ROOT);
     }
     private static double scheduledTime(Shot shot) {return switch(shot){case CHASE->8;case GARAGE->12;case RAMP->16;case CAR->20;};}
-    private static void frame(Camera camera,Vector3f eye,Vector3f aim,float fov) {
-        camera.setFrustumPerspective(fov,camera.getWidth()/(float)camera.getHeight(),.1f,500);
+    private void frame(Camera camera,Vector3f eye,Vector3f aim,float fov) {
+        camera.setFrustumPerspective(fov,camera.getWidth()/(float)camera.getHeight(),.1f,farDistance);
         camera.setLocation(eye);camera.lookAt(aim,Vector3f.UNIT_Y);
     }
 }

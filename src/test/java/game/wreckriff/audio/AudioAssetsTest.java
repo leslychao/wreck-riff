@@ -7,35 +7,36 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AudioAssetsTest {
-    @Test void allFiveCampaignScoresHaveCompleteDistinctSeamlessNormalAndBossMixes() throws Exception {
-        var registry=game.wreckriff.arena.ArenaRegistry.load();
-        Set<String> hashes=new HashSet<>();int maps=0;
+    @Test void eightLicensedRecordingsAreDistinctCompleteStereoLoopsWithIndependentLengths() throws Exception {
+        var config=AudioConfig.load();var registry=game.wreckriff.arena.ArenaRegistry.load();
+        Set<String> paths=new HashSet<>(List.of(config.menuMusicAsset()));
+        Set<Long> lengths=new HashSet<>();Set<String> hashes=new HashSet<>();
         for(var entry:registry.entries()) {
-            if(!entry.campaign())continue;maps++;
-            var arena=registry.definition(entry.id());long frames=-1;
-            for(String path:List.of(arena.metadata().music(),arena.metadata().bossMusic())) {
-                try(InputStream input=asset(path)) {
-                    PcmWave.Header header=PcmWave.header(input);assertEquals(2,header.channels());
-                    assertTrue(header.seconds()>=60&&header.seconds()<=180,path+" is not a complete loop");
-                    if(frames>=0)assertEquals(frames,header.dataBytes()/4,"Normal/boss timeline must match exactly");
-                    frames=header.dataBytes()/4;
-                    byte[] pcm=input.readNBytes((int)header.dataBytes());assertEquals(header.dataBytes(),pcm.length);
-                    assertTrue(hashes.add(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(pcm))),path+" repeats another score/mix");
-                    Metrics signal=metrics(pcm);assertTrue(signal.peak>.65&&signal.peak<.9,path);assertTrue(signal.rms>.07,path);
-                    assertTrue(Math.abs(signal.mean)<.002,path+" DC offset");
-                    int stereoFrames=0;for(int i=0;i<pcm.length;i+=4)if(sample(pcm,i)!=sample(pcm,i+2))stereoFrames++;
-                    assertTrue(stereoFrames>frames/2,path+" must contain a stereo arrangement");
-                    for(int channel=0;channel<2;channel++)assertTrue(Math.abs(sample(pcm,channel*2)-sample(pcm,pcm.length-4+channel*2))<32768*.04,path+" loop seam");
-                    int block=48000*4*8;
-                    for(int offset=0;offset<pcm.length;offset+=block)
-                        assertTrue(metrics(Arrays.copyOfRange(pcm,offset,Math.min(pcm.length,offset+block))).rms>.035,path+" unfinished section");
-                }
-            }
+            var arena=registry.definition(entry.id());paths.add(arena.metadata().music());
+            if(entry.campaign())paths.add(arena.metadata().bossMusic());
         }
-        assertEquals(5,maps);assertEquals(10,hashes.size());
-        try(InputStream input=asset("audio/campaign/provenance.json")) {
+        assertEquals(8,paths.size());
+        for(String path:paths)try(InputStream input=asset(path)) {
+            PcmWave.Header header=PcmWave.header(input);
+            assertEquals(2,header.channels());assertEquals(48000,header.rate());assertEquals(16,header.bits());
+            assertTrue(header.seconds()>=60&&header.seconds()<=600,path+" is not a complete recording");
+            lengths.add(header.dataBytes());
+            byte[] pcm=input.readNBytes((int)header.dataBytes());assertEquals(header.dataBytes(),pcm.length);
+            assertTrue(hashes.add(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(pcm))),path+" repeats another recording");
+            Metrics signal=metrics(pcm);assertTrue(signal.peak>.6&&signal.peak<.85,path);assertTrue(signal.rms>.07,path);
+            assertTrue(Math.abs(signal.mean)<.002,path+" DC offset");
+            long stereoFrames=0;for(int i=0;i<pcm.length;i+=4)if(sample(pcm,i)!=sample(pcm,i+2))stereoFrames++;
+            assertTrue(stereoFrames>header.dataBytes()/8,path+" must contain a stereo arrangement");
+            for(int channel=0;channel<2;channel++)assertTrue(Math.abs(sample(pcm,channel*2)-sample(pcm,pcm.length-4+channel*2))<=2,path+" de-clicked loop seam");
+            int edge=48000*4/10;
+            assertTrue(metrics(Arrays.copyOfRange(pcm,0,edge)).rms>.02,path+" silent entrance");
+            assertTrue(metrics(Arrays.copyOfRange(pcm,pcm.length-edge,pcm.length)).rms>.02,path+" silent ending");
+        }
+        assertEquals(8,hashes.size());assertTrue(lengths.size()>4,"Independent recordings must retain independent timelines");
+        try(InputStream input=asset("audio/music/provenance.json")) {
             var provenance=com.google.gson.JsonParser.parseReader(new InputStreamReader(input,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
-            assertFalse(provenance.get("externalSamples").getAsBoolean());assertEquals(10,provenance.getAsJsonArray("assets").size());
+            assertEquals("LICENSED_RECORDINGS",provenance.get("origin").getAsString());assertEquals(8,provenance.getAsJsonArray("assets").size());
+            assertEquals("CC-BY-4.0",provenance.get("license").getAsString());
             assertEquals("NEEDS_CREATIVE_REVIEW",provenance.get("artisticStatus").getAsString());
         }
     }
@@ -44,7 +45,7 @@ class AudioAssetsTest {
         AudioConfig config=AudioConfig.load();
         Set<String> hashes=new HashSet<>();
         Map<String,Integer> resultFrames=Map.of("victory",172_800,"defeat",124_800,"draw",96_000);
-        assertEquals(113,config.effects().size());
+        assertTrue(config.effects().containsAll(List.of("ui-nav","ui-change","ui-confirm","ui-back","ui-vehicle")));
         assertTrue(config.effects().containsAll(List.of("special-pulse-charge","special-pulse-hit","special-grinder-start",
                 "special-grinder-loop","special-dash","special-bomb-warning")));
         for(String effect:config.effects()) {
@@ -65,26 +66,18 @@ class AudioAssetsTest {
         }
     }
 
-    @Test void a01MusicIsACompleteStereoScoreWithEnergyAndNonIdenticalChannels() throws Exception {
-        try(InputStream input=asset(AudioConfig.load().musicAsset())) {
-            PcmWave.Header header=PcmWave.header(input);
-            assertEquals(2,header.channels()); assertEquals(179.2,header.seconds(),.001);
+    @Test void workshopAmbienceIsALongMonoLoopSeparateFromOneShotEffects()throws Exception {
+        AudioConfig config=AudioConfig.load();assertEquals("audio/menu-ambience.wav",config.menuAmbienceAsset());
+        assertFalse(config.effects().contains("menu-ambience"));
+        try(InputStream input=asset(config.menuAmbienceAsset())) {
+            var header=PcmWave.header(input);assertEquals(1,header.channels());assertEquals(16,header.seconds(),.001);
             byte[] pcm=input.readNBytes((int)header.dataBytes());
-            assertEquals(header.dataBytes(),pcm.length);
-            Metrics total=metrics(pcm);
-            assertTrue(total.peak>.75 && total.peak<.9); assertTrue(total.rms>.08);
-            int difference=0;
-            for(int i=0;i<pcm.length;i+=4) if(sample(pcm,i)!=sample(pcm,i+2)) difference++;
-            assertTrue(difference>pcm.length/8,"Music must contain an actual stereo mix");
-            int sectionBytes=48000*4*15;
-            for(int start=0;start<pcm.length;start+=sectionBytes) {
-                Metrics section=metrics(Arrays.copyOfRange(pcm,start,Math.min(pcm.length,start+sectionBytes)));
-                assertTrue(section.rms>.035,"Silent or unfinished score section at "+start/(48000*4));
-            }
-            for(int channel=0;channel<2;channel++) {
-                double step=Math.abs(sample(pcm,channel*2)-sample(pcm,pcm.length-4+channel*2))/32768.0;
-                assertTrue(step<.04,"Large sample jump at music loop seam: "+step);
-            }
+            Metrics signal=metrics(pcm);assertTrue(signal.peak<.7);assertTrue(signal.rms>.025);
+            assertTrue(Math.abs(sample(pcm,0)-sample(pcm,pcm.length-2))<=2,"Workshop seam");
+        }
+        try(InputStream input=asset("audio/menu-provenance.json")) {
+            String source=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue(source.contains("ORIGINAL_PROJECT_CONTENT"));assertTrue(source.contains("generatorSha256"));
         }
     }
 
@@ -101,20 +94,22 @@ class AudioAssetsTest {
     @Test void scoreAndSignalProvenanceAreBundled() throws Exception {
         try(InputStream input=asset("audio/score.txt")) {
             String score=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
-            assertTrue(score.contains("Metalmania") && score.contains("CC BY 4.0") && score.contains("112 bars")); assertTrue(score.contains("NEEDS_CREATIVE_REVIEW"));
+            assertTrue(score.contains("Alexander Nakarada") && score.contains("CC BY 4.0") && score.contains("Bloodmoon Ritual")); assertTrue(score.contains("NEEDS_CREATIVE_REVIEW"));
         }
         try(InputStream input=asset("audio/audio-metrics.csv")) {
             assertEquals(AudioConfig.load().effects().size()+2,new String(input.readAllBytes()).lines().count());
         }
     }
     @Test void licensedRecordingReplacesRejectedSongAndOverheatIsAbsent() throws Exception {
-        assertEquals("audio/metalmania.wav",AudioConfig.load().musicAsset());
+        assertEquals("audio/music/menu.wav",AudioConfig.load().menuMusicAsset());
+        assertNull(getClass().getResource("/audio/metalmania.wav"));
+        assertNull(getClass().getResource("/audio/campaign/construction_17-normal.wav"));
         assertFalse(AudioConfig.load().effects().contains("overheat"));
         assertNull(getClass().getResource("/audio/dead-air-circuit.wav"));
         assertNull(getClass().getResource("/audio/overheat.wav"));
-        try(InputStream input=asset("audio/music-provenance.json")) {
+        try(InputStream input=asset("audio/music/provenance.json")) {
             String evidence=new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
-            assertTrue(evidence.contains("Kevin MacLeod"));assertTrue(evidence.contains("CC-BY-4.0"));
+            assertTrue(evidence.contains("Alexander Nakarada"));assertTrue(evidence.contains("CC-BY-4.0"));
             assertTrue(evidence.contains("sourceSha256"));assertTrue(evidence.contains("NEEDS_CREATIVE_REVIEW"));
         }
     }
@@ -168,9 +163,9 @@ class AudioAssetsTest {
         }
     }
 
-    @Test void sevenArenaHazardsHaveDistinctShortWarningAndActivationPairsWithProvenance()throws Exception {
+    @Test void sixArenaHazardsHaveDistinctShortWarningAndActivationPairsWithProvenance()throws Exception {
         Set<String> hashes=new HashSet<>();AudioConfig config=AudioConfig.load();
-        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue"))
+        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier"))
             for(String phase:List.of("warning","active")) {
                 String cue="hazard-"+kind+"-"+phase;assertEquals(List.of(cue),config.cueBanks().get(cue));
                 try(InputStream input=asset("audio/"+cue+".wav")) {
@@ -181,11 +176,13 @@ class AudioAssetsTest {
                     assertTrue(Math.abs(signal.mean)<.00004,cue+" DC offset");assertEquals(0,sample(pcm,0));assertEquals(0,sample(pcm,pcm.length-2));
                 }
             }
-        assertEquals(14,hashes.size());
+        assertEquals(12,hashes.size());
+        assertNull(getClass().getResource("/audio/hazard-statue-warning.wav"));
+        assertNull(getClass().getResource("/audio/hazard-statue-active.wav"));
         try(InputStream input=asset("audio/arena-hazard-provenance.json")) {
             var evidence=com.google.gson.JsonParser.parseReader(new InputStreamReader(input,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
             assertFalse(evidence.get("externalSamples").getAsBoolean());assertFalse(evidence.get("looping").getAsBoolean());
-            assertEquals("NEEDS_CREATIVE_REVIEW",evidence.get("artisticStatus").getAsString());assertEquals(14,evidence.getAsJsonArray("assets").size());
+            assertEquals("NEEDS_CREATIVE_REVIEW",evidence.get("artisticStatus").getAsString());assertEquals(12,evidence.getAsJsonArray("assets").size());
         }
     }
 

@@ -13,6 +13,6 @@ public final class DesktopAudioSystem extends JmeDesktopSystem {
         if(backend==null)return null;
         if(!backend.startsWith("LWJGL"))return super.newAudioRenderer(settings);
         initialize(settings);
-        return new ALAudioRenderer(new LwjglAL(),new ConnectedQueryAlc(new LwjglALC()),new LwjglEFX());
+        return new SelectiveAudioRenderer(new LwjglAL(),new ConnectedQueryAlc(new LwjglALC()),new LwjglEFX());
     }
 }

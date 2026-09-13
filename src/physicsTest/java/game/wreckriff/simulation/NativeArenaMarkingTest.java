@@ -17,7 +17,8 @@ class NativeArenaMarkingTest {
             Node paint=(Node)content.visual().getChild("static-road-markings");assertNotNull(paint,entry.id());
             content.visual().updateGeometricState();
             assertEquals(RenderQueue.ShadowMode.Off,paint.getShadowMode());
-            assertEquals(arena.boxes().stream().filter(ArenaDefinition.BoxPart::collision).count()+arena.ramps().size(),content.bodies().size());
+            assertEquals(arena.boxes().stream().filter(ArenaDefinition.BoxPart::collision).count()+arena.ramps().size()
+                    +arena.meshes().stream().filter(ArenaDefinition.TriangleSurface::collision).count(),content.bodies().size());
             int[] draws={0};
             paint.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
                 draws[0]++;assertEquals(0,geometry.getNumControls());

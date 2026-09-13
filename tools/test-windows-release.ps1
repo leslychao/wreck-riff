@@ -3,7 +3,7 @@
 Validates evidence for one immutable Windows ZIP. Missing evidence keeps it a candidate.
 .DESCRIPTION
 First run prepare-windows-release.ps1 on a stable workspace. Then use -RunAutomated
-to run real EXE Smoke, six 600-second benchmarks and a 1800-second soak sequentially.
+to run real EXE Smoke, four 600-second benchmarks and a 1800-second soak sequentially.
 Run test-windows-package.ps1 separately with NormalNew, NormalMigrated and NormalContinue
 and actually perform those scenarios in the game. -AcceptancePath records factual
 agent or human reviews; ownerFeel requires the owner's actual human review.
@@ -23,7 +23,7 @@ $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 if(!$ReportsDirectory){$ReportsDirectory=Join-Path $root 'build/reports'}
 if(!$BuildVerificationPath){$BuildVerificationPath=Join-Path $ReportsDirectory 'release-build-verification.json'}
 $identity=Get-ReleasePackageIdentity $ZipPath
-$arenas=@('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')
+$arenas=@('dead-air-yard','construction_17','neon_zero','euphoria_park')
 if($RunAutomated) {
     if([IO.Path]::GetFullPath($ReportsDirectory) -ne [IO.Path]::GetFullPath((Join-Path $root 'build/reports'))){throw '-RunAutomated writes the standard build/reports directory.'}
     & (Join-Path $PSScriptRoot 'test-windows-package.ps1') -ZipPath $identity.zipPath -Mode Smoke -Seconds 600 -TimeoutSeconds 900
@@ -103,8 +103,7 @@ foreach($mode in @('NormalNew','NormalMigrated','NormalContinue')) {
         if($mode -eq 'NormalNew' -and ($run.diagnostic.initialCheckpointPresent -ne $false -or @($run.diagnostic.sessionStarts | Where-Object {$_.mode -eq 'CAMPAIGN' -and $_.resumedCheckpoint -eq $false}).Count -eq 0)){throw 'Fresh campaign was not started in the normal launch.'}
         if($mode -eq 'NormalContinue' -and ($run.diagnostic.initialCheckpointPresent -ne $true -or @($run.diagnostic.sessionStarts | Where-Object {$_.mode -eq 'CAMPAIGN' -and $_.resumedCheckpoint -eq $true}).Count -eq 0)){throw 'Normal launch did not actually resume the saved campaign checkpoint.'}
         if($mode -eq 'NormalMigrated') {
-            if($run.report.profileBefore.stats.schemaVersion -ge 3 -and $run.report.profileBefore.settings.schemaVersion -ge 4){throw 'Migration scenario started with an already-current profile.'}
-            if($run.report.profileAfter.stats.schemaVersion -ne 3 -or $run.report.profileAfter.settings.schemaVersion -ne 4){throw 'Migration did not persist current profile schemas.'}
+            Assert-ReleaseProfileMigration $run.report.profileBefore $run.report.profileAfter
         }
     }
 }

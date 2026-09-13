@@ -86,14 +86,11 @@ public final class VehicleProfile {
             case "boss_foreman" -> new VehicleProfile(id,rules,12,5,5.5f,.72f,.65f,.65f,false);
             case "boss_prefect" -> new VehicleProfile(id,rules,9,3.3f,3,1.2f,1.2f,1.1f,false);
             case "boss_emcee" -> new VehicleProfile(id,rules,8,4.2f,4.6f,1.05f,1.05f,1,false);
-            case "boss_ash_shepherd" -> new VehicleProfile(id,rules,10,4.4f,4.8f,.8f,.8f,.75f,false);
-            case "boss_director" -> new VehicleProfile(id,rules,14,5.2f,6,.85f,.75f,.7f,false);
             default -> throw new IllegalArgumentException("Unknown boss vehicle profile: "+id);
         };
     }
     public static List<VehicleProfile> bosses(VehicleRules rules) {
-        return List.of(boss("boss_foreman",rules),boss("boss_prefect",rules),boss("boss_emcee",rules),
-                boss("boss_ash_shepherd",rules),boss("boss_director",rules));
+        return List.of(boss("boss_foreman",rules),boss("boss_prefect",rules),boss("boss_emcee",rules));
     }
     /** Shared immutable default for query-only worlds; live worlds supply their registered profile. */
     public static VehicleProfile rivet() { return Defaults.RIVET; }

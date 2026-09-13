@@ -27,8 +27,8 @@ public final class ArenaRegistry {
         for(var entry:entries) {
             var arena=Configs.load(entry.resourceKey(),ArenaDefinition.class);
             if(!arena.id().equals(entry.id()))throw new IllegalArgumentException("Arena registry identity mismatch: "+entry.id());
-            if(entry.campaign()&&(arena.launchPads().size()!=2||arena.drops().size()!=1||arena.secrets().size()!=1
-                    ||arena.pickups().size()!=12||arena.bosses().size()!=1||arena.metadata().durationSeconds()!=0))
+            if(entry.campaign()&&(arena.districts().isEmpty()||arena.pickups().isEmpty()
+                    ||arena.bosses().size()!=1||arena.metadata().durationSeconds()!=0))
                 throw new IllegalArgumentException("Incomplete campaign arena: "+entry.id());
             new NavGraph(arena);loaded.put(entry.id(),arena);
         }

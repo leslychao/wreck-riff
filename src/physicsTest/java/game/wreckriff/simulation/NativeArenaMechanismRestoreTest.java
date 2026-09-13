@@ -24,7 +24,7 @@ class NativeArenaMechanismRestoreTest {
         var profile=VehicleDefinition.RIVET.profile(RULES);var anchor=arena.nodes().getFirst();
         var position=anchor.position().vector().add(0,profile.roadOffset(),0);
         var pose=new ProgressStore.SafePose(position.x,position.y,position.z,0,anchor.surfaceId(),"node-"+anchor.id());
-        var checkpoint=new ProgressStore.Checkpoint(arenaId,"rivet",0,42,"normal",ProgressStore.CheckpointStage.BOSS,
+        var checkpoint=new ProgressStore.Checkpoint(arenaId,arena.layoutRevision(),"rivet",0,42,"normal",ProgressStore.CheckpointStage.BOSS,
                 MatchCheckpoint.player(session.vehicle(0)),pose,savedArena,1000);
         MatchCheckpoint.validateReferences(ArenaRegistry.load(),checkpoint);
         try(var world=new PhysicsWorld(RULES)) {
@@ -46,16 +46,16 @@ class NativeArenaMechanismRestoreTest {
         }
     }
     private static void assertPose(PhysicsWorld world,ArenaDefinition.Hazard hazard) {
-        float x=(hazard.minX()+hazard.maxX())/2,z=(hazard.minZ()+hazard.maxZ())/2;
+        float x=(hazard.minX()+hazard.maxX())/2,z=(hazard.minZ()+hazard.maxZ())/2,road=hazard.minY()+.1f;
         String id="mechanism-"+hazard.id();Vector3f from,to,wrongFrom,wrongTo;float expectedX;
         if(hazard.type()==ArenaDefinition.HazardType.CAROUSEL) {
             // Remaining60 of480 means3.5seconds:3.5π, so the17m arm lies along worldZ.
-            from=new Vector3f(x-3,1.2f,z+10);to=new Vector3f(x+3,1.2f,z+10);expectedX=x-.65f;
-            wrongFrom=new Vector3f(x+10,1.2f,z-3);wrongTo=new Vector3f(x+10,1.2f,z+3);
+            from=new Vector3f(x-3,road+1.2f,z+10);to=new Vector3f(x+3,road+1.2f,z+10);expectedX=x-.65f;
+            wrongFrom=new Vector3f(x+10,road+1.2f,z-3);wrongTo=new Vector3f(x+10,road+1.2f,z+3);
         } else {
             // Remaining300 of360 is0.5seconds after impact: the load is on the road, not at warning height12m.
-            from=new Vector3f(x-6,1.5f,z);to=new Vector3f(x+6,1.5f,z);expectedX=x-4;
-            wrongFrom=new Vector3f(x-6,12,z);wrongTo=new Vector3f(x+6,12,z);
+            from=new Vector3f(x-6,road+1.5f,z);to=new Vector3f(x+6,road+1.5f,z);expectedX=x-4;
+            wrongFrom=new Vector3f(x-6,road+12,z);wrongTo=new Vector3f(x+6,road+12,z);
         }
         var hit=world.ray(from,to,0);assertNotNull(hit,"Saved moving collider must exist immediately");
         assertEquals(id,hit.objectId());assertEquals(expectedX,hit.point().x,.06f);

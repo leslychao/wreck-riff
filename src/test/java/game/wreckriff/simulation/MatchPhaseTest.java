@@ -15,7 +15,7 @@ class MatchPhaseTest {
         var boss=new ArenaDefinition.Boss("boss_foreman","Бригадир","boss_foreman",4000,WeaponType.POWER,WeaponType.CANNON,
                 yard.spawns().subList(0,2),List.of(),List.of("Смена началась."));
         var meta=new ArenaDefinition.Metadata("Тест",ArenaDefinition.Theme.CONSTRUCTION,4,0,0,"","normal","boss");
-        return new ArenaDefinition(2,"construction_17",meta,yard.bounds(),yard.boxes(),yard.ramps(),yard.spawns(),yard.pickups(),
+        return new ArenaDefinition(3,"construction_17",meta,yard.bounds(),yard.boxes(),yard.ramps(),yard.spawns(),yard.pickups(),
                 yard.hazards(),yard.nodes(),yard.edges(),yard.surfaces(),List.of(),List.of(),List.of(),List.of(),List.of(),List.of(boss));
     }
     private MatchSession session() { return new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,rules); }

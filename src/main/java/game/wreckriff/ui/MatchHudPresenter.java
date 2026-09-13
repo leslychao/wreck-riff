@@ -75,7 +75,9 @@ public final class MatchHudPresenter {
             boss=new HudView.BossStatus(state.name,state.hp,state.maximumHp,session.bossMode);
         }
         return new HudView.Snapshot(new HudView.Vitals(player.hp,player.maximumHp,player.turbo/100f,effect),player.selectedWeapon,
-                weapons,abilities,objective,boss,locked>=0,presentationSeconds<hintUntil?selectionHint:"",notification,observer,targets);
+                weapons,abilities,objective,boss,locked<0?HudView.TargetState.NONE:
+                    player.selectedWeapon==WeaponType.HOMING?HudView.TargetState.LOCKED:HudView.TargetState.ASSIST,
+                presentationSeconds<hintUntil?selectionHint:"",notification,observer,targets);
     }
     public static String weaponName(WeaponType type) {
         return switch(type){case HOMING->"Homing";case POWER->"Power";case MINE->"Mine";case NAPALM->"Napalm";case BALLISTIC->"Ballistic";case CANNON->"Cannon";};

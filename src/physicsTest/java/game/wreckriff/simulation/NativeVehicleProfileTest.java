@@ -42,7 +42,7 @@ class NativeVehicleProfileTest {
         }
     }
 
-    @ParameterizedTest @ValueSource(strings={"boss_foreman","boss_prefect","boss_emcee","boss_ash_shepherd","boss_director"})
+    @ParameterizedTest @ValueSource(strings={"boss_foreman","boss_prefect","boss_emcee"})
     void eachBossSettlesAndAcceleratesOnFourRealWheels(String profileId) {
         var rules=VehicleRules.load();var profile=VehicleProfile.boss(profileId,rules);
         try(var world=new PhysicsWorld(rules)) {
@@ -64,7 +64,7 @@ class NativeVehicleProfileTest {
     }
 
     @Test void bossHighHullIsHitAndQueriedWithItsOwnGeometry() {
-        var rules=VehicleRules.load();var profile=VehicleProfile.boss("boss_director",rules);
+        var rules=VehicleRules.load();var profile=VehicleProfile.boss("boss_foreman",rules);
         try(var world=new PhysicsWorld(rules)) {
             var body=world.addVehicle(8,new Vector3f(0,2,0),new Quaternion(),profile);
             Vector3f from=new Vector3f(-12,7,0),to=new Vector3f(12,7,0);
@@ -88,7 +88,7 @@ class NativeVehicleProfileTest {
     }
 
     @Test void recoveryVolumeAndSupportIdsSurviveDestructibleRemoval() {
-        var rules=VehicleRules.load();var profile=VehicleProfile.boss("boss_director",rules);
+        var rules=VehicleRules.load();var profile=VehicleProfile.boss("boss_foreman",rules);
         try(var world=new PhysicsWorld(rules)) {
             world.addStatic("first",new BoxCollisionShape(new Vector3f(2,.5f,2)),new Vector3f(-20,-.5f,0),new Quaternion());
             world.addStatic("road",new BoxCollisionShape(new Vector3f(2,.5f,2)),new Vector3f(20,-.5f,0),new Quaternion());

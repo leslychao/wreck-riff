@@ -1,0 +1,15 @@
+{
+  "title": "Metalmania",
+  "author": "Kevin MacLeod",
+  "isrc": "USUAN1700023",
+  "sourceUrl": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3",
+  "creatorPage": "https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1700023",
+  "license": "CC-BY-4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "acquired": "2026-09-09",
+  "originalSha256": "fe6298b6f9fed30870d21edd97d9be4f35de271789e648eee14a3e8472b6ee4a",
+  "pcmSha256": "d1d26d87f0947eebff691ce4f2ba73b8aa7f89ce1426c0514cdcc28df2e4e5de",
+  "decode": "imageio-ffmpeg 0.6.0; bundled FFmpeg; pcm_s16le 48000Hz stereo; metadata stripped",
+  "artisticStatus": "NEEDS_CREATIVE_REVIEW",
+  "audition": "Not auditioned by an audio-capable tool; owner must listen in the actual mix"
+}

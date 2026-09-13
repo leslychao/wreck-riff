@@ -2,7 +2,7 @@ package game.wreckriff.app;
 
 /** Sole screen-state owner; overlays remember the screen they return to. */
 public final class ScreenFlow {
-    public enum Screen { BOOT,MENU,MAPS,VEHICLES,STATISTICS,LOADING,RUNNING,PAUSED,RESULTS,SETTINGS,CONTROLS,CREDITS,CONFIRM,ERROR }
+    public enum Screen { BOOT,MENU,MAPS,VEHICLES,STATISTICS,LOADING,RUNNING,PAUSED,TACTICAL_MAP,RESULTS,SETTINGS,CONTROLS,CREDITS,CONFIRM,ERROR }
     private Screen screen=Screen.BOOT;
     private String pauseReason="";
     private final java.util.Deque<Screen> parents=new java.util.ArrayDeque<>();
@@ -23,6 +23,9 @@ public final class ScreenFlow {
         if(screen==Screen.RUNNING) {pauseReason=java.util.Objects.requireNonNull(reason);go(Screen.PAUSED);}
     }
     public void resume() { if(screen==Screen.PAUSED) go(Screen.RUNNING); }
+    public void tacticalMap() {
+        if(screen==Screen.RUNNING||screen==Screen.PAUSED) {parents.push(screen);go(Screen.TACTICAL_MAP);}
+    }
     public void open(Screen overlay) {
         if(overlay!=Screen.SETTINGS && overlay!=Screen.CONTROLS && overlay!=Screen.CREDITS && overlay!=Screen.CONFIRM && overlay!=Screen.VEHICLES) throw new IllegalArgumentException("Not an overlay");
         parents.push(screen);go(overlay);

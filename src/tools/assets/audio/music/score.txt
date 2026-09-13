@@ -1,0 +1,29 @@
+WRECK RIFF / CREATORCHORDS HEAVY SOUNDTRACK
+
+Music by Alexander Nakarada (https://creatorchords.com).
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+
+Riffs -> audio/music/menu.wav
+https://creatorchords.com/music/riffs/
+Metal Interlude -> audio/music/dead-air-yard.wav
+https://creatorchords.com/music/metal-interlude/
+Construction -> audio/music/construction_17-normal.wav
+https://creatorchords.com/music/construction/
+The Collapse -> audio/music/construction_17-boss.wav
+https://creatorchords.com/music/the-collapse/
+Circuits -> audio/music/neon_zero-normal.wav
+https://creatorchords.com/music/circuits/
+Chaotic -> audio/music/neon_zero-boss.wav
+https://creatorchords.com/music/chaotic/
+Hall of the Metal King -> audio/music/euphoria_park-normal.wav
+https://creatorchords.com/music/hall-of-the-metal-king/
+Bloodmoon Ritual -> audio/music/euphoria_park-boss.wav
+https://creatorchords.com/music/bloodmoon-ritual/
+
+Changes: loudness normalization, activity trim, prepared cyclic loop, PCM conversion.
+Victory, defeat and draw contain edited excerpts from Riffs with CC0 metal impact.
+Original deterministic workshop ambience and mechanical UI cues: GenerateAudio.java.
+Author pages and original MP3 hashes retained in provenance.json and sources.json.
+Independent recordings have independent lengths and start at zero; no shared seek timeline.
+Artistic status: NEEDS_CREATIVE_REVIEW. Technical checks cannot substitute for listening.

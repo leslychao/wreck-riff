@@ -2,6 +2,7 @@ package game.wreckriff.diagnostics;
 
 import game.wreckriff.arena.ArenaRegistry;
 import game.wreckriff.config.SettingsStore;
+import game.wreckriff.config.ProgressStore;
 import game.wreckriff.config.VehicleDefinition;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
@@ -11,12 +12,23 @@ import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UiReviewTest {
+    @Test void pauseExitIsReviewedWithoutLeavingTheMatchOrClosingTheMatrix() {
+        var cases=UiReview.catalogue();
+        for(String prefix:List.of("pause","actual-campaign")) {
+            var confirmation=cases.stream().filter(c->c.id().equals(prefix+"-quit-confirm")).findFirst().orElseThrow();
+            assertEquals("confirm:",confirmation.expectedPage());assertEquals("cancel",confirmation.expectedFocus());
+            assertEquals(List.of(new UiReview.Command(UiReview.Kind.ACTIVATE,"quit")),confirmation.commands());
+            var cancel=cases.get(cases.indexOf(confirmation)+1);assertEquals(prefix+"-quit-cancel",cancel.id());
+            assertEquals("pause",cancel.expectedPage());
+        }
+    }
     @TempDir Path directory;
     private static final UiReview.Case PAGE=new UiReview.Case("main","main","new","fresh",List.of(new UiReview.Command(UiReview.Kind.ACTIVATE,"new")),"");
     private final class Host implements UiReview.Host {
-        int commands,captures;int width=1280;String page="main";
+        int commands,captures;int width=1280;String page="main",screen="MENU";
         public void command(UiReview.Command command){commands++;}
-        public UiReview.Observation observe(){return new UiReview.Observation("MENU",page,"new",0,width,720,1,true);}
+        public UiReview.Observation observe(){return new UiReview.Observation(screen,page,"new",0,width,720,1,true,
+                Map.of("activeVehicle","rivet","savedVehicle","rivet","sessionId","test-session"));}
         public String capture(String id){captures++;return "review-"+id+"-";}
     }
     @Test void twoDrawnFramesAndCompletedPngAreRequiredBeforeCaptureEvidence() throws Exception {
@@ -42,6 +54,20 @@ class UiReviewTest {
         review.advance(host,0);review.drawnFrame();review.drawnFrame();review.advance(host,1);
         assertTrue(review.failed());assertTrue(review.evidence().getFirst().reason().contains("Unexpected page/focus"));
     }
+    @Test void actualLaunchWaitsForStagedLoadingAndStillRejectsErrorsAndTimeouts() throws Exception {
+        var launch=new UiReview.Case("launch","running:rivet","","actual launch",List.of(),"");
+        var host=new Host();host.page="loading";host.screen="LOADING";
+        var review=new UiReview(directory,1280,720,1,List.of(launch));review.advance(host,0);
+        review.drawnFrame();review.drawnFrame();review.advance(host,2);
+        assertFalse(review.failed());assertEquals(0,host.captures);
+        host.page="running:rivet";host.screen="RUNNING";review.advance(host,3);assertEquals(1,host.captures);
+        var failed=new UiReview(directory.resolve("error"),1280,720,1,List.of(launch));
+        host.screen="ERROR";host.page="error";failed.advance(host,0);failed.drawnFrame();failed.drawnFrame();failed.advance(host,1);
+        assertTrue(failed.failed());
+        var timed=new UiReview(directory.resolve("timeout"),1280,720,1,List.of(launch));
+        host.screen="LOADING";host.page="loading";timed.advance(host,0);timed.drawnFrame();timed.drawnFrame();timed.advance(host,21);
+        assertTrue(timed.failed());
+    }
     @Test void captureDimensionsAndTimeoutFailClosed() throws Exception {
         png("bad.png",640,480);assertThrows(java.io.IOException.class,()->UiReview.verifyPng(directory.resolve("captures/bad.png"),1280,720));
         var host=new Host();var review=new UiReview(directory,1280,720,1,List.of(PAGE));
@@ -64,9 +90,9 @@ class UiReviewTest {
     @Test void catalogueIsBoundedUniqueAndKeepsFixturesSeparateFromActions() {
         var cases=UiReview.catalogue();assertTrue(cases.size()<=UiReview.MAXIMUM_CASES);assertEquals(cases.size(),cases.stream().map(UiReview.Case::id).distinct().count());
         assertEquals(18,cases.stream().filter(c->c.id().startsWith("hud-")).count());
-        assertEquals(6,cases.stream().filter(c->c.id().startsWith("fresh-maps")).count());
-        assertEquals(6,cases.stream().filter(c->c.id().startsWith("unlocked-maps")).count());
-        assertTrue(cases.stream().filter(c->c.id().endsWith("statistics-bottom")).allMatch(c->c.commands().getLast().value().endsWith("doomsday_arena")));
+        assertEquals(ArenaRegistry.load().campaignIds().size()+1,cases.stream().filter(c->c.id().startsWith("fresh-maps")).count());
+        assertEquals(ArenaRegistry.load().campaignIds().size()+1,cases.stream().filter(c->c.id().startsWith("unlocked-maps")).count());
+        assertTrue(cases.stream().filter(c->c.id().endsWith("statistics-bottom")).allMatch(c->c.commands().getLast().value().endsWith(ProgressStore.CAMPAIGN_ARENAS.getLast())));
         assertTrue(cases.stream().anyMatch(c->c.id().equals("video-reverted")&&c.commands().getFirst().kind()==UiReview.Kind.ACTIVATE));
         assertTrue(cases.stream().anyMatch(c->c.id().equals("unlocked-main")&&c.fixture().contains("zero measured wins")));
     }
@@ -93,7 +119,7 @@ class UiReviewTest {
                 String id=target.substring(6).replace(":boss","");var arena=arenas.definition(id);
                 if(target.endsWith(":boss"))assertFalse(arena.bosses().isEmpty(),target);
             } else if(target.startsWith("record:"))assertNotNull(arenas.definition(target.substring(7)));
-            else if(target.startsWith("vehicle:"))assertNotNull(VehicleDefinition.forId(target.substring(8)));
+            else if(target.startsWith("vehicle:"))assertTrue(Set.of("vehicle:previous","vehicle:next","vehicle:choose").contains(target),target);
         }
     }
     private void png(String name,int width,int height)throws Exception {

@@ -43,7 +43,7 @@ README.txt
 
 ## Ресурсы и распространение
 
-Источники и преобразования assets: [ASSET_REGISTER](ASSET_REGISTER.csv), [AUDIO_DESIGN](AUDIO_DESIGN.md), `src/main/resources/licenses/asset-provenance.json` и генераторы. Текстуры Poly Haven, музыка Metalmania Kevin MacLeod и Roboto Condensed имеют локальные исходники и лицензионные сведения. Проверка WAV/размера/hash не подтверждает художественное качество. Ресурсы оригинальной Twisted Metal 4 не являются входом генераторов.
+Источники и преобразования assets: [ASSET_REGISTER](ASSET_REGISTER.csv), [AUDIO_DESIGN](AUDIO_DESIGN.md), `src/main/resources/licenses/asset-provenance.json` и генераторы. Текстуры Poly Haven, музыка Alexander Nakarada (восемь записей, CC BY 4.0) и Roboto Condensed имеют локальные исходники и лицензионные сведения. Проверка WAV/размера/hash не подтверждает художественное качество. Ресурсы оригинальной Twisted Metal 4 не являются входом генераторов.
 
 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md) и `src/main/resources/licenses/license-index.json` указывают upstream документы и hashes; build записывает точные Maven coordinates и license evidence. Сохраняются лицензии зависимости и `runtime/legal`. Для OpenAL Soft до внешнего распространения требуется закрыть отмеченную проверку corresponding-source delivery и возможности замены библиотеки для точного native build; здесь не дано неподтверждённое обещание поставки исходников от имени владельца.
 

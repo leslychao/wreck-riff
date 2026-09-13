@@ -25,7 +25,7 @@ class HudViewTest {
         for(WeaponType weapon:WeaponType.values())weapons.put(weapon,new HudView.WeaponStatus(weapon==WeaponType.MINE?0:4,weapon==WeaponType.CANNON?1.2f:0,2.4f));
         return new HudView.Snapshot(new HudView.Vitals(520,800,.6f,HudView.Effect.FROZEN),WeaponType.CANNON,weapons,
                 Map.of(AbilityId.FREEZE,new HudView.AbilityStatus(0,8,10),AbilityId.SHIELD,new HudView.AbilityStatus(2,14,16)),
-                "4 RIVALS",null,lock,"Cannon / RMB","",new RadarProjection.Observer(0,0,new RadarProjection.Heading(0,1),0),targets);
+                "4 RIVALS",null,lock?HudView.TargetState.LOCKED:HudView.TargetState.NONE,"Cannon / RMB","",new RadarProjection.Observer(0,0,new RadarProjection.Heading(0,1),0),targets);
     }
     @Test void slotStatesUseRealIconsAndCooldownShadeStaysBelowReadableNumbers() {
         try(var view=new HudView(ASSETS,new Node())) {
@@ -108,47 +108,44 @@ class HudViewTest {
             view.resize(640,480,1.5f);var base=snapshot(false,List.of());
             view.setPickupReceipt("Homing +2");
             assertEquals("Homing +2",((BitmapText)view.root().getChild("pickup-receipt")).getText());
-            assertEquals(Spatial.CullHint.Always,view.root().getChild("notice-panel").getCullHint());
+            assertNull(view.root().getChild("notice-panel"));
             view.setSubtitles("Префект: «В этом районе даже аварии происходят по разрешению»");
-            view.update(new HudView.Snapshot(base.vitals(),base.selectedWeapon(),base.weapons(),base.abilities(),base.objective(),null,false,"",
+            view.update(new HudView.Snapshot(base.vitals(),base.selectedWeapon(),base.weapons(),base.abilities(),base.objective(),null,HudView.TargetState.NONE,"",
                     "Progress not saved",base.observer(),base.radarTargets()));
             assertEquals("Progress not saved",((BitmapText)view.root().getChild("notification")).getText());
             assertEquals("Homing +2",((BitmapText)view.root().getChild("pickup-receipt")).getText());
             assertTrue(((BitmapText)view.root().getChild("encounter-subtitle")).getText().contains("Префект"));
-            assertNotEquals(Spatial.CullHint.Always,view.root().getChild("notice-panel").getCullHint());
-            float fullHeight=view.root().getChild("notice-panel").getLocalScale().y;
+            assertNull(view.root().getChild("notice-panel"));
+            float fullHeight=view.root().getChild("notification").getLocalTranslation().y;
             view.setSubtitles("");
             assertEquals("",((BitmapText)view.root().getChild("encounter-subtitle")).getText());
             assertEquals("Progress not saved",((BitmapText)view.root().getChild("notification")).getText());
             assertEquals("Homing +2",((BitmapText)view.root().getChild("pickup-receipt")).getText());
-            assertTrue(view.root().getChild("notice-panel").getLocalScale().y<fullHeight,"Hidden subtitles release panel space");
+            assertTrue(view.root().getChild("notification").getLocalTranslation().y<fullHeight,"Hidden subtitles release notice space");
         }
     }
-    @Test void authoredLongSubtitleAndNotificationKeepTheirPanelAboveThePickupReceipt() {
+    @Test void authoredLongSubtitleAndNotificationRemainSeparatedWithoutBackgroundPanels() {
         for(int[] size:new int[][]{{640,480},{1920,1080},{3840,2160}})for(float scale:new float[]{.8f,1,1.5f}) {
             Node gui=new Node();try(var view=new HudView(ASSETS,gui)) {
                 view.resize(size[0],size[1],scale);var base=snapshot(false,List.of());
                 view.setPickupReceipt("Homing +2");
                 view.setSubtitles("Префект: «В этом районе даже аварии происходят по разрешению»");
-                view.update(new HudView.Snapshot(base.vitals(),base.selectedWeapon(),base.weapons(),base.abilities(),base.objective(),null,false,"",
+                view.update(new HudView.Snapshot(base.vitals(),base.selectedWeapon(),base.weapons(),base.abilities(),base.objective(),null,HudView.TargetState.NONE,"",
                         "Прогресс не сохранён",base.observer(),base.radarTargets()));
                 gui.updateGeometricState();
-                Spatial panel=view.root().getChild("notice-panel");float bottom=panel.getLocalTranslation().y,top=bottom+panel.getLocalScale().y;
+                assertNull(view.root().getChild("notice-panel"));
                 float previousTop=view.layout().notification().y();
                 for(String name:new String[]{"pickup-receipt","encounter-subtitle","notification"}) {
                     BitmapText row=(BitmapText)view.root().getChild(name);
                     float rowTop=row.getLocalTranslation().y,rowBottom=rowTop-row.getHeight();
-                    assertTrue(row.getSize()>=14,name);assertTrue(rowTop<=top,name);
-                    if(name.equals("pickup-receipt"))assertTrue(rowTop<=bottom,"Pickup receipt has no panel behind it");
-                    else assertTrue(rowBottom>=bottom-.01f,name+" leaves panel");
+                    assertTrue(row.getSize()>=14,name);assertTrue(rowTop<view.layout().height(),name);
                     assertTrue(rowBottom>=previousTop-.01f,name+" overlaps previous row at "+size[0]+" / "+scale);
                     previousTop=rowTop;
                 }
-                assertTrue(top<=view.layout().notification().top()+.01f);
                 view.setPickupReceipt("");gui.updateGeometricState();
-                assertEquals(view.layout().notification().y(),panel.getLocalTranslation().y,.01f);
+                assertEquals("",((BitmapText)view.root().getChild("pickup-receipt-shadow")).getText());
                 view.setSubtitles("");view.update(base);
-                assertEquals(Spatial.CullHint.Always,panel.getCullHint());
+                assertEquals("",((BitmapText)view.root().getChild("notification-shadow")).getText());
             }
         }
     }

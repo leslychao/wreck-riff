@@ -21,8 +21,8 @@ class SoakProfileTest {
                 assertTrue(progress.record(new ProgressStore.Result(attempt,ProgressStore.Outcome.DEFEAT,12,0,120,false)));
             }
             assertTrue(progress.flush(Duration.ofSeconds(5)));var writer=progress.diagnostics();
-            assertEquals(writer.revision(),writer.persistedRevision());assertEquals(5,progress.snapshot().stats().losses());
+            assertEquals(writer.revision(),writer.persistedRevision());assertEquals(ProgressStore.CAMPAIGN_ARENAS.size(),progress.snapshot().stats().losses());
         }
-        try(var reloaded=new ProgressStore(directory)) {assertEquals(5,reloaded.snapshot().stats().completedMatches());}
+        try(var reloaded=new ProgressStore(directory)) {assertEquals(ProgressStore.CAMPAIGN_ARENAS.size(),reloaded.snapshot().stats().completedMatches());}
     }
 }

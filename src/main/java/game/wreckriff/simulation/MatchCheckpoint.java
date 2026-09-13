@@ -3,6 +3,8 @@ package game.wreckriff.simulation;
 import game.wreckriff.arena.*;
 import game.wreckriff.combat.*;
 import game.wreckriff.config.ProgressStore;
+import game.wreckriff.config.VehicleProfile;
+import game.wreckriff.config.VehicleRules;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,8 +40,36 @@ public final class MatchCheckpoint {
         state.controlImmunityTicks=Math.toIntExact(timer.controlImmunityTicks());state.impactStabilizerTicks=Math.toIntExact(timer.impactStabilizerTicks());
         state.heavyImpactPending=false;state.clearSpecial();state.grabbedBy=-1;
     }
+    /** Supplies geometry validation and a single migration boundary to the persistence owner. */
+    public static ProgressStore.ReferenceValidator references(ArenaRegistry registry) {
+        Objects.requireNonNull(registry);
+        return new ProgressStore.ReferenceValidator() {
+            public void validate(ProgressStore.Checkpoint checkpoint) {validateReferences(registry,checkpoint);}
+            public ProgressStore.Checkpoint migrateLayout(ProgressStore.Checkpoint checkpoint) {return rebase(registry,checkpoint);}
+        };
+    }
+    public static ProgressStore.Checkpoint rebase(ArenaRegistry registry,ProgressStore.Checkpoint checkpoint) {
+        var arena=registry.definition(checkpoint.arenaId());
+        if(checkpoint.layoutRevision()==arena.layoutRevision()) {validateReferences(registry,checkpoint);return checkpoint;}
+        if(checkpoint.layoutRevision()>arena.layoutRevision())throw new IllegalArgumentException("Checkpoint is from a newer layout");
+        var spawn=arena.spawns().getFirst();var roadPoint=spawn.position().vector();
+        var road=arena.surfaceAt(roadPoint,0,.2f).orElseThrow(()->new IllegalArgumentException("New player spawn lacks road support"));
+        var anchor=arena.nodes().stream().filter(n->n.surfaceId().equals(road.id()))
+                .min(Comparator.comparingDouble(n->n.position().vector().distanceSquared(roadPoint)))
+                .orElseThrow(()->new IllegalArgumentException("New player spawn lacks navigation anchor"));
+        var profile=VehicleProfile.player(checkpoint.profileId(),VehicleRules.load());
+        var pose=new ProgressStore.SafePose(roadPoint.x,roadPoint.y+profile.roadOffset(),roadPoint.z,
+                Math.toRadians(spawn.yawDegrees()),road.id(),"node-"+anchor.id());
+        var session=new MatchSession(checkpoint.seed(),arena,MatchSession.Mode.CAMPAIGN,game.wreckriff.config.Configs.load("combat",CombatRules.class),
+                UUID.randomUUID(),checkpoint.stage()==ProgressStore.CheckpointStage.BOSS,checkpoint.liveryId(),checkpoint.profileId());
+        var initial=new ArenaSystems(session,arena).snapshot();
+        var migrated=new ProgressStore.Checkpoint(checkpoint.arenaId(),arena.layoutRevision(),checkpoint.profileId(),checkpoint.liveryId(),
+                checkpoint.seed(),checkpoint.difficulty(),checkpoint.stage(),checkpoint.player(),pose,initial,checkpoint.activeTicksBeforeBoss());
+        validateReferences(registry,migrated);return migrated;
+    }
     public static void validateReferences(ArenaRegistry registry,ProgressStore.Checkpoint checkpoint) {
         var arena=registry.definition(checkpoint.arenaId());
+        if(checkpoint.layoutRevision()!=arena.layoutRevision())throw new IllegalArgumentException("Checkpoint layout differs from loaded arena");
         if(arena.surfaces().stream().noneMatch(s->s.id().equals(checkpoint.safePose().surfaceId()))
                 ||arena.nodes().stream().noneMatch(n->("node-"+n.id()).equals(checkpoint.safePose().anchorId())
                     &&n.surfaceId().equals(checkpoint.safePose().surfaceId())))throw new IllegalArgumentException("Unknown checkpoint road anchor");
@@ -47,7 +77,6 @@ public final class MatchCheckpoint {
         sameKeys(checkpoint.arena().objects(),arena.destructibles().stream().map(ArenaDefinition.Destructible::id).collect(Collectors.toSet()),"object");
         Set<String> eventIds=arena.hazards().stream().map(ArenaDefinition.Hazard::id).collect(Collectors.toSet());
         arena.barriers().forEach(b->eventIds.add(b.id()));
-        arena.destructibles().stream().filter(o->o.effect()==ArenaDefinition.ObjectEffect.STATUE).forEach(o->eventIds.add(o.id()));
         sameKeys(checkpoint.arena().hazards(),eventIds,"hazard");
         if(!arena.bounds().contains(new com.jme3.math.Vector3f((float)checkpoint.safePose().x(),(float)checkpoint.safePose().y(),(float)checkpoint.safePose().z())))
             throw new IllegalArgumentException("Checkpoint pose outside arena");

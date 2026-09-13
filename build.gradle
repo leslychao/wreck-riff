@@ -78,6 +78,9 @@ tasks.named('startScripts') {
 tasks.withType(JavaExec).configureEach { minHeapSize='128m';maxHeapSize='768m' }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.withType(Test).configureEach {
+    // The complete headless suite retains several asset caches; use the application's JVM budget.
+    minHeapSize = '128m'
+    maxHeapSize = '768m'
     useJUnitPlatform()
     testLogging { events 'failed', 'skipped'; exceptionFormat 'full' }
 }
@@ -137,7 +140,47 @@ tasks.register('generatePickupModels', JavaExec) {
     inputs.dir('src/main/resources/textures')
     outputs.dir(layout.buildDirectory.dir('generated-resources/models/pickups'))
 }
-tasks.named('processResources') { dependsOn tasks.named('generateAudio'),tasks.named('generateFont'),tasks.named('generateBuildInfo'),tasks.named('generatePickupModels') }
+tasks.register('generateOrdnance', JavaExec) {
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.GenerateOrdnance'
+    args layout.buildDirectory.dir('generated-resources').get().asFile.absolutePath
+    args file('src/tools/java/game/wreckriff/tools/GenerateOrdnance.java').absolutePath
+    inputs.files('src/tools/java/game/wreckriff/tools/GenerateOrdnance.java',
+            'src/main/java/game/wreckriff/presentation/OrdnanceStyle.java',
+            'src/main/java/game/wreckriff/presentation/SurfaceMaterials.java',
+            'src/tools/assets/fonts/RobotoCondensed-Bold.ttf')
+    outputs.dir(layout.buildDirectory.dir('generated-resources/models/ordnance'))
+    outputs.dir(layout.buildDirectory.dir('generated-resources/textures/ordnance'))
+}
+tasks.named('processResources') { dependsOn tasks.named('generateAudio'),tasks.named('generateFont'),tasks.named('generateBuildInfo'),tasks.named('generatePickupModels'),tasks.named('generateOrdnance') }
+tasks.named('processResources') {
+    doLast {
+        // Copy tasks do not remove previously packaged outputs when their source disappears.
+        // Retired runtime resources are removed; archived originals stay in src/tools/assets.
+        delete fileTree(destinationDir) {
+            include 'audio/campaign/**', 'audio/metalmania.wav', 'audio/music-source.json', 'audio/music-provenance.json', 'audio/hazard-statue-*.wav'
+            include 'config/arena-ash-necropolis.json', 'config/arena-doomsday.json'
+            include 'config/arena-art-ash-necropolis.json', 'config/arena-art-doomsday.json'
+            include 'textures/ui/arenas/ash_necropolis.png', 'textures/ui/arenas/doomsday_arena.png'
+        }
+    }
+}
+
+tasks.register('ordnanceReview', JavaExec) {
+    description = 'Real-window day/night/close-up inspection of the exported ordnance; owner acceptance stays pending'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'game.wreckriff.diagnostics.OrdnanceReview'
+    args layout.buildDirectory.dir('reports/ordnance-review').get().asFile.absolutePath
+}
+tasks.register('captureArenaPreviews', JavaExec) {
+    description = 'Capture the current arena catalogue in a real window for local menu artwork'
+    dependsOn tasks.named('classes'),tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath + sourceSets.main.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.GenerateArenaPreviews'
+    args layout.buildDirectory.dir('reports/arena-previews').get().asFile.absolutePath
+}
 
 tasks.register('physicsTest', Test) {
     description = 'Real Minie/Bullet integration tests without a graphics context'

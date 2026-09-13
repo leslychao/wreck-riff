@@ -136,7 +136,7 @@ class NewArsenalTest {
         final Vector3f[] positions=new Vector3f[5],velocities=new Vector3f[5];final float[] masses={1100,1100,1100,1100,1100};
         final Set<Integer> hidden=new HashSet<>();final Deque<Hit> hits=new ArrayDeque<>();final List<Integer> ignored=new ArrayList<>();
         final Map<Integer,Vector3f> impulses=new HashMap<>(),torques=new HashMap<>();final Map<Integer,Float> angularCaps=new HashMap<>();
-        boolean floor,roof,blockMuzzle;
+        boolean floor,roof,blockMuzzle;float roofHeight=6;
         TestWorld() {for(int id=0;id<5;id++){positions[id]=new Vector3f(100+id*20,1,100);velocities[id]=new Vector3f();}positions[0].set(0,1,0);}
         public Vector3f position(int id){return positions[id].clone();}public Vector3f velocity(int id){return velocities[id].clone();}
         public Quaternion rotation(int id){return new Quaternion();}public boolean grounded(int id){return true;}public float mass(int id){return masses[id];}
@@ -144,7 +144,7 @@ class NewArsenalTest {
         public Hit sweep(Vector3f from,Vector3f to,float radius,int owner,float stepStart,float stepEnd){ignored.add(owner);return hits.isEmpty()?staticSweep(from,to,radius):hits.removeFirst();}
         public Hit staticSweep(Vector3f from,Vector3f to,float radius){
             if(!floor)return null;
-            Hit roofHit=roof?plane(from,to,radius,6,true):null;return roofHit==null?plane(from,to,radius,0,false):roofHit;
+            Hit roofHit=roof?plane(from,to,radius,roofHeight,true):null;return roofHit==null?plane(from,to,radius,0,false):roofHit;
         }
         private Hit plane(Vector3f from,Vector3f to,float radius,float height,boolean restricted) {
             if(from.y<height+radius||to.y>height+radius||from.y==to.y)return null;
@@ -152,10 +152,10 @@ class NewArsenalTest {
             if(restricted&&(Math.abs(point.x)>12||point.z<28||point.z>52))return null;
             return new Hit(-1,point,Vector3f.UNIT_Y,fraction);
         }
-        public boolean visible(Vector3f from,Vector3f to,int target){return !hidden.contains(target)&&!(roof&&from.y>6&&to.y<6&&Math.abs(to.x)<12&&to.z>28&&to.z<52);}
+        public boolean visible(Vector3f from,Vector3f to,int target){return !hidden.contains(target)&&!(roof&&from.y>roofHeight&&to.y<roofHeight&&Math.abs(to.x)<12&&to.z>28&&to.z<52);}
         public float distanceToHull(int id,Vector3f point){return Math.max(0,point.distance(position(id))-1);}
         public Vector3f closestHullPoint(int id,Vector3f from){Vector3f offset=from.subtract(position(id));return position(id).add(offset.normalize());}
         public void impulse(int id,Vector3f linear,Vector3f angular,float cap){impulses.put(id,linear.clone());torques.put(id,angular.clone());angularCaps.put(id,cap);}
-        public Support support(Vector3f from,float depth){float y=roof&&Math.abs(from.x)<12&&from.z>=28&&from.z<=52&&from.y>6?6:0;return new Support(y==6?1:0,new Vector3f(from.x,y,from.z),Vector3f.UNIT_Y);}
+        public Support support(Vector3f from,float depth){float y=roof&&Math.abs(from.x)<12&&from.z>=28&&from.z<=52&&from.y>roofHeight?roofHeight:0;return new Support(y==roofHeight?1:0,new Vector3f(from.x,y,from.z),Vector3f.UNIT_Y);}
     }
 }

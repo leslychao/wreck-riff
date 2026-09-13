@@ -81,12 +81,40 @@ public final class UiReview {
             if(!observed.visible||observed.width!=width||observed.height!=height||Math.abs(observed.scale-scale)>.001f) {
                 fail(host,"Requested framebuffer/scale unavailable: "+width+"x"+height+" @ "+scale+"; actual "+observed);return;
             }
+            // Actual vehicle selection starts the staged loader. Wait for its real completion,
+            // still bounded by the same 20-second case timeout; errors are never swallowed.
+            if(next.expectedPage.startsWith("running:")&&observed.screen.equals("LOADING"))return;
             if(!observed.pageId.startsWith(next.expectedPage)||!next.expectedFocus.isBlank()&&!Objects.equals(next.expectedFocus,observed.focus)) {
                 fail(host,"Unexpected page/focus, expected "+next.expectedPage+" / "+next.expectedFocus+"; actual "+observed);return;
             }
+            verifyMatchTransition(next,observed);
             capturedObservation=observed;capturedFrame=drawnFrames;capturePrefix=host.capture(next.id);
             if(capturePrefix==null||!capturePrefix.matches("[A-Za-z0-9_.-]+"))throw new IllegalStateException("Invalid capture prefix");
         } catch(RuntimeException|IOException failure) {fail(host,failure.getClass().getSimpleName()+": "+failure.getMessage());}
+    }
+    private void verifyMatchTransition(Case next,Observation observed) {
+        if(next.id.equals("actual-campaign-pause")&&(!(observed.state.get("simulationTick") instanceof Number tick)||tick.longValue()<=0))
+            throw new IllegalStateException("Map review must pause an advancing combat simulation, after the countdown");
+        if(next.id.startsWith("actual-map-")&&!evidence.isEmpty()) {
+            var before=evidence.getLast().observed.state;
+            if(!Objects.equals(before.get("sessionId"),observed.state.get("sessionId"))||!Objects.equals(before.get("simulationTick"),observed.state.get("simulationTick")))
+                throw new IllegalStateException("Tactical map advanced or reconstructed the paused simulation");
+        }
+        if(next.id.startsWith("vehicles-")) {
+            String preview=next.id.substring("vehicles-".length());
+            if(!preview.equals(observed.state.get("previewVehicle"))||!"rivet".equals(observed.state.get("savedVehicle")))
+                throw new IllegalStateException("Carousel browsing changed the saved chassis or skipped a preview");
+        }
+        if(!next.expectedPage.startsWith("running:"))return;
+        String profile=next.expectedPage.substring("running:".length());
+        if(!profile.equals(observed.state.get("activeVehicle"))||!profile.equals(observed.state.get("savedVehicle")))
+            throw new IllegalStateException("Displayed, saved and active chassis must agree");
+        if(next.id.startsWith("actual-repeat-accept-")||next.id.startsWith("actual-retry-")) {
+            Object before=evidence.getLast().observed.state.get("sessionId"),after=observed.state.get("sessionId");
+            boolean repeat=next.id.startsWith("actual-repeat-accept-");
+            if(before==null||after==null||Objects.equals(before,after)!=repeat)
+                throw new IllegalStateException(repeat?"Repeated accept started another match":"Retry did not start a new match");
+        }
     }
     private void next() throws IOException {cursor++;caseStarted=false;capturePrefix=null;complete=cursor==cases.size();write();}
     private void fail(Host host,String reason) throws IOException {
@@ -112,7 +140,7 @@ public final class UiReview {
         data.put("status",failed?"FAIL":complete?"CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING":"RUNNING");
         data.put("requestedFramebuffer",Map.of("width",width,"height",height,"uiScale",scale));
         data.put("ownerAcceptance","NOT_GRANTED");data.put("releaseEligible",false);
-        data.put("fixturePolicy","Render-only snapshots; no recorded wins, campaign changes or hardware-input claims");
+        data.put("fixturePolicy","Render-only snapshots plus native matches in an isolated profile; no synthetic outcomes or hardware-input claims");
         data.put("plannedCases",cases.size());data.put("cases",List.copyOf(evidence));
         data.put("remainingCaseIds",cases.subList(Math.min(cursor+(failed?1:0),cases.size()),cases.size()).stream().map(Case::id).toList());
         Files.createDirectories(directory);Files.writeString(directory.resolve("ui-review-manifest.json"),Configs.gson().toJson(data));
@@ -131,9 +159,9 @@ public final class UiReview {
         for(String arena:ProgressStore.CAMPAIGN_ARENAS)add.page("fresh-maps-"+arena,"maps","fresh locked campaign; each card reachable",focus("arena:"+arena));
         add.page("fresh-statistics","statistics","fresh zero statistics",activate("back"),activate("stats"));
         add.page("fresh-statistics-bottom","statistics","fresh zero statistics",focus("record:"+ProgressStore.CAMPAIGN_ARENAS.getLast()));
-        add.page("vehicles-rivet","vehicles","actual vehicle selection action",activate("back"),activate("new"),activate("vehicle:rivet"));
-        add.page("vehicles-grinder","vehicles","actual vehicle selection action",activate("vehicle:grinder"));
-        add.page("vehicles-spark","vehicles","actual vehicle selection action",activate("vehicle:spark"));
+        result.add(new Case("vehicles-rivet","vehicles","","actual carousel preview; saved profile unchanged",List.of(activate("back"),activate("new")),"",.4));
+        result.add(new Case("vehicles-grinder","vehicles","","actual carousel browse; saved profile unchanged",List.of(dispatch("right")),"",.4));
+        result.add(new Case("vehicles-spark","vehicles","","actual carousel browse; saved profile unchanged",List.of(dispatch("right")),"",.4));
         add.page("settings-video","settings:0","isolated saved settings",activate("back"),activate("settings"));
         for(int tab=1;tab<4;tab++)add.page("settings-tab-"+tab,"settings:"+tab,"actual settings tab action",activate("settings-tab:"+tab));
         add.page("controls-keyboard","controls:false","actual controls action",activate("bindings"));
@@ -165,6 +193,31 @@ public final class UiReview {
         add.page("pause","pause","render-only session pause with visible reason",fixture("pause"));
         add.page("pause-settings","settings:0","actual settings overlay from paused render fixture",activate("settings"),activate("settings-tab:0"));
         add.page("pause-return","pause","actual back preserves pause reason",activate("back"));
+        add.focused("pause-quit-confirm","confirm:","cancel","quit directly from pause; safe initial focus",activate("quit"));
+        add.page("pause-quit-cancel","pause","cancel exit returns to the original pause",activate("cancel"));
+        add.page("actual-launch-menu","main","real isolated progress; no synthetic result",fixture("actual-progress"));
+        for(int index=0;index<3;index++) {
+            String profile=List.of("rivet","grinder","spark").get(index);
+            var commands=new ArrayList<Command>();commands.add(activate("maps"));commands.add(activate("arena:"+ProgressStore.LEGACY_ARENA));
+            if(index>0)commands.add(dispatch("right"));commands.add(activate("vehicle:choose"));
+            result.add(new Case("actual-start-"+profile,"running:"+profile,"","actual native match loading through vehicle selection; no combat outcome fixture",commands,"",.4));
+            add.page("actual-repeat-accept-"+profile,"running:"+profile,"second accept must leave the same match active",dispatch("activate"));
+            add.page("actual-retry-"+profile,"running:"+profile,"actual retry retains chassis",dispatch("pause"),activate("retry"),activate("accept"));
+            add.page("actual-leave-"+profile,"main","actual leave closes native world",dispatch("pause"),activate("leave"),activate("accept"));
+        }
+        result.add(new Case("actual-campaign-start","running:spark","","actual new campaign after countdown in isolated profile",List.of(activate("new"),activate("vehicle:choose")),"",7));
+        add.page("actual-campaign-pause","pause","pause the native campaign before map interaction",dispatch("pause"));
+        add.focused("actual-campaign-quit-confirm","confirm:","cancel","native campaign exit describes the last checkpoint",activate("quit"));
+        add.page("actual-campaign-quit-cancel","pause","cancel exit retains the native match",dispatch("back"));
+        add.page("actual-map-open","tactical-map","actual authored roads, pickups and all living vehicles",activate("tactical-map"));
+        add.page("actual-map-zoom-pan","tactical-map","zoom and pan while simulation remains paused",activate("map:zoom-in"),activate("map:east"),activate("map:north"));
+        add.page("actual-map-height","tactical-map","filter real authored surface levels",activate("map:level"));
+        add.page("actual-map-fit","tactical-map","restore complete map and all levels",activate("map:fit"));
+        add.page("actual-map-return","pause","return to original pause without simulation changes",activate("map:back"));
+        add.page("actual-campaign-resume","running:spark","resume original match after using the map",dispatch("pause"));
+        add.page("actual-campaign-menu","main","actual checkpoint remains after leaving",dispatch("pause"),activate("leave"),activate("accept"));
+        add.page("actual-campaign-continue","running:spark","actual checkpoint continuation retains chassis",activate("continue"));
+        add.page("actual-campaign-finished-review","main","real match unloaded without recording a synthetic victory",dispatch("pause"),activate("leave"),activate("accept"));
         result.add(new Case("hardware-controller","","","",List.of(),"Requires a physically operated controller; virtual UI dispatch is not hardware proof"));
         return List.copyOf(result);
     }

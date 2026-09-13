@@ -23,13 +23,13 @@ class BallisticGuidanceTest {
         throw new AssertionError("No falling charge");
     }
 
-    @Test void immediateShotSelectsNearestVisibleFrontCarIncludingCloseAndOffAxisTargets() {
+    @Test void immediateShotSelectsNearestVisibleCarOnlyInsideThirtyDegreeCone() {
         world.positions[1].set(0,1,40);world.positions[2].set(8,1,7);
         world.positions[3].set(0,1,-3);world.positions[4].set(0,1,5);world.hidden.add(4);
         fire();
         assertEquals(-1,combat.lockTarget(0),"Fixture fires before any lock can complete");
-        assertEquals(2,combat.projectiles().getFirst().targetId());
-        assertEquals(2,combat.ballisticTarget(0),"HUD and shot use the same immediate selection");
+        assertEquals(1,combat.projectiles().getFirst().targetId(),"The nearer off-axis car is outside the aiming cone");
+        assertEquals(1,combat.ballisticTarget(0),"HUD and shot use the same immediate selection");
         assertEquals(1,session.vehicle(0).weapon(WeaponType.BALLISTIC).ammo);
     }
 
@@ -47,42 +47,46 @@ class BallisticGuidanceTest {
         for(int i=0;i<750;i++) {
             tick();
             for(var p:combat.projectiles())if(p.kind().equals("ballistic-fall")) {
-                seen.add(p.id());assertEquals(1,p.targetId());
+                seen.add(p.id());assertTrue(p.targetId()==1||p.targetId()==-1,"Guidance may finish, but must never switch targets");
             }
         }
         assertEquals(4,seen.size());assertTrue(combat.ballisticWarnings().isEmpty());
         assertEquals(0,combat.occupiedProjectileSlots());
     }
 
-    @Test void releasedDropsTurnAtABoundedRateAndWarningsMoveWithTheirTrajectory() {
-        world.floor=true;world.positions[1].set(0,1,40);fire();ProjectileState drop=firstDrop();
+    @Test void releasedDropsOnlyTurnHorizontallyAndStayWithinThreeMetresOfTheirFreeTrajectory() {
+        world.floor=true;world.positions[1].set(0,1,40);world.velocities[1].set(18,0,0);fire();
+        while(combat.ballisticWarnings().isEmpty()) {world.positions[1].addLocal(world.velocities[1].mult(MatchSession.DT));tick();}
+        ProjectileState drop=firstDrop();
         assertEquals(1,drop.targetId());Vector3f initialWarning=warning(drop.id());
-        world.positions[1].x=22;
-        float largestWarningShift=0;
+        world.positions[1].x=-22;world.velocities[1].set(-18,0,0);
+        Vector3f initialVelocity=drop.originalVelocity.clone();
         for(int i=0;i<600&&!drop.exploded;i++) {
-            Vector3f before=drop.velocity().normalizeLocal();tick();
-            Vector3f steered=drop.velocity().addLocal(0,18*MatchSession.DT,0).normalizeLocal();
-            double angle=Math.acos(Math.clamp(before.dot(steered),-1,1));
-            assertTrue(angle<=Math.toRadians(45)*MatchSession.DT+.00015,"Instant turn: "+angle);
+            Vector3f before=drop.velocity();tick();
+            assertEquals(before.y-18*MatchSession.DT,drop.velocity().y,.0001,"Guidance must not change falling speed");
+            Vector3f oldHorizontal=before.setY(0).normalizeLocal(),newHorizontal=drop.velocity().setY(0).normalizeLocal();
+            double angle=Math.acos(Math.clamp(oldHorizontal.dot(newHorizontal),-1,1));
+            assertTrue(angle<=Math.toRadians(12)*MatchSession.DT+.0003,"Instant turn: "+angle);
             if(!drop.exploded) {
+                Vector3f free=drop.launchPosition.add(initialVelocity.mult(drop.ageTicks*MatchSession.DT));
+                assertTrue(drop.position().subtract(free).setY(0).length()<=3.001,"Correction exceeded the free-flight envelope");
                 var marker=combat.ballisticWarnings().stream().filter(w->w.id()==drop.id()).findFirst();
-                if(marker.isPresent())largestWarningShift=Math.max(largestWarningShift,marker.get().point().distance(initialWarning));
+                if(marker.isPresent())assertTrue(marker.get().point().distance(initialWarning)<=3.1,"The warning chased a moving target");
             }
         }
-        assertTrue(drop.position().x>6,"Charge must leave the removed six-metre area limit: "+drop.position());
-        assertTrue(largestWarningShift>6,"The old warning must not remain fixed under a homing charge");
     }
 
-    @Test void movingTargetReceivesDamageAfterDrivingOutsideTheOldSixMetreArea() {
-        world.floor=true;world.positions[1].set(0,1,40);world.velocities[1].set(6,0,0);fire();
-        List<GameEvent> explosions=new ArrayList<>();
+    @Test void laterChargesUseTheFirstWarningCentreInsteadOfReaimingAtTheMovingTarget() {
+        world.floor=true;world.positions[1].set(0,1,40);fire();
+        while(combat.ballisticWarnings().isEmpty())tick();
+        world.positions[1].x=22;world.velocities[1].set(18,0,0);
+        Set<Long> seen=new HashSet<>();
         for(int i=0;i<750;i++) {
-            world.positions[1].addLocal(world.velocities[1].mult(MatchSession.DT));
-            for(var event:tick())if(event.type()==GameEvent.Type.EXPLOSION&&event.kind().equals("ballistic")) {
-                explosions.add(event);assertTrue(event.position().x>6);
-            }
+            for(var marker:combat.ballisticWarnings())if(seen.add(marker.id()))
+                assertTrue(Math.abs(marker.point().x)<=2.01,"A later charge recomputed the published salvo centre: "+marker.point());
+            tick();
         }
-        assertEquals(4,explosions.size());assertTrue(session.vehicle(1).hp<400,"A steady moving target should be hit");
+        assertEquals(4,seen.size());
         assertTrue(combat.fireZones().isEmpty());
     }
 
@@ -107,13 +111,24 @@ class BallisticGuidanceTest {
         }
     }
 
-    @Test void aLateSharpDodgeCanEscapeAnAlreadyFallingCharge() {
+    @Test void guidanceEndsPermanentlyAfterTheFirstPointSixSecondsOfFalling() {
         world.floor=true;world.positions[1].set(0,1,40);fire();ProjectileState drop=firstDrop();
-        for(int i=0;i<105;i++)tick();
-        world.positions[1].x=30;float health=session.vehicle(1).hp;
-        while(!drop.exploded)tick();
-        assertTrue(drop.position().distance(world.positions[1])>session.combatRules.ballistic().radius()+1);
-        assertEquals(health,session.vehicle(1).hp,"Guidance must not guarantee a hit after a sudden late dodge");
+        while(drop.ageTicks<=72&&!drop.exploded)tick();
+        assertFalse(drop.exploded);assertEquals(-1,drop.targetId());Vector3f velocity=drop.velocity();
+        world.positions[1].x=4;
+        for(int i=0;i<30&&!drop.exploded;i++) {
+            tick();assertEquals(-1,drop.targetId());
+            assertEquals(velocity.x,drop.velocity().x,.00001);assertEquals(velocity.z,drop.velocity().z,.00001);
+        }
+    }
+
+    @Test void approachingAnEarlierRoofEndsGuidanceBeforeTheMaximumGuidedLifetime() {
+        world.floor=true;world.positions[1].set(0,1,40);fire();ProjectileState drop=firstDrop();
+        // A fresh roof prediction reaches its terminal window while the charge is still young.
+        world.roof=true;world.roofHeight=18;world.positions[1].y=19;
+        for(int i=0;i<72&&!drop.exploded&&drop.targetId()>=0;i++)tick();
+        assertEquals(-1,drop.targetId());
+        assertTrue(drop.ageTicks<72,"The roof must end guidance earlier than the maximum guided lifetime");
     }
 
     private Vector3f warning(long id) {

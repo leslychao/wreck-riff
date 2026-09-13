@@ -14,17 +14,17 @@ class CombatRulesTest {
     @Test void T01_bundledWeaponNumbersMatchTheApprovedSpecification() {
         CombatRules rules = Configs.load("combat", CombatRules.class);
         assertEquals(64, rules.maximumProjectiles());
-        assertEquals(3, rules.machineGun().damage());
+        assertEquals(2.4f, rules.machineGun().damage());
         assertEquals(12, rules.machineGun().cooldownTicks());
-        assertEquals(60, CombatRules.ticks(rules.homing().cooldownSeconds()));
-        assertEquals(84, CombatRules.ticks(rules.power().cooldownSeconds()));
-        assertEquals(84, CombatRules.ticks(rules.mine().cooldownSeconds()));
-        assertEquals(108, CombatRules.ticks(rules.napalm().cooldownSeconds()));
-        assertEquals(168, CombatRules.ticks(rules.cannon().cooldownSeconds()));
-        assertEquals(360, CombatRules.ticks(rules.ballistic().cooldownSeconds()));
+        assertEquals(78, CombatRules.ticks(rules.homing().cooldownSeconds()));
+        assertEquals(108, CombatRules.ticks(rules.power().cooldownSeconds()));
+        assertEquals(120, CombatRules.ticks(rules.mine().cooldownSeconds()));
+        assertEquals(144, CombatRules.ticks(rules.napalm().cooldownSeconds()));
+        assertEquals(216, CombatRules.ticks(rules.cannon().cooldownSeconds()));
+        assertEquals(480, CombatRules.ticks(rules.ballistic().cooldownSeconds()));
         assertEquals(18, CombatRules.ticks(rules.targeting().acquisitionSeconds()));
         assertEquals(36, CombatRules.ticks(rules.targeting().occlusionGraceSeconds()));
-        assertEquals(72, CombatRules.ticks(rules.ram().cooldownSeconds()));
+        assertEquals(96, CombatRules.ticks(rules.ram().cooldownSeconds()));
         assertEquals(new CombatRules.Blast(4,1),rules.homing().blast());
         assertEquals(new CombatRules.Blast(6,2),rules.power().blast());
         assertEquals(new CombatRules.Blast(4,5),rules.mine().blast());
@@ -33,8 +33,15 @@ class CombatRulesTest {
         assertEquals(new CombatRules.BlastLimits(16,10,6),rules.heavyBlastLimits());
         assertEquals(65,rules.cannon().directDamage());assertEquals(13200,rules.cannon().horizontalImpulse());
         assertEquals(2,rules.cannon().ricochets());assertEquals(4,rules.ballistic().charges());
-        assertEquals(34,rules.ballistic().damage());assertEquals(54,CombatRules.ticks(rules.ballistic().releaseIntervalSeconds()));
-        assertEquals(45,rules.ballistic().turnDegreesPerSecond());assertEquals(70,rules.ballistic().maximumRange());
+        assertEquals(28,rules.ballistic().damage());assertEquals(54,CombatRules.ticks(rules.ballistic().releaseIntervalSeconds()));
+        assertEquals(12,rules.ballistic().turnDegreesPerSecond());assertEquals(70,rules.ballistic().maximumRange());
+        assertEquals(30,rules.ballistic().acquisitionConeDegrees());assertEquals(3,rules.ballistic().maximumDeviation());
+        assertEquals(.35f,rules.ballistic().maximumLeadSeconds());assertEquals(6,rules.ballistic().maximumLead());
+        assertEquals(.6f,rules.ballistic().maximumGuidanceSeconds());assertEquals(.6f,rules.ballistic().guidanceCutoffSeconds());
+        assertEquals(25,rules.napalm().damagePerSecond());assertEquals(1.5f,rules.control().freezeSeconds());
+        assertEquals(12,rules.control().freezeCooldownSeconds());
+        assertEquals(18,SpecialRules.cooldownSeconds("rivet"));assertEquals(26,SpecialRules.cooldownSeconds("grinder"));
+        assertEquals(16,SpecialRules.cooldownSeconds("spark"));
         assertEquals(18,rules.napalm().assist().turnDegreesPerSecond());assertEquals(3,rules.napalm().assist().maximumDeviation());
     }
 
@@ -75,5 +82,14 @@ class CombatRulesTest {
         JsonObject cone = configuration();
         cone.getAsJsonObject("targeting").addProperty("retentionConeDegrees", 17);
         assertThrows(RuntimeException.class, () -> Configs.gson().fromJson(cone, CombatRules.class));
+    }
+
+    @Test void ballisticGuidanceLimitsMustBePresentAndPositive() {
+        for(String field:new String[]{"acquisitionConeDegrees","maximumDeviation","maximumGuidanceSeconds","guidanceCutoffSeconds"}) {
+            JsonObject invalid=configuration();invalid.getAsJsonObject("ballistic").addProperty(field,0);
+            assertThrows(RuntimeException.class,()->Configs.gson().fromJson(invalid,CombatRules.class));
+            JsonObject missing=configuration();missing.getAsJsonObject("ballistic").remove(field);
+            assertThrows(IllegalArgumentException.class,()->Configs.validate(missing,CombatRules.class,"combat"));
+        }
     }
 }

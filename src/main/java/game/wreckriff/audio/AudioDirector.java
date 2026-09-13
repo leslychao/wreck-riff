@@ -10,7 +10,8 @@ import java.util.*;
 
 /** One render-thread audio owner. Never creates a device, never uses untracked playInstance voices. */
 public final class AudioDirector implements AutoCloseable {
-    private enum Group { ENGINE, WEAPON, THREAT, UI }
+    private enum Group { ENGINE, WEAPON, THREAT, UI, MENU_UI }
+    private static final int MENU_UI_SOURCES=2;
     private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
     private record DelayedImpact(GameEvent event,double due) {}
@@ -28,10 +29,11 @@ public final class AudioDirector implements AutoCloseable {
         }
     }
     private final AudioRenderer renderer;
+    private final SourcePauseRenderer pauseRenderer;
     private final AssetManager assets;
     private final Listener listener;
     private final AudioConfig config;
-    private final Node audioRoot = new Node("match-audio");
+    private final Node audioRoot = new Node("game-audio");
     private final Map<String,AudioData> buffers = new LinkedHashMap<>();
     private final Map<String,List<String>> cueBanks;
     private final Map<String,Integer> nextTake = new HashMap<>();
@@ -47,9 +49,15 @@ public final class AudioDirector implements AutoCloseable {
     private static final class Motion { float priorSpeed,priorTurbo=100,enginePitch=1; }
     private final Map<Integer,Motion> motion=new HashMap<>();
     private AudioNode music,bossTrack;
+    private AudioNode menuMusic,menuAmbience;
     private String musicAsset,bossAsset;
     private float bossBlend,bossTarget;
     private static final float MUSIC_CROSSFADE_SECONDS=2;
+    private static final float MENU_CROSSFADE_SECONDS=.6f;
+    private float menuFade=1;
+    private double presentationClock,nextChangeCue;
+    private boolean menuActive,leavingMenu,matchPrepared;
+    private List<AudioSource> suspended=List.of();
     private AudioCapture capture;
     private double impactClock;
     private boolean closed, paused, matchActive, warningWasActive;
@@ -61,12 +69,14 @@ public final class AudioDirector implements AutoCloseable {
     }
     AudioDirector(AssetManager assets, AudioRenderer renderer, Listener listener, Node parent, AudioConfig config) {
         this.assets=assets;this.renderer=renderer; this.listener=listener; this.config=config;
-        musicAsset=config.musicAsset();bossAsset=config.musicAsset();
+        if(renderer!=null&&!(renderer instanceof SourcePauseRenderer))
+            throw new IllegalArgumentException("Desktop audio requires atomic source pause support");
+        pauseRenderer=(SourcePauseRenderer)renderer;
         cueBanks=config.cueBanks();
         parent.attachChild(audioRoot);
         if (renderer == null) return; // Application emits the explicit no-device/no-audio diagnostic.
         try {
-            music=loadMusic(config.musicAsset(),"music-metalmania");audioRoot.attachChild(music);
+            prepareMenu();
             for (String id : config.effects()) {
                 AudioData data = assets.loadAsset(new AudioKey("audio/" + id + ".wav", false));
                 if (data.getChannels() != 1) throw new IOException("Positional effect is not mono: " + id);
@@ -79,23 +89,72 @@ public final class AudioDirector implements AutoCloseable {
         }
     }
 
-    /** Called during loading. Both campaign streams are opened before combat; no asset is loaded on a boss transition. */
-    public void startMatch(UUID nextSessionId,String normalAsset,String intenseAsset) {
+    /** Idempotent navigation between menu pages keeps the current riff and ambience running. */
+    public void startMenu() {
+        if(closed)throw new IllegalStateException("AudioDirector is closed");
+        if(menuActive&&!leavingMenu)return;
+        stopMatch();disposeMusic(music);disposeMusic(bossTrack);music=null;bossTrack=null;
+        musicAsset=null;bossAsset=null;sessionId=null;
+        if(renderer!=null) {
+            try {prepareMenu();}catch(IOException e){throw new IllegalStateException("Cannot load menu audio",e);}
+            renderer.playSource(menuMusic);renderer.playSource(menuAmbience);
+        }
+        menuActive=true;leavingMenu=false;menuFade=1;applyVolumes();
+    }
+
+    /** Stops presentation audio explicitly for errors, shutdown and non-menu showcases. */
+    public void stopMenu() {
+        if(renderer!=null) {
+            disposeMusic(menuMusic);menuMusic=null;
+            if(menuAmbience!=null){if(capture!=null)capture.stop(menuAmbience);renderer.stopSource(menuAmbience);}
+        }
+        if(menuAmbience!=null){menuAmbience.removeFromParent();menuAmbience=null;}
+        menuActive=false;leavingMenu=false;menuFade=1;
+    }
+
+    private void prepareMenu() throws IOException {
+        if(menuMusic==null){menuMusic=loadMusic(config.menuMusicAsset(),"music-menu");audioRoot.attachChild(menuMusic);}
+        if(menuAmbience==null) {
+            AudioKey key=new AudioKey(config.menuAmbienceAsset(),false);
+            AudioData data=assets.loadAsset(key);
+            if(data.getChannels()!=1)throw new IOException("Menu ambience must be mono PCM");
+            menuAmbience=new AudioNode(data,key);menuAmbience.setName("sound-menu-ambience");
+            menuAmbience.setLooping(true);menuAmbience.setPositional(false);menuAmbience.setVolume(0);
+            audioRoot.attachChild(menuAmbience);
+        }
+    }
+
+    /** Opens both local battle streams during loading while the menu continues playing. */
+    public void prepareMatch(UUID nextSessionId,String normalAsset,String intenseAsset) {
         if (closed) throw new IllegalStateException("AudioDirector is closed");
         Objects.requireNonNull(nextSessionId,"Audio requires the authoritative match session");
         validateMusicPath(normalAsset);validateMusicPath(intenseAsset);
         stopMatch();
+        if(!menuActive)stopMenu();
         prepareMusic(normalAsset,intenseAsset);
-        sessionId=nextSessionId;matchActive=true; paused=false;
-        if (music != null) {music.setTimeOffset(0);renderer.playSource(music);}
+        sessionId=nextSessionId;matchPrepared=true;
+    }
+
+    /** Starts the prepared score as the loaded match becomes visible. */
+    public void startPreparedMatch() {
+        if(closed||!matchPrepared)throw new IllegalStateException("No prepared match audio");
+        matchPrepared=false;matchActive=true;paused=false;
+        bossBlend=bossTarget;
+        leavingMenu=menuActive;menuFade=leavingMenu?0:1;
+        AudioNode incoming=bossTarget>0&&bossTrack!=null?bossTrack:music;
+        if(incoming!=null){incoming.setTimeOffset(0);renderer.playSource(incoming);}
         applyVolumes();
+    }
+
+    public void startMatch(UUID nextSessionId,String normalAsset,String intenseAsset) {
+        prepareMatch(nextSessionId,normalAsset,intenseAsset);startPreparedMatch();
     }
 
     /** Idempotent phase input. Reversing a fade keeps the same pair and musical timeline. */
     public void bossMusic(boolean active) {
-        if(closed||!matchActive||bossTrack==null)return;
+        if(closed||(!matchActive&&!matchPrepared)||bossTrack==null)return;
         bossTarget=active?1:0;
-        if(!paused)ensureMusicSources();
+        if(matchActive&&!paused)ensureMusicSources();
     }
 
     /** Real TELEGRAPH transitions only; checkpoint snapshots are seeded silently by presentation. */
@@ -128,15 +187,13 @@ public final class AudioDirector implements AutoCloseable {
     }
 
     private void prepareMusic(String normalAsset,String intenseAsset) {
-        if(musicAsset.equals(normalAsset)&&bossAsset.equals(intenseAsset))return;
+        if(Objects.equals(musicAsset,normalAsset)&&Objects.equals(bossAsset,intenseAsset))return;
         if(renderer==null) {musicAsset=normalAsset;bossAsset=intenseAsset;return;}
         AudioNode normal=null,intense=null;
         try {
-            normal=loadMusic(normalAsset,normalAsset.equals(config.musicAsset())?"music-metalmania":"music-normal");
+            normal=loadMusic(normalAsset,"music-normal");
             if(!normalAsset.equals(intenseAsset)) {
                 intense=loadMusic(intenseAsset,"music-boss");
-                if(Math.abs(normal.getAudioData().getDuration()-intense.getAudioData().getDuration())>1f/48000)
-                    throw new IOException("Campaign music mixes must have exactly the same duration");
             }
         } catch(IOException|RuntimeException e) {
             disposeMusic(normal);disposeMusic(intense);throw new IllegalStateException("Cannot load arena music "+normalAsset+" / "+intenseAsset,e);
@@ -151,19 +208,20 @@ public final class AudioDirector implements AutoCloseable {
     }
 
     private void ensureMusicSources() {
-        if(renderer==null||!matchActive||paused)return;
-        AudioNode incoming=bossTarget>0?bossTrack:music,playing=bossTarget>0?music:bossTrack;
+        if(renderer==null||!matchActive||paused||leavingMenu)return;
+        AudioNode incoming=bossTarget>0?bossTrack:music;
         if(incoming==null||incoming.getStatus()!=AudioSource.Status.Stopped)return;
         prune();
-        while(voices.size()+musicSourceCount()>=config.sourceLimit())
-            remove(voices.stream().min(Comparator.comparingInt(voice->voice.priority)).orElseThrow());
-        float seconds=playing==null?0:playing.getPlaybackTime();
-        incoming.setTimeOffset(seconds%incoming.getAudioData().getDuration());
+        while(gameplayVoiceCount()>=config.sourceLimit()-MENU_UI_SOURCES)
+            remove(voices.stream().filter(voice->voice.group!=Group.MENU_UI)
+                    .min(Comparator.comparingInt(voice->voice.priority)).orElseThrow());
+        // These are independent recorded songs, not phase-aligned stems.
+        incoming.setTimeOffset(0);
         incoming.setVolume(0);renderer.playSource(incoming);
     }
 
     private void advanceMusic(float dt) {
-        if(bossTrack==null)return;
+        if(bossTrack==null||leavingMenu)return;
         ensureMusicSources();
         float step=dt/MUSIC_CROSSFADE_SECONDS;
         bossBlend=bossTarget>bossBlend?Math.min(bossTarget,bossBlend+step):Math.max(bossTarget,bossBlend-step);
@@ -180,11 +238,17 @@ public final class AudioDirector implements AutoCloseable {
             for (Voice voice : List.copyOf(voices)) remove(voice);
             if (music != null) { if(capture!=null)capture.stop(music);renderer.stopSource(music); }
             if (bossTrack != null) { if(capture!=null)capture.stop(bossTrack);renderer.stopSource(bossTrack); }
-            if (paused) renderer.resumeAll();
+            if(menuActive&&!leavingMenu&&paused) {
+                List<AudioSource> menuSources=new ArrayList<>();
+                if(menuMusic!=null)menuSources.add(menuMusic);if(menuAmbience!=null)menuSources.add(menuAmbience);
+                pauseRenderer.resumeSources(menuSources);
+            }
         }
         // Keep the completed session identity for its final death/result tail. The next start
         // replaces it explicitly before receiving any events; no event can bind audio itself.
-        matchActive=false; paused=false; warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
+        matchActive=false;matchPrepared=false;paused=false;suspended=List.of();
+        if(leavingMenu)stopMenu();
+        warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
         nextTake.clear(); acceptedEvents.clear(); delayedImpacts.clear();impactClock=0;
         motion.clear();bossWarnings.clear();
     }
@@ -194,7 +258,6 @@ public final class AudioDirector implements AutoCloseable {
         prune();
         if (!matchActive || paused || session == null || world == null || !session.sessionId.equals(sessionId)) return;
         dt=Math.max(0, Math.min(dt, .1f));
-        advanceMusic(dt);
         impactClock+=dt;
         for(Iterator<DelayedImpact> pending=delayedImpacts.iterator();pending.hasNext();) {
             DelayedImpact impact=pending.next();int subject=impact.event.subjectId();
@@ -364,8 +427,31 @@ public final class AudioDirector implements AutoCloseable {
         applyVolumes();
     }
 
-    public void ui(boolean confirm) {
-        if (!closed && !paused && renderer!=null) { prune(); shot(confirm?"ui-confirm":"ui-nav",Group.UI,110,null,.55f,1); applyVolumes(); }
+    public void ui(UiCue cue) {
+        Objects.requireNonNull(cue,"Menu cue");
+        if(!closed&&renderer!=null) {
+            if(cue==UiCue.CHANGE&&presentationClock+1e-9<nextChangeCue)return;
+            if(cue==UiCue.CHANGE)nextChangeCue=presentationClock+.08;
+            prune();shot(cue.asset(),Group.MENU_UI,110,null,.55f,1);applyVolumes();
+        }
+    }
+
+    /** One render-frame update on every screen, including paused menus and loading. */
+    public void updatePresentation(float dt) {
+        if(closed||renderer==null)return;
+        presentationClock+=clamp(dt,0,.1f);
+        prune();
+        if(!paused) {
+            dt=clamp(dt,0,.1f);
+            if(leavingMenu) {
+                menuFade=Math.min(1,menuFade+dt/MENU_CROSSFADE_SECONDS);
+                if(menuFade>=1) {
+                    stopMenu();
+                }
+            }
+            if(matchActive)advanceMusic(dt);
+        }
+        applyVolumes();
     }
     /** Results keep their finishing sounds only; no vehicle or arena loops are recreated. */
     public void updateTail(float dt) {
@@ -377,17 +463,24 @@ public final class AudioDirector implements AutoCloseable {
     }
     public void pause() {
         if (closed || paused) return;
-        // jME 3.8.1 pauseSource can mark a just-finished OpenAL one-shot Paused
-        // while the device still reports Stopped. Freeze the device atomically;
-        // source states and queued stream buffers stay intact for exact resumption.
-        if (renderer!=null) renderer.pauseAll();
+        if(pauseRenderer!=null) {
+            List<AudioSource> sources=new ArrayList<>();
+            if(music!=null)sources.add(music);if(bossTrack!=null)sources.add(bossTrack);
+            if(menuMusic!=null)sources.add(menuMusic);if(menuAmbience!=null)sources.add(menuAmbience);
+            for(Voice voice:voices)if(voice.group!=Group.MENU_UI)sources.add(voice.node);
+            suspended=pauseRenderer.pauseSources(sources);
+            if(capture!=null)for(AudioSource source:suspended)capture.stop(source);
+            prune();
+        }
         paused=true;
     }
     public void resume() {
         if (closed || !paused) return;
-        if (renderer!=null) renderer.resumeAll();
+        if(pauseRenderer!=null)pauseRenderer.resumeSources(suspended);
+        suspended=List.of();
         paused=false;
         ensureMusicSources();
+        applyVolumes();
     }
     public void setVolumes(float master, float music, float sfx) {
         this.master=clamp(master,0,1); musicVolume=clamp(music,0,1); sfxVolume=clamp(sfx,0,1);
@@ -395,11 +488,20 @@ public final class AudioDirector implements AutoCloseable {
     }
     public int voiceCount() {
         return (int)voices.stream().filter(v->v.node.getStatus()!=AudioSource.Status.Stopped).count()
-                +musicSourceCount();
+                +musicSourceCount()+playing(menuAmbience);
     }
-    public int musicSourceCount() { return playing(music)+playing(bossTrack); }
+    public int musicSourceCount() { return playing(music)+playing(bossTrack)+playing(menuMusic); }
+    public int menuSourceCount() {return playing(menuMusic)+playing(menuAmbience);}
+    public int gameplayVoiceCount() {
+        return (int)voices.stream().filter(v->v.group!=Group.MENU_UI&&v.node.getStatus()!=AudioSource.Status.Stopped).count()
+                +playing(music)+playing(bossTrack);
+    }
     private static int playing(AudioNode node) {return node!=null&&node.getStatus()!=AudioSource.Status.Stopped?1:0;}
-    public float musicPlaybackSeconds() { return playing(bossTrack)>0&&bossBlend>=.5f?bossTrack.getPlaybackTime():music==null?0:music.getPlaybackTime(); }
+    public float musicPlaybackSeconds() {
+        if(playing(bossTrack)>0&&bossBlend>=.5f)return bossTrack.getPlaybackTime();
+        if(playing(music)>0)return music.getPlaybackTime();
+        return menuMusic==null?0:menuMusic.getPlaybackTime();
+    }
     public boolean isPaused() { return paused; }
     /** Caller owns capture.close(); attaching or detaching never creates an audio renderer. */
     public void setCapture(AudioCapture next) {
@@ -441,10 +543,14 @@ public final class AudioDirector implements AutoCloseable {
         List<String> takes=cueBanks.get(asset);
         if (takes==null) throw new IllegalArgumentException("Required cue missing: "+asset);
         if (position!=null && listener!=null && listener.getLocation().distance(position)>config.maximumDistance()) return null;
-        int budget=config.sourceLimit()-Math.max(1,musicSourceCount());
-        if (voices.size()>=budget) {
-            Voice weakest=voices.stream().min(Comparator.comparingInt(v->v.priority)).orElseThrow();
-            if (weakest.priority>=priority) return null;
+        List<Voice> candidates=voices.stream().filter(v->(v.group==Group.MENU_UI)==(group==Group.MENU_UI)).toList();
+        int budget=group==Group.MENU_UI?MENU_UI_SOURCES:
+                config.sourceLimit()-MENU_UI_SOURCES-musicSourceCount()-playing(menuAmbience);
+        if(candidates.size()>=budget) {
+            Voice weakest=group==Group.MENU_UI?candidates.getFirst():
+                    candidates.stream().min(Comparator.comparingInt(v->v.priority)).orElse(null);
+            if(weakest==null)return null;
+            if(group!=Group.MENU_UI&&weakest.priority>=priority)return null;
             remove(weakest);
         }
         int take=nextTake.getOrDefault(asset,0);
@@ -472,18 +578,28 @@ public final class AudioDirector implements AutoCloseable {
         }
         float normalWeight=bossTrack==null?1:(float)Math.cos(bossBlend*Math.PI/2);
         float bossWeight=bossTrack==null?0:(float)Math.sin(bossBlend*Math.PI/2);
-        float total=musicGain*(normalWeight+bossWeight);
-        for(Voice voice:voices) total+=gain(voice);
+        float battleFade=leavingMenu?(float)Math.sin(menuFade*Math.PI/2):1;
+        float menuWeight=menuActive?(leavingMenu?(float)Math.cos(menuFade*Math.PI/2):1):0;
+        float menuGain=master*config.masterHeadroom()*musicVolume*config.musicGain()*menuWeight;
+        float ambienceGain=master*config.masterHeadroom()*sfxVolume*config.menuAmbienceGain()*menuWeight;
+        float total=0;
+        if(music!=null&&music.getStatus()==AudioSource.Status.Playing)total+=musicGain*normalWeight*battleFade;
+        if(bossTrack!=null&&bossTrack.getStatus()==AudioSource.Status.Playing)total+=musicGain*bossWeight*battleFade;
+        if(menuMusic!=null&&menuMusic.getStatus()==AudioSource.Status.Playing)total+=menuGain;
+        if(menuAmbience!=null&&menuAmbience.getStatus()==AudioSource.Status.Playing)total+=ambienceGain;
+        for(Voice voice:voices)if(voice.node.getStatus()==AudioSource.Status.Playing)total+=gain(voice);
         // Conservative signal bound: even coincident full-scale samples remain below 0 dBFS.
         // Spatial distance attenuation only lowers the real mix further. No DSP/device replacement.
         float headroom=total>1?1/total:1;
-        if(music!=null) music.setVolume(musicGain*normalWeight*headroom);
-        if(bossTrack!=null)bossTrack.setVolume(musicGain*bossWeight*headroom);
+        if(music!=null) music.setVolume(musicGain*normalWeight*battleFade*headroom);
+        if(bossTrack!=null)bossTrack.setVolume(musicGain*bossWeight*battleFade*headroom);
+        if(menuMusic!=null)menuMusic.setVolume(menuGain*headroom);
+        if(menuAmbience!=null)menuAmbience.setVolume(ambienceGain*headroom);
         for(Voice voice:voices) voice.node.setVolume(gain(voice)*headroom);
         if(capture!=null)captureVoices();
     }
     private void captureVoices() {
-        if(listener==null||paused)return;
+        if(listener==null)return;
         Vector3f position=listener.getLocation(),right=listener.getRotation().mult(Vector3f.UNIT_X);
         if(music!=null&&music.getStatus()==AudioSource.Status.Playing)
             capture.observe(music,musicAsset,true,false,music.getVolume(),music.getPitch(),Vector3f.ZERO,
@@ -491,6 +607,12 @@ public final class AudioDirector implements AutoCloseable {
         if(bossTrack!=null&&bossTrack.getStatus()==AudioSource.Status.Playing)
             capture.observe(bossTrack,bossAsset,true,false,bossTrack.getVolume(),bossTrack.getPitch(),Vector3f.ZERO,
                     position,right,config.referenceDistance(),config.maximumDistance(),bossTrack.getPlaybackTime());
+        if(menuMusic!=null&&menuMusic.getStatus()==AudioSource.Status.Playing)
+            capture.observe(menuMusic,config.menuMusicAsset(),true,false,menuMusic.getVolume(),1,Vector3f.ZERO,
+                    position,right,config.referenceDistance(),config.maximumDistance(),menuMusic.getPlaybackTime());
+        if(menuAmbience!=null&&menuAmbience.getStatus()==AudioSource.Status.Playing)
+            capture.observe(menuAmbience,config.menuAmbienceAsset(),true,false,menuAmbience.getVolume(),1,Vector3f.ZERO,
+                    position,right,config.referenceDistance(),config.maximumDistance(),menuAmbience.getPlaybackTime());
         for(Voice voice:voices)if(voice.node.getStatus()==AudioSource.Status.Playing) {
             AudioNode node=voice.node;
             capture.observe(node,voice.sample,node.isLooping(),node.isPositional(),node.getVolume(),node.getPitch(),
@@ -500,7 +622,7 @@ public final class AudioDirector implements AutoCloseable {
     private float gain(Voice voice) {
         float group=switch(voice.group) {
             case ENGINE -> config.engineGain(); case WEAPON -> config.weaponsGain();
-            case THREAT -> config.threatsGain(); case UI -> config.interfaceGain();
+            case THREAT -> config.threatsGain(); case UI, MENU_UI -> config.interfaceGain();
         };
         return master*config.masterHeadroom()*sfxVolume*group*voice.gain;
     }
@@ -510,7 +632,7 @@ public final class AudioDirector implements AutoCloseable {
     private void stopLoop(String key) { Voice voice=loops.get(key); if (voice!=null) remove(voice); }
     private static String arenaHazardCue(String kind) {
         return switch(kind) {
-            case "crane","traffic","carousel","electric","fire","barrier","statue" -> "hazard-"+kind;
+            case "crane","traffic","carousel","electric","fire","barrier" -> "hazard-"+kind;
             default -> null;
         };
     }
@@ -520,6 +642,7 @@ public final class AudioDirector implements AutoCloseable {
     private void remove(Voice voice) {
         if(capture!=null)capture.stop(voice.node);
         renderer.stopSource(voice.node); voice.node.removeFromParent(); voices.remove(voice);
+        if(suspended.contains(voice.node))suspended=suspended.stream().filter(source->source!=voice.node).toList();
         if (voice.loopKey!=null) loops.remove(voice.loopKey);
         hazardWarnings.values().removeIf(warning->warning==voice);
         bossWarnings.replaceAll((subject,warning)->warning.voice==voice?new BossWarning(warning.beganTick,null):warning);
@@ -527,6 +650,7 @@ public final class AudioDirector implements AutoCloseable {
     @Override public void close() {
         if (closed) return;
         stopMatch();
+        stopMenu();
         disposeMusic(music);disposeMusic(bossTrack);music=null;bossTrack=null;
         audioRoot.removeFromParent(); buffers.clear(); closed=true;
     }

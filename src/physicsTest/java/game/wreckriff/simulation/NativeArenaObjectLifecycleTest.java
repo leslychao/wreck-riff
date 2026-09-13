@@ -56,32 +56,20 @@ class NativeArenaObjectLifecycleTest {
         }
     }
 
-    @Test void statueRetainsItsColliderForTheFullWarningAndCheckpointPreservesTheRemainingDelay() {
-        var arena=REGISTRY.definition("ash_necropolis");
-        var statue=arena.destructibles().stream().filter(o->o.effect()==ArenaDefinition.ObjectEffect.STATUE).findFirst().orElseThrow();
-        assertEquals(240,statue.delayTicks());
+    @Test void openedShortcutCheckpointKeepsTheRouteOpenAndNeverRestoresItsDestroyedCollider() {
+        var arena=REGISTRY.definition("construction_17");
+        var panel=arena.destructibles().getFirst();
         try(var original=new Rig(arena,null,null,0)) {
-            original.combat.queueArenaRam(statue.geometryId(),0,22);
+            original.assertClosed(panel);
+            original.combat.queueArenaRam(panel.geometryId(),0,22);
             original.combat.prepareArenaDamage(original.world);original.systems.synchronizeGeometry(original.world,original.graph);
-            original.assertClosed(statue);
-            for(int elapsed=0;elapsed<=120;elapsed++) {
-                original.session.tick=elapsed;original.advanceEnvironment();original.assertClosed(statue);
+            original.assertOpen(panel);var saved=original.systems.snapshot();
+            assertFalse(saved.hazards().containsKey(panel.id()),"Ordinary destructibles have no second delayed hazard lifecycle");
+            try(var retry=new Rig(arena,saved,null,0)) {
+                retry.assertOpen(panel);assertEquals(saved,retry.systems.snapshot());int bodies=retry.world.bodyCount();
+                for(int step=0;step<120;step++){retry.advanceEnvironment();retry.assertOpen(panel);retry.session.tick++;}
+                assertEquals(bodies,retry.world.bodyCount());
             }
-            var midpoint=original.systems.snapshot();
-            assertEquals(120,midpoint.hazards().get(statue.id()).remainingTicks());
-            try(var retry=new Rig(arena,midpoint,null,0)) {
-                retry.assertClosed(statue);assertEquals(midpoint,retry.systems.snapshot());
-                for(int step=0;step<119;step++) {
-                    retry.advanceEnvironment();retry.assertClosed(statue);retry.session.tick++;
-                }
-                assertEquals(1,retry.systems.snapshot().hazards().get(statue.id()).remainingTicks());
-                retry.advanceEnvironment();retry.assertOpen(statue);
-            }
-            for(int elapsed=121;elapsed<240;elapsed++) {
-                original.session.tick=elapsed;original.advanceEnvironment();original.assertClosed(statue);
-            }
-            original.session.tick=240;original.advanceEnvironment();original.assertOpen(statue);
-            assertEquals(ProgressStore.HazardPhase.DISABLED,original.systems.snapshot().hazards().get(statue.id()).phase());
         }
     }
 
@@ -89,7 +77,7 @@ class NativeArenaObjectLifecycleTest {
     void realCraneContactDealsOneHeavyHitToPlayerAndBossWithoutWarningDamage(boolean hitBoss) {
         var arena=REGISTRY.definition("construction_17");
         var hazard=arena.hazards().stream().filter(h->h.id().equals("crane-1")).findFirst().orElseThrow();
-        assertEquals(240,hazard.warningTicks());assertEquals(120,hazard.damage());
+        assertTrue(hazard.warningTicks()>=240);assertEquals(120,hazard.damage());
         var session=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),true,0);
         var boss=session.registerBoss(arena.bosses().getFirst());session.phase=MatchSession.Phase.BOSS_COMBAT;
         var target=session.vehicle(hitBoss?boss.id:0);var other=session.vehicle(hitBoss?0:boss.id);
@@ -98,12 +86,13 @@ class NativeArenaObjectLifecycleTest {
         hazards.put(hazard.id(),new ProgressStore.HazardState(ProgressStore.HazardPhase.WARNING,hazard.warningTicks(),0,1));
         var warning=new ProgressStore.ArenaState(saved.pickups(),saved.objects(),hazards,saved.eventCooldownTicks(),saved.randomState());
         try(var world=new PhysicsWorld(RULES)) {
+            float road=hazard.minY()+.1f,cx=(hazard.minX()+hazard.maxX())/2,cz=(hazard.minZ()+hazard.maxZ())/2;
             world.addStatic("test-road",new com.jme3.bullet.collision.shapes.BoxCollisionShape(new Vector3f(300,.5f,300)),
-                    new Vector3f(0,-.5f,0),new Quaternion());
+                    new Vector3f(cx,road-.5f,cz),new Quaternion());
             for(var vehicle:session.vehicles) {
                 var profile=vehicle.boss?VehicleProfile.boss(vehicle.profileId,RULES):VehicleDefinition.forId(vehicle.profileId).profile(RULES);
-                Vector3f position=vehicle==target?new Vector3f((hazard.minX()+hazard.maxX())/2,profile.roadOffset(),(hazard.minZ()+hazard.maxZ())/2)
-                        :new Vector3f(20,profile.roadOffset(),20);
+                Vector3f position=vehicle==target?new Vector3f(cx,road+profile.roadOffset(),cz)
+                        :new Vector3f(cx+30,road+profile.roadOffset(),cz+30);
                 world.addVehicle(vehicle.id,position,new Quaternion(),profile);
             }
             for(int tick=0;tick<360;tick++)world.step();

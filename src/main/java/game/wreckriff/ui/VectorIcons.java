@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Original Wreck Riff vector artwork. Authored here; no downloaded font glyphs or image assets. */
 public final class VectorIcons {
-    public enum Icon {HOMING,POWER,MINE,NAPALM,BALLISTIC,CANNON,MACHINE_GUN,FREEZE,SHIELD,PULSE,GRINDER,DASH,HEALTH,TURBO,CHEVRON,DIAMOND,CROWN}
+    public enum Icon {HOMING,POWER,MINE,NAPALM,BALLISTIC,CANNON,MACHINE_GUN,FREEZE,SHIELD,PULSE,GRINDER,DASH,HEALTH,TURBO,CHEVRON,DIAMOND,CROWN,AIM_ASSIST,TARGET_LOCK}
     private final EnumMap<Icon,Mesh> meshes=new EnumMap<>(Icon.class);
     public VectorIcons() {for(Icon icon:Icon.values())meshes.put(icon,draw(icon));}
     public Mesh mesh(Icon icon) {return meshes.get(icon);}
@@ -39,6 +39,8 @@ public final class VectorIcons {
             case TURBO -> {pen.path(.60f,.94f,.21f,.48f,.47f,.48f,.36f,.07f,.82f,.61f,.54f,.61f,.60f,.94f);}
             case CHEVRON -> pen.path(.13f,.27f,.5f,.75f,.87f,.27f);
             case DIAMOND -> pen.path(.5f,.05f,.95f,.5f,.5f,.95f,.05f,.5f,.5f,.05f);
+            case AIM_ASSIST -> {pen.path(.12f,.38f,.12f,.12f,.38f,.12f);pen.path(.62f,.88f,.88f,.88f,.88f,.62f);pen.circle(.5f,.5f,.055f);}
+            case TARGET_LOCK -> {pen.polygon(.15f,.15f,.85f,.15f,.85f,.85f,.15f,.85f);pen.line(.5f,.02f,.5f,.28f);pen.line(.5f,.72f,.5f,.98f);pen.line(.02f,.5f,.28f,.5f);pen.line(.72f,.5f,.98f,.5f);}
             case CROWN -> {pen.path(.18f,.21f,.08f,.77f,.32f,.58f,.5f,.94f,.68f,.58f,.92f,.77f,.82f,.21f,.18f,.21f);pen.line(.22f,.35f,.78f,.35f);}
         }
         return pen.mesh();

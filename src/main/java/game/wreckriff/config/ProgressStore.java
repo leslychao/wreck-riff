@@ -18,15 +18,20 @@ import java.util.stream.Collectors;
 
 /** One owner for lifetime statistics, campaign progress and immutable fixed-tick checkpoints. */
 public final class ProgressStore implements AutoCloseable {
-    public static final int SCHEMA_VERSION=3;
+    public static final int SCHEMA_VERSION=4;
+    public static final int CURRENT_LAYOUT_REVISION=2;
+    public static final String MIGRATION_NOTICE="Карты обновлены. Старые рекорды сохранены в истории; продолжение — с безопасной точки новой карты.";
     public static final String LEGACY_ARENA="dead-air-yard";
-    public static final List<String> CAMPAIGN_ARENAS=List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena");
+    public static final List<String> CAMPAIGN_ARENAS=List.of("construction_17","neon_zero","euphoria_park");
+    private static final List<String> ORIGINAL_CAMPAIGN=List.of("construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena");
     private static final Set<String> WEAPONS=Arrays.stream(WeaponType.values()).map(WeaponType::id).collect(Collectors.toUnmodifiableSet());
     private static final Set<String> ABILITIES=Set.of("freeze","shield","special");
     private static final Gson JSON=new GsonBuilder().setPrettyPrinting().serializeNulls().create();
     private static final int MAX_FILE_BYTES=4*1024*1024, MAX_ARENA_OBJECTS=512;
     private static final Set<String> NULLABLE=Set.of("Snapshot.activeAttempt","Campaign.currentArenaId","Campaign.checkpoint",
-            "ArenaRecord.bestFullMapTicks","ArenaRecord.bestBossDuelTicks");
+            "ArenaRecord.bestFullMapTicks","ArenaRecord.bestBossDuelTicks",
+            "OriginalSnapshot.activeAttempt","OriginalCampaign.currentArenaId","OriginalCampaign.checkpoint",
+            "LayoutHistory.currentArenaId","LayoutHistory.checkpoint");
 
     public enum Mode { LEGACY, CAMPAIGN, ARENA, BOSS_DUEL }
     public enum Outcome { VICTORY, DEFEAT, DRAW }
@@ -34,7 +39,12 @@ public final class ProgressStore implements AutoCloseable {
     public enum HazardPhase { READY, WARNING, ACTIVE, COOLDOWN, DISABLED }
 
     /** The caller may check geometry/object references against the loaded immutable arena registry. */
-    @FunctionalInterface public interface ReferenceValidator { void validate(Checkpoint checkpoint); }
+    @FunctionalInterface public interface ReferenceValidator {
+        void validate(Checkpoint checkpoint);
+        default Checkpoint migrateLayout(Checkpoint checkpoint) {
+            throw new IllegalStateException("The current arena registry is required to migrate this checkpoint");
+        }
+    }
 
     public record Stats(long completedMatches,long wins,long losses,long draws,long totalEliminations,double totalDamage) {
         public Stats {
@@ -119,10 +129,10 @@ public final class ProgressStore implements AutoCloseable {
             nonNegative(eventCooldownTicks,"arena.eventCooldownTicks");
         }
     }
-    public record Checkpoint(String arenaId,String profileId,int liveryId,long seed,String difficulty,CheckpointStage stage,
+    public record Checkpoint(String arenaId,int layoutRevision,String profileId,int liveryId,long seed,String difficulty,CheckpointStage stage,
                              PlayerResources player,SafePose safePose,ArenaState arena,long activeTicksBeforeBoss) {
         public Checkpoint {
-            campaignArena(arenaId);VehicleDefinition definition=VehicleDefinition.forId(profileId);
+            campaignArena(arenaId);require(layoutRevision>0&&layoutRevision<=CURRENT_LAYOUT_REVISION,"Unsupported checkpoint layout");VehicleDefinition definition=VehicleDefinition.forId(profileId);
             require(liveryId>=0&&liveryId<5,"Unknown liveryId: "+liveryId);require("normal".equals(difficulty),"Unsupported difficulty: "+difficulty);
             Objects.requireNonNull(stage,"checkpoint.stage");Objects.requireNonNull(player,"checkpoint.player");
             require(player.hp()<=definition.maximumHp(),"Checkpoint HP exceeds this profile");
@@ -157,13 +167,44 @@ public final class ProgressStore implements AutoCloseable {
         }
         static ArenaRecord empty() { return new ArenaRecord(0,0,null,null); }
     }
-    public record Snapshot(int schemaVersion,long revision,long attemptSequence,Stats stats,Campaign campaign,
-                           Attempt activeAttempt,Map<String,ArenaRecord> records) {
+    /** Historical data is readable evidence only; it is never used to instantiate retired content. */
+    public record HistoricalCheckpoint(String arenaId,String profileId,int liveryId,long seed,String difficulty,CheckpointStage stage,
+                                       PlayerResources player,SafePose safePose,ArenaState arena,long activeTicksBeforeBoss) {
+        public HistoricalCheckpoint {
+            require(ORIGINAL_CAMPAIGN.contains(arenaId),"Unknown historical checkpoint arena");
+            Objects.requireNonNull(player);Objects.requireNonNull(safePose);Objects.requireNonNull(arena);Objects.requireNonNull(stage);
+            var profile=VehicleDefinition.forId(profileId);
+            require(liveryId>=0&&liveryId<5&&"normal".equals(difficulty),"Invalid historical checkpoint selection");
+            require(player.hp()<=profile.maximumHp(),"Historical HP exceeds profile");nonNegative(activeTicksBeforeBoss,"historical activeTicks");
+        }
+        Checkpoint active() {
+            return new Checkpoint(arenaId,1,profileId,liveryId,seed,difficulty,stage,player,safePose,arena,activeTicksBeforeBoss);
+        }
+    }
+    public record LayoutHistory(int layoutRevision,String currentArenaId,Set<String> unlockedArenaIds,Set<String> completedArenaIds,
+                                Map<String,ArenaRecord> records,HistoricalCheckpoint checkpoint) {
+        public LayoutHistory {
+            require(layoutRevision==1,"Unknown historical layout");
+            unlockedArenaIds=Set.copyOf(unlockedArenaIds);completedArenaIds=Set.copyOf(completedArenaIds);records=immutableMap(records);
+            validateOriginalCampaign(currentArenaId,unlockedArenaIds,completedArenaIds);
+            records.keySet().forEach(id->require(LEGACY_ARENA.equals(id)||ORIGINAL_CAMPAIGN.contains(id),"Unknown historical record arena"));
+            if(checkpoint!=null)require(checkpoint.arenaId().equals(currentArenaId),"Historical checkpoint has wrong arena");
+        }
+    }
+    // Shapes used only for strict validation before migrating earlier on-disk versions.
+    private record OriginalCampaign(String currentArenaId,Set<String> unlockedArenaIds,Set<String> completedArenaIds,HistoricalCheckpoint checkpoint) {}
+    private record OriginalSnapshot(int schemaVersion,long revision,long attemptSequence,Stats stats,OriginalCampaign campaign,
+                                    Attempt activeAttempt,Map<String,ArenaRecord> records) {}
+    public record Snapshot(int schemaVersion,int layoutRevision,long revision,long attemptSequence,Stats stats,Campaign campaign,
+                           Attempt activeAttempt,Map<String,ArenaRecord> records,Map<String,LayoutHistory> historicalLayouts) {
         public Snapshot {
-            require(schemaVersion==SCHEMA_VERSION,"Unsupported progress schema");nonNegative(revision,"revision");nonNegative(attemptSequence,"attemptSequence");
+            require(schemaVersion==SCHEMA_VERSION,"Unsupported progress schema");require(layoutRevision==CURRENT_LAYOUT_REVISION,"Unsupported map layout revision");nonNegative(revision,"revision");nonNegative(attemptSequence,"attemptSequence");
             require(revision>=attemptSequence,"Attempt sequence exceeds progress revision");
             Objects.requireNonNull(stats,"stats");Objects.requireNonNull(campaign,"campaign");records=immutableMap(records);records.keySet().forEach(ProgressStore::arena);
+            historicalLayouts=immutableMap(historicalLayouts);
+            for(var entry:historicalLayouts.entrySet())require(entry.getKey().equals("revision-"+entry.getValue().layoutRevision()),"Historical revision key mismatch");
             long recordedWins=0;for(ArenaRecord record:records.values()) recordedWins=Math.addExact(recordedWins,record.victories());
+            for(var history:historicalLayouts.values())for(var record:history.records().values())recordedWins=Math.addExact(recordedWins,record.victories());
             require(recordedWins<=stats.wins(),"Arena records exceed lifetime victories");
             if(activeAttempt!=null) {
                 require(activeAttempt.sequence()==attemptSequence,"Attempt sequence does not match snapshot");
@@ -174,7 +215,7 @@ public final class ProgressStore implements AutoCloseable {
                         ||campaign.checkpoint()!=null&&campaign.checkpoint().stage()==CheckpointStage.BOSS,"Active attempt has no boss checkpoint");
             }
         }
-        static Snapshot initial() { return new Snapshot(SCHEMA_VERSION,0,0,Stats.empty(),Campaign.initial(),null,Map.of()); }
+        static Snapshot initial() { return new Snapshot(SCHEMA_VERSION,CURRENT_LAYOUT_REVISION,0,0,Stats.empty(),Campaign.initial(),null,Map.of(),Map.of()); }
     }
 
     private final Path directory;
@@ -184,7 +225,7 @@ public final class ProgressStore implements AutoCloseable {
     private long persistedRevision;
     private byte[] persistedBytes;
     private boolean workerScheduled,readOnly,closed;
-    private String warning="";
+    private String warning="",migrationNotice="";
 
     public ProgressStore() { this(SettingsStore.defaultDirectory()); }
     public ProgressStore(Path directory) { this(directory,checkpoint->{}); }
@@ -203,7 +244,7 @@ public final class ProgressStore implements AutoCloseable {
     public synchronized WriterDiagnostics diagnostics() {
         return new WriterDiagnostics(pending==null?0:1,workerScheduled,snapshot.revision(),persistedRevision);
     }
-    public synchronized String warning() { return warning; }
+    public synchronized String warning() { return warning.isBlank()?migrationNotice:warning; }
     public Path directory() { return directory; }
 
     public synchronized void beginNewCampaign() {
@@ -228,7 +269,8 @@ public final class ProgressStore implements AutoCloseable {
         checkOpen();Objects.requireNonNull(checkpoint,"checkpoint");
         require(Objects.equals(snapshot.activeAttempt(),attempt),"Checkpoint belongs to a stale attempt");
         require(attempt.mode()==Mode.CAMPAIGN,"Only the campaign persists a continuation checkpoint");
-        require(attempt.arenaId().equals(checkpoint.arenaId()),"Checkpoint arena differs from the active attempt");references.validate(checkpoint);
+        require(attempt.arenaId().equals(checkpoint.arenaId()),"Checkpoint arena differs from the active attempt");
+        require(checkpoint.layoutRevision()==CURRENT_LAYOUT_REVISION,"Cannot save an obsolete layout checkpoint");references.validate(checkpoint);
         Campaign current=snapshot.campaign();
         replace(new Campaign(current.currentArenaId(),current.unlockedArenaIds(),current.completedArenaIds(),checkpoint),attempt,snapshot.stats(),snapshot.records(),snapshot.attemptSequence());
     }
@@ -258,7 +300,7 @@ public final class ProgressStore implements AutoCloseable {
     }
 
     private void replace(Campaign campaign,Attempt attempt,Stats stats,Map<String,ArenaRecord> records,long attemptSequence) {
-        snapshot=new Snapshot(SCHEMA_VERSION,Math.incrementExact(snapshot.revision()),attemptSequence,stats,campaign,attempt,records);enqueueLatest();
+        snapshot=new Snapshot(SCHEMA_VERSION,CURRENT_LAYOUT_REVISION,Math.incrementExact(snapshot.revision()),attemptSequence,stats,campaign,attempt,records,snapshot.historicalLayouts());enqueueLatest();
     }
     private void checkOpen() { if(closed) throw new IllegalStateException("Progress store is closed"); }
     private void enqueueLatest() {
@@ -315,6 +357,7 @@ public final class ProgressStore implements AutoCloseable {
         if(Files.exists(main)) {
             try { loaded=decode(readBytes(main)); }
             catch(FutureSchema e) { readOnly=true;warning="Unsupported stats.json version; original file preserved, progress is read-only.";return; }
+            catch(MigrationFailure e) { readOnly=true;warning="Map migration could not complete; original progress is preserved. "+e.getMessage();return; }
             catch(IOException|RuntimeException e) {
                 try { Files.move(main,directory.resolve("stats.json.broken-"+System.currentTimeMillis()+"-"+UUID.randomUUID())); }
                 catch(IOException|RuntimeException preserveError) { readOnly=true;warning="Damaged progress could not be preserved; progress is read-only.";return; }
@@ -324,6 +367,7 @@ public final class ProgressStore implements AutoCloseable {
         if(loaded==null&&Files.exists(backup)) {
             try { loaded=decode(readBytes(backup));warning="Damaged or missing progress recovered from the last valid backup."; }
             catch(FutureSchema e) { readOnly=true;warning="Unsupported backup version; original backup preserved, progress is read-only.";return; }
+            catch(MigrationFailure e) { readOnly=true;warning="Backup map migration could not complete; original progress is preserved. "+e.getMessage();return; }
             catch(IOException|RuntimeException e) { warning="Progress and backup are damaged; start the map again. Original files are preserved."; }
         }
         if(loaded==null) return;
@@ -331,8 +375,15 @@ public final class ProgressStore implements AutoCloseable {
         if(loaded.sourceVersion()<SCHEMA_VERSION) {
             try {
                 Path original=directory.resolve("stats.json.v"+loaded.sourceVersion()+".bak");
-                if(!Files.exists(original)) writeForced(original,persistedBytes,StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE);
-                snapshot=new Snapshot(SCHEMA_VERSION,Math.incrementExact(snapshot.revision()),snapshot.attemptSequence(),snapshot.stats(),snapshot.campaign(),snapshot.activeAttempt(),snapshot.records());
+                if(Files.exists(original)) {
+                    if(!Arrays.equals(readBytes(original),persistedBytes))throw new IOException("An earlier migration backup already exists with different data");
+                } else {
+                    Path originalTemp=directory.resolve(original.getFileName()+".tmp");
+                    writeForced(originalTemp,persistedBytes,StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING,StandardOpenOption.WRITE);
+                    Files.move(originalTemp,original,StandardCopyOption.ATOMIC_MOVE);
+                }
+                snapshot=new Snapshot(SCHEMA_VERSION,CURRENT_LAYOUT_REVISION,Math.incrementExact(snapshot.revision()),snapshot.attemptSequence(),snapshot.stats(),snapshot.campaign(),snapshot.activeAttempt(),snapshot.records(),snapshot.historicalLayouts());
+                migrationNotice=loaded.sourceVersion()>=2?MIGRATION_NOTICE:"Statistics upgraded; the original file is backed up.";
                 synchronized(this) { enqueueLatest(); }
             } catch(IOException|RuntimeException e) { warning="Statistics migration stays in memory; the original file is preserved.";readOnly=true; }
         }
@@ -340,6 +391,7 @@ public final class ProgressStore implements AutoCloseable {
 
     private record Loaded(Snapshot snapshot,byte[] bytes,int sourceVersion) {}
     private static final class FutureSchema extends IOException {}
+    private static final class MigrationFailure extends IOException { MigrationFailure(RuntimeException cause) {super(cause.getMessage(),cause);} }
 
     private Loaded decode(byte[] bytes) throws IOException {
         JsonObject tree;
@@ -356,10 +408,10 @@ public final class ProgressStore implements AutoCloseable {
             require(fields.containsAll(tree.keySet()),"Unknown version-one statistics field");
             Stats stats=new Stats(oldLong(tree,"completedMatches"),oldLong(tree,"wins"),oldLong(tree,"losses"),oldLong(tree,"draws"),
                     oldLong(tree,"totalEliminations"),oldDouble(tree,"totalDamage"));
-            return new Loaded(new Snapshot(SCHEMA_VERSION,0,0,stats,Campaign.initial(),null,Map.of()),bytes,version);
+            return new Loaded(new Snapshot(SCHEMA_VERSION,CURRENT_LAYOUT_REVISION,0,0,stats,Campaign.initial(),null,Map.of(),Map.of()),bytes,version);
         }
+        if(version<SCHEMA_VERSION)validateTree(tree,OriginalSnapshot.class,"OriginalSnapshot",false);
         if(version==2) {
-            validateTree(tree,Snapshot.class,"Snapshot",false);
             var checkpoint=tree.getAsJsonObject("campaign").get("checkpoint");
             if(!checkpoint.isJsonNull()) {
                 var saved=checkpoint.getAsJsonObject();
@@ -371,12 +423,75 @@ public final class ProgressStore implements AutoCloseable {
                 require(abilities.keySet().equals(Set.of("freeze","shield")),"Invalid version-two abilities");
                 abilities.addProperty("special",0);
             }
-            tree.addProperty("schemaVersion",SCHEMA_VERSION);
         }
+        if(version<SCHEMA_VERSION)tree=migrateOriginal(tree);
+        if(tree.has("layoutRevision")&&tree.get("layoutRevision").getAsInt()>CURRENT_LAYOUT_REVISION)throw new FutureSchema();
         validateTree(tree,Snapshot.class,"Snapshot",false);
         Snapshot decoded=JSON.fromJson(tree,Snapshot.class);
-        if(decoded.campaign().checkpoint()!=null) references.validate(decoded.campaign().checkpoint());
+        if(decoded.campaign().checkpoint()!=null) {
+            require(decoded.campaign().checkpoint().layoutRevision()==CURRENT_LAYOUT_REVISION,"Checkpoint has an obsolete layout");
+            references.validate(decoded.campaign().checkpoint());
+        }
         return new Loaded(decoded,bytes,version);
+    }
+
+
+    private JsonObject migrateOriginal(JsonObject tree) throws MigrationFailure {
+        JsonObject campaign=tree.getAsJsonObject("campaign");
+        String current=campaign.get("currentArenaId").isJsonNull()?null:campaign.get("currentArenaId").getAsString();
+        Set<String> unlocked=jsonIds(campaign.getAsJsonArray("unlockedArenaIds")),completed=jsonIds(campaign.getAsJsonArray("completedArenaIds"));
+        validateOriginalCampaign(current,unlocked,completed);
+        HistoricalCheckpoint oldCheckpoint=campaign.get("checkpoint").isJsonNull()?null:JSON.fromJson(campaign.get("checkpoint"),HistoricalCheckpoint.class);
+        Map<String,ArenaRecord> oldRecords=new LinkedHashMap<>();
+        tree.getAsJsonObject("records").entrySet().forEach(entry->oldRecords.put(entry.getKey(),JSON.fromJson(entry.getValue(),ArenaRecord.class)));
+        // Dead Air has unchanged geometry and retains its comparable record in the current set.
+        Map<String,ArenaRecord> retained=new LinkedHashMap<>();
+        if(oldRecords.containsKey(LEGACY_ARENA))retained.put(LEGACY_ARENA,oldRecords.remove(LEGACY_ARENA));
+        var history=new LayoutHistory(1,current,unlocked,completed,oldRecords,oldCheckpoint);
+        var active=tree.get("activeAttempt");
+        if(!active.isJsonNull()) {
+            var a=active.getAsJsonObject();String id=a.get("arenaId").getAsString();Mode mode=Mode.valueOf(a.get("mode").getAsString());
+            require(a.get("sequence").getAsLong()>0&&a.get("sequence").getAsLong()==tree.get("attemptSequence").getAsLong(),"Historical attempt sequence mismatch");
+            UUID.fromString(a.get("id").getAsString());
+            require((mode==Mode.LEGACY)==LEGACY_ARENA.equals(id),"Invalid historical attempt mode");
+            require(mode==Mode.LEGACY||unlocked.contains(id),"Historical attempt is locked");
+            require(mode!=Mode.CAMPAIGN||Objects.equals(id,current),"Historical attempt has wrong campaign arena");
+            require(mode!=Mode.BOSS_DUEL||completed.size()==ORIGINAL_CAMPAIGN.size(),"Historical boss duel is locked");
+            require(!a.get("fromBossCheckpoint").getAsBoolean()||mode==Mode.CAMPAIGN||mode==Mode.ARENA,"Invalid historical retry mode");
+            require(mode!=Mode.CAMPAIGN||!a.get("fromBossCheckpoint").getAsBoolean()
+                    ||oldCheckpoint!=null&&oldCheckpoint.stage()==CheckpointStage.BOSS,"Historical attempt has no boss checkpoint");
+        }
+        Set<String> newCompleted=new HashSet<>(completed);newCompleted.retainAll(CAMPAIGN_ARENAS);
+        Set<String> newUnlocked=new HashSet<>(unlocked);newUnlocked.retainAll(CAMPAIGN_ARENAS);
+        String next=current==null||!CAMPAIGN_ARENAS.contains(current)?null:current;
+        Checkpoint checkpoint=null;
+        if(oldCheckpoint!=null&&next!=null) {
+            try {
+                checkpoint=references.migrateLayout(oldCheckpoint.active());
+                require(checkpoint!=null&&checkpoint.layoutRevision()==CURRENT_LAYOUT_REVISION,"Migration returned an obsolete checkpoint");
+                require(checkpoint.arenaId().equals(next)&&checkpoint.profileId().equals(oldCheckpoint.profileId())
+                        &&checkpoint.liveryId()==oldCheckpoint.liveryId()&&checkpoint.seed()==oldCheckpoint.seed()
+                        &&checkpoint.stage()==oldCheckpoint.stage()&&checkpoint.player().equals(oldCheckpoint.player())
+                        &&checkpoint.activeTicksBeforeBoss()==oldCheckpoint.activeTicksBeforeBoss(),"Migration changed player resources or campaign stage");
+                references.validate(checkpoint);
+            } catch(RuntimeException failure) {throw new MigrationFailure(failure);}
+        }
+        var migratedCampaign=new Campaign(next,newUnlocked,newCompleted,checkpoint);
+        tree.add("campaign",JSON.toJsonTree(migratedCampaign));
+        // No unfinished attempt on replaced geometry can award a new-layout record.
+        if(!active.isJsonNull()&&!LEGACY_ARENA.equals(active.getAsJsonObject().get("arenaId").getAsString()))tree.add("activeAttempt",JsonNull.INSTANCE);
+        tree.add("records",JSON.toJsonTree(retained));tree.add("historicalLayouts",JSON.toJsonTree(Map.of("revision-1",history)));
+        tree.addProperty("layoutRevision",CURRENT_LAYOUT_REVISION);tree.addProperty("schemaVersion",SCHEMA_VERSION);return tree;
+    }
+    private static Set<String> jsonIds(JsonArray array) {
+        Set<String> ids=new HashSet<>();for(var element:array)require(ids.add(element.getAsString()),"Duplicate saved arena ID");return ids;
+    }
+    private static void validateOriginalCampaign(String current,Set<String> unlocked,Set<String> completed) {
+        require(ORIGINAL_CAMPAIGN.containsAll(unlocked)&&ORIGINAL_CAMPAIGN.containsAll(completed),"Unknown historical campaign arena");
+        int prefix=0;while(prefix<ORIGINAL_CAMPAIGN.size()&&completed.contains(ORIGINAL_CAMPAIGN.get(prefix)))prefix++;
+        require(completed.size()==prefix,"Historical completion must form a prefix");
+        require(unlocked.equals(Set.copyOf(ORIGINAL_CAMPAIGN.subList(0,Math.min(prefix+1,ORIGINAL_CAMPAIGN.size())))),"Invalid historical unlocks");
+        require(current==null?completed.size()==ORIGINAL_CAMPAIGN.size():unlocked.contains(current),"Invalid historical current arena");
     }
 
     private static void canonicalResourceIds(JsonObject player,String field) {

@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory=$true)][string]$Ffmpeg,
     [ValidateSet('720p','1080p')][string]$Resolution='720p',
     [switch]$NoGlow,
-    [string[]]$Arenas=@('construction_17','dead-air-yard','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')
+    [string[]]$Arenas=@('construction_17','dead-air-yard','neon_zero','euphoria_park')
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest

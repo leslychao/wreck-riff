@@ -1,0 +1,36 @@
+{
+  "status": "historical-layout-1",
+  "generatorNote": "Original recipe retained by reversing only the current task camera and catalogue count edits. Line endings normalized to LF.",
+  "previews": [
+    {
+      "source": "src/tools/assets/arena-previews/ash_necropolis.png",
+      "archive": "src/tools/assets/campaign-layouts-revision1/arena-previews/ash_necropolis.png",
+      "sha256": "c2d29d63fff2663757b167b07829aee47288223875982524d7961f5750d7706f"
+    },
+    {
+      "source": "src/tools/assets/arena-previews/construction_17.png",
+      "archive": "src/tools/assets/campaign-layouts-revision1/arena-previews/construction_17.png",
+      "sha256": "19b0ac68394813e1d8005eacbdcd741121082e051f8cf360e8ec6fba5fe3d6c3"
+    },
+    {
+      "source": "src/tools/assets/arena-previews/dead-air-yard.png",
+      "archive": "src/tools/assets/campaign-layouts-revision1/arena-previews/dead-air-yard.png",
+      "sha256": "03f9b45a11821e0355190a27899dfe374551031dd68ff3cc0ab3e01ff98b2112"
+    },
+    {
+      "source": "src/tools/assets/arena-previews/doomsday_arena.png",
+      "archive": "src/tools/assets/campaign-layouts-revision1/arena-previews/doomsday_arena.png",
+      "sha256": "d23fd132b31af769070dabd3ceb44016992b0cefd117e4ac8aff2135b88fbb0d"
+    },
+    {
+      "source": "src/tools/assets/arena-previews/euphoria_park.png",
+      "archive": "src/tools/assets/campaign-layouts-revision1/arena-previews/euphoria_park.png",
+      "sha256": "a8ce65ce1b4a3ba925dcbbffd9c019f1ce98da355a1a7404805d3e7957fe622c"
+    },
+    {
+      "source": "src/tools/assets/arena-previews/neon_zero.png",
+      "archive": "src/tools/assets/campaign-layouts-revision1/arena-previews/neon_zero.png",
+      "sha256": "7ddca015383d5fc1b4587764f667d500f022bd884d7fcae9a0f280160ef32796"
+    }
+  ]
+}

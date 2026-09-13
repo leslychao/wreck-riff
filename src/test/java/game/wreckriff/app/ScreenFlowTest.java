@@ -6,6 +6,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScreenFlowTest {
+    @Test void tacticalMapPausesAndReturnsToTheActualOrigin() {
+        ScreenFlow flow=new ScreenFlow();flow.running();flow.tacticalMap();
+        assertEquals(ScreenFlow.Screen.TACTICAL_MAP,flow.screen());flow.back();assertEquals(ScreenFlow.Screen.RUNNING,flow.screen());
+        flow.pause("Focus lost");flow.tacticalMap();flow.back();
+        assertEquals(ScreenFlow.Screen.PAUSED,flow.screen());assertEquals("Focus lost",flow.pauseReason());
+        flow.menu();flow.tacticalMap();assertEquals(ScreenFlow.Screen.MENU,flow.screen());
+    }
     @Test void pauseReasonSurvivesNestedSettingsAndClearsWhenTheMatchResumesOrRestarts() {
         ScreenFlow flow=new ScreenFlow();flow.running();
         flow.pause("Controller disconnected");assertEquals("Controller disconnected",flow.pauseReason());

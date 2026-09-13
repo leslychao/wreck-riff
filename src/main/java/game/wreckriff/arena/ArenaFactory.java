@@ -32,6 +32,7 @@ public final class ArenaFactory {
         var names=new LinkedHashSet<String>();
         definition.boxes().forEach(part->names.add(surfaceMaterial(part,definition.metadata().theme())));
         definition.ramps().forEach(ramp->names.add(ramp.material()));
+        definition.meshes().forEach(mesh->names.add(mesh.material()));
         names.addAll(ArenaArt.surfaceMaterials(art));
         return SurfaceMaterials.texturesFor(names);
     }
@@ -44,9 +45,11 @@ public final class ArenaFactory {
             Vector3f half=part.size().vector().mult(.5f);
             Geometry visual=new Geometry(part.id(),SurfaceMesh.box(half.x,half.y,half.z,tileSize(part.material())));
             visual.setLocalTranslation(part.center().vector());
+            Quaternion rotation=part.rotation();
+            visual.setLocalRotation(rotation);
             visual.setMaterial(material(surfaceMaterial(part,definition.metadata().theme()))); root.attachChild(visual);
             if (part.collision()) bodies.add(new ArenaContent.StaticBody(part.id(),new BoxCollisionShape(half),
-                    part.center().vector(),new Quaternion()));
+                    part.center().vector(),rotation));
         }
         for (var ramp:definition.ramps()) {
             Mesh mesh=rampMesh(ramp);
@@ -55,6 +58,23 @@ public final class ArenaFactory {
             // The same exact top vertices provide both ramp contacts and visible seam.
             bodies.add(new ArenaContent.StaticBody(ramp.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
         }
+        for(var surface:definition.meshes()) {
+            List<Vector3f> vertices=new ArrayList<>();for(int index:surface.indices())vertices.add(surface.vertices().get(index).vector());
+            Mesh mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
+            Geometry visual=new Geometry(surface.id(),mesh);visual.setMaterial(material(surface.material()));root.attachChild(visual);
+            if(surface.collision())bodies.add(new ArenaContent.StaticBody(surface.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
+        }
+        // Independent cells keep distant districts cullable; movable object visuals retain their identity.
+        Set<String> dynamic=new HashSet<>();definition.destructibles().forEach(d->dynamic.add(d.geometryId()));definition.barriers().forEach(b->dynamic.add(b.geometryId()));
+        Map<String,Node> cells=new LinkedHashMap<>();
+        root.updateGeometricState();
+        for(Spatial child:new ArrayList<>(root.getChildren()))if(!dynamic.contains(child.getName())) {
+            Vector3f center=child.getLocalTranslation();
+            if(child instanceof Geometry geometry&&center.lengthSquared()==0)center=geometry.getWorldBound().getCenter();
+            String key=(int)Math.floor(center.x/160)+":"+(int)Math.floor(center.z/160);
+            cells.computeIfAbsent(key,k->new Node("arena-cell-"+k)).attachChild(child);
+        }
+        for(Node cell:cells.values()){cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);root.attachChild(cell);}
         addDecoration(root,definition,art);
         root.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry &&
                 geometry.getMaterial().getParam("NormalMap")!=null && geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)
@@ -64,12 +84,7 @@ public final class ArenaFactory {
     public Material material(String name) {return materials.material(name);}
     private static String surfaceMaterial(ArenaDefinition.BoxPart part,ArenaDefinition.Theme theme) {
         // Collision and material IDs in arena data stay authoritative. This only selects the surface finish.
-        if(theme==ArenaDefinition.Theme.NECROPOLIS) {
-            if(part.material().equals("ivory")||part.material().equals("rust"))return "stone";
-            if(part.material().equals("steel"))return "black";
-        }
-        if((theme==ArenaDefinition.Theme.NEON||theme==ArenaDefinition.Theme.SHOW)
-                &&part.material().equals("rust"))return "dark-concrete";
+        if(theme==ArenaDefinition.Theme.NEON&&part.material().equals("rust"))return "dark-concrete";
         if(theme==ArenaDefinition.Theme.CARNIVAL&&part.material().equals("red"))return "faded-red";
         return part.material();
     }

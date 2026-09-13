@@ -12,27 +12,41 @@ import game.wreckriff.config.VehicleRules;
 import game.wreckriff.simulation.*;
 import java.util.*;
 import java.util.stream.Stream;
+import java.nio.file.*;
+import java.io.IOException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Short native balance probes: all pairs and mirrors plus three-car fights; no claimed win-rate balance. */
+/** Repeatable native balance observations; a timeout is recorded, never counted as a completed fight. */
 class NativeRosterBalanceMatrixTest {
+    private static final List<Map<String,Object>> RESULTS=new ArrayList<>();
+    private static final Path OUTPUT=Path.of("build","diagnostics","weapon-balance");
+    @BeforeAll static void prepareOutput() throws IOException {RESULTS.clear();Files.createDirectories(OUTPUT);}
+    @AfterAll static void writeOutput() throws IOException {
+        RESULTS.sort(Comparator.comparing(row->row.get("scenario").toString()));
+        Files.writeString(OUTPUT.resolve("matrix.json"),new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(RESULTS));
+        StringBuilder csv=new StringBuilder("scenario,seed,profiles,layout,seconds,outcome,timeout,damage10,damage30,damage,shots,specials,captures,pickups,maxControlSeconds,ammoRemaining,hp\n");
+        for(var row:RESULTS)csv.append(String.join(",",row.values().stream().map(value->"\""+value.toString().replace("\"","\"\"")+"\"").toList())).append('\n');
+        Files.writeString(OUTPUT.resolve("matrix.csv"),csv);
+    }
     static Stream<Arguments> scenarios() {
         var rows=new ArrayList<Arguments>();var ids=List.of("rivet","grinder","spark");
-        for(String layout:List.of("open","narrow","pickup")) {
+        for(long seed:List.of(42L,73L,101L))for(String layout:List.of("open","narrow","pickup")) {
             for(int first=0;first<ids.size();first++)for(int second=first;second<ids.size();second++)
-                rows.add(Arguments.of(List.of(ids.get(first),ids.get(second)),layout));
-            rows.add(Arguments.of(ids,layout));
+                rows.add(Arguments.of(List.of(ids.get(first),ids.get(second)),layout,seed));
+            rows.add(Arguments.of(ids,layout,seed));
         }
         return rows.stream();
     }
 
     @ParameterizedTest @MethodSource("scenarios")
-    void everyPairAndFreeForAllUsesNativeContactsAndSharedControlLimits(List<String> profiles,String layout) {
+    void everyPairAndFreeForAllUsesNativeContactsAndSharedControlLimits(List<String> profiles,String layout,long seed) {
         var rules=VehicleRules.load();var arena=arena(layout);
-        var session=MatchSession.balanced(73,profiles,Configs.load("combat",CombatRules.class));
+        var session=MatchSession.balanced(seed,profiles,Configs.load("combat",CombatRules.class));
         try(var world=new PhysicsWorld(rules)) {
             world.configureArena(arena);
             for(var box:arena.boxes())world.addStatic(box.id(),new BoxCollisionShape(box.size().vector().mult(.5f)),box.center().vector(),new Quaternion());
@@ -45,17 +59,19 @@ class NativeRosterBalanceMatrixTest {
             for(int tick=0;tick<360;tick++)world.step();
             try(var runtime=new MatchRuntime(session,world,arena,new NavGraph(arena),rules)) {
                 int shots=0,activations=0,captures=0,pickups=0,maxControl=0;
-                float damage=0;var controlRun=new int[profiles.size()];
+                float damage=0,damage10=0,damage30=0;var controlRun=new int[profiles.size()];
                 var grindDamage=new HashMap<Integer,Float>();
-                for(int tick=0;tick<12*120&&session.outcome==MatchSession.Outcome.NONE;tick++) {
+                for(int tick=0;tick<180*120&&session.outcome==MatchSession.Outcome.NONE;tick++) {
                     var events=runtime.tick(runtime.bots().commands(world),false);
                     for(var event:events) {
                         if(event.type()==GameEvent.Type.SHOT)shots++;
-                        if(event.type()==GameEvent.Type.SPECIAL_STARTED)activations++;
+                        if(event.type()==GameEvent.Type.SPECIAL_STARTED) {activations++;grindDamage.remove(event.sourceId());}
                         if(event.type()==GameEvent.Type.GRAB_STARTED)captures++;
                         if(event.type()==GameEvent.Type.PICKUP)pickups++;
                         if(event.type()==GameEvent.Type.DAMAGE) {
                             damage+=event.value();
+                            if(tick<10*120)damage10+=event.value();
+                            if(tick<30*120)damage30+=event.value();
                             if(event.kind().equals("grinder"))grindDamage.merge(event.sourceId(),event.value(),Float::sum);
                         }
                     }
@@ -69,10 +85,17 @@ class NativeRosterBalanceMatrixTest {
                         if(world.containsVehicle(state.id))assertTrue(Vector3f.isValidVector(world.position(state.id))&&Vector3f.isValidVector(world.velocity(state.id)));
                     }
                 }
+                var row=new LinkedHashMap<String,Object>();
+                row.put("scenario",String.join("-",profiles)+"/"+layout+"/"+seed);row.put("seed",seed);row.put("profiles",profiles);row.put("layout",layout);
+                row.put("seconds",session.seconds());row.put("outcome",session.outcome.name());row.put("timeout",session.outcome==MatchSession.Outcome.NONE);
+                row.put("damage10",damage10);row.put("damage30",damage30);row.put("damage",damage);row.put("shots",shots);row.put("specials",activations);
+                row.put("captures",captures);row.put("pickups",pickups);row.put("maxControlSeconds",maxControl/120f);
+                row.put("ammoRemaining",session.vehicles.stream().map(v->v.weapons().stream().map(w->w.ammo).toList()).toList());
+                row.put("hp",session.vehicles.stream().map(v->v.hp).toList());RESULTS.add(row);
                 System.out.printf(Locale.ROOT,"ROSTER_PROBE profiles=%s layout=%s seconds=%.2f shots=%d specials=%d captures=%d damage=%.2f maxControlSeconds=%.3f pickups=%d hp=%s%n",
                         profiles,layout,session.seconds(),shots,activations,captures,damage,maxControl/120f,pickups,session.vehicles.stream().map(v->v.hp).toList());
                 assertTrue(shots>0&&damage>0,"A balance probe must include actual attacks and hits");
-                // Twelve-second probes are shorter than Grinder's 20s cooldown, so each source has at most one activation.
+                // Reset on each activation; the cap applies to the full current hold, including every victim.
                 for(float dealt:grindDamage.values())assertTrue(dealt<=120.02f,"Contact damage cap includes every victim of one activation");
             }
         }

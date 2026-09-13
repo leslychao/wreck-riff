@@ -110,13 +110,13 @@ class VerifyAssetsTest {
         assertThrows(IOException.class, () -> VerifyAssets.verifyFontSourceLicense(new byte[8]));
     }
     @Test void registrySeparatesLicensedRecordingFontAndTexturesFromOriginalProjectContent() {
-        var music=new VerifyAssets.Asset("audio/metalmania.wav","licensed-music",100,"c".repeat(64),
-                "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3","LICENSED_DERIVED",2,10L,.5,.2);
+        var music=new VerifyAssets.Asset("audio/music/menu.wav","licensed-music",100,"c".repeat(64),
+                "https://creatorchords.com/music/riffs/","LICENSED_DERIVED",2,10L,.5,.2);
         var texture=new VerifyAssets.Asset("textures/materials/cracked_concrete/diffuse.png","licensed-texture",100,"c".repeat(64),
                 "https://polyhaven.com/a/cracked_concrete","LICENSED_BYTES_VERIFIED",null,null,null,null);
         var font=new VerifyAssets.Asset("fonts/wreck.fnt","bitmap-font",100,"c".repeat(64),"GenerateFont.java","LICENSED_DERIVED",null,null,null,null);
         var records=VerifyAssets.registerEntries(List.of(music,texture,font),"0.2.0");
-        assertTrue(records.getFirst().author().contains("Kevin MacLeod"));
+        assertTrue(records.getFirst().author().contains("Alexander Nakarada"));
         assertTrue(records.getFirst().licensePermission().contains("CC-BY-4.0"));
         assertEquals("licenses/assets/CC-BY-4.0.txt",records.getFirst().licenseTextPath());
         assertTrue(records.get(1).author().contains("Dimitrios Savva"));

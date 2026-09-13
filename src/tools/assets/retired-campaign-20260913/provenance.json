@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "author": "Wreck Riff original project composition and synthesis",
+  "origin": "ORIGINAL_PROJECT_CONTENT",
+  "externalSamples": false,
+  "artisticStatus": "NEEDS_CREATIVE_REVIEW",
+  "generator": "src/tools/compose_campaign_music.py",
+  "generatorSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+  "numpyVersion": "2.3.5",
+  "seed": 6292167784718813510,
+  "themes": [
+    {
+      "id": "construction_17",
+      "title": "Rebar Oath",
+      "bpm": 126,
+      "root": 38,
+      "color": "steel",
+      "motif": [
+        0,
+        0,
+        3,
+        0,
+        7,
+        6,
+        3,
+        1
+      ],
+      "progression": [
+        0,
+        0,
+        3,
+        1,
+        0,
+        5,
+        3,
+        1
+      ],
+      "kick": [
+        0,
+        3,
+        6,
+        8,
+        10
+      ],
+      "lead": [
+        12,
+        15,
+        19,
+        18,
+        15,
+        13,
+        12,
+        7
+      ]
+    },
+    {
+      "id": "neon_zero",
+      "title": "Last Service Lane",
+      "bpm": 138,
+      "root": 40,
+      "color": "neon",
+      "motif": [
+        0,
+        7,
+        0,
+        10,
+        0,
+        3,
+        5,
+        7
+      ],
+      "progression": [
+        0,
+        0,
+        5,
+        3,
+        0,
+        7,
+        5,
+        3
+      ],
+      "kick": [
+        0,
+        4,
+        7,
+        8,
+        12,
+        14
+      ],
+      "lead": [
+        19,
+        15,
+        12,
+        10,
+        12,
+        17,
+        15,
+        14
+      ]
+    },
+    {
+      "id": "euphoria_park",
+      "title": "Crooked Midway",
+      "bpm": 144,
+      "root": 45,
+      "color": "carnival",
+      "motif": [
+        0,
+        3,
+        7,
+        6,
+        0,
+        10,
+        7,
+        3
+      ],
+      "progression": [
+        0,
+        0,
+        5,
+        1,
+        0,
+        8,
+        7,
+        1
+      ],
+      "kick": [
+        0,
+        3,
+        8,
+        11,
+        14
+      ],
+      "lead": [
+        12,
+        15,
+        19,
+        18,
+        19,
+        22,
+        19,
+        13
+      ]
+    },
+    {
+      "id": "ash_necropolis",
+      "title": "Cinders Remember",
+      "bpm": 108,
+      "root": 36,
+      "color": "funeral",
+      "motif": [
+        0,
+        0,
+        7,
+        0,
+        1,
+        0,
+        5,
+        3
+      ],
+      "progression": [
+        0,
+        0,
+        1,
+        1,
+        5,
+        3,
+        1,
+        0
+      ],
+      "kick": [
+        0,
+        6,
+        8,
+        11
+      ],
+      "lead": [
+        12,
+        13,
+        19,
+        17,
+        15,
+        13,
+        12,
+        7
+      ]
+    },
+    {
+      "id": "doomsday_arena",
+      "title": "The Last Broadcast",
+      "bpm": 132,
+      "root": 38,
+      "color": "finale",
+      "motif": [
+        0,
+        3,
+        0,
+        7,
+        1,
+        6,
+        5,
+        0
+      ],
+      "progression": [
+        0,
+        3,
+        5,
+        1,
+        0,
+        8,
+        7,
+        1
+      ],
+      "kick": [
+        0,
+        2,
+        6,
+        8,
+        10,
+        14
+      ],
+      "lead": [
+        12,
+        15,
+        19,
+        18,
+        17,
+        13,
+        12,
+        7
+      ]
+    }
+  ],
+  "arrangement": "48 bars: A introduction, B lead, A variation, C half-time bridge, B variation, D final refrain; eight bars per section",
+  "assets": [
+    {
+      "path": "audio/campaign/construction_17-normal.wav",
+      "arenaId": "construction_17",
+      "title": "Rebar Oath",
+      "mix": "normal",
+      "bpm": 126,
+      "bars": 48,
+      "frames": 4388571,
+      "sha256": "e6fb6c8c23ea3c4ab85be6871238739f242050541ac73c8431540dae95d53e89",
+      "peak": 0.829986572265625,
+      "rms": 0.3174091975579768,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/construction_17-boss.wav",
+      "arenaId": "construction_17",
+      "title": "Rebar Oath",
+      "mix": "boss",
+      "bpm": 126,
+      "bars": 48,
+      "frames": 4388571,
+      "sha256": "74b16e85610b7699e4ae03fcfac5f273e1fe550d00bda28c5a1dcb4bc895e78e",
+      "peak": 0.829986572265625,
+      "rms": 0.3213148609995108,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/neon_zero-normal.wav",
+      "arenaId": "neon_zero",
+      "title": "Last Service Lane",
+      "mix": "normal",
+      "bpm": 138,
+      "bars": 48,
+      "frames": 4006957,
+      "sha256": "f237c0dc10ee3fb60e2acfc0f95f20d523256d2157af582e1dbac493ed71b9f4",
+      "peak": 0.829986572265625,
+      "rms": 0.31406491390446994,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/neon_zero-boss.wav",
+      "arenaId": "neon_zero",
+      "title": "Last Service Lane",
+      "mix": "boss",
+      "bpm": 138,
+      "bars": 48,
+      "frames": 4006957,
+      "sha256": "56fb1a804a8a4cbf472b1e1bdb0bf3546c9f5397ebcfb3bddf3e245f540295a7",
+      "peak": 0.829986572265625,
+      "rms": 0.3268678853525168,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/euphoria_park-normal.wav",
+      "arenaId": "euphoria_park",
+      "title": "Crooked Midway",
+      "mix": "normal",
+      "bpm": 144,
+      "bars": 48,
+      "frames": 3840000,
+      "sha256": "725562d421f79147d3bbcc7bd670f3dac7468267e3b49d3720ff6d563ae733ac",
+      "peak": 0.829986572265625,
+      "rms": 0.3138842196234301,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/euphoria_park-boss.wav",
+      "arenaId": "euphoria_park",
+      "title": "Crooked Midway",
+      "mix": "boss",
+      "bpm": 144,
+      "bars": 48,
+      "frames": 3840000,
+      "sha256": "36942d579b070ee45b428d5a568f8180640ebe8dc305be91493580c9f05ffd06",
+      "peak": 0.829986572265625,
+      "rms": 0.3231805484657054,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/ash_necropolis-normal.wav",
+      "arenaId": "ash_necropolis",
+      "title": "Cinders Remember",
+      "mix": "normal",
+      "bpm": 108,
+      "bars": 48,
+      "frames": 5120000,
+      "sha256": "b72bb2119930149e0899d568f70bebff31ad5375f13aea44755e8bd2322ce239",
+      "peak": 0.829986572265625,
+      "rms": 0.309780538339181,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/ash_necropolis-boss.wav",
+      "arenaId": "ash_necropolis",
+      "title": "Cinders Remember",
+      "mix": "boss",
+      "bpm": 108,
+      "bars": 48,
+      "frames": 5120000,
+      "sha256": "5bd55dce98879dbe5aadb5b8000c7e547d65be439198f34007a6ba78dbf34b8b",
+      "peak": 0.829986572265625,
+      "rms": 0.30911177288492747,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/doomsday_arena-normal.wav",
+      "arenaId": "doomsday_arena",
+      "title": "The Last Broadcast",
+      "mix": "normal",
+      "bpm": 132,
+      "bars": 48,
+      "frames": 4189091,
+      "sha256": "354924192302c865da293a47a6275c27451e63d9efe9b450a3af84438fc3603e",
+      "peak": 0.829986572265625,
+      "rms": 0.3272897291408667,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    },
+    {
+      "path": "audio/campaign/doomsday_arena-boss.wav",
+      "arenaId": "doomsday_arena",
+      "title": "The Last Broadcast",
+      "mix": "boss",
+      "bpm": 132,
+      "bars": 48,
+      "frames": 4189091,
+      "sha256": "89bce36d20bf4a98ecb52eb87ca26897e7fe02c2051cf10628aab81177a44c6a",
+      "peak": 0.829986572265625,
+      "rms": 0.32963114404174226,
+      "sourcePath": "src/tools/compose_campaign_music.py",
+      "sourceSha256": "a622d960d4217625be0c27ad450c419602054fdd039a41ed26af37ec937b0226",
+      "transformation": "Original score and oscillators/noise only; circular instrument tails and delays; stereo mastering to peak 0.83; PCM48k16"
+    }
+  ]
+}

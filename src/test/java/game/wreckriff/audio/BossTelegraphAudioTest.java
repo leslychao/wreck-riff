@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Pure source orchestration checks; audible device output still requires the graphical review. */
 class BossTelegraphAudioTest {
     private static final UUID SESSION=new UUID(0,321),OTHER=new UUID(0,654);
-    private static final String MUSIC="audio/metalmania.wav";
+    private static final String MUSIC="audio/music/dead-air-yard.wav";
 
     @Test void startsOnePositionalShotAndIgnoresDuplicateOrStaleStartsEvenAfterTheShotFinishes() {
         Node scene=new Node();Vector3f position=new Vector3f(4,8,12);
@@ -99,15 +99,17 @@ class BossTelegraphAudioTest {
     @Test void bossPriorityIsBetweenArenaWarningAndActivationWithinTheCrossfadeBudget() {
         Node scene=new Node();
         try(AudioDirector director=director(scene)) {
-            director.startMatch(SESSION,"audio/campaign/construction_17-normal.wav","audio/campaign/construction_17-boss.wav");
+            director.startMatch(SESSION,"audio/music/construction_17-normal.wav","audio/music/construction_17-boss.wav");
             director.bossMusic(true);assertEquals(2,director.musicSourceCount());
-            for(int i=1;i<=29;i++)director.accept(List.of(hazard(i,"crane",GameEvent.Type.ARENA_HAZARD_WARNING)));
+            // Leave one of the 28 gameplay-effect slots for the lower-priority activation.
+            // Two music streams and two dedicated menu slots account for the other four.
+            for(int i=1;i<=27;i++)director.accept(List.of(hazard(i,"crane",GameEvent.Type.ARENA_HAZARD_WARNING)));
             director.accept(List.of(hazard(30,"traffic",GameEvent.Type.ARENA_HAZARD_ACTIVE)));
-            AudioNode impact=find(scene,"sound-hazard-traffic-active");assertEquals(32,director.voiceCount());
+            AudioNode impact=find(scene,"sound-hazard-traffic-active");assertNotNull(impact);assertEquals(30,director.voiceCount());
             director.bossTelegraph(SESSION,9,100,Vector3f.ZERO,true);AudioNode boss=warning(scene);assertNotNull(boss);
-            assertEquals(AudioSource.Status.Stopped,impact.getStatus());assertEquals(32,director.voiceCount());
+            assertEquals(AudioSource.Status.Stopped,impact.getStatus());assertEquals(30,director.voiceCount());
             for(int i=100;i<180;i++)director.accept(List.of(new GameEvent(GameEvent.Type.PICKUP,i,0,0,Vector3f.ZERO,"power-ammo",1).inSession(SESSION)));
-            assertSame(boss,warning(scene));assertEquals(32,director.voiceCount());
+            assertSame(boss,warning(scene));assertEquals(30,director.voiceCount());
             double[] gain={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)gain[0]+=audio.getVolume();});
             assertTrue(gain[0]<=1.000001);
             director.accept(List.of(hazard(31,"crane",GameEvent.Type.ARENA_HAZARD_WARNING)));
@@ -145,14 +147,7 @@ class BossTelegraphAudioTest {
         AudioNode[] result={null};root.depthFirstTraversal(node->{if(node instanceof AudioNode audio&&name.equals(audio.getName()))result[0]=audio;});return result[0];
     }
     private static AudioDirector director(Node scene) {
-        AudioRenderer renderer=(AudioRenderer)Proxy.newProxyInstance(AudioRenderer.class.getClassLoader(),new Class<?>[]{AudioRenderer.class},
-                (proxy,method,args)->{
-                    if(args!=null&&args.length>0&&args[0] instanceof AudioSource source)switch(method.getName()) {
-                        case "playSource" -> source.setStatus(AudioSource.Status.Playing);
-                        case "stopSource" -> source.setStatus(AudioSource.Status.Stopped);
-                    }
-                    if(method.getReturnType()==float.class)return 0f;if(method.getReturnType()==boolean.class)return false;return null;
-                });
+        AudioRenderer renderer=TestAudioRenderer.create();
         return new AudioDirector(new DesktopAssetManager(true),renderer,new Listener(),scene);
     }
 }

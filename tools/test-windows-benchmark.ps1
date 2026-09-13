@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory=$true)][string]$ZipPath,
     [ValidateRange(60,3600)][int]$Seconds=600,
-    [ValidateSet('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')]
+    [ValidateSet('dead-air-yard','construction_17','neon_zero','euphoria_park')]
     [string]$Arena='construction_17'
 )
 $ErrorActionPreference='Stop'

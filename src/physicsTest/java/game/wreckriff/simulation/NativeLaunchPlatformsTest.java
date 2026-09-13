@@ -28,14 +28,19 @@ class NativeLaunchPlatformsTest {
         for(var vehicle:VehicleDefinition.values()) {
             var profile=vehicle.profile(RULES);
             float maximum=RULES.maxSpeed()*profile.speedMultiplier(),turbo=RULES.turboSpeed()*profile.turboMultiplier();
-            for(String arena:REGISTRY.campaignIds())for(int pad=0;pad<2;pad++)for(float speed:new float[]{2,maximum/2,maximum,turbo})
+            for(String arena:REGISTRY.campaignIds())for(int pad=0;pad<REGISTRY.definition(arena).launchPads().size();pad++)
+                for(float speed:new float[]{REGISTRY.definition(arena).launchPads().get(pad).minimumSpeed(),maximum/2,maximum,turbo})
                 for(int angle:new int[]{0,-25,25,-50,50})for(int fps:new int[]{30,60,120})
                     rows.add(Arguments.of(vehicle.id(),arena,pad,speed,angle,fps));
         }
         return rows.stream();
     }
     static Stream<Arguments> renderRates() {
-        return REGISTRY.campaignIds().stream().flatMap(a->Stream.of(0,1).flatMap(p->Stream.of(30,60,120).map(fps->Arguments.of(a,p,fps))));
+        return REGISTRY.campaignIds().stream().flatMap(a->java.util.stream.IntStream.range(0,REGISTRY.definition(a).launchPads().size()).boxed()
+                .flatMap(p->Stream.of(30,60,120).map(fps->Arguments.of(a,p,fps))));
+    }
+    static Stream<Integer> emceePads() {
+        return java.util.stream.IntStream.range(0,REGISTRY.definition("euphoria_park").launchPads().size()).boxed();
     }
 
     @ParameterizedTest(name="{0} {1} pad={2} speed={3} angle={4} fps={5}") @MethodSource("launches")
@@ -49,12 +54,21 @@ class NativeLaunchPlatformsTest {
             assertEquals(0,rig.loop.droppedSimulationTime());
         }
     }
-    @ParameterizedTest @ValueSource(ints={0,1})
-    void emceeUsesBothRealPlatformsWithItsActualLargeHull(int padIndex) {
+    @ParameterizedTest @MethodSource("emceePads")
+    void emceeUsesEveryRealPlatformWithItsActualLargeHull(int padIndex) {
         try(var rig=new Rig(REGISTRY.definition("euphoria_park"),true)) {
             rig.place(rig.focus,padIndex,14,0);
             assertEquals(4,rig.world.wheelContacts(rig.focus));
             rig.fly(rig.focus,padIndex,60);
+        }
+    }
+    @ParameterizedTest @MethodSource("renderRates")
+    void aMovingChassisBelowTheAuthoredMinimumSpeedCannotStartCompression(String arenaId,int padIndex,int fps) {
+        try(var rig=new Rig(REGISTRY.definition(arenaId),false)) {
+            var pad=rig.arena.launchPads().get(padIndex);rig.place(0,padIndex,pad.minimumSpeed()*.5f,0);
+            for(int frame=0;frame<fps;frame++)rig.loop.advance(1.0/fps,true,rig::tick);
+            assertTrue(rig.events.stream().noneMatch(e->e.type()==GameEvent.Type.LAUNCH_COMPRESS||e.type()==GameEvent.Type.LAUNCHED));
+            assertEquals(0,rig.world.teleportGeneration(0));assertEquals(800,rig.session.vehicle(0).hp);
         }
     }
     @ParameterizedTest @MethodSource("renderRates")
@@ -92,7 +106,7 @@ class NativeLaunchPlatformsTest {
     }
     @Test void wrongWaySidewaysAndStoppedCarsDoNotLaunchOrReceiveDamage() {
         for(int angle:new int[]{90,180})try(var rig=new Rig(REGISTRY.definition("construction_17"),false)) {
-            rig.place(0,0,4,angle);
+            rig.place(0,0,rig.arena.launchPads().getFirst().minimumSpeed()+2,angle);
             for(int tick=0;tick<18;tick++)rig.tick();
             assertTrue(rig.events.stream().noneMatch(e->e.type()==GameEvent.Type.LAUNCHED));
             assertEquals(1,rig.events.stream().filter(e->e.type()==GameEvent.Type.LAUNCH_REJECTED).count());
@@ -142,14 +156,16 @@ class NativeLaunchPlatformsTest {
         try(var rig=new Rig(REGISTRY.definition("construction_17"),false)) {
             rig.place(0,0,14,0);
             for(int i=0;i<5;i++)rig.tick();
-            float before=rig.systems.launches().compression("launch-a",0);
+            var pad=rig.arena.launchPads().getFirst();
+            float before=rig.systems.launches().compression(pad.id(),0);
+            assertTrue(before>0,"The authored pad must actually be compressing before pause");
             rig.loop.advance(.1,false,rig::tick);
-            assertEquals(before,rig.systems.launches().compression("launch-a",0));
+            assertEquals(before,rig.systems.launches().compression(pad.id(),0));
             for(int i=0;i<25;i++)rig.tick();
             assertEquals(1,rig.events.stream().filter(e->e.type()==GameEvent.Type.LAUNCHED).count());
-            var pad=rig.arena.launchPads().getFirst();
-            rig.world.teleport(0,pad.source().vector().add(0,rig.world.profile(0).roadOffset(),0),new Quaternion().fromAngleAxis((float)Math.PI/2,Vector3f.UNIT_Y));
-            rig.world.vehicle(0).setLinearVelocity(pad.direction().mult(2));
+            rig.world.teleport(0,pad.source().vector().add(0,rig.world.profile(0).roadOffset(),0),
+                    new Quaternion().fromAngleAxis((float)Math.atan2(pad.direction().x,pad.direction().z),Vector3f.UNIT_Y));
+            rig.world.vehicle(0).setLinearVelocity(pad.direction().mult(14));
             for(int i=0;i<50;i++)rig.tick();
             assertEquals(1,rig.events.stream().filter(e->e.type()==GameEvent.Type.LAUNCHED).count());
         }
@@ -221,28 +237,34 @@ class NativeLaunchPlatformsTest {
             // first native step. Include them in the launch leak baseline.
             systems.beforePhysics(world,drivers);
             int baseBodies=world.bodyCount();
+            var pad=arena.launchPads().get(padIndex);
+            var sourceSurface=arena.surfaces().stream().filter(s->s.id().equals(pad.sourceSurfaceId())).findFirst().orElseThrow();
+            var landingSurface=arena.surfaces().stream().filter(s->s.id().equals(pad.landingSurfaceId())).findFirst().orElseThrow();
             float maxY=world.position(id).y;
-            for(int frame=0;frame<fps*4;frame++) {
+            for(int frame=0;frame<fps*(pad.flightSeconds()+1);frame++) {
                 loop.advance(1.0/fps,true,this::tick);
                 maxY=Math.max(maxY,world.position(id).y);
                 if(events.stream().anyMatch(e->e.type()==GameEvent.Type.LANDED&&e.subjectId()==id))break;
                 var context=world.roadContext(id);
                 if(context.motion()==RoadContext.Motion.LAUNCH) {
-                    assertEquals(0,context.level());assertEquals(1,context.targetLevel());
-                    assertEquals(arena.launchPads().get(padIndex).id(),context.transitionId());
+                    assertEquals(sourceSurface.level(),context.level());assertEquals(landingSurface.level(),context.targetLevel());
+                    assertEquals(pad.id(),context.transitionId());
                 }
             }
             var launched=events.stream().filter(e->e.type()==GameEvent.Type.LAUNCHED&&e.subjectId()==id).toList();
             var landed=events.stream().filter(e->e.type()==GameEvent.Type.LANDED&&e.subjectId()==id).toList();
             assertEquals(1,launched.size(),"Exactly one launch: "+events);
             assertEquals(1,landed.size(),"Real wheels must land: "+world.position(id));
-            var pad=arena.launchPads().get(padIndex);Vector3f contact=landed.getFirst().position();
+            Vector3f contact=landed.getFirst().position();
             assertTrue(contact.subtract(pad.target().vector()).setY(0).length()<4,"Landing must reach the authored centre: "+contact);
-            assertTrue(contact.y>8&&contact.y<10,"Must land on the upper road, not downstairs");
-            assertTrue(maxY>12,"The collider must actually fly over the slab edge");
+            assertEquals(pad.target().y()+world.profile(id).roadOffset(),contact.y,.3f,
+                    "The native hull must land at the authored road height with this chassis's suspension offset");
+            assertTrue(maxY>Math.max(pad.source().y(),pad.target().y())+world.profile(id).roadOffset()+3,
+                    "The collider must actually fly above both road endpoints");
             assertTrue(world.rotation(id).mult(Vector3f.UNIT_Y).y>.75f,"Correct wheel-side landing");
             assertFalse(drivers.get(id).launchActive());
-            assertEquals(1,world.roadContext(id).level());
+            assertEquals(pad.landingSurfaceId(),world.roadContext(id).surfaceId());
+            assertEquals(landingSurface.level(),world.roadContext(id).level());
             assertEquals(0,world.teleportGeneration(id));assertEquals(baseBodies,world.bodyCount());
         }
         @Override public void close() {world.close();}

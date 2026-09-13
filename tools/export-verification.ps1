@@ -49,7 +49,7 @@ foreach($directory in $HistoryDirectories) {
 }
 $requiredReports=@('release-build-verification.json','windows-package-Smoke.json','windows-package-Soak.json',
     'windows-package-NormalNew.json','windows-package-NormalMigrated.json','windows-package-NormalContinue.json')+
-    @('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena' | ForEach-Object {"windows-benchmark-$_.json"})
+    @('dead-air-yard','construction_17','neon_zero','euphoria_park' | ForEach-Object {"windows-benchmark-$_.json"})
 $primaryNames=@($gate.artifacts | ForEach-Object {Split-Path -Leaf $_.path})
 foreach($required in $requiredReports){if($primaryNames -notcontains $required){throw "Gate omitted current report $required"}}
 $script:exportFiles=[Collections.Generic.List[object]]::new()

@@ -43,8 +43,6 @@ public final class SceneLighting {
             case CONSTRUCTION -> new Profile(c(.20f,.25f,.33f),c(.54f,.68f,.88f),c(.42f,.26f,.13f),c(.012f,.023f,.050f),.65f);
             case NEON -> new Profile(c(.29f,.34f,.45f),c(.76f,.86f,1.10f),c(.30f,.14f,.34f),c(.035f,.043f,.095f),.85f);
             case CARNIVAL -> new Profile(c(.33f,.31f,.42f),c(1.03f,.79f,.58f),c(.16f,.28f,.39f),c(.09f,.06f,.13f),.72f);
-            case NECROPOLIS -> new Profile(c(.31f,.36f,.40f),c(.77f,.89f,.96f),c(.30f,.24f,.16f),c(.095f,.13f,.15f),.55f);
-            case SHOW -> new Profile(c(.33f,.35f,.43f),c(.96f,1.02f,1.13f),c(.33f,.16f,.19f),c(.04f,.045f,.075f),.75f);
         };
     }
     private static ColorRGBA c(float red,float green,float blue) {return new ColorRGBA(red,green,blue,1);}
@@ -66,18 +64,31 @@ public final class SceneLighting {
         private final GlowPostProcessor post;
         private final ViewPort viewport;
         private Theme theme;
-        private boolean glowEnabled;
+        private boolean glowEnabled,menu;
         private int samples=-1;
         private Handle(AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
                 DirectionalLightShadowRenderer shadows,BloomFilter bloom,GlowPostProcessor post,ViewPort viewport) {
             this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.post=post;this.viewport=viewport;
         }
         public void apply(Theme theme,boolean glowEnabled) {
-            if(this.theme==theme&&this.glowEnabled==glowEnabled)return;
+            if(!menu&&this.theme==theme&&this.glowEnabled==glowEnabled)return;
+            menu=false;
             Profile colors=profile(theme);this.theme=theme;this.glowEnabled=glowEnabled;
+            key.setDirection(new Vector3f(-.72f,-.70f,.38f).normalizeLocal());
+            rim.setDirection(new Vector3f(.65f,-.27f,-.72f).normalizeLocal());
             ambient.setColor(colors.ambient());key.setColor(colors.key());rim.setColor(colors.rim());
             viewport.setBackgroundColor(colors.sky());shadows.setShadowIntensity(.57f);
             bloom.setBloomIntensity(colors.glow());post.setGlowEnabled(bloom,glowEnabled);
+        }
+        /** Garage art direction reuses the same key, rim, shadows and optional object glow. */
+        public void applyMenu(boolean glowEnabled) {
+            if(menu&&this.glowEnabled==glowEnabled)return;
+            menu=true;this.glowEnabled=glowEnabled;
+            ambient.setColor(c(.15f,.18f,.23f));key.setColor(c(1.08f,.74f,.43f));rim.setColor(c(.25f,.53f,.75f));
+            key.setDirection(new Vector3f(.50f,-.83f,-.23f).normalizeLocal());
+            rim.setDirection(new Vector3f(-.55f,-.32f,.78f).normalizeLocal());
+            viewport.setBackgroundColor(c(.009f,.012f,.019f));shadows.setShadowIntensity(.66f);
+            bloom.setBloomIntensity(.43f);post.setGlowEnabled(bloom,glowEnabled);
         }
         public Theme theme() {return theme;}
         public boolean glowEnabled() {return glowEnabled;}

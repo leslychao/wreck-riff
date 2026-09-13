@@ -81,7 +81,7 @@ class SpecialAudioTest {
             fixture.director.accept(List.of(warning));assertEquals(1,fixture.playCount("sound-special-bomb-warning"));
             fixture.director.stopMatch();fixture.director.accept(List.of(event(GameEvent.Type.BOMB_PLACED,51,3,"special-bomb",4)));
             assertEquals(0,fixture.director.voiceCount());
-            fixture.director.startMatch(SESSION,"audio/metalmania.wav","audio/metalmania.wav");
+            fixture.director.startMatch(SESSION,"audio/music/dead-air-yard.wav","audio/music/dead-air-yard.wav");
             fixture.director.accept(List.of(warning));assertEquals(2,fixture.playCount("sound-special-bomb-warning"),"Retry clears dedupe");
         }
     }
@@ -92,11 +92,11 @@ class SpecialAudioTest {
             AudioNode warning=fixture.find("sound-hazard-warning"),active=fixture.find("sound-hazard-active");
             List<GameEvent> flood=new ArrayList<>();
             for(int index=0;index<100;index++)flood.add(event(GameEvent.Type.SPECIAL_STARTED,100+index,3,"spark",.35f));
-            fixture.director.accept(flood);assertEquals(32,fixture.director.voiceCount());
+            fixture.director.accept(flood);assertEquals(30,fixture.director.voiceCount());
             fixture.director.accept(List.of(event(GameEvent.Type.BOMB_PLACED,300,3,"special-bomb",4)));
             assertNotNull(fixture.find("sound-special-bomb-warning"));
             assertSame(warning,fixture.find("sound-hazard-warning"));assertSame(active,fixture.find("sound-hazard-active"));
-            assertEquals(32,fixture.director.voiceCount());
+            assertEquals(30,fixture.director.voiceCount());
             double[] volume={0};fixture.scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)volume[0]+=audio.getVolume();});
             assertTrue(volume[0]<=1.000001,"Specials share the existing mix headroom");
             fixture.director.stopMatch();assertEquals(0,fixture.director.voiceCount());
@@ -109,10 +109,10 @@ class SpecialAudioTest {
             AudioNode danger=fixture.find("sound-hazard-active");
             List<GameEvent> pickups=new ArrayList<>();
             for(int index=0;index<100;index++)pickups.add(event(GameEvent.Type.PICKUP,400+index,0,"homing-ammo",1));
-            fixture.director.accept(pickups);assertEquals(32,fixture.director.voiceCount());
+            fixture.director.accept(pickups);assertEquals(30,fixture.director.voiceCount());
             fixture.director.accept(List.of(event(GameEvent.Type.SPECIAL_STARTED,550,2,"grinder",.6f)));
             assertNotNull(fixture.find("sound-special-grinder-start"),"Enemy windup must outrank repeated pickup confirmations");
-            assertSame(danger,fixture.find("sound-hazard-active"));assertEquals(32,fixture.director.voiceCount());
+            assertSame(danger,fixture.find("sound-hazard-active"));assertEquals(30,fixture.director.voiceCount());
         }
     }
 
@@ -155,18 +155,9 @@ class SpecialAudioTest {
         final MatchSession session=new MatchSession(42,180,Configs.load("combat",CombatRules.class),SESSION);
         final AudioDirector director;
         Fixture() {
-            AudioRenderer renderer=(AudioRenderer)Proxy.newProxyInstance(AudioRenderer.class.getClassLoader(),new Class<?>[]{AudioRenderer.class},
-                    (proxy,method,args)->{
-                        if(args!=null&&args.length>0&&args[0] instanceof AudioSource source) {
-                            if(method.getName().equals("playSource")) {started.add(source);source.setStatus(AudioSource.Status.Playing);}
-                            if(method.getName().equals("stopSource"))source.setStatus(AudioSource.Status.Stopped);
-                        }
-                        if(method.getReturnType()==float.class)return 0f;
-                        if(method.getReturnType()==boolean.class)return false;
-                        return null;
-                    });
+            AudioRenderer renderer=TestAudioRenderer.create(started::add);
             director=new AudioDirector(new DesktopAssetManager(true),renderer,new Listener(),scene);
-            director.startMatch(SESSION,"audio/metalmania.wav","audio/metalmania.wav");
+            director.startMatch(SESSION,"audio/music/dead-air-yard.wav","audio/music/dead-air-yard.wav");
         }
         long playCount(String name) {return started.stream().filter(source->source instanceof AudioNode node&&node.getName().equals(name)).count();}
         AudioNode find(String name) {

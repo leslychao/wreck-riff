@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Build and Run Windows" type="ShConfigurationType" factoryName="Shell Script">
+    <option name="SCRIPT_TEXT" value="" />
+    <option name="SCRIPT_PATH" value="$PROJECT_DIR$/tools/build-and-run-windows.ps1" />
+    <option name="SCRIPT_OPTIONS" value="" />
+    <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="INTERPRETER_PATH" value="C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe" />
+    <option name="INTERPRETER_OPTIONS" value="-NoProfile -ExecutionPolicy Bypass -File" />
+    <option name="EXECUTE_IN_TERMINAL" value="false" />
+    <option name="EXECUTE_SCRIPT_FILE" value="true" />
+    <envs>
+      <env name="JAVA_HOME" value="$USER_HOME$/.jdks/ms-21.0.11" />
+      <env name="GRADLE_USER_HOME" value="$PROJECT_DIR$/.gradle-user" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>

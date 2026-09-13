@@ -10,19 +10,23 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeArenaDrivingTest {
-    @Test void gravelChangesAllFourWheelCoefficientsAndLeavingItRestoresGrip() {
+    @Test void excavationGravelChangesAllFourWheelCoefficientsAndLeavingItRestoresGrip() {
         var arena=ArenaRegistry.load().definition("construction_17");var rules=VehicleRules.load();
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
             content.bodies().forEach(body->world.addStatic(body.id(),body.shape(),body.position(),body.rotation()));world.configureArena(arena);
             var session=new MatchSession(42,arena,MatchSession.Mode.BOSS_DUEL,Configs.load("combat",CombatRules.class));
-            var body=world.addVehicle(0,new Vector3f(200,2,81),new Quaternion());
+            var gravel=arena.surfaces().stream().filter(s->s.id().equals("pit-floor")).findFirst().orElseThrow();
+            assertEquals(.8f,gravel.grip(),"Excavation gravel must retain its authored lower grip");
+            var pit=arena.boxes().stream().filter(b->b.id().equals(gravel.geometryId())).findFirst().orElseThrow();
+            var point=pit.center().vector().add(0,pit.size().y()/2,0);
+            var body=world.addVehicle(0,point.add(0,2,0),new Quaternion());
             var driver=new VehicleController(world,session.vehicle(0),rules,arena.bounds(),arena.metadata().recoveryCost());
             for(int i=0;i<360;i++)world.step();
-            assertEquals("gravel",world.roadContext(0).surfaceId());
+            assertEquals(gravel.id(),world.roadContext(0).surfaceId());
             for(int i=0;i<120;i++)driver.drive(VehicleCommand.NONE);
             for(int i=0;i<4;i++)assertEquals(rules.frictionSlip()*.8f,body.getWheel(i).getFrictionSlip(),.001f);
-            world.teleport(0,new Vector3f(24,2,24),new Quaternion());for(int i=0;i<360;i++)world.step();
+            world.teleport(0,arena.spawns().getFirst().position().vector().add(0,2,0),new Quaternion());for(int i=0;i<360;i++)world.step();
             assertEquals(1,world.roadContext(0).grip());
             for(int i=0;i<120;i++)driver.drive(VehicleCommand.NONE);
             for(int i=0;i<4;i++)assertEquals(rules.frictionSlip(),body.getWheel(i).getFrictionSlip(),.001f);

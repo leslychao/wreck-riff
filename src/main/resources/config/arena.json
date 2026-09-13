@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "dead-air-yard",
   "bounds": {
     "minX": -80,
@@ -22,7 +22,8 @@
         "z": 140
       },
       "material": "asphalt",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "west-fence",
@@ -37,7 +38,8 @@
         "z": 140
       },
       "material": "rust",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "east-fence",
@@ -52,7 +54,8 @@
         "z": 140
       },
       "material": "rust",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "south-fence",
@@ -67,7 +70,8 @@
         "z": 1
       },
       "material": "rust",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "north-fence",
@@ -82,7 +86,8 @@
         "z": 1
       },
       "material": "rust",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "mast-base",
@@ -97,7 +102,8 @@
         "z": 16
       },
       "material": "concrete",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-south-wall",
@@ -112,7 +118,8 @@
         "z": 0.7
       },
       "material": "rust",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-north-wall",
@@ -127,7 +134,8 @@
         "z": 0.7
       },
       "material": "rust",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-roof",
@@ -142,7 +150,8 @@
         "z": 24
       },
       "material": "steel",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-west-south-post",
@@ -157,7 +166,8 @@
         "z": 4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-west-north-post",
@@ -172,7 +182,8 @@
         "z": 4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-east-south-post",
@@ -187,7 +198,8 @@
         "z": 4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "garage-east-north-post",
@@ -202,7 +214,8 @@
         "z": 4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "upper-deck",
@@ -217,7 +230,8 @@
         "z": 20
       },
       "material": "concrete",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-west-rail",
@@ -232,7 +246,8 @@
         "z": 20
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-east-rail",
@@ -247,7 +262,8 @@
         "z": 20
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-south-west-rail",
@@ -262,7 +278,8 @@
         "z": 0.4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-south-east-rail",
@@ -277,7 +294,8 @@
         "z": 0.4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-north-west-rail",
@@ -292,7 +310,8 @@
         "z": 0.4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-north-east-rail",
@@ -307,7 +326,8 @@
         "z": 0.4
       },
       "material": "yellow",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-post-sw",
@@ -322,7 +342,8 @@
         "z": 0.7
       },
       "material": "steel",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-post-nw",
@@ -337,7 +358,8 @@
         "z": 0.7
       },
       "material": "steel",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-post-se",
@@ -352,7 +374,8 @@
         "z": 0.7
       },
       "material": "steel",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     },
     {
       "id": "deck-post-ne",
@@ -367,7 +390,8 @@
         "z": 0.7
       },
       "material": "steel",
-      "collision": true
+      "collision": true,
+      "yawDegrees": 0
     }
   ],
   "ramps": [
@@ -1554,8 +1578,8 @@
     "durationSeconds": 360,
     "recoveryCost": 15,
     "introduction": "Последняя машина в эфире",
-    "music": "audio/metalmania.wav",
-    "bossMusic": "audio/metalmania.wav"
+    "music": "audio/music/dead-air-yard.wav",
+    "bossMusic": "audio/music/dead-air-yard.wav"
   },
   "hazards": [
     {
@@ -1606,5 +1630,8 @@
   "destructibles": [],
   "secrets": [],
   "bosses": [],
-  "barriers": []
+  "barriers": [],
+  "layoutRevision": 1,
+  "meshes": [],
+  "districts": []
 }

@@ -131,6 +131,14 @@ $invalid=Clone $normal;$invalid.dev=$true
 Reject {Assert-ReleaseDiagnostic $invalid $identity $image 'normal'} 'normal dev launch'
 $invalid=Clone $normal;$invalid.javaHome=Join-Path $work 'other/runtime'
 Reject {Assert-ReleaseDiagnostic $invalid $identity $image 'normal'} 'different bundled runtime'
+$oldProfile=[pscustomobject]@{stats=[pscustomobject]@{schemaVersion=3};settings=[pscustomobject]@{schemaVersion=4}}
+$newProfile=[pscustomobject]@{stats=[pscustomobject]@{schemaVersion=4;layoutRevision=2};settings=[pscustomobject]@{schemaVersion=4}}
+Assert-ReleaseProfileMigration $oldProfile $newProfile;$script:checks++
+$invalid=Clone $newProfile;$invalid.stats.schemaVersion=3
+Reject {Assert-ReleaseProfileMigration $oldProfile $invalid} 'old statistics schema cannot pass map migration'
+$invalid=Clone $newProfile;$invalid.stats.layoutRevision=1
+Reject {Assert-ReleaseProfileMigration $oldProfile $invalid} 'old layout cannot pass map migration'
+Reject {Assert-ReleaseProfileMigration $newProfile $newProfile} 'already-current profile cannot claim migration evidence'
 # Automatic verification must allow normal GLFW minimization, while rejecting
 # any actual interval in which its measured/captured window was not drawable.
 foreach($automaticMode in @('graphics-smoke','benchmark','soak','ui-review')) {
@@ -210,10 +218,10 @@ $invalid=Clone $memory;$invalid.pid=124
 Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'unrelated PID'
 $invalid=Clone $memory;$invalid.samples=@($invalid.samples | Where-Object {$_.seconds -lt 500 -or $_.seconds -gt 510})
 Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'memory sampling gap'
-$arenaIds=@('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')
+$arenaIds=@('dead-air-yard','construction_17','neon_zero','euphoria_park')
 $loadedModes=@('dead-air-yard/LEGACY')+@($arenaIds | Where-Object {$_ -ne 'dead-air-yard'} | ForEach-Object {"$_/ARENA";"$_/BOSS_DUEL"})
 $snapshots=@(0..14 | ForEach-Object {
-    $index=$_;$seconds=10+$index*100;$pair=$loadedModes[[Math]::Min($index,10)].Split('/')
+    $index=$_;$seconds=10+$index*100;$pair=$loadedModes[[Math]::Min($index,$loadedModes.Count-1)].Split('/')
     foreach($stage in @('LOAD','UNLOAD')) {
         [pscustomobject]@{stage=$stage;elapsedSeconds=$seconds;observedAtEpochMillis=([DateTimeOffset]$at.AddSeconds($seconds)).ToUnixTimeMilliseconds();
             arenaId=$pair[0];mode=$pair[1];phase='ARENA_COMBAT';profileId='rivet';topology='fixture';
@@ -224,8 +232,12 @@ $snapshots=@(0..14 | ForEach-Object {
 })
 $soak=[pscustomobject]@{pid=123;status='SOAK_MEASURED';mode='soak';requestedSeconds=1800;
     soakCoverage=[pscustomobject]@{measuredSeconds=1800;mapChanges=10;retries=20;arenaIds=$arenaIds;loadedModes=$loadedModes;resourcesWarmed=$true;coverageComplete=$true};
-    resourceChecks=[pscustomobject]@{status='PASS';errors=@();unloadComparisons=4;minimumUnloadComparisons=3};resourceSnapshots=$snapshots}
+    resourceChecks=[pscustomobject]@{status='PASS';errors=@();unloadComparisons=(@($snapshots | Where-Object {$_.stage -eq 'UNLOAD'}).Count-$loadedModes.Count);minimumUnloadComparisons=3};resourceSnapshots=$snapshots}
 Assert-ReleaseSoak $report $soak $memory;$script:checks++
+$invalid=Clone $soak;$invalid.soakCoverage.arenaIds=@($arenaIds | Where-Object {$_ -ne 'euphoria_park'})
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'soak must cover every current map'
+$invalid=Clone $soak;$invalid.soakCoverage.arenaIds+=@('historical-map')
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'historical extra map cannot be presented as current soak coverage'
 $invalid=Clone $soak;$invalid.soakCoverage.retries=19
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'nineteen Retry is insufficient'
 $invalid=Clone $memory;$invalid.samples[1411].handles=117
@@ -301,6 +313,17 @@ $review.observations=[pscustomobject]@{materialsVerified=$true;sourceReplacement
 Assert-ReleaseReview 'distributionLicenses' $review $identity;$script:checks++
 $invalid=Clone $review;$invalid.observations.distributionApproval='GRANTED'
 Reject {Assert-ReleaseReview 'distributionLicenses' $invalid $identity} 'integrity evidence grants no distribution approval'
+$review.observations=[pscustomobject]@{arenas=@(foreach($arena in $arenaIds) {
+    $routeChecks=if($arena -eq 'dead-air-yard'){@('lower','upper-combat','pickup','descent')}else{
+        @('district-connections','through-interiors','elevation-transitions','destructible-shortcuts','pickup','boss-routes','full-map','all-three-chassis')
+    }
+    [pscustomobject]@{id=$arena;checks=$routeChecks}
+})}
+Assert-ReleaseReview 'arenaRoutes' $review $identity;$script:checks++
+$invalid=Clone $review;$invalid.observations.arenas[1].checks=@('lower','upper-combat','pickup','descent','launch','boss-lower','boss-upper')
+Reject {Assert-ReleaseReview 'arenaRoutes' $invalid $identity} 'old arena route checklist does not prove large-map districts and interiors'
+$invalid=Clone $review;$invalid.observations.arenas=@($invalid.observations.arenas | Where-Object {$_.id -ne 'neon_zero'})
+Reject {Assert-ReleaseReview 'arenaRoutes' $invalid $identity} 'all four current maps need route observations'
 # UI collection fixtures contain actual generated PNG files, but never launch the game.
 Add-Type -AssemblyName System.Drawing
 $uiDirectory=Join-Path $work 'ui-collection';$uiCaptureDirectory=Join-Path $uiDirectory 'captures'
@@ -313,7 +336,14 @@ Check ($uiRequest.windowMode -eq 'windowed' -and $uiRequest.width -eq 640) 'UI r
 Check ((Get-ReleaseUiReviewRequest '1080p' 1 $false).fullscreen -eq $true) 'UI alias uses Main fullscreen semantics'
 Reject {Get-ReleaseUiReviewRequest '1600x900' 1 $false} 'unsupported UI resolution'
 Reject {Get-ReleaseUiReviewRequest '640x480' ([double]::NaN) $false} 'non-finite UI scale'
-$uiCases=@(foreach($id in Get-ReleaseUiReviewCaseIds) {
+$uiRequiredCases=@(Get-ReleaseUiReviewCaseIds)
+$uiActualCases=@('actual-launch-menu';foreach($profile in @('rivet','grinder','spark')) {
+    foreach($action in @('start','repeat-accept','retry','leave')){"actual-$action-$profile"}
+};'actual-campaign-start';'actual-campaign-pause';'actual-map-open';'actual-map-zoom-pan';'actual-map-height';
+    'actual-map-fit';'actual-map-return';'actual-campaign-resume';'actual-campaign-menu';'actual-campaign-continue';'actual-campaign-finished-review')
+Check (@($uiActualCases | Where-Object {$uiRequiredCases -cnotcontains $_}).Count -eq 0) 'UI evidence requires the real launch, repeated accept, retry, leave, map interaction and checkpoint continuation cases'
+$uiCaptureCount=@($uiRequiredCases | Where-Object {$_ -cne 'hardware-controller'}).Count
+$uiCases=@(foreach($id in $uiRequiredCases) {
     $hardware=$id -eq 'hardware-controller';$relative=if($hardware){''}else{"captures/$id.png"}
     if(!$hardware){Copy-Item -LiteralPath $uiTemplate -Destination (Join-Path $uiDirectory $relative)}
     [pscustomobject]@{caseId=$id;status=$(if($hardware){'PENDING'}else{'CAPTURED'});reason=$(if($hardware){'Physical controller not operated'}else{'Visual review pending'});
@@ -321,7 +351,7 @@ $uiCases=@(foreach($id in Get-ReleaseUiReviewCaseIds) {
         observed=[pscustomobject]@{width=640;height=480;scale=1;visible=$true;state=[pscustomobject]@{fullscreen=$false;storedWins=0;storedMatches=0}}}
 })
 $uiManifest=[pscustomobject]@{schemaVersion=1;mode='ui-review';status='CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING';ownerAcceptance='NOT_GRANTED';releaseEligible=$false;
-    requestedFramebuffer=[pscustomobject]@{width=640;height=480;uiScale=1};plannedCases=68;cases=$uiCases;remainingCaseIds=@()}
+    requestedFramebuffer=[pscustomobject]@{width=640;height=480;uiScale=1};plannedCases=$uiRequiredCases.Count;cases=$uiCases;remainingCaseIds=@()}
 $uiManifestPath=Join-Path $uiDirectory 'ui-review-manifest.json';Write-ReleaseJson $uiManifestPath $uiManifest
 $uiDiagnostic=[pscustomobject]@{schemaVersion=2;sourceSha256=$source;version='0.0.1';mode='ui-review';pid=123;javaHome=(Join-Path $image 'runtime');
     windowVisible=$true;audioEnabled=$true;errors=@();autoIconify=$true;undrawableSeconds=0;
@@ -329,7 +359,7 @@ $uiDiagnostic=[pscustomobject]@{schemaVersion=2;sourceSha256=$source;version='0.
     releaseEligible=$false;hardwareController='PENDING_MANUAL';feelApproval='PENDING_MANUAL';width=640;height=480}
 Assert-ReleaseDiagnostic $uiDiagnostic $identity $image 'ui-review';$script:checks++
 $uiEvidence=Get-ReleaseUiReviewEvidence $uiManifestPath $uiDiagnostic $uiRequest
-Check ($uiEvidence.captures.Count -eq 67 -and $uiEvidence.status -eq 'CAPTURE_COLLECTION_COMPLETE' -and !$uiEvidence.releaseEligible) 'UI collection hashes 67 actual PNGs without release approval'
+Check ($uiEvidence.captures.Count -eq $uiCaptureCount -and $uiEvidence.status -eq 'CAPTURE_COLLECTION_COMPLETE' -and !$uiEvidence.releaseEligible) 'UI collection hashes every required physical PNG without release approval'
 $invalid=Clone $uiDiagnostic;$invalid.audioEnabled=$false
 Reject {Assert-ReleaseDiagnostic $invalid $identity $image 'ui-review'} 'UI capture requires actual audio'
 $invalid=Clone $uiDiagnostic;$invalid.mode='graphics-smoke'
@@ -353,7 +383,7 @@ $invalid=Clone $uiEvidence;$invalid.hardwareController='PASS'
 Reject {Assert-ReleaseUiReview $invalid $uiDiagnostic $uiRequest} 'collection cannot claim hardware PASS'
 $invalid=Clone $uiEvidence;$invalid.releaseEligible=$true
 Reject {Assert-ReleaseUiReview $invalid $uiDiagnostic $uiRequest} 'UI captures cannot become release eligible'
-foreach($mutation in @('manifest-dimensions','observed-dimensions','scale','window-mode','visibility','stored-wins','stored-matches','hardware-pass','duplicate-case','short-case','missing-case','string-visibility','string-release-eligible','string-frames')) {
+foreach($mutation in @('manifest-dimensions','observed-dimensions','scale','window-mode','visibility','stored-wins','stored-matches','hardware-pass','duplicate-case','short-case','missing-case','missing-map-case','string-visibility','string-release-eligible','string-frames')) {
     $changed=Clone $uiManifest
     switch($mutation) {
         'manifest-dimensions' {$changed.requestedFramebuffer.height=481}
@@ -363,10 +393,11 @@ foreach($mutation in @('manifest-dimensions','observed-dimensions','scale','wind
         'visibility' {$changed.cases[0].observed.visible=$false}
         'stored-wins' {$changed.cases[0].observed.state.storedWins=1}
         'stored-matches' {$changed.cases[0].observed.state.storedMatches=1}
-        'hardware-pass' {$changed.cases[67].status='PASS'}
+        'hardware-pass' {($changed.cases | Where-Object {$_.caseId -ceq 'hardware-controller'}).status='PASS'}
         'duplicate-case' {$changed.cases[1].caseId=$changed.cases[0].caseId}
         'short-case' {$changed.cases[0].settledDrawFrames=1}
-        'missing-case' {$changed.cases=$changed.cases[0..66]}
+        'missing-case' {$changed.cases=@($changed.cases | Where-Object {$_.caseId -cne 'actual-campaign-continue'})}
+        'missing-map-case' {$changed.cases=@($changed.cases | Where-Object {$_.caseId -cne 'actual-map-zoom-pan'})}
         'string-visibility' {$changed.cases[0].observed.visible='true'}
         'string-release-eligible' {$changed.releaseEligible='false'}
         'string-frames' {$changed.cases[0].settledDrawFrames='2'}

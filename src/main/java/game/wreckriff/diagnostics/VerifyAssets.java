@@ -88,11 +88,20 @@ public final class VerifyAssets {
             assets.add(asset(path, "config", bytes, "src/main/resources/" + path, "VALIDATED"));
         });
         attempt(errors, "audio", () -> verifyAudio(assets));
-        attempt(errors, "campaign music", () -> verifyCampaignMusic(assets));
+        attempt(errors, "licensed soundtrack", () -> verifyMusic(assets));
         attempt(errors, "pickup models", () -> verifyPickupModels(assets));
+        attempt(errors, "ordnance models and atlases", () -> OrdnanceAssetsVerifier.verify(assets));
         attempt(errors, "arena art", () -> verifyArenaArt(assets));
         attempt(errors, "font", () -> verifyFont(assets));
         attempt(errors, "licensed textures", () -> verifyTextures(assets));
+        attempt(errors, "arena menu previews", () -> verifyArenaPreviews(assets));
+        attempt(errors, "retired campaign resources", () -> {
+            for(String path:List.of("config/arena-ash-necropolis.json","config/arena-doomsday.json",
+                    "config/arena-art-ash-necropolis.json","config/arena-art-doomsday.json",
+                    "textures/ui/arenas/ash_necropolis.png","textures/ui/arenas/doomsday_arena.png"))
+                if(VerifyAssets.class.getClassLoader().getResource(path)!=null)
+                    throw new IOException("Retired campaign resource is still packaged: "+path);
+        });
         attempt(errors, "asset license evidence", () -> {
             for (var license : ASSET_LICENSE_HASHES.entrySet()) {
                 String path = "licenses/assets/" + license.getKey();
@@ -119,9 +128,10 @@ public final class VerifyAssets {
         });
         attempt(errors, "procedural sources", () -> {
             for (String path : List.of("src/tools/java/game/wreckriff/tools/GenerateAudio.java", "src/tools/java/game/wreckriff/tools/GenerateFont.java", "src/tools/prepare_recorded_sfx.py",
-                    "src/tools/java/game/wreckriff/tools/GeneratePickupModels.java",
+                    "src/tools/java/game/wreckriff/tools/GeneratePickupModels.java", "src/tools/java/game/wreckriff/tools/GenerateArenaPreviews.java",
                     "src/main/java/game/wreckriff/presentation/VehicleVisual.java", "src/main/java/game/wreckriff/arena/ArenaFactory.java",
-                    "src/main/java/game/wreckriff/presentation/CombatVisuals.java", "src/main/java/game/wreckriff/presentation/ArenaPresentation.java")) {
+                    "src/main/java/game/wreckriff/presentation/CombatVisuals.java", "src/main/java/game/wreckriff/presentation/ArenaPresentation.java",
+                    "src/main/java/game/wreckriff/presentation/GaragePresentation.java")) {
                 byte[] bytes = Files.readAllBytes(Path.of(path));
                 if (bytes.length == 0) throw new IOException("Empty generator " + path);
                 assets.add(asset(path, "procedural-source", bytes, "Original project source recipe", "SOURCE_PRESENT"));
@@ -170,13 +180,13 @@ public final class VerifyAssets {
             String permission = "Original project content; no distribution license assigned; owner review required";
             String license = "", attribution = "OWNER_REVIEW_REQUIRED";
             if (Set.of("licensed-result","result-provenance").contains(asset.category)) {
-                author = "Kevin MacLeod (incompetech.com); CC0 metal recordings identified in audio/sfx-sources.json";
-                permission = "CC-BY-4.0 Metalmania excerpt and CC0 impact; transformations in audio/result-provenance.json";
+                author = "Alexander Nakarada (creatorchords.com); CC0 metal recordings identified in audio/sfx-sources.json";
+                permission = "CC-BY-4.0 Riffs excerpt and CC0 impact; transformations in audio/result-provenance.json";
                 license = "licenses/assets/CC-BY-4.0.txt; licenses/assets/CC0-1.0.txt";
                 attribution = "CREDIT_TITLE_AUTHOR_SOURCE_LICENSE_AND_MODIFICATIONS";
             } else if (asset.category.equals("licensed-music") || asset.category.equals("music-provenance")) {
-                author = "Kevin MacLeod (incompetech.com)";
-                permission = "CC-BY-4.0; source track Metalmania; local loop edit and normalization identified in audio/music-provenance.json";
+                author = "Alexander Nakarada (creatorchords.com)";
+                permission = "CC-BY-4.0; eight CreatorChords recordings; edits and normalization in audio/music/provenance.json";
                 license = "licenses/assets/CC-BY-4.0.txt";
                 attribution = "CREDIT_TITLE_AUTHOR_SOURCE_LICENSE_AND_MODIFICATIONS";
             } else if (Set.of("recorded-sound-effect", "sfx-provenance").contains(asset.category)) {
@@ -195,6 +205,11 @@ public final class VerifyAssets {
                 permission = "CC0-1.0; source and per-file transformations retained in licenses/asset-provenance.json";
                 license = "licenses/assets/CC0-1.0.txt";
                 attribution = "NOT_REQUIRED_BY_CC0; SOURCE_RETAINED";
+            } else if(asset.category.equals("ordnance-texture")) {
+                author = "Wreck Riff project texture recipe; stencil lettering by The Roboto Project Authors";
+                permission = "Original project artwork; rasterized Roboto Condensed lettering under OFL-1.1";
+                license = "licenses/assets/Roboto-OFL.txt";
+                attribution = "RETAIN_FONT_COPYRIGHT_AND_OFL_NOTICE; ORIGINAL_ARTWORK_OWNER_REVIEW_REQUIRED";
             } else if (asset.category.equals("engine-material")) {
                 packaged = "app/jme3-core-3.8.1-stable.jar!/" + asset.path;
                 author = "jMonkeyEngine contributors; see retained upstream notice";
@@ -234,8 +249,7 @@ public final class VerifyAssets {
 
     private static void verifyAudio(List<Asset> assets) throws Exception {
         AudioConfig config = Configs.gson().fromJson(new String(resource("config/audio.json"), StandardCharsets.UTF_8), AudioConfig.class);
-        if (!config.musicAsset().equals("audio/metalmania.wav")) throw new IOException("Unexpected music cue");
-        for(String retired:List.of("dead-air-circuit","overheat","pulse","stun","freeze","shield","pickup-ammo",
+        for(String retired:List.of("metalmania","dead-air-circuit","overheat","pulse","stun","freeze","shield","pickup-ammo",
                 "machine-gun","metal-hit","explosion","destroyed","homing-launch","power-launch","mine-detonate","napalm-launch")) {
             if(config.effects().contains(retired) || VerifyAssets.class.getClassLoader().getResource("audio/"+retired+".wav")!=null)
                 throw new IOException("Superseded runtime audio is still packaged: "+retired);
@@ -246,19 +260,8 @@ public final class VerifyAssets {
         Map<String,String> authored=new HashMap<>(pickups);authored.putAll(specials);
         authored.putAll(verifyArenaHazardEffects(config,assets));
         authored.putAll(verifyBossTelegraph(config,assets));
-        byte[] provenanceBytes = resource("audio/music-provenance.json"), sourceBytes = resource("audio/music-source.json");
-        JsonObject provenance = JsonParser.parseString(new String(provenanceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
-        JsonObject source = JsonParser.parseString(new String(sourceBytes, StandardCharsets.UTF_8)).getAsJsonObject();
-        if (!provenance.get("license").getAsString().equals("CC-BY-4.0")
-                || !source.get("license").getAsString().equals("CC-BY-4.0")
-                || !source.get("isrc").getAsString().equals("USUAN1700023")
-                || !source.get("author").getAsString().equals("Kevin MacLeod")
-                || !source.get("sourceUrl").getAsString().equals("https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3")
-                || !hash(sourceBytes).equals(provenance.get("sourceEvidenceSha256").getAsString())
-                || !hash(Files.readAllBytes(Path.of("src/tools/assets/audio/Metalmania-original.mp3"))).equals(source.get("originalSha256").getAsString())
-                || !hash(Files.readAllBytes(Path.of("src/tools/assets/audio/Metalmania-source.wav"))).equals(provenance.get("sourceSha256").getAsString()))
-            throw new IOException("Music source/license provenance mismatch");
-        Map<String,String> results=verifyResults(config,assets,provenance);
+        authored.putAll(verifyMenuEffects(config,assets));
+        Map<String,String> results=verifyResults(config,assets);
         String metricsPath = "audio/audio-metrics.csv";
         byte[] metricsBytes = resource(metricsPath);
         Map<String, String[]> expected = new TreeMap<>();
@@ -272,7 +275,7 @@ public final class VerifyAssets {
             }
         }
         Set<String> required = new TreeSet<>();
-        required.add(config.musicAsset());
+        required.add(config.menuAmbienceAsset());
         for (String effect : config.effects()) required.add("audio/" + effect + ".wav");
         if (expected.size() != required.size()) throw new IOException("Audio manifest must cover exactly the configured files");
         for (String path : required) {
@@ -280,7 +283,7 @@ public final class VerifyAssets {
             if (row == null) throw new IOException("Missing metric row: " + path);
             URL url = uniqueResource(path);
             WaveMetrics metrics = inspectWave(url);
-            int channels = path.equals(config.musicAsset()) ? 2 : 1;
+            int channels = 1;
             if (metrics.channels != channels || metrics.rate != 48_000 || metrics.bits != 16) throw new IOException("Unexpected WAV format: " + path);
             if (metrics.frames != Long.parseLong(row[1]) || metrics.channels != Integer.parseInt(row[2])
                     || metrics.rate != Integer.parseInt(row[3]) || metrics.bits != Integer.parseInt(row[4])
@@ -288,19 +291,12 @@ public final class VerifyAssets {
             if (Math.abs(metrics.peak - Double.parseDouble(row[5])) > 0.00004 || Math.abs(metrics.rms - Double.parseDouble(row[6])) > 0.00004) {
                 throw new IOException("Audio signal metrics mismatch: " + path);
             }
-            if (path.equals(config.musicAsset()) && (metrics.frames != 8_601_600
-                    || !metrics.sha256.equals(provenance.get("sha256").getAsString()))) {
-                throw new IOException("Music must match registered 112-bar loop and hash");
-            }
-            assets.add(new Asset(path, channels == 2 ? "licensed-music" : results.containsKey(path)?"licensed-result":recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
-                    channels == 2 ? source.get("sourceUrl").getAsString() + "; Kevin MacLeod; CC-BY-4.0; loop edit/DC removal/normalization"
-                            : results.getOrDefault(path,recorded.getOrDefault(path,authored.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"))),
-                    channels == 2 || recorded.containsKey(path)||results.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
+            assets.add(new Asset(path, results.containsKey(path)?"licensed-result":recorded.containsKey(path)?"recorded-sound-effect":"sound-effect", metrics.bytes, metrics.sha256,
+                    results.getOrDefault(path,recorded.getOrDefault(path,authored.getOrDefault(path,"GenerateAudio.java; fixed seed; original ancillary sound-effect synthesis; no external samples"))),
+                    recorded.containsKey(path)||results.containsKey(path) ? "LICENSED_DERIVED" : "ORIGINAL_GENERATED", metrics.channels, metrics.frames, metrics.peak, metrics.rms));
         }
         assets.add(asset(metricsPath, "audio-metrics", metricsBytes, "GenerateAudio.java", "VERIFIED_AGAINST_PCM"));
         assets.add(asset("audio/score.txt", "score", resource("audio/score.txt"), "GenerateAudio.java", "SOURCE_PRESENT"));
-        assets.add(asset("audio/music-provenance.json", "music-provenance", provenanceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
-        assets.add(asset("audio/music-source.json", "music-provenance", sourceBytes, source.get("sourceUrl").getAsString(), "VERIFIED"));
     }
 
     private static void verifyPickupModels(List<Asset> assets)throws Exception {
@@ -409,7 +405,7 @@ public final class VerifyAssets {
                 ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString()))
             throw new IOException("Arena hazard audio source/provenance mismatch");
         Set<String> required=new HashSet<>(),hashes=new HashSet<>();Map<String,String> origins=new HashMap<>();
-        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier","statue"))
+        for(String kind:List.of("crane","traffic","carousel","electric","fire","barrier"))
             for(String phase:List.of("warning","active")) {
                 String cue="hazard-"+kind+"-"+phase;
                 if(!List.of(cue).equals(config.cueBanks().get(cue)))throw new IOException("Missing arena hazard cue: "+cue);
@@ -498,71 +494,155 @@ public final class VerifyAssets {
         return Map.copyOf(origins);
     }
 
-    private static void verifyCampaignMusic(List<Asset> assets)throws Exception {
-        String generator="src/tools/compose_campaign_music.py";
-        byte[] recipe=Files.readAllBytes(Path.of(generator)),evidenceBytes=resource("audio/campaign/provenance.json");
-        String sourceHash=hash(recipe);
+    private static void verifyMusic(List<Asset> assets)throws Exception {
+        String generator="src/tools/import_menu_music.py",root="src/tools/assets/audio/music/";
+        byte[] recipe=Files.readAllBytes(Path.of(generator)),evidenceBytes=resource("audio/music/provenance.json");
         JsonObject evidence=JsonParser.parseString(new String(evidenceBytes,StandardCharsets.UTF_8)).getAsJsonObject();
-        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()
-                ||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
-                ||!generator.equals(evidence.get("generator").getAsString())||!sourceHash.equals(evidence.get("generatorSha256").getAsString())
+        if(evidence.get("schemaVersion").getAsInt()!=2||!"LICENSED_RECORDINGS".equals(evidence.get("origin").getAsString())
+                ||!"CC-BY-4.0".equals(evidence.get("license").getAsString())||!"Alexander Nakarada".equals(evidence.get("author").getAsString())
+                ||!generator.equals(evidence.get("generator").getAsString())||!hash(recipe).equals(evidence.get("generatorSha256").getAsString())
                 ||!"NEEDS_CREATIVE_REVIEW".equals(evidence.get("artisticStatus").getAsString()))
-            throw new IOException("Campaign score source/provenance mismatch");
-        Map<String,String> required=new HashMap<>();
+            throw new IOException("Licensed soundtrack source/provenance mismatch");
+        Map<String,String> names=Map.of("menu","Riffs","dead-air-yard","Metal Interlude","construction_17-normal","Construction",
+                "construction_17-boss","The Collapse","neon_zero-normal","Circuits","neon_zero-boss","Chaotic",
+                "euphoria_park-normal","Hall of the Metal King","euphoria_park-boss","Bloodmoon Ritual");
+        Set<String> required=new HashSet<>(List.of(AudioConfig.load().menuMusicAsset()));
         var registry=ArenaRegistry.load();
-        for(var entry:registry.entries())if(entry.campaign()) {
-            var arena=registry.definition(entry.id());
-            required.put(arena.metadata().music(),entry.id());required.put(arena.metadata().bossMusic(),entry.id());
+        for(var entry:registry.entries()) {
+            var arena=registry.definition(entry.id());required.add(arena.metadata().music());
+            if(entry.campaign())required.add(arena.metadata().bossMusic());
         }
-        if(required.size()!=10)throw new IOException("Five separate normal/boss score pairs are required");
-        byte[] metricsBytes=resource("audio/campaign/audio-metrics.csv");
+        if(required.size()!=8)throw new IOException("One menu, four arena and three boss recordings are required");
+        byte[] metricsBytes=resource("audio/music/audio-metrics.csv");
         List<String> rows=new String(metricsBytes,StandardCharsets.UTF_8).lines().toList();
-        if(rows.size()!=11||!rows.getFirst().equals("asset,frames,channels,sample_rate,bits,peak,rms,sha256"))throw new IOException("Campaign metrics manifest mismatch");
+        if(rows.size()!=9||!rows.getFirst().equals("asset,frames,channels,sample_rate,bits,peak,rms,sha256"))throw new IOException("Soundtrack metrics manifest mismatch");
         Map<String,String[]> metricsByPath=new HashMap<>();
         for(String row:rows.subList(1,rows.size())) {
             String[] columns=row.split(",",-1);
-            if(columns.length!=8||metricsByPath.put("audio/campaign/"+columns[0],columns)!=null)throw new IOException("Duplicate/invalid campaign metric row");
+            if(columns.length!=8||metricsByPath.put("audio/music/"+columns[0],columns)!=null)throw new IOException("Duplicate/invalid soundtrack metric row");
         }
-        Set<String> found=new HashSet<>(),hashes=new HashSet<>();Map<String,Long> framesByArena=new HashMap<>();
+        Set<String> found=new HashSet<>(),hashes=new HashSet<>();
         for(JsonElement value:evidence.getAsJsonArray("assets")) {
-            JsonObject item=value.getAsJsonObject();String path=item.get("path").getAsString(),arenaId=required.get(path);
-            if(arenaId==null||!found.add(path)||!arenaId.equals(item.get("arenaId").getAsString())
-                    ||!generator.equals(item.get("sourcePath").getAsString())||!sourceHash.equals(item.get("sourceSha256").getAsString())
-                    ||!path.equals("audio/campaign/"+arenaId+"-"+item.get("mix").getAsString()+".wav")
-                    ||item.get("bars").getAsInt()!=48||item.get("transformation").getAsString().isBlank())
-                throw new IOException("Campaign source/score binding mismatch: "+path);
+            JsonObject item=value.getAsJsonObject();String path=item.get("path").getAsString();
+            if(!required.contains(path)||!found.add(path))throw new IOException("Unexpected/duplicate soundtrack path: "+path);
+            String identity=path.substring("audio/music/".length(),path.length()-4),title=names.get(identity);
+            String slug=title==null?"":title.toLowerCase(Locale.ROOT).replace(' ','-');
+            String original=root+"originals/"+slug+".mp3",page=root+"evidence/"+slug+".html";
+            byte[] originalBytes=Files.readAllBytes(Path.of(original)),pageBytes=Files.readAllBytes(Path.of(page));
+            if(title==null||!title.equals(item.get("title").getAsString())||!"Alexander Nakarada".equals(item.get("author").getAsString())
+                    ||!"CC-BY-4.0".equals(item.get("license").getAsString())||!"licenses/assets/CC-BY-4.0.txt".equals(item.get("licensePath").getAsString())
+                    ||!original.equals(item.get("sourcePath").getAsString())||!hash(originalBytes).equals(item.get("sourceSha256").getAsString())
+                    ||!page.equals(item.get("evidencePath").getAsString())||!hash(pageBytes).equals(item.get("evidenceSha256").getAsString())
+                    ||!new String(pageBytes,StandardCharsets.UTF_8).contains("Creative Commons Attribution 4.0")
+                    ||!item.get("creatorPage").getAsString().equals("https://creatorchords.com/music/"+slug+"/")
+                    ||item.get("transformation").getAsString().isBlank())throw new IOException("Creator recording/license binding mismatch: "+path);
             WaveMetrics signal=inspectWave(uniqueResource(path));String[] row=metricsByPath.get(path);
-            if(row==null||signal.channels()!=2||signal.frames()<60L*48000||signal.frames()>180L*48000
-                    ||signal.peak()<.65||signal.peak()>.9||signal.rms()<.07||!hashes.add(signal.sha256())
+            if(row==null||signal.channels()!=2||signal.rate()!=48000||signal.bits()!=16||signal.frames()<60L*48000||signal.frames()>600L*48000
+                    ||signal.peak()<.60||signal.peak()>.85||signal.rms()<.07||!hashes.add(signal.sha256())
                     ||!signal.sha256().equals(item.get("sha256").getAsString())||!signal.sha256().equals(row[7])
                     ||signal.frames()!=item.get("frames").getAsLong()||signal.frames()!=Long.parseLong(row[1])
-                    ||signal.frames()!=Math.round(48*4*60.0/item.get("bpm").getAsDouble()*48000)
                     ||!row[2].equals("2")||!row[3].equals("48000")||!row[4].equals("16")
                     ||Math.abs(signal.peak()-Double.parseDouble(row[5]))>.00004||Math.abs(signal.rms()-Double.parseDouble(row[6]))>.00004
-                    ||!signal.sha256().equals(hash(Files.readAllBytes(Path.of("src/tools/assets/audio/campaign",path.substring("audio/campaign/".length()))))))
-                throw new IOException("Campaign music PCM/hash/length mismatch: "+path);
-            Long partner=framesByArena.putIfAbsent(arenaId,signal.frames());
-            if(partner!=null&&partner.longValue()!=signal.frames())throw new IOException("Campaign normal/boss timeline differs: "+arenaId);
-            assets.add(new Asset(path,"campaign-music",signal.bytes(),signal.sha256(),generator+"; "+item.get("title").getAsString()+"; original score and synthesis",
-                    "ORIGINAL_GENERATED",2,signal.frames(),signal.peak(),signal.rms()));
+                    ||!signal.sha256().equals(hash(Files.readAllBytes(Path.of(root,identity+".wav")))))
+                throw new IOException("Soundtrack PCM/hash/length mismatch: "+path);
+            assets.add(new Asset(path,"licensed-music",signal.bytes(),signal.sha256(),item.get("creatorPage").getAsString()+"; "+title+"; Alexander Nakarada; "+item.get("transformation").getAsString(),
+                    "LICENSED_DERIVED",2,signal.frames(),signal.peak(),signal.rms()));
         }
-        if(!found.equals(required.keySet())||!metricsByPath.keySet().equals(found))throw new IOException("Campaign manifest must cover exactly the ten configured mixes");
-        byte[] score=resource("audio/campaign/score.txt");
-        if(!new String(score,StandardCharsets.UTF_8).contains("NEEDS_CREATIVE_REVIEW"))throw new IOException("Campaign creative-review status is missing");
-        assets.add(asset(generator,"procedural-source",recipe,"Original project score and synthesis; no external recordings","SOURCE_PRESENT"));
-        assets.add(asset("audio/campaign/provenance.json","campaign-provenance",evidenceBytes,generator,"VERIFIED"));
-        assets.add(asset("audio/campaign/audio-metrics.csv","campaign-metrics",metricsBytes,generator,"VERIFIED_AGAINST_PCM"));
-        assets.add(asset("audio/campaign/score.txt","campaign-score",score,generator,"SOURCE_PRESENT"));
+        if(!found.equals(required)||!metricsByPath.keySet().equals(found))throw new IOException("Soundtrack manifest must cover exactly the eight configured recordings");
+        for(String name:List.of("provenance.json","sources.json","score.txt"))
+            assets.add(asset("audio/music/"+name,"music-provenance",resource("audio/music/"+name),"https://creatorchords.com; Alexander Nakarada; CC-BY-4.0","VERIFIED"));
+        assets.add(asset("audio/music/audio-metrics.csv","audio-metrics",metricsBytes,generator,"VERIFIED_AGAINST_PCM"));
+        assets.add(asset(generator,"procedural-source",recipe,"Explicit local licensed-recording import recipe; builds never download","SOURCE_PRESENT"));
+        verifyReplacedMusicHistory(assets);
+        verifyRetiredCampaignHistory(assets);
     }
 
-    private static Map<String,String> verifyResults(AudioConfig config,List<Asset> assets,JsonObject music)throws Exception {
+    private static void verifyReplacedMusicHistory(List<Asset> assets)throws Exception {
+        String root="src/tools/assets/history/music-before-nakarada/";
+        byte[] recipe=Files.readAllBytes(Path.of(root,"compose_campaign_music.py"));
+        JsonObject history=JsonParser.parseString(Files.readString(Path.of(root,"campaign/provenance.json"),StandardCharsets.UTF_8)).getAsJsonObject();
+        if(!hash(recipe).equals(history.get("generatorSha256").getAsString()))throw new IOException("Original three-map composition recipe missing");
+        for(JsonElement value:history.getAsJsonArray("assets")) {
+            JsonObject item=value.getAsJsonObject();String oldPath=item.get("path").getAsString();
+            if(VerifyAssets.class.getClassLoader().getResource(oldPath)!=null)throw new IOException("Replaced campaign recording still packaged: "+oldPath);
+            Path original=Path.of(root,"campaign",oldPath.substring("audio/campaign/".length()));
+            if(!hash(Files.readAllBytes(original)).equals(item.get("sha256").getAsString()))throw new IOException("Original composition recording changed: "+original);
+        }
+        JsonObject previous=JsonParser.parseString(Files.readString(Path.of(root,"source.json"),StandardCharsets.UTF_8)).getAsJsonObject();
+        if(!hash(Files.readAllBytes(Path.of(root,"Metalmania-original.mp3"))).equals(previous.get("originalSha256").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(root,"Metalmania-source.wav"))).equals(previous.get("pcmSha256").getAsString()))
+            throw new IOException("Original Metalmania license/source history changed");
+        for(String file:List.of("compose_campaign_music.py","GenerateAudio.java.txt","campaign/provenance.json","campaign/score.txt","campaign/audio-metrics.csv","source.json"))
+            assets.add(asset(root+file,"historical-source",Files.readAllBytes(Path.of(root,file)),"Original recording/composition recipe retained outside runtime","SOURCE_PRESENT"));
+    }
+
+    private static Map<String,String> verifyMenuEffects(AudioConfig config,List<Asset> assets)throws Exception {
+        String path="audio/menu-provenance.json",generator="src/tools/java/game/wreckriff/tools/GenerateAudio.java";
+        byte[] bytes=resource(path);
+        JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(evidence.get("schemaVersion").getAsInt()!=1||evidence.get("externalSamples").getAsBoolean()
+                ||!generator.equals(evidence.get("generator").getAsString())||!hash(Files.readAllBytes(Path.of(generator))).equals(evidence.get("generatorSha256").getAsString()))
+            throw new IOException("Original menu audio provenance mismatch");
+        Set<String> required=new HashSet<>(List.of("audio/ui-nav.wav","audio/ui-change.wav","audio/ui-confirm.wav","audio/ui-back.wav","audio/ui-vehicle.wav",config.menuAmbienceAsset()));
+        Map<String,String> origins=new HashMap<>();
+        for(JsonElement entry:evidence.getAsJsonArray("assets")) {
+            JsonObject item=entry.getAsJsonObject();String audio=item.get("path").getAsString();
+            if(!required.remove(audio))throw new IOException("Unexpected/duplicate menu cue: "+audio);
+            WaveMetrics signal=inspectWave(uniqueResource(audio));boolean ambience=audio.equals(config.menuAmbienceAsset());
+            if(signal.channels()!=1||signal.rate()!=48000||signal.bits()!=16||signal.frames()!=item.get("frames").getAsLong()
+                    ||!signal.sha256().equals(item.get("sha256").getAsString())||signal.peak()>.85||signal.rms()<.025
+                    ||item.get("loop").getAsBoolean()!=ambience||ambience&&signal.frames()!=16L*48000
+                    ||!ambience&&!config.effects().contains(audio.substring(6,audio.length()-4)))throw new IOException("Invalid menu audio: "+audio);
+            origins.put(audio,"Original deterministic mechanical menu audio; "+item.get("recipe").getAsString()+"; "+path);
+        }
+        if(!required.isEmpty())throw new IOException("Missing menu audio cues: "+required);
+        assets.add(asset(path,"menu-provenance",bytes,generator,"VERIFIED"));return origins;
+    }
+
+    private static void verifyRetiredCampaignHistory(List<Asset> assets)throws Exception {
+        String directory="src/tools/assets/retired-campaign-20260913/";
+        byte[] manifest=Files.readAllBytes(Path.of(directory,"provenance.json"));
+        JsonObject history=JsonParser.parseString(new String(manifest,StandardCharsets.UTF_8)).getAsJsonObject();
+        byte[] recipe=Files.readAllBytes(Path.of(directory,"compose_campaign_music.py.txt"));
+        if(!hash(recipe).equals(history.get("generatorSha256").getAsString()))throw new IOException("Original campaign composition recipe not preserved");
+        Set<String> retired=new HashSet<>();
+        for(String arena:List.of("ash_necropolis","doomsday_arena"))for(String mix:List.of("normal","boss"))retired.add(arena+"-"+mix+".wav");
+        for(JsonElement element:history.getAsJsonArray("assets")) {
+            JsonObject item=element.getAsJsonObject();String oldPath=item.get("path").getAsString(),name=oldPath.substring("audio/campaign/".length());
+            if(!retired.remove(name))continue;
+            if(VerifyAssets.class.getClassLoader().getResource(oldPath)!=null)throw new IOException("Retired campaign stream still packaged: "+oldPath);
+            byte[] original=Files.readAllBytes(Path.of(directory,name));
+            if(!hash(original).equals(item.get("sha256").getAsString()))throw new IOException("Retired campaign original/hash missing: "+name);
+            assets.add(asset(directory+name,"historical-source",original,"Original retired campaign recording; provenance.json preserves exact recipe/hash", "ORIGINAL_HASH_VERIFIED"));
+        }
+        if(!retired.isEmpty())throw new IOException("Retired campaign source manifest is incomplete: "+retired);
+        for(String file:List.of("provenance.json","compose_campaign_music.py.txt","GenerateAudio.java.txt","audio-metrics.csv","score.txt"))
+            assets.add(asset(directory+file,"historical-source",Files.readAllBytes(Path.of(directory,file)),"Original campaign recipe and evidence retained outside runtime","SOURCE_PRESENT"));
+        byte[] hazardManifest=Files.readAllBytes(Path.of(directory,"arena-hazard-provenance.json"));
+        JsonObject hazards=JsonParser.parseString(new String(hazardManifest,StandardCharsets.UTF_8)).getAsJsonObject();
+        byte[] hazardRecipe=Files.readAllBytes(Path.of(directory,"GenerateAudio-before-statue-retirement.java.txt"));
+        if(!hash(hazardRecipe).equals(hazards.get("generatorSha256").getAsString()))throw new IOException("Retired statue audio recipe missing");
+        Set<String> statue=new HashSet<>(List.of("audio/hazard-statue-warning.wav","audio/hazard-statue-active.wav"));
+        for(JsonElement value:hazards.getAsJsonArray("assets")) {
+            var item=value.getAsJsonObject();String path=item.get("path").getAsString();if(!statue.remove(path))continue;
+            if(VerifyAssets.class.getClassLoader().getResource(path)!=null)throw new IOException("Retired statue cue still packaged: "+path);
+            String retained=directory+path.substring("audio/".length());byte[] original=Files.readAllBytes(Path.of(retained));
+            if(!hash(original).equals(item.get("sha256").getAsString()))throw new IOException("Retired statue cue source hash mismatch");
+            assets.add(asset(retained,"historical-source",original,"Original retired statue synthesis; exact recipe/output hash","ORIGINAL_HASH_VERIFIED"));
+        }
+        if(!statue.isEmpty())throw new IOException("Retired statue cue manifest incomplete");
+        assets.add(asset(directory+"arena-hazard-provenance.json","historical-source",hazardManifest,"Original hazard source/output evidence","SOURCE_PRESENT"));
+        assets.add(asset(directory+"GenerateAudio-before-statue-retirement.java.txt","historical-source",hazardRecipe,"Original retired statue synthesis recipe","SOURCE_PRESENT"));
+    }
+
+    private static Map<String,String> verifyResults(AudioConfig config,List<Asset> assets)throws Exception {
         byte[] bytes=resource("audio/result-provenance.json");
         JsonObject evidence=JsonParser.parseString(new String(bytes,StandardCharsets.UTF_8)).getAsJsonObject();
-        if(evidence.get("schemaVersion").getAsInt()!=1||!"Kevin MacLeod".equals(evidence.get("author").getAsString())
+        if(evidence.get("schemaVersion").getAsInt()!=1||!"Alexander Nakarada".equals(evidence.get("author").getAsString())
                 ||!"CC-BY-4.0".equals(evidence.get("license").getAsString())
                 ||!"licenses/assets/CC-BY-4.0.txt".equals(evidence.get("licensePath").getAsString())
-                ||!"src/tools/assets/audio/Metalmania-source.wav".equals(evidence.get("sourcePath").getAsString())
-                ||!music.get("sourceSha256").getAsString().equals(evidence.get("sourceSha256").getAsString())
+                ||!"src/tools/assets/audio/music/menu.wav".equals(evidence.get("sourcePath").getAsString())
+                ||!hash(resource("audio/music/menu.wav")).equals(evidence.get("sourceSha256").getAsString())
                 ||!"src/tools/assets/audio/recorded/processed/ram-hit-1.wav".equals(evidence.get("impactSourcePath").getAsString())
                 ||!"CC0-1.0".equals(evidence.get("impactLicense").getAsString())
                 ||!hash(resource("audio/ram-hit-1.wav")).equals(evidence.get("impactSourceSha256").getAsString()))
@@ -574,7 +654,7 @@ public final class VerifyAssets {
                     ||!config.effects().contains(path.substring(6,path.length()-4))||result.containsKey(path)
                     ||!hash(resource(path)).equals(item.get("sha256").getAsString())
                     ||item.get("transformation").getAsString().isBlank())throw new IOException("Result sting hash/recipe mismatch");
-            result.put(path,"Metalmania; Kevin MacLeod; CC-BY-4.0; recorded CC0 metal accent; "+item.get("transformation").getAsString());
+            result.put(path,"Riffs; Alexander Nakarada; CC-BY-4.0; recorded CC0 metal accent; "+item.get("transformation").getAsString());
         }
         if(result.size()!=3)throw new IOException("All three recorded result stings are required");
         assets.add(asset("audio/result-provenance.json","result-provenance",bytes,"GenerateAudio.java; recorded guitar result edits","VERIFIED"));
@@ -787,6 +867,35 @@ public final class VerifyAssets {
             if (!characters.contains(code)) throw new IOException("Missing UI punctuation glyph " + code);
         if (!characters.contains(0x401) || !characters.contains(0x451) || characters.size() != 165 || !antialiased)
             throw new IOException("Unexpected font charset or missing grayscale antialiasing");
+    }
+
+    static void verifyArenaPreviews(List<Asset> assets) throws Exception {
+        String manifest="textures/ui/arenas/provenance.json";
+        byte[] evidence=resource(manifest);
+        var index=JsonParser.parseString(new String(evidence,StandardCharsets.UTF_8)).getAsJsonObject();
+        if(index.get("schemaVersion").getAsInt()!=1||!index.get("origin").getAsString().equals("original-game-render")
+                ||!index.get("generator").getAsString().equals("src/tools/java/game/wreckriff/tools/GenerateArenaPreviews.java")
+                ||!index.get("artisticStatus").getAsString().equals("NEEDS_CREATIVE_REVIEW"))
+            throw new IOException("Invalid arena preview provenance");
+        Set<String> expected=new TreeSet<>();ArenaRegistry.load().entries().forEach(entry->expected.add(entry.id()));
+        Set<String> found=new TreeSet<>();
+        for(var element:index.getAsJsonArray("previews")) {
+            var record=element.getAsJsonObject();String id=record.get("arenaId").getAsString();
+            String path="textures/ui/arenas/"+id+".png",sourcePath="src/tools/assets/arena-previews/"+id+".png";
+            if(!expected.contains(id)||!found.add(id)||!record.get("path").getAsString().equals(path)
+                    ||!record.get("sourcePath").getAsString().equals(sourcePath)||record.get("transformation").getAsString().isBlank())
+                throw new IOException("Unknown/duplicate/malformed arena preview: "+id);
+            byte[] bytes=resource(path),source=Files.readAllBytes(Path.of(sourcePath));
+            if(!hash(bytes).equals(record.get("sha256").getAsString())
+                    ||!hash(source).equals(record.get("sourceSha256").getAsString())||!Arrays.equals(bytes,source))
+                throw new IOException("Arena preview source/output mismatch: "+id);
+            BufferedImage image=ImageIO.read(new ByteArrayInputStream(bytes));
+            if(image==null||image.getWidth()<1280||image.getHeight()<720||image.getWidth()*9!=image.getHeight()*16)
+                throw new IOException("Expected a readable 16:9 arena screenshot: "+id);
+            assets.add(asset(path,"arena-preview",bytes,sourcePath+"; "+record.get("transformation").getAsString(),"CAPTURE_AND_HASH_VERIFIED"));
+        }
+        if(!found.equals(expected))throw new IOException("Missing arena menu preview");
+        assets.add(asset(manifest,"arena-preview-provenance",evidence,index.get("generator").getAsString(),"VERIFIED"));
     }
 
     private static void verifyTextures(List<Asset> assets) throws Exception {

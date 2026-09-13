@@ -50,7 +50,7 @@ class EnemyHealthBarProjectionTest {
         for(float x:new float[]{b.minX(),b.maxX()})for(float y:new float[]{b.minY(),b.maxY()})for(float z:new float[]{b.minZ(),b.maxZ()})
             maxY=Math.max(maxY,camera.getScreenCoordinates(pose.position().add(pose.rotation().mult(new Vector3f(x,y,z)))).y);
         assertEquals(maxY,marker.y(),.001f);assertEquals(positionBefore,world.position(1));assertEquals(cameraBefore,camera.getLocation());
-        var boss=VehicleProfile.boss("boss_director",VehicleRules.load());
+        var boss=VehicleProfile.boss("boss_foreman",VehicleRules.load());
         var bossMarker=EnemyHealthBarProjection.project(camera,world,1,pose,1,1,boss);
         assertNotNull(bossMarker);assertTrue(bossMarker.y()>marker.y());
     }

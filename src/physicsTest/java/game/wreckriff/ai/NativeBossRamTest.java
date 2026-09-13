@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** A real shared driver, chassis and Bullet contact; only the straight test road is synthetic. */
 class NativeBossRamTest {
-    @ParameterizedTest @ValueSource(strings={"construction_17","doomsday_arena"})
+    @ParameterizedTest @ValueSource(strings={"construction_17"})
     void advertisedRamReachesItsActualTargetHullInsteadOfTreatingItAsAnObstacle(String arenaId) {
         try(var rig=new Rig(arenaId,false)) {
             var warning=rig.beginWarning();
@@ -43,7 +43,7 @@ class NativeBossRamTest {
         }
     }
 
-    @ParameterizedTest @ValueSource(strings={"construction_17","doomsday_arena"})
+    @ParameterizedTest @ValueSource(strings={"construction_17"})
     void aWallAppearingAfterWarningStopsTheChargeBeforeNativeCollision(String arenaId) {
         try(var rig=new Rig(arenaId,false)) {
             var warning=rig.beginWarning();
@@ -64,7 +64,7 @@ class NativeBossRamTest {
         }
     }
 
-    @ParameterizedTest @ValueSource(strings={"construction_17","doomsday_arena"})
+    @ParameterizedTest @ValueSource(strings={"construction_17"})
     void driverCanLeaveTheAdvertisedLineBeforeChargeAndBossRecoversAfterARealMiss(String arenaId) {
         try(var rig=new Rig(arenaId)) {
             var warning=rig.beginWarning();
@@ -90,7 +90,7 @@ class NativeBossRamTest {
         }
     }
 
-    @ParameterizedTest @ValueSource(strings={"construction_17","doomsday_arena"})
+    @ParameterizedTest @ValueSource(strings={"construction_17"})
     void visibleTargetBehindALowSolidBlockDoesNotPermitTheAdvertisedRam(String arenaId) {
         try(var rig=new Rig(arenaId)) {
             rig.world.addStatic("ram-block",new BoxCollisionShape(new Vector3f(7,.45f,1)),new Vector3f(110,.45f,72),new Quaternion());

@@ -13,9 +13,13 @@ public final class ChaseCamera {
     private Vector3f horizontalHeading;
     private boolean initialized;
     private float fov,shake,flightBlend;
+    private float farDistance=500;
     private double phase;
     public ChaseCamera(Camera camera,CameraRules rules) { this.camera=camera; this.rules=rules; fov=rules.fov(); }
     public void reset() { initialized=false;horizontalHeading=null;flightBlend=0; }
+    public void configureMap(game.wreckriff.arena.ArenaDefinition.Bounds bounds) {
+        farDistance=Math.max(500,(float)Math.hypot(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ())+150);
+    }
     public void impact(float magnitude) { shake=Math.min(1,shake+magnitude); }
     public void update(PhysicsWorld world,int id,float alpha,float dt,boolean rear,boolean turbo,float intensity) {
         if(camera.getWidth()<=0 || camera.getHeight()<=0) return;
@@ -40,7 +44,7 @@ public final class ChaseCamera {
             position.set(candidate); target.interpolateLocal(aim,1-(float)Math.exp(-rules.rotationResponse()*dt));
         }
         fov+=( (turbo?rules.turboFov():rules.fov())-fov)*(1-(float)Math.exp(-7*dt));
-        camera.setFrustumPerspective(fov,camera.getWidth()/(float)camera.getHeight(),0.1f,500);
+        camera.setFrustumPerspective(fov,camera.getWidth()/(float)camera.getHeight(),0.1f,farDistance);
         phase+=dt; shake=Math.max(0,shake-dt*2.5f);
         float amount=shake*intensity;
         Vector3f offset=new Vector3f((float)Math.sin(phase*73),(float)Math.sin(phase*97),0).mult(rules.shakeDistance()*amount);

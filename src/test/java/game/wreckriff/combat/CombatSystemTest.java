@@ -77,6 +77,19 @@ class CombatSystemTest {
         assertEquals(300,count(combat.drainEvents(),GameEvent.Type.SHOT));
     }
 
+    @Test void rapidWeaponSwitchingKeepsTheCombinedCadenceWithoutBypassingAnyReload() {
+        WeaponType[] rotation={WeaponType.HOMING,WeaponType.POWER,WeaponType.CANNON};
+        // Unlimited analysis ammunition isolates sustained cadence from pickup availability.
+        for(var type:rotation)session.vehicle(0).initializeWeapon(type,128,128);
+        for(int tick=0;tick<1200;tick++)step(new VehicleCommand(0,0,0,false,false,true,true,
+                rotation[tick%rotation.length],0,false,false,AbilityId.NONE));
+        var shots=combat.drainEvents().stream().filter(event->event.type()==GameEvent.Type.SHOT).toList();
+        assertEquals(100,shots.stream().filter(event->event.kind().equals("machine-gun")).count());
+        assertEquals(16,weaponLaunches(shots,WeaponType.HOMING));
+        assertEquals(12,weaponLaunches(shots,WeaponType.POWER));
+        assertEquals(6,weaponLaunches(shots,WeaponType.CANNON));
+    }
+
     @Test void T04_weaponSwitchPreservesCooldownAndDoesNotFire() {
         step(rocket());
         int cooldown = session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks;
@@ -91,7 +104,7 @@ class CombatSystemTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"HOMING,60", "POWER,84", "MINE,84", "NAPALM,108", "CANNON,168", "BALLISTIC,360"})
+    @CsvSource({"HOMING,78", "POWER,108", "MINE,120", "NAPALM,144", "CANNON,216", "BALLISTIC,480"})
     void heldWeaponRepeatsExactlyAtItsCooldownBoundary(WeaponType type, int intervalTicks) {
         session.vehicle(0).selectedWeapon = type;
         WeaponSlot slot = session.vehicle(0).weapon(type);
@@ -134,7 +147,7 @@ class CombatSystemTest {
         step(rocket());
         assertEquals(ammo - 1, slot.ammo);
         assertEquals(1, weaponLaunches(combat.drainEvents(), WeaponType.BALLISTIC));
-        assertEquals(360, slot.cooldownTicks);
+        assertEquals(480, slot.cooldownTicks);
     }
 
     @Test void powerRocketUsesItsOwnAmmoAndDirectDamage() {
@@ -145,7 +158,7 @@ class CombatSystemTest {
         assertEquals(150, session.vehicle(1).hp);
         assertEquals(3, session.vehicle(0).weapon(WeaponType.POWER).ammo);
         assertEquals(6, session.vehicle(0).weapon(WeaponType.HOMING).ammo);
-        assertEquals(84, session.vehicle(0).weapon(WeaponType.POWER).cooldownTicks);
+        assertEquals(108, session.vehicle(0).weapon(WeaponType.POWER).cooldownTicks);
         assertEquals(0, session.vehicle(0).weapon(WeaponType.HOMING).cooldownTicks);
     }
 
@@ -209,7 +222,7 @@ class CombatSystemTest {
         combat.queueRam(0, 1, 40, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(192, session.vehicle(0).hp);
-        session.tick = 72;
+        session.tick = 96;
         combat.queueRam(0, 1, 40, Vector3f.ZERO, Vector3f.UNIT_Z);
         combat.resolveDamage(world);
         assertEquals(167, session.vehicle(0).hp);
@@ -430,7 +443,7 @@ class CombatSystemTest {
     @Test void hitscanDoesNotDamageTwoCarsBehindEachOther() {
         world.rayHit = new WorldQuery.Hit(1, new Vector3f(0, 0.55f, 10), new Vector3f(0, 0, -1), 0.1f);
         step(machineGun());
-        assertEquals(197, session.vehicle(1).hp);
+        assertEquals(197.6f, session.vehicle(1).hp,.0001f);
         assertEquals(200, session.vehicle(2).hp);
         assertEquals(0, world.lastIgnoredVehicle);
     }

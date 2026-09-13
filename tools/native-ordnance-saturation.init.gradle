@@ -1,0 +1,23 @@
+allprojects {
+    afterEvaluate {
+        def workspace = rootProject.projectDir
+        def imageJars = files(fileTree(new File(workspace,'build/large-world-verification/image-8f88d012604745b28ca23f6f97154a73/lib')) { include '*.jar' })
+        def fixtureClasses = new File(workspace,'build/native-ordnance-saturation/classes')
+        def fixtures = ['Rig','Review','Test'].collect { new File(workspace,"src/physicsTest/java/game/wreckriff/diagnostics/NativeOrdnanceSaturation${it}.java") }
+        tasks.named('compilePhysicsTestJava') {
+            setSource(fixtures)
+            destinationDirectory.set(fixtureClasses)
+            classpath = imageJars + configurations.physicsTestCompileClasspath
+            doFirst { println "Isolated fixture: ${source.files}; image JARs: ${imageJars.files.size()}"; assert source.files.size()==3; assert imageJars.files.size()>0 }
+            doLast { assert new File(fixtureClasses,'game/wreckriff/diagnostics/NativeOrdnanceSaturationReview.class').isFile() }
+        }
+        tasks.named('physicsTest') {
+            dependsOn tasks.named('compilePhysicsTestJava')
+            testClassesDirs = files(fixtureClasses)
+            classpath = imageJars + files(fixtureClasses) + configurations.physicsTestRuntimeClasspath
+            reports.junitXml.outputLocation.set(new File(workspace,'build/native-ordnance-saturation/xml'))
+            reports.html.outputLocation.set(new File(workspace,'build/native-ordnance-saturation/report'))
+            afterSuite { descriptor,result -> if(!descriptor.parent) { println "Native fixture tests: ${result.testCount}, failures: ${result.failedTestCount}"; assert result.testCount==1 } }
+        }
+    }
+}

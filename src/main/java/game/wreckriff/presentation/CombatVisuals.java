@@ -16,7 +16,7 @@ import game.wreckriff.simulation.*;
 import java.nio.FloatBuffer;
 import java.util.*;
 
-/** Bounded presentation effects: four shared draws and at most two brief, shadowless blast lights. */
+/** Three bounded effect batches, pooled lit ordnance, and at most two brief shadowless blast lights. */
 public final class CombatVisuals implements AutoCloseable {
     public static final int PARTICLE_LIMIT=768, SHOT_LIMIT=128, SHARD_LIMIT=192, FLARE_LIMIT=24, PROJECTILE_LIMIT=64, COSMETIC_FIRE_LIMIT=16;
     public static final float TRACER_LENGTH=1.5f;
@@ -138,7 +138,8 @@ public final class CombatVisuals implements AutoCloseable {
     private static final class Emitter { float previousTurbo=100,smokeClock,turboClock; }
     private final Map<Integer,Emitter> emitters=new HashMap<>();
     private final Random visualRandom=new Random(0x56495355414cL); // Never touches combat RNG.
-    private final Batch particleBatch,rocketBatch,fragmentBatch,fieldBatch;
+    private final Batch particleBatch,fragmentBatch,fieldBatch;
+    private final OrdnancePresentation ordnance;
     private List<CombatSystem.MineView> mines=List.of();
     private List<CombatSystem.FireZoneView> fires=List.of();
     private List<CombatSystem.BallisticWarningView> warnings=List.of();
@@ -153,7 +154,7 @@ public final class CombatVisuals implements AutoCloseable {
         root.setShadowMode(RenderQueue.ShadowMode.Off); // Emissive particles and screen-facing quads are not shadow casters/receivers.
         particleBatch=new Batch(root,"particles-and-tracers",assets,PARTICLE_LIMIT*6+SHOT_LIMIT*12,true,true);
         particleBatch.geometry.getMaterial().setFloat("FlashIntensity",flashIntensity);
-        rocketBatch=new Batch(root,"rocket-models",assets,PROJECTILE_LIMIT*450+10*500,false,false);
+        ordnance=new OrdnancePresentation(assets,root);
         fragmentBatch=new Batch(root,"impact-fragments",assets,SHARD_LIMIT*12+FLARE_LIMIT*16*3,true,false);
         fieldBatch=new Batch(root,"ground-fire",assets,FIELD_VERTEX_LIMIT,true,true);
         particleBatch.geometry.addControl(new AbstractControl() {
@@ -320,9 +321,9 @@ public final class CombatVisuals implements AutoCloseable {
         Set<Long> live=new HashSet<>();
         for(ProjectileState rocket:states) {
             emissionPriority=rocket.ownerId()==0?1:0;
-            live.add(rocket.id());Vector3f position=rocket.position();
+            live.add(rocket.id());Vector3f position=OrdnancePresentation.trailAnchor(rocket.kind(),rocket.position(),rocket.direction());
             Vector3f previous=trailHeads.get(rocket.id());
-            if(previous==null)previous=rocket.previousPosition();
+            if(previous==null)previous=OrdnancePresentation.trailAnchor(rocket.kind(),rocket.previousPosition(),rocket.direction());
             Vector3f delta=position.subtract(previous);float distance=delta.length();
             float spacing="freeze".equals(rocket.kind())?.22f:"power".equals(rocket.kind())?.62f:.48f;
             int steps=Math.min(10,(int)(distance/spacing));
@@ -491,7 +492,7 @@ public final class CombatVisuals implements AutoCloseable {
     }
     private void render() {
         renderParticles(null);
-        renderRockets();renderFields();renderFragments();
+        ordnance.update(projectiles,mines,observer);renderFields();renderFragments();
     }
     private void renderParticles(Camera camera) {
         List<Particle> ordered=particles;
@@ -521,80 +522,6 @@ public final class CombatVisuals implements AutoCloseable {
             particleBatch.quad(tracer.from.subtract(side),tracer.from.add(side),tracer.to.add(side),tracer.to.subtract(side),AMBER,.9f);
         }
         particleBatch.end();
-    }
-    private void renderRockets() {
-        rocketBatch.begin();
-        int count=0;
-        for(ProjectileState rocket:projectiles) {
-            if(count++>=PROJECTILE_LIMIT)break;
-            boolean power="power".equals(rocket.kind()),napalm="napalm".equals(rocket.kind()),freeze="freeze".equals(rocket.kind());
-            boolean carrier="ballistic".equals(rocket.kind()),drop="ballistic-fall".equals(rocket.kind());
-            Vector3f centre=rocket.position(),direction=rocket.direction();
-            Quaternion rotation=new Quaternion().lookAt(direction,Math.abs(direction.y)>.98f?Vector3f.UNIT_Z:Vector3f.UNIT_Y);
-            if("cannon".equals(rocket.kind())) {
-                // The renderer follows the authoritative rebounding centre/direction; it never simulates a bounce.
-                for(int band=0;band<6;band++)for(int segment=0;segment<12;segment++) {
-                    float a=segment*FastMath.TWO_PI/12,b=(segment+1)*FastMath.TWO_PI/12,
-                            v=-FastMath.HALF_PI+band*FastMath.PI/6,w=-FastMath.HALF_PI+(band+1)*FastMath.PI/6;
-                    ColorRGBA metal=band==2||band==3?new ColorRGBA(.76f,.34f,.065f,1):new ColorRGBA(.20f,.21f,.23f,1);
-                    rocketBatch.quad(ballPoint(centre,rotation,a,v),ballPoint(centre,rotation,b,v),
-                            ballPoint(centre,rotation,b,w),ballPoint(centre,rotation,a,w),metal,1);
-                }
-                continue;
-            }
-            if(freeze) {
-                for(int face=0;face<6;face++) {
-                    float a=face*FastMath.TWO_PI/6,b=(face+1)*FastMath.TWO_PI/6;
-                    Vector3f p=local(centre,rotation,FastMath.cos(a)*.11f,FastMath.sin(a)*.11f,0);
-                    Vector3f q=local(centre,rotation,FastMath.cos(b)*.11f,FastMath.sin(b)*.11f,0);
-                    rocketBatch.triangle(p,q,local(centre,rotation,0,0,.30f),ION,1);
-                    rocketBatch.triangle(q,p,local(centre,rotation,0,0,-.24f),new ColorRGBA(.65f,.93f,1,1),1);
-                }
-                continue;
-            }
-            float radius=carrier?.34f:drop?.20f:power?.19f:napalm?.25f:.11f,
-                    tail=carrier?-.85f:drop?-.42f:power?-.5f:napalm?-.28f:-.35f,nose=carrier?.9f:drop?.55f:power?.52f:napalm?.36f:.55f;
-            ColorRGBA color=carrier?new ColorRGBA(.32f,.34f,.37f,1):drop?new ColorRGBA(.82f,.38f,.04f,1):power?HOT:napalm?AMBER:new ColorRGBA(.70f,.65f,.49f,1);
-            for(int i=0;i<6;i++) {
-                float a=i*FastMath.TWO_PI/6,b=(i+1)*FastMath.TWO_PI/6;
-                Vector3f p=local(centre,rotation,FastMath.cos(a)*radius,FastMath.sin(a)*radius,tail);
-                Vector3f q=local(centre,rotation,FastMath.cos(b)*radius,FastMath.sin(b)*radius,tail);
-                Vector3f r=local(centre,rotation,FastMath.cos(b)*radius,FastMath.sin(b)*radius,.23f);
-                Vector3f s=local(centre,rotation,FastMath.cos(a)*radius,FastMath.sin(a)*radius,.23f);
-                rocketBatch.quad(p,q,r,s,color,1);
-                rocketBatch.triangle(s,r,local(centre,rotation,0,0,nose),AMBER,1);
-            }
-            int fins=carrier||drop||power?4:3;
-            for(int i=0;i<fins;i++) {
-                float a=i*FastMath.TWO_PI/fins;
-                Vector3f tip=local(centre,rotation,FastMath.cos(a)*radius*2.4f,FastMath.sin(a)*radius*2.4f,tail);
-                rocketBatch.triangle(local(centre,rotation,0,0,tail),tip,local(centre,rotation,0,0,.1f),color,1);
-            }
-        }
-        for(var mine:mines) {
-            Vector3f normal=mine.normal(),centre=mine.position().add(normal.mult(.12f));
-            Quaternion pose=surfaceRotation(normal);ColorRGBA body=new ColorRGBA(.17f,.18f,.20f,1);
-            for(int i=0;i<12;i++) {
-                float a=i*FastMath.TWO_PI/12,b=(i+1)*FastMath.TWO_PI/12;
-                Vector3f p=local(centre,pose,FastMath.cos(a)*.54f,0,FastMath.sin(a)*.54f),
-                        q=local(centre,pose,FastMath.cos(b)*.54f,0,FastMath.sin(b)*.54f),
-                        r=local(centre,pose,FastMath.cos(b)*.44f,.18f,FastMath.sin(b)*.44f),
-                        t=local(centre,pose,FastMath.cos(a)*.44f,.18f,FastMath.sin(a)*.44f);
-                rocketBatch.quad(p,q,r,t,body,1);
-                rocketBatch.triangle(t,r,local(centre,pose,0,.2f,0),i%2==0?body:AMBER,1);
-            }
-            ColorRGBA indicator=mine.armed()?HOT:new ColorRGBA(.33f,.27f,.14f,1);
-            for(int i=0;i<8;i++) {
-                float a=i*FastMath.TWO_PI/8,b=(i+1)*FastMath.TWO_PI/8;
-                rocketBatch.triangle(local(centre,pose,FastMath.cos(a)*.13f,.21f,FastMath.sin(a)*.13f),
-                        local(centre,pose,FastMath.cos(b)*.13f,.21f,FastMath.sin(b)*.13f),local(centre,pose,0,.24f,0),indicator,1);
-            }
-        }
-        rocketBatch.end();
-    }
-    private static Vector3f ballPoint(Vector3f centre,Quaternion rotation,float longitude,float latitude) {
-        float r=FastMath.cos(latitude)*.25f;
-        return local(centre,rotation,FastMath.cos(longitude)*r,FastMath.sin(longitude)*r,FastMath.sin(latitude)*.25f);
     }
     List<TracerSegment> tracerSegments() {
         List<TracerSegment> result=new ArrayList<>();
@@ -705,8 +632,8 @@ public final class CombatVisuals implements AutoCloseable {
     int cosmeticFireCount(){return cosmeticFires.size();}
     int fireTopologyBuildCount(){return fireTopologyBuilds;}
     int cachedFirePointCount(){return cachedFirePoints;}
-    public int projectileCount(){return Math.min(projectiles.size(),PROJECTILE_LIMIT);}
-    @Override public void close(){if(closed)return;closed=true;root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
+    public int projectileCount(){return ordnance.projectileCount();}
+    @Override public void close(){if(closed)return;closed=true;ordnance.close();root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
         particles.clear();shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();trailHeads.clear();
         fireSurfaces.clear();cachedFirePoints=0;
         projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();}

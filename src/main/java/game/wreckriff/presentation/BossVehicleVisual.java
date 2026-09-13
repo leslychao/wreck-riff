@@ -8,7 +8,7 @@ import com.jme3.scene.*;
 import game.wreckriff.config.VehicleProfile;
 import game.wreckriff.presentation.VehicleVisual.Builder;
 
-/** Five original bodies authored in metres inside the registered native chassis envelope. */
+/** Three original bodies authored in metres inside the registered native chassis envelope. */
 final class BossVehicleVisual {
     private final VehicleProfile profile;
     private final float w,y,l;
@@ -24,8 +24,6 @@ final class BossVehicleVisual {
             case "boss_foreman" -> {author.foreman();yield new ColorRGBA(.88f,.53f,.065f,1);}
             case "boss_prefect" -> {author.prefect();yield new ColorRGBA(.055f,.12f,.19f,1);}
             case "boss_emcee" -> {author.emcee();yield new ColorRGBA(.52f,.10f,.60f,1);}
-            case "boss_ash_shepherd" -> {author.shepherd();yield new ColorRGBA(.31f,.34f,.29f,1);}
-            case "boss_director" -> {author.director();yield new ColorRGBA(.13f,.17f,.24f,1);}
             default -> throw new IllegalArgumentException("Unknown boss silhouette "+profile.id());
         };
         Node root=new Node(profile.id());author.runningGear(root);author.servicePanel();
@@ -114,52 +112,6 @@ final class BossVehicleVisual {
             for(int bulb=0;bulb<5;bulb++)box(lights,side*.92f,.40f,-.82f+bulb*.07f,.016f,.022f,.018f);
         }
         box(trim,0,.28f,-.96f,.55f,.12f,.015f);
-    }
-    private void shepherd() {
-        hull(new float[][]{{-1,.82f,-.08f,.41f},{-.87f,.97f,-.1f,.49f},{.43f,.97f,-.1f,.49f},{.81f,.87f,-.08f,.35f},{1,.77f,-.04f,.25f}});
-        cabin(-.18f,.22f,.72f,.76f);
-        for(int side:new int[]{-1,1}) {
-            for(int slab=0;slab<4;slab++) {
-                box(panels,side*.975f,.30f,-.75f+slab*.22f,.014f,.15f,.082f);
-                box(metal,side*.99f,.32f,-.75f+slab*.22f,.008f,.017f,.058f);
-            }
-            // Fixed chain links remain inside the width; they do not simulate ropes.
-            for(int link=0;link<10;link++) {
-                float z=-.80f+link*.08f;
-                box(metal,side*.99f,.095f+(link%2)*.018f,z,.007f,.025f,.015f);
-            }
-            box(metal,side*.65f,.71f,-.35f,.04f,.24f,.035f);
-            box(lights,side*.68f,.265f,.968f,.07f,.075f,.009f);
-        }
-        box(metal,0,.94f,-.35f,.69f,.03f,.042f);
-        // A faceted bell suspended in the high rear frame, not a new weapon.
-        box(metal,0,.86f,-.35f,.025f,.055f,.025f);
-        box(metal,0,.79f,-.35f,.14f,.06f,.065f);
-        box(metal,0,.73f,-.35f,.23f,.027f,.11f);
-        box(trim,0,.707f,-.35f,.20f,.004f,.09f);
-        box(metal,0,.685f,-.35f,.022f,.04f,.022f);
-        box(trim,0,.29f,-1,.31f,.115f,.006f);
-        for(int bar=-3;bar<=3;bar++)box(metal,bar*.09f,.285f,.993f,.012f,.13f,.006f);
-    }
-    private void director() {
-        hull(new float[][]{{-1,.90f,-.08f,.34f},{-.80f,.98f,-.1f,.47f},{.46f,.99f,-.1f,.45f},{.78f,.94f,-.08f,.37f},{1,.84f,-.05f,.32f}});
-        cabin(-.20f,.24f,.75f,.94f);
-        // A single short stage is part of the same chassis: no trailer or joints.
-        box(paint,0,.47f,-.68f,.95f,.025f,.27f);
-        for(int side:new int[]{-1,1}) {
-            box(metal,side*.69f,.73f,-.37f,.036f,.22f,.026f);
-            box(metal,side*.69f,.94f,-.09f,.036f,.026f,.28f);
-            for(int lamp=0;lamp<4;lamp++)box(lights,side*.70f,.89f,-.32f+lamp*.14f,.037f,.027f,.025f);
-            // Recessed side screens carry a geometric broadcast test pattern.
-            box(trim,side*.986f,.29f,-.52f,.009f,.155f,.25f);
-            for(int bar=0;bar<6;bar++)box(lights,side*.998f,.31f,-.72f+bar*.08f,.001f,.10f-(bar%3)*.019f,.024f);
-            box(panels,side*.99f,.46f,-.52f,.008f,.026f,.26f);
-            box(metal,side*.67f,.21f,.983f,.05f,.23f,.013f);
-        }
-        box(metal,0,-.015f,.983f,.89f,.04f,.017f);
-        box(metal,0,.38f,.981f,.91f,.04f,.019f);
-        box(trim,0,.24f,-.988f,.52f,.16f,.008f);
-        for(int vent=-4;vent<=4;vent++)box(metal,vent*.1f,.24f,-.998f,.018f,.13f,.002f);
     }
     private void cabin(float back,float front,float width,float roof) {
         loft(paint,new float[][]{{back,width,.43f,.55f},{back+.065f,width*.91f,.43f,roof},{front-.065f,width*.90f,.43f,roof},{front,width,.43f,.55f}});

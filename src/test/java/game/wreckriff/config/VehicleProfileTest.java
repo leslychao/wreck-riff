@@ -41,9 +41,9 @@ class VehicleProfileTest {
     @Test void bossProfilesMatchApprovedDimensionsAndPhysicalRatios() {
         var rules=VehicleRules.load();
         float[][] expected={{12,5,5.5f,.72f,.65f,.65f},{9,3.3f,3,1.2f,1.2f,1.1f},
-                {8,4.2f,4.6f,1.05f,1.05f,1},{10,4.4f,4.8f,.8f,.8f,.75f},{14,5.2f,6,.85f,.75f,.7f}};
+                {8,4.2f,4.6f,1.05f,1.05f,1}};
         var profiles=VehicleProfile.bosses(rules);
-        assertEquals(5,profiles.stream().map(VehicleProfile::id).distinct().count());
+        assertEquals(3,profiles.stream().map(VehicleProfile::id).distinct().count());
         for(int i=0;i<profiles.size();i++) {
             var profile=profiles.get(i);var row=expected[i];
             assertEquals(row[0],profile.length());assertEquals(row[1],profile.width());assertEquals(row[2],profile.height());

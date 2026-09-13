@@ -27,6 +27,7 @@ import java.util.Set;
 /** Read-only presentation of a match snapshot. No simulation objects, timers or input mutations live here. */
 public final class HudView implements AutoCloseable {
     public enum Effect {NONE,FROZEN,SHIELDED,IMMUNE}
+    public enum TargetState {NONE,ASSIST,LOCKED}
     public record Vitals(float hp,float maximumHp,float turboFraction,Effect effect) {
         public Vitals {positive(maximumHp);finite(hp);finite(turboFraction);Objects.requireNonNull(effect);}
     }
@@ -40,11 +41,12 @@ public final class HudView implements AutoCloseable {
         public BossStatus {Objects.requireNonNull(name);finite(hp);positive(maximumHp);if(phase<1||phase>3)throw new IllegalArgumentException("Boss phase must be 1..3");}
     }
     public record Snapshot(Vitals vitals,WeaponType selectedWeapon,Map<WeaponType,WeaponStatus> weapons,
-                           Map<AbilityId,AbilityStatus> abilities,String objective,BossStatus boss,boolean locked,
+                           Map<AbilityId,AbilityStatus> abilities,String objective,BossStatus boss,TargetState targetState,
                            String selectionHint,String notification,RadarProjection.Observer observer,
                            List<RadarProjection.Target> radarTargets) {
         public Snapshot {
             Objects.requireNonNull(vitals);Objects.requireNonNull(selectedWeapon);Objects.requireNonNull(observer);
+            Objects.requireNonNull(targetState);
             weapons=Map.copyOf(weapons);abilities=Map.copyOf(abilities);radarTargets=List.copyOf(radarTargets);
             objective=Objects.requireNonNullElse(objective,"");selectionHint=Objects.requireNonNullElse(selectionHint,"");
             notification=Objects.requireNonNullElse(notification,"");
@@ -68,7 +70,7 @@ public final class HudView implements AutoCloseable {
     private final Quad unitQuad=new Quad(1,1);
     private HudLayout layout;
     private Snapshot lastSnapshot;
-    private Geometry healthBar,turboBar,bossBar,effectIcon,targetBracket,noticePanel;
+    private Geometry healthBar,turboBar,bossBar,effectIcon,targetBracket;
     private TextValue healthValue,objectiveValue,bossValue,hintValue,noticeValue,receiptValue,subtitleValue,diagnosticsValue,specialValue;
     private String pickupReceipt="";
     private String subtitle="";
@@ -76,7 +78,6 @@ public final class HudView implements AutoCloseable {
     private List<HelpItem> helpItems=List.of();
     private Set<WeaponType> pickupHighlights=Set.of();
     private int previousHealth=-1,previousMaximumHealth=-1;
-    private int noticeChannels=-1;
 
     public HudView(AssetManager assets,Node guiNode) {
         font=assets.loadFont("fonts/wreck.fnt");
@@ -101,19 +102,12 @@ public final class HudView implements AutoCloseable {
         updateNoticeVisibility();
     }
     private void updateNoticeVisibility() {
-        if(noticePanel==null||layout==null||receiptValue==null||subtitleValue==null||noticeValue==null)return;
-        int channels=(!pickupReceipt.isBlank()?1:0)|(!subtitle.isBlank()?2:0)
-                |(lastSnapshot!=null&&!lastSnapshot.notification.isBlank()?4:0);
-        if(channels==noticeChannels)return;noticeChannels=channels;
-        show(noticePanel,(channels&6)!=0);
-        float pad=8*layout.scale(),line=Math.max(18,20*layout.scale()),bottom=layout.notification().y();
-        float top=bottom+pad;
-        if((channels&1)!=0){top+=line;receiptValue.top(top);}
-        float panelBottom=(channels&1)!=0?top:bottom;
-        if((channels&2)!=0){top+=line*3;subtitleValue.top(top);}
-        if((channels&4)!=0){top+=line*2;noticeValue.top(top);}
-        noticePanel.setLocalTranslation(layout.notification().x(),panelBottom,0);
-        noticePanel.setLocalScale(layout.notification().width(),top+pad-panelBottom,1);
+        if(layout==null||receiptValue==null||subtitleValue==null||noticeValue==null)return;
+        float top=layout.notification().y()+6*layout.scale();
+        for(TextValue value:List.of(receiptValue,subtitleValue,noticeValue)) {
+            if(value.text.getText().isBlank())continue;
+            top+=value.text.getHeight();value.top(top);top+=6*layout.scale();
+        }
     }
     public void setPickupHighlights(Set<WeaponType> types) {
         if(pickupHighlights.equals(types))return;pickupHighlights=Set.copyOf(types);
@@ -163,8 +157,9 @@ public final class HudView implements AutoCloseable {
             bossValue.set(snapshot.boss.name+"  "+switch(snapshot.boss.phase){case 1->"I";case 2->"II";default->"III";});
             bossBar.setLocalScale(Math.clamp(snapshot.boss.hp/snapshot.boss.maximumHp,0,1),1,1);
         } else bossValue.set("");
-        targetBracket.setMaterial(materials.get(snapshot.locked?Paint.ACCENT:Paint.MUTED));
-        float reticleSize=(snapshot.locked?28:18)*layout.scale();
+        targetBracket.setMaterial(materials.get(switch(snapshot.targetState){case NONE->Paint.MUTED;case ASSIST->Paint.BLUE;case LOCKED->Paint.ACCENT;}));
+        targetBracket.setMesh(icons.mesh(switch(snapshot.targetState){case NONE->VectorIcons.Icon.DIAMOND;case ASSIST->VectorIcons.Icon.AIM_ASSIST;case LOCKED->VectorIcons.Icon.TARGET_LOCK;}));
+        float reticleSize=(snapshot.targetState==TargetState.NONE?18:28)*layout.scale();
         targetBracket.setLocalScale(reticleSize,reticleSize,1);targetBracket.setLocalTranslation(-reticleSize/2,-reticleSize/2,0);
         hintValue.set(snapshot.selectionHint);noticeValue.set(snapshot.notification);
         updateNoticeVisibility();
@@ -173,7 +168,7 @@ public final class HudView implements AutoCloseable {
 
     private void build() {
         root.detachAllChildren();markers.detachAllChildren();weaponSlots.clear();abilitySlots.clear();radarMarkers.clear();
-        previousHealth=previousMaximumHealth=-1;noticeChannels=-1;
+        previousHealth=previousMaximumHealth=-1;
         float s=layout.scale(),pad=8*s;
         panel("health-panel",layout.health());panel("weapons-panel",layout.weapons());panel("abilities-panel",layout.abilities());
         UiBounds health=layout.health();
@@ -200,12 +195,12 @@ public final class HudView implements AutoCloseable {
         Node reticleCenter=new Node("reticle-center");root.attachChild(reticleCenter);reticleCenter.attachChild(targetBracket);
         reticleCenter.setLocalTranslation(layout.width()/2f,layout.height()/2f,4);
         targetBracket.setLocalTranslation(-9*s,-9*s,0);
-        UiBounds notice=layout.notification();noticePanel=panel("notice-panel",notice);show(noticePanel,false);
+        UiBounds notice=layout.notification();
         float noticeLine=Math.max(18,20*s),noticeFont=Math.max(14,16*s);
-        noticeValue=text(root,"notification",new UiBounds(notice.x()+pad,notice.top()-pad-noticeLine*2,notice.width()-pad*2,noticeLine*2),noticeFont,Paint.ACCENT);
-        subtitleValue=text(root,"encounter-subtitle",new UiBounds(notice.x()+pad,notice.y()+pad+noticeLine,notice.width()-pad*2,noticeLine*3),Math.max(14,15*s),Paint.INK);
+        noticeValue=shadowText("notification",new UiBounds(notice.x()+pad,notice.top()-pad-noticeLine*2,notice.width()-pad*2,noticeLine*2),noticeFont,Paint.ACCENT);
+        subtitleValue=shadowText("encounter-subtitle",new UiBounds(notice.x()+pad,notice.y()+pad+noticeLine,notice.width()-pad*2,noticeLine*3),Math.max(14,15*s),Paint.INK);
         subtitleValue.set(subtitle);
-        receiptValue=text(root,"pickup-receipt",new UiBounds(notice.x()+pad,notice.y()+pad,notice.width()-pad*2,noticeLine),noticeFont,Paint.GREEN);
+        receiptValue=shadowText("pickup-receipt",new UiBounds(notice.x()+pad,notice.y()+pad,notice.width()-pad*2,noticeLine),noticeFont,Paint.GREEN);
         receiptValue.set(pickupReceipt);
         updateNoticeVisibility();
         hintValue=text(root,"selection-hint",new UiBounds(layout.weapons().x(),layout.weapons().top()+8*s,layout.weapons().width(),29*s),layout.fontSize(),Paint.INK);
@@ -337,10 +332,18 @@ public final class HudView implements AutoCloseable {
         text.setLocalTranslation(bounds.x(),bounds.top(),6);parent.attachChild(text);return new TextValue(text);
     }
     private static final class TextValue {
-        private final BitmapText text;private String current;
+        private final BitmapText text;private BitmapText shadow;private float shadowOffset;private String current;
         private TextValue(BitmapText text) {this.text=text;}
-        private void set(String value) {if(!Objects.equals(current,value)){text.setText(value);current=value;}}
-        private void top(float value) {text.setLocalTranslation(text.getLocalTranslation().x,value,6);}
+        private void set(String value) {if(!Objects.equals(current,value)){text.setText(value);if(shadow!=null)shadow.setText(value);current=value;}}
+        private void top(float value) {
+            text.setLocalTranslation(text.getLocalTranslation().x,value,6);
+            if(shadow!=null)shadow.setLocalTranslation(text.getLocalTranslation().x+shadowOffset,value-shadowOffset,5);
+        }
+    }
+    private TextValue shadowText(String name,UiBounds bounds,float size,Paint paint) {
+        TextValue value=text(root,name,bounds,size,paint);
+        value.shadow=value.text.clone();value.shadow.setName(name+"-shadow");value.shadow.setColor(new ColorRGBA(0,0,0,.95f));
+        value.shadowOffset=Math.max(1.5f,1.5f*layout.scale());root.attachChild(value.shadow);value.top(bounds.top());return value;
     }
     private static UiBounds inset(UiBounds bounds,float pad) {return new UiBounds(bounds.x()+pad,bounds.y()+pad,Math.max(0,bounds.width()-pad*2),Math.max(0,bounds.height()-pad*2));}
     private static void centerIcon(Geometry geometry,float size,Quaternion rotation) {

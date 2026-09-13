@@ -10,10 +10,13 @@ import java.util.*;
 
 /** Existing guiNode UI, with keyed focus and reusable controls for adaptive screens. */
 public final class GameUi {
-    public static final ColorRGBA INK=new ColorRGBA(0.055f,0.065f,0.078f,0.96f);
-    public static final ColorRGBA PAPER=new ColorRGBA(0.92f,0.9f,0.82f,1);
-    public static final ColorRGBA ACCENT=new ColorRGBA(1,0.48f,0.16f,1);
-    private record Button(String id,UiBounds bounds,Geometry plate,BitmapText label,boolean enabled,Runnable action) {}
+    public static final ColorRGBA INK=new ColorRGBA(.035f,.039f,.043f,.96f);
+    public static final ColorRGBA PAPER=new ColorRGBA(.94f,.91f,.84f,1);
+    public static final ColorRGBA ACCENT=new ColorRGBA(.96f,.49f,.25f,1);
+    public static final ColorRGBA MUTED=new ColorRGBA(.63f,.66f,.66f,1);
+    public enum ButtonStyle {CONTROL,NAVIGATION,PRIMARY,QUIET,TAB}
+    private record Button(String id,UiBounds bounds,Geometry plate,Geometry rail,BitmapText label,boolean enabled,
+                          ButtonStyle style,boolean active,Runnable action) {}
     private final AssetManager assets;
     private final BitmapFont font;
     private final BitmapFont boldFont;
@@ -41,6 +44,16 @@ public final class GameUi {
         material.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
         geometry.setMaterial(material); geometry.setLocalTranslation(x,y,depth); root.attachChild(geometry); return geometry;
     }
+    /** Locally vendored images only; missing presentation assets are visible build/runtime failures. */
+    public Geometry image(String name,String path,UiBounds bounds,float depth) {
+        Geometry geometry=rect(name,bounds.x(),bounds.y(),bounds.width(),bounds.height(),ColorRGBA.White,depth);
+        var texture=assets.loadTexture(path);geometry.getMaterial().setTexture("ColorMap",texture);
+        float targetAspect=bounds.width()/Math.max(1,bounds.height()),sourceAspect=(float)texture.getImage().getWidth()/texture.getImage().getHeight();
+        float uSpan=Math.min(1,targetAspect/sourceAspect),vSpan=Math.min(1,sourceAspect/targetAspect);
+        float u=(1-uSpan)/2,v=(1-vSpan)/2;
+        geometry.getMesh().setBuffer(VertexBuffer.Type.TexCoord,2,new float[]{u,v,u+uSpan,v,u+uSpan,v+vSpan,u,v+vSpan});
+        return geometry;
+    }
     public BitmapText text(String value,float x,float top,float size,ColorRGBA color) {
         BitmapText text=new BitmapText(size>=27?boldFont:font); text.setText(value); text.setSize(size); text.setColor(color);
         text.setLocalTranslation(x,top,5); root.attachChild(text); return text;
@@ -56,15 +69,28 @@ public final class GameUi {
         return text.getLineHeight()*text.getLineCount();
     }
     public float fitTextSize(String value,float width,float requested) {
-        BitmapText text=new BitmapText(requested>=27?boldFont:font);text.setSize(requested);text.setText(value);
-        return Math.max(14,Math.min(requested,requested*width/Math.max(1,text.getLineWidth())));
+        float size=Math.max(14,requested);
+        // Crossing the heading threshold changes the actual font. Measure that font again
+        // after shrinking; fitting the bold face once can overflow when regular is rendered.
+        for(int attempt=0;attempt<4;attempt++) {
+            BitmapText text=new BitmapText(size>=27?boldFont:font);text.setSize(size);text.setText(value);
+            if(text.getLineWidth()<=width||size<=14)return size;
+            size=Math.max(14,size*Math.max(1,width-1)/Math.max(1,text.getLineWidth()));
+        }
+        return size;
     }
     public void button(String id,String label,UiBounds bounds,boolean enabled,Runnable action) {
+        button(id,label,bounds,enabled,ButtonStyle.CONTROL,false,action);
+    }
+    public void button(String id,String label,UiBounds bounds,boolean enabled,ButtonStyle style,boolean active,Runnable action) {
         if(buttons.stream().anyMatch(button->button.id.equals(id)))throw new IllegalArgumentException("Duplicate button: "+id);
         Geometry plate=rect(id,bounds.x(),bounds.y(),bounds.width(),bounds.height(),INK,1);
-        float size=fitTextSize(label,Math.max(1,bounds.width()-28),Math.max(14,Math.min(24,bounds.height()*.44f)));
-        BitmapText text=paragraph(label,new UiBounds(bounds.x()+14,bounds.y()+5,Math.max(0,bounds.width()-28),bounds.height()-10),size,PAPER);
-        buttons.add(new Button(id,bounds,plate,text,enabled,Objects.requireNonNull(action)));
+        boolean tab=style==ButtonStyle.TAB;
+        Geometry rail=rect(id+"-focus",bounds.x(),bounds.y(),tab?bounds.width():3,tab?3:bounds.height(),ACCENT,2);
+        float size=fitTextSize(label,Math.max(1,bounds.width()-28),Math.max(14,Math.min(48,bounds.height()*.4f)));
+        float textHeight=paragraphHeight(label,Math.max(1,bounds.width()-28),size);
+        BitmapText text=paragraph(label,new UiBounds(bounds.x()+14,bounds.centerY()-textHeight/2,Math.max(0,bounds.width()-28),textHeight),size,PAPER);
+        buttons.add(new Button(id,bounds,plate,rail,text,enabled,style,active,Objects.requireNonNull(action)));
         refreshFocus();
         if(restoreFocus!=null && focus.select(restoreFocus))restoreFocus=null;
         highlight();
@@ -72,7 +98,7 @@ public final class GameUi {
     public void setEnabled(String id,boolean enabled) {
         for(int i=0;i<buttons.size();i++) {
             Button button=buttons.get(i);
-            if(button.id.equals(id))buttons.set(i,new Button(button.id,button.bounds,button.plate,button.label,enabled,button.action));
+            if(button.id.equals(id))buttons.set(i,new Button(button.id,button.bounds,button.plate,button.rail,button.label,enabled,button.style,button.active,button.action));
         }
         refreshFocus();highlight();
     }
@@ -92,8 +118,16 @@ public final class GameUi {
     private void highlight() {
         for(Button button:buttons) {
             boolean selected=button.id.equals(focus.selectedId());
-            button.plate.getMaterial().setColor("Color",!button.enabled?new ColorRGBA(.09f,.10f,.11f,.85f):selected?new ColorRGBA(.45f,.2f,.08f,1):new ColorRGBA(.13f,.15f,.17f,.98f));
-            button.label.setColor(!button.enabled?new ColorRGBA(.48f,.49f,.49f,1):PAPER);
+            ColorRGBA idle=switch(button.style) {
+                case PRIMARY->new ColorRGBA(.48f,.20f,.085f,.98f);
+                case NAVIGATION,QUIET->new ColorRGBA(.055f,.059f,.064f,.38f);
+                case TAB->new ColorRGBA(.055f,.059f,.064f,.76f);
+                case CONTROL->new ColorRGBA(.075f,.08f,.084f,.9f);
+            };
+            button.plate.getMaterial().setColor("Color",!button.enabled?new ColorRGBA(.045f,.05f,.055f,.65f)
+                    :selected?new ColorRGBA(.31f,.16f,.095f,.97f):button.active?new ColorRGBA(.18f,.105f,.069f,.92f):idle);
+            button.rail.setCullHint(button.enabled&&(selected||button.active||button.style==ButtonStyle.PRIMARY)?Spatial.CullHint.Never:Spatial.CullHint.Always);
+            button.label.setColor(!button.enabled?new ColorRGBA(.43f,.46f,.46f,1):selected||button.active?ColorRGBA.White:PAPER);
         }
     }
 }
