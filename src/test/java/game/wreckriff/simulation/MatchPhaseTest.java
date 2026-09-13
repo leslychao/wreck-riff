@@ -31,10 +31,10 @@ class MatchPhaseTest {
         var session=session();session.phase=MatchSession.Phase.ARENA_COMBAT;session.vehicle(0).hp=100;
         for(var v:session.vehicles)if(!v.player)v.hp=0;
         int ammo=session.vehicle(0).weapon(WeaponType.POWER).ammo;
-        MatchRuntime.finishTick(session);
+        assertEquals(new HealthChange(100,520),MatchRuntime.finishTick(session));
         assertEquals(520,session.vehicle(0).hp);assertTrue(session.checkpointRequested);
         assertEquals(MatchSession.Phase.BOSS_ENTRY,session.phase);assertEquals(MatchSession.Outcome.NONE,session.outcome);
-        session.vehicle(0).hp=490;MatchRuntime.finishTick(session);
+        session.vehicle(0).hp=490;assertNull(MatchRuntime.finishTick(session));
         assertEquals(490,session.vehicle(0).hp);assertEquals(ammo,session.vehicle(0).weapon(WeaponType.POWER).ammo);
     }
     @Test void simultaneousPlayerAndLastRivalDeathIsDefeatWithoutRepairOrBossEntry() {

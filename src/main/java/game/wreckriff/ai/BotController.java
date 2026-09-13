@@ -108,8 +108,7 @@ public final class BotController {
         lastCommandTick=session.tick;
         reservations.values().removeIf(r->r.untilTick()<=session.tick||!session.vehicle(r.vehicleId()).alive());
         Map<Integer,VehicleCommand> result=new LinkedHashMap<>();
-        Set<String> active=new HashSet<>();
-        for (var pickup:activePickups.get()) active.add(pickup.id());
+        Set<String> active=null;
         for (VehicleState vehicle:session.vehicles) {
             Brain brain=brains.get(vehicle.id);
             if (!vehicle.alive() || session.outcome!=MatchSession.Outcome.NONE) {
@@ -146,6 +145,11 @@ public final class BotController {
             }
             trackProgress(vehicle,brain,position,world);
             if (session.tick%rules.decisionTicks()==0 || brain.destination==null) {
+                // Availability is perception data: read it once for this decision batch,
+                // rather than allocate a map-sized list and set on every 120 Hz driving tick.
+                if(active==null) {
+                    active=new HashSet<>();for(var pickup:activePickups.get())active.add(pickup.id());
+                }
                 observe(vehicle,brain,world,active);
                 decide(vehicle,brain,world);
             }

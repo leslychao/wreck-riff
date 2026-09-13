@@ -32,8 +32,9 @@ public final class SceneLighting {
         // Objects alone opt in with GlowColor. Road paint, warning frames and bright sky never bloom.
         BloomFilter bloom=new BloomFilter(BloomFilter.GlowMode.Objects);
         bloom.setDownSamplingFactor(4);bloom.setBlurScale(1.2f);bloom.setBloomIntensity(.65f);
-        GlowPostProcessor post=new GlowPostProcessor(assets);post.addFilter(bloom);viewport.addProcessor(post);
-        Handle handle=new Handle(ambient,sun,rim,shadows,bloom,post,viewport);
+        CombatVfxFilter combatVfx=new CombatVfxFilter();
+        GlowPostProcessor post=new GlowPostProcessor(assets);post.addFilter(bloom);post.addFilter(combatVfx);viewport.addProcessor(post);
+        Handle handle=new Handle(ambient,sun,rim,shadows,bloom,combatVfx,post,viewport);
         handle.apply(Theme.INDUSTRIAL_YARD,true);return handle;
     }
 
@@ -78,14 +79,16 @@ public final class SceneLighting {
         private final DirectionalLight key,rim;
         private final DirectionalLightShadowRenderer shadows;
         private final BloomFilter bloom;
+        private final CombatVfxFilter combatVfx;
+        private CombatVisuals combatVisuals;
         private final GlowPostProcessor post;
         private final ViewPort viewport;
         private Theme theme;
         private boolean glowEnabled,menu;
         private int samples=-1;
         private Handle(AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
-                DirectionalLightShadowRenderer shadows,BloomFilter bloom,GlowPostProcessor post,ViewPort viewport) {
-            this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.post=post;this.viewport=viewport;
+                DirectionalLightShadowRenderer shadows,BloomFilter bloom,CombatVfxFilter combatVfx,GlowPostProcessor post,ViewPort viewport) {
+            this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.combatVfx=combatVfx;this.post=post;this.viewport=viewport;
         }
         /** Complete jME's one-time camera reshape before the caller frames its first scene. */
         public void initialize(RenderManager renderManager) {
@@ -102,6 +105,7 @@ public final class SceneLighting {
             ambient.setColor(colors.ambient());key.setColor(colors.key());rim.setColor(colors.rim());
             viewport.setBackgroundColor(colors.sky());shadows.setShadowIntensity(.57f);
             bloom.setBloomIntensity(colors.glow());post.setGlowEnabled(bloom,glowEnabled);
+            updateParticleLight();
         }
         /** Garage art direction reuses the same key, rim, shadows and optional object glow. */
         public void applyMenu(boolean glowEnabled) {
@@ -112,6 +116,17 @@ public final class SceneLighting {
             rim.setDirection(new Vector3f(-.55f,-.32f,.78f).normalizeLocal());
             viewport.setBackgroundColor(c(.009f,.012f,.019f));shadows.setShadowIntensity(.66f);
             bloom.setBloomIntensity(.43f);post.setGlowEnabled(bloom,glowEnabled);
+            updateParticleLight();
+        }
+        /** Matches share this existing post processor; a closed/replaced match is explicitly unbound. */
+        public void bindCombatVisuals(CombatVisuals visuals) {
+            combatVisuals=visuals;combatVfx.bind(visuals);updateParticleLight();
+            // Filter.setEnabled before initialization does not update jME's last-filter index.
+            post.setFilterState(combatVfx,visuals!=null);
+        }
+        public void setCombatVfxProbe(CombatVfxFilter.Probe probe) {combatVfx.setProbe(probe);}
+        private void updateParticleLight() {
+            if(combatVisuals!=null)combatVisuals.setLighting(key.getDirection(),key.getColor(),ambient.getColor());
         }
         public Theme theme() {return theme;}
         public boolean glowEnabled() {return glowEnabled;}

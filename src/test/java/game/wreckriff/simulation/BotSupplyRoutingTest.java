@@ -9,6 +9,7 @@ import game.wreckriff.simulation.*;
 import org.junit.jupiter.api.Test;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BotSupplyRoutingTest {
@@ -47,6 +48,7 @@ class BotSupplyRoutingTest {
         assertEquals(1,rig.graph.searchCount(),"Selection and its driving route share one graph search");
         for(int tick=1;tick<=132;tick++){rig.session.tick=tick;rig.bots.commands(rig.world);}
         assertEquals(1,rig.graph.searchCount(),"Neither render ticks nor a one-second timer expire a valid route tree");
+        assertEquals(12,rig.availabilityReads.get(),"Supply availability is sampled at the 10 Hz decision cadence");
         rig.world.profiles.put(0,VehicleDefinition.SPARK.profile(VEHICLES));
         rig.session.tick=144;rig.bots.commands(rig.world);assertEquals(2,rig.graph.searchCount(),"Mobility changes invalidate the tree");
         hazards.set(arena.hazards());rig.session.tick=156;rig.bots.commands(rig.world);
@@ -90,8 +92,9 @@ class BotSupplyRoutingTest {
             var endpoint=rig.graph.position(path.getLast());
             assertEquals(pickup.position().y(),endpoint.y,2.2f,pickup.id()+" must not target an underlying street");
             var mobility=rig.bots.mobility(0,rig.world);
-            for(var traversal:rig.bots.navigation(0).nodes().isEmpty()?List.<NavGraph.Traversal>of():rig.graph.route(path.getFirst(),path.getLast(),mobility,Set.of(),8,150).traversals()) {
-                var link=rig.graph.links(traversal.from()).stream().filter(edge->edge.id().equals(traversal.edgeId())).findFirst().orElseThrow();
+            for(int index=1;index<path.size();index++) {
+                int next=path.get(index);
+                var link=rig.graph.links(path.get(index-1)).stream().filter(edge->edge.to()==next).findFirst().orElseThrow();
                 assertTrue(link.width()>=mobility.width()&&link.clearance()>=mobility.height());
             }
         }
@@ -104,11 +107,13 @@ class BotSupplyRoutingTest {
     private static final class Rig {
         final MatchSession session;final NavGraph graph;final SupplyWorld world;final BotController bots;
         final AtomicReference<List<ArenaDefinition.Pickup>> active;
+        final AtomicInteger availabilityReads=new AtomicInteger();
         Rig(ArenaDefinition arena,int start) {
             session=new MatchSession(73,arena,arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA,COMBAT);session.phase=MatchSession.Phase.ARENA_COMBAT;
             for(var vehicle:session.vehicles)if(vehicle.id!=0)vehicle.hp=0;
             graph=new NavGraph(arena);world=new SupplyWorld(arena);world.place(0,graph.position(start));
-            active=new AtomicReference<>(arena.pickups());bots=new BotController(session,arena,graph,AiRules.load(),active::get);
+            active=new AtomicReference<>(arena.pickups());
+            bots=new BotController(session,arena,graph,AiRules.load(),()->{availabilityReads.incrementAndGet();return active.get();});
         }
     }
     /** Deterministic road queries; native route drivability is covered by the physics suite. */

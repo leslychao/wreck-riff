@@ -15,6 +15,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Compares Bullet contact to actual visible high-detail triangles, not to an invisible roof proxy. */
 class NativeArchitectureCollisionTest {
     private static final DesktopAssetManager ASSETS=NativeArenaAssets.MANAGER;
+    @org.junit.jupiter.api.BeforeAll static void loadNativeShapes() {
+        com.jme3.system.NativeLibraryLoader.loadNativeLibrary("bulletjme",true);
+    }
     @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park"})
     void structuralModelRaysMatchTheVisibleArchitecture(String arenaId) {
         var definition=ArenaRegistry.load().definition(arenaId);var art=ArenaArt.load(definition);

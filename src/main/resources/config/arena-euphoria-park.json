@@ -2039,9 +2039,9 @@
       "id": "route-cache-120",
       "type": "BALLISTIC_AMMO",
       "position": {
-        "x": 495.14285,
+        "x": 512.28571,
         "y": 0.0,
-        "z": 899.95715
+        "z": 904.81429
       },
       "respawnTicks": 3000
     },

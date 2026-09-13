@@ -6,7 +6,14 @@ import game.wreckriff.config.VehicleProfile;
 
 /** Geometry boundary. The live implementation always queries real Bullet colliders. */
 public interface WorldQuery {
-    record Hit(int vehicleId, Vector3f point, Vector3f normal, float fraction,String objectId) {
+    record Hit(int vehicleId, Vector3f point, Vector3f normal, float fraction,String objectId,
+               ContactSurface surface,VehicleContact vehicleContact) {
+        public Hit {point=point.clone();normal=normal.clone();java.util.Objects.requireNonNull(surface);}
+        @Override public Vector3f point(){return point.clone();}
+        @Override public Vector3f normal(){return normal.clone();}
+        public Hit(int vehicleId,Vector3f point,Vector3f normal,float fraction,String objectId) {
+            this(vehicleId,point,normal,fraction,objectId,ContactSurface.UNKNOWN,null);
+        }
         public Hit(int vehicleId,Vector3f point,Vector3f normal,float fraction) {this(vehicleId,point,normal,fraction,null);}
     }
     record Support(int surfaceId,Vector3f point,Vector3f normal) {
@@ -15,6 +22,9 @@ public interface WorldQuery {
     Vector3f position(int vehicleId);
     Vector3f velocity(int vehicleId);
     Quaternion rotation(int vehicleId);
+    default VehicleContact vehicleContact(int id,Vector3f point,Vector3f normal) {
+        return VehicleContact.atPose(point,normal,position(id),rotation(id));
+    }
     boolean grounded(int vehicleId);
     float mass(int vehicleId);
     default VehicleProfile profile(int vehicleId) { return VehicleProfile.rivet(); }

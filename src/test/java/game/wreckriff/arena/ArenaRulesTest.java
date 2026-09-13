@@ -82,7 +82,10 @@ class ArenaRulesTest {
         systems.collectPickups(world); systems.collectPickups(world);
         assertEquals(300,session.vehicle(0).hp); assertEquals(100,session.vehicle(1).hp);
         assertFalse(systems.active("repair-garage"));
-        var events=systems.drainEvents(); assertEquals(1,events.size()); assertEquals("repair",events.getFirst().kind());
+        var events=systems.drainEvents(); assertEquals(2,events.size()); assertEquals("repair",events.getFirst().kind());
+        var repair=events.stream().filter(e->e.type()==GameEvent.Type.REPAIRED).findFirst().orElseThrow();
+        assertEquals(new HealthChange(100,300),repair.healthChange());assertEquals(200,repair.value());
+        assertEquals("repair-garage",repair.objectId());
         assertTrue(systems.drainEvents().isEmpty());
         session.tick=2999; systems.collectPickups(world); assertEquals(300,session.vehicle(0).hp);
         session.tick=3000; systems.collectPickups(world); assertEquals(500,session.vehicle(0).hp);

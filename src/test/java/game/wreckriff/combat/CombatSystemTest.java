@@ -22,6 +22,46 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Pure combat rules. Fake geometry is intentional here; real sweeps have physicsTest coverage. */
 class CombatSystemTest {
+    @Test void acceptedDamagePreservesSweptLocalContactAndActualShieldLoss() {
+        Vector3f point=new Vector3f(.2f,.4f,8),normal=new Vector3f(0,0,-1);
+        // Contact belongs to an earlier sweep pose, deliberately different from the final world pose.
+        var contact=new VehicleContact(new Vector3f(-.7f,.4f,1.8f),Vector3f.UNIT_X);
+        world.positions[1].set(0,0,10);session.vehicle(1).shieldTicks=120;
+        world.rayHit=new WorldQuery.Hit(1,point,normal,.2f,null,ContactSurface.METAL,contact);
+        step(machineGun());var events=combat.drainEvents();
+        var damage=events.stream().filter(e->e.type()==GameEvent.Type.DAMAGE).findFirst().orElseThrow();
+        assertEquals(point,damage.position());assertEquals(normal,damage.normal());assertEquals(contact,damage.vehicleContact());
+        assertEquals(ContactSurface.METAL,damage.surface());
+        assertEquals(world.machineGunMuzzle(0,0),damage.origin());
+        assertEquals(rules.machineGun().damage()*rules.control().shieldDamageMultiplier(),damage.value(),.0001f);
+        assertEquals(200,damage.healthChange().hpBefore());assertEquals(session.vehicle(1).hp,damage.healthChange().hpAfter(),.0001f);
+        var shot=events.stream().filter(e->e.type()==GameEvent.Type.SHOT).findFirst().orElseThrow();
+        assertEquals("machine-gun-muzzle-0",shot.emission().socketId());
+        assertEquals(world.shotDirections.getLast(),shot.emission().direction());
+        assertEquals(0,shot.simulationTick());assertTrue(damage.ordinalWithinTick()>shot.ordinalWithinTick());
+        var shield=events.stream().filter(e->e.type()==GameEvent.Type.SHIELD_HIT).findFirst().orElseThrow();
+        assertEquals(contact,shield.vehicleContact());
+    }
+    @Test void strongestRamKeepsBothSidesOfItsContactAndGenericDamageHasNoInventedContact() {
+        Vector3f strongest=new Vector3f(2,.4f,3);
+        combat.queueRam(0,1,10,new Vector3f(1,0,0),Vector3f.UNIT_Z);
+        combat.queueRam(1,0,12,strongest,Vector3f.UNIT_X);combat.resolveDamage(world);
+        var damage=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.DAMAGE).toList();assertEquals(2,damage.size());
+        for(var event:damage) {
+            assertEquals(strongest,event.position());
+            assertEquals(strongest.subtract(world.position(event.subjectId())),event.vehicleContact().localPoint());
+            assertEquals(event.subjectId()==0?Vector3f.UNIT_X.negate():Vector3f.UNIT_X,event.normal());
+        }
+        combat.queueDamage(0,-1,2,"recovery",-50);combat.resolveDamage(world);
+        var recovery=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.DAMAGE).findFirst().orElseThrow();
+        assertNull(recovery.vehicleContact());assertEquals(ContactSurface.UNKNOWN,recovery.surface());
+    }
+    @Test void eventTimesDescribeEmissionTickEvenWhenSeveralTicksDrainTogether() {
+        step(machineGun());for(int i=0;i<12;i++)step(machineGun());
+        var shots=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.SHOT).toList();
+        assertEquals(List.of(0L,12L),shots.stream().map(GameEvent::simulationTick).toList());
+        assertEquals("machine-gun-muzzle-1",shots.getLast().emission().socketId());
+    }
     @Test void localMultiplierUsesActualHitscanPointAndNeverGenericDamage() {
         createSession();world.positions[1].set(0,0,10);Vector3f local=new Vector3f(.2f,.4f,-2);
         world.rayHit=new WorldQuery.Hit(1,world.position(1).add(local),new Vector3f(0,0,-1),.5f);

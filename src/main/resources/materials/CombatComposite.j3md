@@ -1,0 +1,12 @@
+MaterialDef CombatComposite {
+    MaterialParameters {
+        Texture2D Texture
+        Color Color
+        Int NumSamplesDepth
+    }
+    Technique {
+        VertexShader GLSL150 GLSL100 : Common/MatDefs/Post/Post.vert
+        FragmentShader GLSL150 GLSL100 : Common/MatDefs/Post/Overlay.frag
+        WorldParameters { WorldViewProjectionMatrix }
+    }
+}

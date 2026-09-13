@@ -2689,8 +2689,8 @@
       "id": "start-cache-014",
       "type": "POWER_AMMO",
       "position": {
-        "x": 1562.8,
-        "y": 16.0,
+        "x": 1555.1,
+        "y": 8.0,
         "z": 440.0
       },
       "respawnTicks": 3000
@@ -3069,9 +3069,9 @@
       "id": "boss-supply-052",
       "type": "MINE_AMMO",
       "position": {
-        "x": 1587.06667,
+        "x": 1623.93333,
         "y": 0.0,
-        "z": 1113.06667
+        "z": 1072.8
       },
       "respawnTicks": 3000
     },
@@ -3079,9 +3079,9 @@
       "id": "boss-supply-053",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 216.9,
+        "x": 277.65333,
         "y": 0.0,
-        "z": 1170.1
+        "z": 1201.21333
       },
       "respawnTicks": 3000
     },
@@ -3089,9 +3089,9 @@
       "id": "boss-supply-054",
       "type": "MINE_AMMO",
       "position": {
-        "x": 234.98667,
+        "x": 238.56666,
         "y": 0.0,
-        "z": 1200.54667
+        "z": 1131.76666
       },
       "respawnTicks": 3000
     },
@@ -3239,26 +3239,6 @@
       "id": "route-cache-069",
       "type": "POWER_AMMO",
       "position": {
-        "x": 436.8,
-        "y": 0.0,
-        "z": 1203.7
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-070",
-      "type": "POWER_AMMO",
-      "position": {
-        "x": 1637.26667,
-        "y": 0.0,
-        "z": 912.8
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-071",
-      "type": "POWER_AMMO",
-      "position": {
         "x": 1570.68571,
         "y": 0.0,
         "z": 180.0
@@ -3266,7 +3246,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-072",
+      "id": "route-cache-070",
       "type": "POWER_AMMO",
       "position": {
         "x": 997.6,
@@ -3276,7 +3256,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-073",
+      "id": "route-cache-071",
       "type": "POWER_AMMO",
       "position": {
         "x": 1263.22222,
@@ -3286,27 +3266,37 @@
       "respawnTicks": 3000
     },
     {
+      "id": "route-cache-072",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 1638.16667,
+        "y": 0.0,
+        "z": 902.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-073",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 448.32,
+        "y": 0.0,
+        "z": 1203.88
+      },
+      "respawnTicks": 3000
+    },
+    {
       "id": "route-cache-074",
       "type": "POWER_AMMO",
       "position": {
-        "x": 312.23333,
+        "x": 1686.26,
         "y": 0.0,
-        "z": 1001.43333
+        "z": 547.62
       },
       "respawnTicks": 3000
     },
     {
       "id": "route-cache-075",
-      "type": "POWER_AMMO",
-      "position": {
-        "x": 1683.46,
-        "y": 0.0,
-        "z": 564.02
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-076",
       "type": "POWER_AMMO",
       "position": {
         "x": 805.16,
@@ -3316,7 +3306,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-077",
+      "id": "route-cache-076",
       "type": "POWER_AMMO",
       "position": {
         "x": 629.53333,
@@ -3326,12 +3316,22 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-078",
+      "id": "route-cache-077",
       "type": "POWER_AMMO",
       "position": {
         "x": 284.2,
         "y": 0.0,
         "z": 426.7
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-078",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 318.08333,
+        "y": 0.0,
+        "z": 991.08333
       },
       "respawnTicks": 3000
     },
@@ -3389,16 +3389,6 @@
       "id": "route-cache-084",
       "type": "NAPALM_AMMO",
       "position": {
-        "x": 1531.88572,
-        "y": 0.0,
-        "z": 823.6
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-085",
-      "type": "NAPALM_AMMO",
-      "position": {
         "x": 1311.71429,
         "y": 0.0,
         "z": 318.85714
@@ -3406,7 +3396,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-086",
+      "id": "route-cache-085",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 1008.8,
@@ -3416,7 +3406,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-087",
+      "id": "route-cache-086",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 876.24,
@@ -3426,12 +3416,22 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-088",
+      "id": "route-cache-087",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 1230.4,
         "y": 0.0,
         "z": 858.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-088",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 1531.88572,
+        "y": 0.0,
+        "z": 823.6
       },
       "respawnTicks": 3000
     },
@@ -3509,9 +3509,9 @@
       "id": "route-cache-096",
       "type": "BALLISTIC_AMMO",
       "position": {
-        "x": 1480.0,
+        "x": 1465.76,
         "y": 0.0,
-        "z": 524.41667
+        "z": 1206.76
       },
       "respawnTicks": 3000
     },
@@ -3519,9 +3519,9 @@
       "id": "route-cache-097",
       "type": "BALLISTIC_AMMO",
       "position": {
-        "x": 1465.76,
+        "x": 1480.0,
         "y": 0.0,
-        "z": 1206.76
+        "z": 534.76667
       },
       "respawnTicks": 3000
     },
@@ -3569,16 +3569,6 @@
       "id": "route-cache-102",
       "type": "CANNON_AMMO",
       "position": {
-        "x": 1702.15,
-        "y": 0.0,
-        "z": 454.55
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-103",
-      "type": "CANNON_AMMO",
-      "position": {
         "x": 1016.44,
         "y": 0.0,
         "z": 915.92
@@ -3586,7 +3576,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-104",
+      "id": "route-cache-103",
       "type": "CANNON_AMMO",
       "position": {
         "x": 187.26667,
@@ -3596,7 +3586,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-105",
+      "id": "route-cache-104",
       "type": "CANNON_AMMO",
       "position": {
         "x": 1295.96667,
@@ -3606,12 +3596,22 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-106",
-      "type": "MINE_AMMO",
+      "id": "route-cache-105",
+      "type": "CANNON_AMMO",
       "position": {
         "x": 1193.0,
         "y": 0.0,
         "z": 964.8
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-106",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 1456.78095,
+        "y": 0.0,
+        "z": 180.0
       },
       "respawnTicks": 3000
     }

@@ -53,6 +53,28 @@ class CampaignArenaContentTest {
         var box=new ArenaDefinition.BoxPart("turned",new ArenaDefinition.Vec3(0,0,0),new ArenaDefinition.Vec3(12,2,2),"steel",true,90);
         assertTrue(box.containsXZ(0,5,0));assertFalse(box.containsXZ(5,0,0));
     }
+    @Test void parkingRampsHaveActualOpeningsThroughUpperDecks() {
+        var neon=ArenaRegistry.load().definition("neon_zero");
+        for(float x=1435;x<1525;x+=10) {
+            assertTrue(neon.surfaceAt(new Vector3f(x,(x-1430)*.08f,240),0,.02f).isPresent(),"First ramp support at "+x);
+            assertTrue(neon.surfaceAt(new Vector3f(x,8+(x-1430)*.08f,440),0,.02f).isPresent(),"Second ramp support at "+x);
+            assertTrue(neon.surfaceAt(new Vector3f(x,8,240),0,.02f).isEmpty(),"Upper slab closes first ramp at "+x);
+            assertTrue(neon.surfaceAt(new Vector3f(x,16,440),0,.02f).isEmpty(),"Upper slab closes second ramp at "+x);
+        }
+    }
+    @Test void RoadMarkingsPartitionOneCanonicalSurfaceInsteadOfAddingOverlayPlanes() {
+        var registry=ArenaRegistry.load();
+        for(String id:List.of("construction_17","neon_zero")) {
+            var arena=registry.definition(id);
+            assertTrue(arena.meshes().stream().anyMatch(m->m.triangleMaterials().contains("road-marking")),id);
+            for(var mesh:arena.meshes())if(!mesh.triangleMaterials().isEmpty()) {
+                assertEquals(mesh.indices().size()/3,mesh.triangleMaterials().size());
+                assertTrue(mesh.id().startsWith("road-"));
+                assertTrue(arena.surfaces().stream().anyMatch(s->s.geometryId().equals(mesh.id())));
+            }
+            assertTrue(arena.meshes().stream().noneMatch(m->m.id().startsWith("paint-")),"Paint must retain the road's support identity");
+        }
+    }
     @Test void allBossesRemainBoundToTheirExistingCombatProfilesAndLocalEntrances() {
         var registry=ArenaRegistry.load();String[] ids={"boss_foreman","boss_prefect","boss_emcee"};float[] hp={4000,3400,4000};
         for(int i=0;i<ids.length;i++) {

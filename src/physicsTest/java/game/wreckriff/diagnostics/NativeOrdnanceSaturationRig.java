@@ -52,6 +52,9 @@ public final class NativeOrdnanceSaturationRig implements AutoCloseable {
         supplies=new ArenaSystems(session,ArenaDefinition.load().withPickups(pickups));
     }
     public List<GameEvent> step(boolean commandsEnabled) {
+        return step(commandsEnabled,null);
+    }
+    public List<GameEvent> step(boolean commandsEnabled,StageProfiler profiler) {
         List<GameEvent> collectedEvents=List.of();
         if(commandsEnabled&&scriptTicks==0) {
             supplies.collectPickups(world);collectedEvents=supplies.drainEvents();
@@ -62,7 +65,7 @@ public final class NativeOrdnanceSaturationRig implements AutoCloseable {
         WeaponType[] rotation={WeaponType.BALLISTIC,WeaponType.HOMING,WeaponType.POWER};
         if(commandsEnabled)for(var participant:session.vehicles)commands.put(participant.id,new VehicleCommand(0,0,0,false,false,false,true,
                 scriptTicks==0?WeaponType.MINE:rotation[(scriptTicks-1)%rotation.length],0,false,false,AbilityId.NONE));
-        List<GameEvent> events=new ArrayList<>(collectedEvents);events.addAll(advance(commands));scriptTicks++;
+        List<GameEvent> events=new ArrayList<>(collectedEvents);events.addAll(advance(commands,profiler));scriptTicks++;
         maximumProjectiles=Math.max(maximumProjectiles,combat.projectiles().size());maximumMines=Math.max(maximumMines,combat.mines().size());
         if(combat.projectiles().size()>rules.maximumProjectiles()||combat.mines().size()>rules.mine().maximumActive())
             throw new IllegalStateException("CombatSystem exceeded its configured limit");
@@ -78,8 +81,17 @@ public final class NativeOrdnanceSaturationRig implements AutoCloseable {
         return events;
     }
     private List<GameEvent> advance(Map<Integer,VehicleCommand> commands) {
-        combat.beginTick(commands,world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);
-        MatchRuntime.finishTick(session);return combat.drainEvents();
+        return advance(commands,null);
+    }
+    private List<GameEvent> advance(Map<Integer,VehicleCommand> commands,StageProfiler profiler) {
+        long started=profiler==null?0:System.nanoTime();combat.beginTick(commands,world);
+        long combatNanos=profiler==null?0:System.nanoTime()-started;
+        started=profiler==null?0:System.nanoTime();world.step();
+        if(profiler!=null)profiler.record(StageProfiler.Stage.BULLET,System.nanoTime()-started);
+        started=profiler==null?0:System.nanoTime();combat.advanceProjectiles(world);combat.resolveDamage(world);
+        MatchRuntime.finishTick(session);var events=combat.drainEvents();
+        if(profiler!=null)profiler.record(StageProfiler.Stage.COMBAT,combatNanos+System.nanoTime()-started);
+        return events;
     }
     public boolean saturated(){return combat.projectiles().size()==rules.maximumProjectiles()&&combat.mines().size()==rules.mine().maximumActive();}
     public int scriptTicks(){return scriptTicks;}

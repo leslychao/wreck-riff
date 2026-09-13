@@ -16,6 +16,8 @@ final class ArenaLocalLights extends AbstractControl {
     private final Node root;
     private final List<Fixture> fixtures;
     private final Set<PointLight> active=new HashSet<>();
+    private final Vector3f cameraPosition=new Vector3f();
+    private boolean cameraKnown;
     ArenaLocalLights(Node root,List<ArenaArt.LocalLight> definitions) {
         this.root=root;List<Fixture> values=new ArrayList<>();
         for(var definition:definitions) {
@@ -25,8 +27,14 @@ final class ArenaLocalLights extends AbstractControl {
         }
         fixtures=List.copyOf(values);
     }
-    @Override protected void controlUpdate(float tpf) { }
-    @Override protected void controlRender(RenderManager manager,ViewPort view) {select(view.getCamera().getLocation());}
+    @Override protected void controlUpdate(float tpf) {
+        if(cameraKnown)select(cameraPosition);
+    }
+    @Override protected void controlRender(RenderManager manager,ViewPort view) {
+        // Rendering follows updateGeometricState: changing the light list here would
+        // invalidate descendants while RenderManager is already traversing them.
+        cameraPosition.set(view.getCamera().getLocation());cameraKnown=true;
+    }
     void select(Vector3f camera) {
         List<Fixture> nearest=fixtures.stream().filter(fixture->camera.distance(fixture.light.getPosition())<260)
                 .sorted(Comparator.comparingDouble(fixture->camera.distanceSquared(fixture.light.getPosition())))

@@ -110,9 +110,9 @@ def architectural(name,low=False):
     elif name=='depot-gantry':
         m.roof(180,130,5,'steel',12 if detail else 2,False)
         m.beam((-85,-2,-45),(85,-2,-45),1,'yellow');m.beam((-85,-2,45),(85,-2,45),1,'yellow')
+        m.box((20,-4,0),(12,4,8),'yellow');m.beam((20,-6,0),(20,-8,0),.22,'steel')
         if detail:
             for z in range(-60,70,20):m.beam((-90,-1,z),(90,-1,z),.45,'steel')
-            m.box((20,-4,0),(12,4,8),'yellow');m.beam((20,-6,0),(20,-11,0),.22,'steel')
     elif name=='cement-silo':
         m.cylinder((0,24,0),17,34,'ivory',36 if detail else 12);m.cylinder((0,44,0),17,6,'steel',36 if detail else 12,5);m.cylinder((0,4,0),7,6,'steel',24 if detail else 8,17)
         for x,z in [(-12,-12),(-12,12),(12,-12),(12,12)]:m.box((x,3,z),(1,6,1),'steel')
@@ -132,7 +132,7 @@ def main():
     if '--blend' in sys.argv:
         import bpy
         for p in sorted(OUT.glob('*.glb')):
-            bpy.ops.wm.read_factory_settings(use_empty=True);bpy.ops.import_scene.gltf(filepath=str(p));bpy.ops.wm.save_as_mainfile(filepath=str(p.with_suffix('.blend')))
+            bpy.ops.wm.read_factory_settings(use_empty=True);bpy.context.preferences.filepaths.save_version=0;bpy.ops.import_scene.gltf(filepath=str(p));bpy.ops.wm.save_as_mainfile(filepath=str(p.with_suffix('.blend')))
     else:
         for name in NAMES:
             architectural(name).save(name);architectural(name,True).save(name+'-lod')

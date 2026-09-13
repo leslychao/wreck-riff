@@ -23,7 +23,6 @@ class NativeChaseCameraTest {
     private static final CameraRules CAMERA_RULES=CameraRules.load();
     private static final ArenaDefinition ARENA=ArenaRegistry.load().definition("construction_17");
     private static final Vector3f ROAD_POINT=ARENA.spawns().getFirst().position().vector();
-    private static final ArenaDefinition.Surface ROAD_SURFACE=ARENA.surfaceAt(ROAD_POINT,3,.1f).orElseThrow();
     private static final int PLAYER=0;
     // Native suspension continues to settle by fractions of a millimetre while the camera is tracking it.
     private static final float CONTACT_HEIGHT_TOLERANCE=.001f;
@@ -220,19 +219,22 @@ class NativeChaseCameraTest {
 
         Rig(Quaternion rotation) {
             world.configureArena(ARENA);
-            var floor=ARENA.boxes().stream().filter(box->box.id().equals(ROAD_SURFACE.geometryId())).findFirst();
-            if(floor.isPresent()) {
-                var box=floor.orElseThrow();assertTrue(box.collision());
+            // A spawn may sit on a junction between several authored road meshes. Load
+            // every nearby support, as the real world does, rather than one old floor ID.
+            for(var box:ARENA.boxes())if(box.collision()
+                    &&ARENA.surfaces().stream().anyMatch(surface->surface.geometryId().equals(box.id()))) {
                 world.addStatic(box.id(),new BoxCollisionShape(box.size().vector().mult(.5f)),box.center().vector(),box.rotation());
-            } else {
-                var mesh=ARENA.meshes().stream().filter(surface->surface.id().equals(ROAD_SURFACE.geometryId())).findFirst().orElseThrow();
+            }
+            for(var mesh:ARENA.meshes())if(mesh.collision()
+                    &&ARENA.surfaces().stream().anyMatch(surface->surface.geometryId().equals(mesh.id()))) {
                 var triangles=mesh.indices().stream().map(index->mesh.vertices().get(index).vector()).toList();
                 world.addStatic(mesh.id(),new MeshCollisionShape(SurfaceMesh.triangles(triangles,4)),Vector3f.ZERO,new Quaternion());
             }
             world.addVehicle(PLAYER,ROAD_POINT.add(0,2,0),rotation);
             for(int i=0;i<360;i++)world.step();
             assertEquals(4,world.supportedWheelContacts(PLAYER),"Fixture requires all four native wheels on the shipped floor");
-            assertEquals(ROAD_SURFACE.id(),world.roadContext(PLAYER).surfaceId());
+            assertTrue(ARENA.surfaces().stream().anyMatch(surface->surface.id().equals(world.roadContext(PLAYER).surfaceId())),
+                    "Native wheel contacts must resolve to an authored support");
             assertEquals(RoadContext.Motion.ROAD,world.roadContext(PLAYER).motion());
         }
 

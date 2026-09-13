@@ -1,0 +1,10 @@
+{
+  "id": "rivet",
+  "lodTriangles": [
+    15060,
+    5796,
+    2532
+  ],
+  "sourceBlendSha256": "7fe5621a13b3e8a61f7f89aae7c45740b5887a6279c3f933c9d6bf1a6a880961",
+  "meshSha256": "e89feeff77bf6157137fb93f3bdf226edbc223ca5c0ad95df7ddda366a3a7534"
+}

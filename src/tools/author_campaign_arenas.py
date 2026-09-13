@@ -148,7 +148,7 @@ class Location:
                 paint=[];paint_pieces=[]
                 # Paint occupies its own triangles in the road surface. It is not
                 # a decal sheet. Junction approaches and park promenades stay clear.
-                marked=flat and length>48 and self.data['metadata']['theme']!='CARNIVAL' and path['width']>=26 and path['kind']=='ROAD'
+                marked=flat and length>48 and self.data['metadata']['theme']!='CARNIVAL' and path['width']>=26 and path['kind']=='ROAD' and not path['id'].startswith('pit-')
                 if marked:
                     ux,uz=dx/length,dz/length;vx,vz=dz/length,-dx/length
                     for t in range(22,int(length)-25,22):
@@ -207,7 +207,7 @@ class Location:
             if abs(a[1]-b[1])>.01:continue
             for t in (.22,.55,.82):
                 p=tuple(a[k]+(b[k]-a[k])*t for k in range(3))
-                if min(dist(p,q) for q in spawns)>=32 and self.clear(p,5):candidates.append(p)
+                if min(dist(p,q) for q in spawns)>=45 and self.clear(p,5):candidates.append(p)
         def add(kind,p,label):
             if kind in remaining and remaining[kind]<=0 or any(dist(p,q)<17 for q in positions) or not self.clear(p,5):return False
             self.surface_at(p);positions.append(p);self.data['pickups'].append(dict(id=f'{label}-{len(positions):03}',type=kind,position=vec(p),respawnTicks=(40 if kind=='REPAIR' else 30 if kind=='TURBO_CELL' else 25)*120))
@@ -215,7 +215,7 @@ class Location:
             return True
         for i,spawn in enumerate(spawns):
             selected=[]
-            for p in sorted(candidates,key=lambda p:dist(spawn,p)):
+            for p in sorted((p for p in candidates if abs(p[1]-spawn[1])<.1),key=lambda p:dist(spawn,p)):
                 distance=dist(spawn,p)
                 if distance<45:continue
                 if selected:
@@ -236,8 +236,8 @@ class Location:
                 start=point(entrance['position'])
                 for weapon in (boss['primary'],boss['secondary']):
                     kind=weapon+'_AMMO'
-                    if any(p['type']==kind and dist(start,point(p['position']))<150 for p in self.data['pickups']):continue
-                    assert any(add(kind,p,'boss-supply') for p in sorted(candidates,key=lambda q:dist(start,q))),(self.data['id'],kind)
+                    if any(p['type']==kind and abs(p['position']['y']-start[1])<.1 and dist(start,point(p['position']))<150 for p in self.data['pickups']):continue
+                    assert any(add(kind,p,'boss-supply') for p in sorted((p for p in candidates if abs(p[1]-start[1])<.1),key=lambda q:dist(start,q))),(self.data['id'],kind)
         for kind in AMMO:
             while remaining[kind]>0:
                 possible=[p for p in candidates if all(dist(p,q)>=17 for q in positions)];assert possible,(self.data['id'],'insufficient sockets',remaining)

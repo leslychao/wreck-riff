@@ -19,8 +19,12 @@ import java.util.*;
 /** Single-threaded native physics owner. No scene controls are attached to bodies. */
 public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public record Pose(Vector3f position, Quaternion rotation) {}
-    public record Ram(int first,int second,float closingSpeed,Vector3f point,Vector3f normal) {
+    public record Ram(int first,int second,float closingSpeed,Vector3f point,Vector3f normal,
+                      VehicleContact firstContact,VehicleContact secondContact) {
         public Ram { point=point.clone();normal=normal.clone(); }
+        public Ram(int first,int second,float closingSpeed,Vector3f point,Vector3f normal) {
+            this(first,second,closingSpeed,point,normal,null,null);
+        }
         @Override public Vector3f point() { return point.clone(); }
         @Override public Vector3f normal() { return normal.clone(); }
     }
@@ -48,6 +52,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<Integer,VehicleProfile> profiles=new HashMap<>();
     private final Map<Integer,RoadContext> roadContexts=new HashMap<>();
     private final Map<String,ArenaDefinition.Surface> surfacesByGeometry=new HashMap<>();
+    private final Map<String,ContactSurface> contactSurfaces=new HashMap<>();
     private ArenaDefinition arenaDefinition;
     private final Map<Integer,Integer> wheelContactCounts=new HashMap<>();
     private final Map<Integer,Support[]> wheelSupports=new HashMap<>();
@@ -108,6 +113,9 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         Objects.requireNonNull(definition);
         if(arenaDefinition!=null&&arenaDefinition!=definition)throw new IllegalStateException("Physics world already belongs to an arena");
         arenaDefinition=definition;surfacesByGeometry.clear();
+        contactSurfaces.clear();
+        for(var box:definition.boxes())contactSurfaces.put(box.id(),ContactSurface.fromMaterial(box.material()));
+        for(var ramp:definition.ramps())contactSurfaces.put(ramp.id(),ContactSurface.fromMaterial(ramp.material()));
         for(var surface:definition.surfaces())surfacesByGeometry.put(surface.geometryId(),surface);
         for(int id:vehicles.keySet())refreshRoadContext(id);
     }
@@ -165,6 +173,11 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     public boolean containsArenaBody(String objectId) {return staticIds.containsKey(objectId);}
     private String staticObjectName(PhysicsCollisionObject object) {
         Integer id=staticIdentities.get(object);return id==null?null:staticNames.get(id);
+    }
+    private ContactSurface contactSurface(PhysicsCollisionObject object) {
+        // Vehicle hulls are metal; finer glass/rubber/panel classification belongs to the authored visual surface.
+        if(identities.containsKey(object))return ContactSurface.METAL;
+        return contactSurfaces.getOrDefault(staticObjectName(object),ContactSurface.UNKNOWN);
     }
     public boolean removeStatic(String objectId) {
         Integer surfaceId=staticIds.remove(objectId);if(surfaceId==null)return false;
@@ -381,7 +394,10 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         if (old==null || old.closingSpeed()<closing) {
             Vector3f point=event.getPositionWorldOnA().add(event.getPositionWorldOnB()).multLocal(.5f);
             Vector3f normal=event.getNormalWorldOnB().clone();if(a!=first)normal.negateLocal();
-            rams.put(key,new Ram(first,second,closing,point,normal));
+            Vector3f firstPoint=a==first?event.getPositionWorldOnA():event.getPositionWorldOnB();
+            Vector3f secondPoint=a==second?event.getPositionWorldOnA():event.getPositionWorldOnB();
+            rams.put(key,new Ram(first,second,closing,point,normal,
+                    vehicleContact(first,firstPoint,normal),vehicleContact(second,secondPoint,normal.negate())));
         }
     }
     private void observeArenaContact(PhysicsCollisionEvent event,Integer a,Integer b) {
@@ -545,8 +561,11 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         for (PhysicsRayTestResult result:space.rayTest(from,to)) {
             int id=identities.getOrDefault(result.getCollisionObject(),-1);
             if (id==ignoredVehicle && id>=0) continue;
-            if (nearest==null || result.getHitFraction()<nearest.fraction()) nearest=new Hit(id,
-                    from.clone().interpolateLocal(to,result.getHitFraction()),result.getHitNormalLocal().clone(),result.getHitFraction(),staticObjectName(result.getCollisionObject()));
+            if (nearest==null || result.getHitFraction()<nearest.fraction()) {
+                Vector3f point=from.clone().interpolateLocal(to,result.getHitFraction()),normal=result.getHitNormalLocal().clone();
+                nearest=new Hit(id,point,normal,result.getHitFraction(),staticObjectName(result.getCollisionObject()),
+                        contactSurface(result.getCollisionObject()),id>=0?vehicleContact(id,point,normal):null);
+            }
         }
         return nearest;
     }
@@ -691,7 +710,8 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             if (nearest==null || result.getHitFraction()<nearest.fraction()) {
                 Vector3f normal=result.getHitNormalLocal(null).normalizeLocal();
                 Vector3f point=from.clone().interpolateLocal(to,result.getHitFraction()).subtractLocal(normal.mult(radius));
-                nearest=new Hit(id,point,normal,result.getHitFraction(),staticObjectName(result.getCollisionObject()));
+                nearest=new Hit(id,point,normal,result.getHitFraction(),staticObjectName(result.getCollisionObject()),
+                        contactSurface(result.getCollisionObject()),id>=0?vehicleContact(id,point,normal):null);
             }
         }
         return nearest;
@@ -719,9 +739,12 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
                 if (hit!=null) {
                     float fraction=t0+hit.fraction()/parts;
                     if (nearest==null || fraction<nearest.fraction()) {
-                        Quaternion contactRotation=interpolate(old,current,stepStart+(stepEnd-stepStart)*fraction).rotation();
+                        Pose contactPose=interpolate(old,current,stepStart+(stepEnd-stepStart)*fraction);
+                        Quaternion contactRotation=contactPose.rotation();
                         Vector3f normal=contactRotation.mult(rot.inverse().mult(hit.normal())).normalizeLocal();
-                        nearest=new Hit(id,from.clone().interpolateLocal(to,fraction).subtractLocal(normal.mult(radius)),normal,fraction);
+                        Vector3f point=from.clone().interpolateLocal(to,fraction).subtractLocal(normal.mult(radius));
+                        nearest=new Hit(id,point,normal,fraction,null,ContactSurface.METAL,
+                                VehicleContact.atPose(point,normal,contactPose.position(),contactRotation));
                     }
                 }
             }
@@ -805,7 +828,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         space.removeTickListener(arenaMotionListener);
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
         for (PhysicsRigidBody body:statics.values()) space.removeCollisionObject(body);
-        vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelSupports.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();
+        vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();contactSurfaces.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelSupports.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();
         statics.clear();staticIds.clear();staticNames.clear();staticIdentities.clear();preStepVelocity.clear();preStepWheelAngles.clear();rams.clear();sweepShapes.clear();
         movingArenaBodies.clear();arenaContacts.clear();movingContactImpulses.clear();
         chassisSupports.clear();vehicleContacts.clear();dashShapes.clear();

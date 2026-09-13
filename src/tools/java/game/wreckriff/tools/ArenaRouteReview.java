@@ -49,9 +49,12 @@ public final class ArenaRouteReview extends SimpleApplication {
         settings.setResolution(1920,1080);settings.setFullscreen(false);settings.setSamples(4);settings.setVSync(false);
         settings.setGammaCorrection(true);settings.setAudioRenderer(null);settings.setFrameRate(30);settings.setRenderer(AppSettings.LWJGL_OPENGL33);
         app.setSettings(settings);app.setShowSettings(false);app.setPauseOnLostFocus(false);app.start();
-        if(!app.complete.await(120+routes.size()*30L,TimeUnit.SECONDS)){app.stop(true);throw new IllegalStateException("Moving map inspection timed out");}
+        if(!app.complete.await(120+routes.size()*30L,TimeUnit.SECONDS)) {
+            app.stop(false);System.err.println("Moving map inspection timed out");System.exit(1);
+        }
+        // An uncaught render-thread failure cannot service stop(true)'s shutdown latch.
+        if(app.failure!=null){app.stop(false);app.failure.printStackTrace();System.exit(1);}
         app.stop(true);
-        if(app.failure!=null)throw new IllegalStateException("Moving map inspection failed",app.failure);
         System.out.println("Inspected "+routes.size()+" authored routes with "+app.captures.size()+" captured views: "+output);
     }
     @Override public void simpleInitApp() {
