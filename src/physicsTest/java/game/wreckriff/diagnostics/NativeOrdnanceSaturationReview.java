@@ -57,6 +57,9 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
     private int setupFramesRemaining,activeCapFrames,completedCycles;
     private long previousFrameNanos,activeSimulationTicks,maximumHeapBytes;
     private double initialLoadMilliseconds,submittedSimulationSeconds;
+    private long framebufferWaitStarted;
+    private double initialFramebufferWaitMilliseconds;
+    private boolean framebufferReady;
 
     private NativeOrdnanceSaturationReview(Path output,String expectedSource,int performanceSeconds){this.output=output;this.expectedSource=expectedSource;this.performanceSeconds=performanceSeconds;}
     public static void main(String[] args)throws Exception {
@@ -76,13 +79,19 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         var settings=new AppSettings(true);
         settings.setTitle("Wreck Riff / Native combat ordnance limits");settings.setResolution(1920,1080);settings.setSamples(4);
         settings.setGammaCorrection(true);settings.setVSync(false);settings.setFrameRate(seconds==0?60:0);
-        settings.setFullscreen(seconds>0);settings.setResizable(false);settings.setAudioRenderer(AppSettings.LWJGL_OPENAL);
+        settings.setFullscreen(false);settings.setResizable(false);settings.setAudioRenderer(AppSettings.LWJGL_OPENAL);
         return settings;
     }
     @Override public void simpleInitApp() {
         long initializationStarted=System.nanoTime();
         if(context.getType()!=JmeContext.Type.Display||audioRenderer==null)throw new IllegalStateException("A real window and audio device are required");
-        if(performanceSeconds>0)validatePerformanceDevice();
+        if(performanceSeconds>0) {
+            long window=GLFW.glfwGetCurrentContext();
+            if(window==0)throw new IllegalStateException("Performance requires a real GLFW window");
+            // Keep a fixed client framebuffer without changing the desktop display mode.
+            GLFW.glfwSetWindowAttrib(window,GLFW.GLFW_DECORATED,GLFW.GLFW_FALSE);
+            GLFW.glfwSetWindowSize(window,1920,1080);
+        }
         try(var input=getClass().getResourceAsStream("/build-info.properties")) {
             if(input==null)throw new IllegalStateException("Image build-info missing");buildInfo.load(input);
         } catch(Exception failure){throw new IllegalStateException("Cannot identify the running image",failure);}
@@ -98,6 +107,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         sound=new AudioDirector(assetManager,audioRenderer,listener,rootNode);sound.setVolumes(.8f,.3f,.8f);
         beginAttempt();initialLoadMilliseconds=(System.nanoTime()-initializationStarted)/1_000_000.0;
         if(performanceSeconds>0) {
+            framebufferWaitStarted=System.nanoTime();
             performanceLoop=new SimulationLoop(MatchRules.load());
             profiler=new StageProfiler();profiler.attachGpu(renderer);setupFramesRemaining=2;
             setAppProfiler(new AppProfiler() {
@@ -175,6 +185,18 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             (previousMeasuredFrame?combatFrames:setupFrames).add(elapsed);
         }
         previousFrameNanos=now;
+        if(!framebufferReady) {
+            readPerformanceFramebuffer();
+            if(!awaitPerformanceFramebuffer(framebufferWidth[0],framebufferHeight[0],cam.getWidth(),cam.getHeight(),now-framebufferWaitStarted)) {
+                measuredFrame=false;previousMeasuredFrame=false;return;
+            }
+            validatePerformanceDevice();framebufferReady=true;
+            initialFramebufferWaitMilliseconds=(now-framebufferWaitStarted)/1_000_000.0;
+        } else {
+            // A later resize invalidates the measurement; do not silently count or
+            // exclude frames rendered at another resolution after timing has begun.
+            validatePerformanceWindow();
+        }
         if(combatFrames.seconds()>=performanceSeconds) {measuredFrame=false;finishPerformance();return;}
         if(pendingRetry) {
             long started=System.nanoTime();
@@ -233,7 +255,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             var evidence=new LinkedHashMap<String,Object>();evidence.put("status",samplesValid?"COMPLETE":"INVALID");evidence.put("runId",runId);
             evidence.put("sourceSha256",buildInfo.getProperty("sourceSha256"));evidence.put("context",context.getType().name());
             evidence.put("resolution",List.of(cam.getWidth(),cam.getHeight()));evidence.put("msaa",context.getSettings().getSamples());
-            evidence.put("framebuffer",List.of(framebufferWidth[0],framebufferHeight[0]));evidence.put("fullscreen",true);evidence.put("audioDevice",audioDevice);
+            evidence.put("framebuffer",List.of(framebufferWidth[0],framebufferHeight[0]));evidence.put("fullscreen",false);evidence.put("windowMode","undecorated");evidence.put("audioDevice",audioDevice);
             evidence.put("audioEnabled",audioRenderer!=null);evidence.put("vsync",context.getSettings().isVSync());evidence.put("frameRateLimit",context.getSettings().getFrameRate());
             evidence.put("activeCombatFrames",combatFrames.snapshot());evidence.put("profiling",profiling);
             evidence.put("frameTimeGate",samplesValid&&timeValid&&combatFrames.withinTarget()?"PASS":"FAIL");
@@ -242,8 +264,8 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             evidence.put("unspentAccumulatorSeconds",remaining);evidence.put("discardedSimulationSeconds",performanceLoop.droppedSimulationTime());
             evidence.put("submittedSimulationSeconds",submittedSimulationSeconds);
             evidence.put("simulationTimeBalanceErrorSeconds",balanceError);evidence.put("simulationTimeGate",timeValid?"PASS":"FAIL");
-            evidence.put("initialFixtureLoadMs",initialLoadMilliseconds);evidence.put("retryFixtureLoadMs",retryMilliseconds);evidence.put("excludedSetupFrames",setupFrames.snapshot());
-            evidence.put("setupPolicy","Initial fixture creation, Retry and two presentation frames per attempt are outside active combat samples. Their durations are retained separately. The shipped SimulationLoop owns combat catch-up; actual steps, discarded time and the remainder surviving Retry are recorded.");
+            evidence.put("initialFixtureLoadMs",initialLoadMilliseconds);evidence.put("initialFramebufferWaitMs",initialFramebufferWaitMilliseconds);evidence.put("retryFixtureLoadMs",retryMilliseconds);evidence.put("excludedSetupFrames",setupFrames.snapshot());
+            evidence.put("setupPolicy","Initial fixture creation, waiting up to 30 seconds for an actual 1920x1080 framebuffer and matching camera, Retry and two presentation frames per attempt are outside active combat samples. Their durations are retained separately. Every subsequent frame must retain that framebuffer and camera size. The shipped SimulationLoop owns combat catch-up; actual steps, discarded time and the remainder surviving Retry are recorded.");
             evidence.put("maximumUsedJavaHeapBytes",maximumHeapBytes);evidence.put("memoryScope","Java heap only; process RSS must be measured by the external runner.");
             evidence.put("attempts",attempts);evidence.put("retryCleared",retryCleared);
             evidence.put("scope","60-90 second active native ordnance stress scene with stationary chassis. No map navigation AI or prolonged stability/owner acceptance claim.");
@@ -253,10 +275,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         stop(false);
     }
     private void validatePerformanceDevice() {
-        long window=GLFW.glfwGetCurrentContext();
-        if(window==0||GLFW.glfwGetWindowMonitor(window)==0)throw new IllegalStateException("Performance requires an actual fullscreen GLFW window");
-        GLFW.glfwGetFramebufferSize(window,framebufferWidth,framebufferHeight);
-        validatePerformanceFramebuffer(framebufferWidth[0],framebufferHeight[0],cam.getWidth(),cam.getHeight());
+        validatePerformanceWindow();
         if(context.getSettings().getSamples()!=4||context.getSettings().isVSync()||context.getSettings().getFrameRate()!=0)
             throw new IllegalStateException("Performance requires MSAA 4, VSync off and no frame-rate cap");
         if(audioRenderer==null)throw new IllegalStateException("Performance requires a real audio renderer");
@@ -268,6 +287,25 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             throw new IllegalStateException("Native OpenAL device disconnected");
         audioDevice=Map.of("opened",true,"device",Objects.toString(ALC10.alcGetString(device,ALC10.ALC_DEVICE_SPECIFIER),"unknown"),
                 "renderer",Objects.toString(AL10.alGetString(AL10.AL_RENDERER),"unknown"),"disconnectQuerySupported",hasDisconnect);
+    }
+    private long readPerformanceFramebuffer() {
+        long window=GLFW.glfwGetCurrentContext();
+        if(window==0)throw new IllegalStateException("Performance requires an actual GLFW window");
+        GLFW.glfwGetFramebufferSize(window,framebufferWidth,framebufferHeight);
+        return window;
+    }
+    private void validatePerformanceWindow() {
+        long window=readPerformanceFramebuffer();
+        validatePerformanceFramebuffer(framebufferWidth[0],framebufferHeight[0],cam.getWidth(),cam.getHeight());
+        if(GLFW.glfwGetWindowMonitor(window)!=0||GLFW.glfwGetWindowAttrib(window,GLFW.GLFW_DECORATED)!=GLFW.GLFW_FALSE)
+            throw new IllegalStateException("Performance requires its undecorated fixed client window");
+        if(GLFW.glfwGetWindowAttrib(window,GLFW.GLFW_VISIBLE)==GLFW.GLFW_FALSE||GLFW.glfwGetWindowAttrib(window,GLFW.GLFW_ICONIFIED)!=GLFW.GLFW_FALSE)
+            throw new IllegalStateException("Performance window is not drawable");
+    }
+    static boolean awaitPerformanceFramebuffer(int width,int height,int cameraWidth,int cameraHeight,long elapsedNanos) {
+        if(width==1920&&height==1080&&cameraWidth==width&&cameraHeight==height)return true;
+        if(elapsedNanos>=30_000_000_000L)validatePerformanceFramebuffer(width,height,cameraWidth,cameraHeight);
+        return false;
     }
     static void validatePerformanceFramebuffer(int width,int height,int cameraWidth,int cameraHeight) {
         if(width!=1920||height!=1080||cameraWidth!=width||cameraHeight!=height)

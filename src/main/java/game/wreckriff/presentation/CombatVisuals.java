@@ -433,8 +433,14 @@ public final class CombatVisuals implements AutoCloseable {
         for(Iterator<Particle> it=particles.iterator();it.hasNext();) {
             Particle p=it.next();p.age+=dt;
             if(p.age>=p.lifetime){it.remove();freeParticles.addLast(p);continue;}
-            if(p.envelope==null||!p.envelope.stationary){p.velocity.y-=p.gravity*dt;p.position.addLocal(p.velocity.x*dt,p.velocity.y*dt,p.velocity.z*dt);}
-            if(p.envelope!=null){p.envelope.validate(world,envelopeFrame,surfaceRevisions);p.envelope.constrain(p.position,p.velocity);}
+            if(p.envelope!=null) {
+                p.envelope.validate(world,envelopeFrame,surfaceRevisions);
+                if(p.envelope.invalidated()){p.lifetime=Math.min(p.lifetime,p.age+.13f);p.growth=0;}
+            }
+            if(p.envelope==null||(!p.envelope.stationary&&!p.envelope.invalidated())) {
+                p.velocity.y-=p.gravity*dt;p.position.addLocal(p.velocity.x*dt,p.velocity.y*dt,p.velocity.z*dt);
+            }
+            if(p.envelope!=null)p.envelope.constrain(p.position,p.velocity);
         }
         int tracerQueries=0;
         for(Iterator<GunShot> it=shots.values().iterator();it.hasNext();) {
@@ -519,7 +525,7 @@ public final class CombatVisuals implements AutoCloseable {
             int id=vehicle.id;Emitter emitter=emitters.computeIfAbsent(id,key->new Emitter());emitter.smokeClock-=dt;emitter.turboClock-=dt;
             if(vehicle.alive() && vehicle.hp/vehicle.maximumHp<=.25f) {
                 emitter.envelopeClock-=dt;Vector3f position=world.position(id);
-                if(emitter.envelope==null||emitter.envelopeClock<=0||emitter.envelopeOrigin.distanceSquared(position)>.75f*.75f) {
+                if(emitter.envelope==null||emitter.envelope.invalidated()||emitter.envelopeClock<=0||emitter.envelopeOrigin.distanceSquared(position)>.75f*.75f) {
                     emitter.envelope=captureEnvelope(position.add(0,.7f,0),null,3.5f);emitter.envelopeOrigin.set(position);emitter.envelopeClock=.5f;
                 }
                 emissionEnvelope=emitter.envelope;

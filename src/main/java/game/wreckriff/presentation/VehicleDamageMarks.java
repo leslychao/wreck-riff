@@ -14,6 +14,7 @@ final class VehicleDamageMarks {
     static final int SIZE=512,LIMIT=32;
     record Mark(Vector3f point,Vector3f normal,Vector2f uv,float strength,int channel,long id,int owner,int stamp) {}
     private static final Map<AssetManager,byte[]> ATLASES=new WeakHashMap<>();
+    private static final Map<AssetManager,Map<String,byte[]>> OWNERSHIP=new WeakHashMap<>();
     private final byte[] atlas,ownership;
     private final ArrayDeque<Mark> marks=new ArrayDeque<>();
     private final ByteBuffer pixels=BufferUtils.createByteBuffer(SIZE*SIZE*4);
@@ -21,7 +22,7 @@ final class VehicleDamageMarks {
     private final Image image=new Image(Image.Format.RGBA8,SIZE,SIZE,pixels,ColorSpace.Linear);
     private boolean dirty;
     final Texture2D texture=new Texture2D(image);
-    VehicleDamageMarks(AssetManager assets,String profile){synchronized(ATLASES){atlas=ATLASES.computeIfAbsent(assets,key->readPixels(assets,"textures/vehicles/shared/damage-atlas.png"));}ownership=readPixels(assets,"textures/vehicles/"+profile+"/damage-ownership.png");texture.setMagFilter(Texture.MagFilter.Bilinear);texture.setMinFilter(Texture.MinFilter.BilinearNoMipMaps);texture.setWrap(Texture.WrapMode.EdgeClamp);}
+    VehicleDamageMarks(AssetManager assets,String profile){synchronized(ATLASES){atlas=ATLASES.computeIfAbsent(assets,key->readPixels(assets,"textures/vehicles/shared/damage-atlas.png"));ownership=OWNERSHIP.computeIfAbsent(assets,key->new HashMap<>()).computeIfAbsent(profile,key->readPixels(assets,"textures/vehicles/"+profile+"/damage-ownership.png"));}texture.setMagFilter(Texture.MagFilter.Bilinear);texture.setMinFilter(Texture.MinFilter.BilinearNoMipMaps);texture.setWrap(Texture.WrapMode.EdgeClamp);}
     void hit(Vector3f point,Vector3f normal,Vector2f uv,float amount,boolean fire,boolean glass,long id,int owner,int stamp) {
         int channel=fire?1:glass?2:0;Mark nearby=null;for(Mark mark:marks)if(mark.channel==channel&&mark.owner==owner&&mark.uv.distanceSquared(uv)<.00016f){nearby=mark;break;}
         if(nearby!=null){marks.remove(nearby);amount=Math.min(1,nearby.strength+amount*.6f);}

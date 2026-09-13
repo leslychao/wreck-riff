@@ -18,11 +18,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class NativeOrdnanceReviewLifecycleTest {
     @TempDir Path directory;
 
-    @Test void performanceSettingsRequireFullscreen1080pFourSamplesAudioAndNoFrameCap() {
+    @Test void performanceSettingsRequireFixed1080pClientFourSamplesAudioAndNoFrameCap() {
         for(int seconds:new int[]{60,75,90}) {
             var settings=NativeOrdnanceSaturationReview.reviewSettings(seconds);
             assertEquals(1920,settings.getWidth());assertEquals(1080,settings.getHeight());
-            assertTrue(settings.isFullscreen());assertFalse(settings.isResizable());assertEquals(4,settings.getSamples());
+            assertFalse(settings.isFullscreen());assertFalse(settings.isResizable());assertEquals(4,settings.getSamples());
             assertFalse(settings.isVSync());assertEquals(0,settings.getFrameRate());assertNotNull(settings.getAudioRenderer());
         }
         assertThrows(IllegalArgumentException.class,()->NativeOrdnanceSaturationReview.reviewSettings(59));
@@ -32,6 +32,13 @@ class NativeOrdnanceReviewLifecycleTest {
         assertDoesNotThrow(()->NativeOrdnanceSaturationReview.validatePerformanceFramebuffer(1920,1080,1920,1080));
         assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.validatePerformanceFramebuffer(1920,1055,1920,1055));
         assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.validatePerformanceFramebuffer(1920,1080,1920,1055));
+    }
+    @Test void initialWrongResolutionWaitsForRealReshapeAndFailsAfterThirtySeconds() {
+        assertFalse(NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(1920,1055,1920,1055,0));
+        assertFalse(NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(1920,1080,1920,1055,29_000_000_000L));
+        assertTrue(NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(1920,1080,1920,1080,29_900_000_000L));
+        assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(3840,2160,3840,2160,30_000_000_000L));
+        assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(0,0,0,0,30_000_000_000L));
     }
     @ParameterizedTest @ValueSource(booleans={false,true})
     void initializationFailureExitsTwoWithoutWaitingForTheRenderThreadEvenIfShutdownFails(boolean shutdownFails) throws Exception {
