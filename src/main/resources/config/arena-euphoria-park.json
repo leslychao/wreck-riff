@@ -660,898 +660,66 @@
       "yawDegrees": 0
     },
     {
-      "id": "edge-0-0",
+      "id": "woodland-core-0",
       "center": {
         "x": 0.0,
-        "y": 2.5,
-        "z": 50.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-100",
-      "center": {
-        "x": 0.0,
-        "y": 3.25,
-        "z": 150.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 6.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-200",
-      "center": {
-        "x": 0.0,
-        "y": 4.0,
-        "z": 250.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 8.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-300",
-      "center": {
-        "x": 0.0,
-        "y": 4.75,
-        "z": 350.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 9.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-400",
-      "center": {
-        "x": 0.0,
-        "y": 2.5,
-        "z": 450.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-500",
-      "center": {
-        "x": 0.0,
-        "y": 3.25,
-        "z": 550.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 6.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-600",
-      "center": {
-        "x": 0.0,
-        "y": 4.0,
+        "y": 3.0,
         "z": 650.0
       },
       "size": {
-        "x": 10.0,
-        "y": 8.0,
-        "z": 100.0
+        "x": 2.0,
+        "y": 6.0,
+        "z": 1300.0
       },
-      "material": "park-ground",
+      "material": "earth",
       "collision": true,
       "yawDegrees": 0
     },
     {
-      "id": "edge-0-700",
-      "center": {
-        "x": 0.0,
-        "y": 4.75,
-        "z": 750.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 9.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-800",
-      "center": {
-        "x": 0.0,
-        "y": 2.5,
-        "z": 850.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-900",
-      "center": {
-        "x": 0.0,
-        "y": 3.25,
-        "z": 950.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 6.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-1000",
-      "center": {
-        "x": 0.0,
-        "y": 4.0,
-        "z": 1050.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 8.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-1100",
-      "center": {
-        "x": 0.0,
-        "y": 4.75,
-        "z": 1150.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 9.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-0-1200",
-      "center": {
-        "x": 0.0,
-        "y": 2.5,
-        "z": 1250.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-0",
+      "id": "woodland-core-1",
       "center": {
         "x": 1500.0,
-        "y": 2.5,
-        "z": 50.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-100",
-      "center": {
-        "x": 1500.0,
-        "y": 3.25,
-        "z": 150.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 6.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-200",
-      "center": {
-        "x": 1500.0,
-        "y": 4.0,
-        "z": 250.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 8.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-300",
-      "center": {
-        "x": 1500.0,
-        "y": 4.75,
-        "z": 350.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 9.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-400",
-      "center": {
-        "x": 1500.0,
-        "y": 2.5,
-        "z": 450.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-500",
-      "center": {
-        "x": 1500.0,
-        "y": 3.25,
-        "z": 550.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 6.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-600",
-      "center": {
-        "x": 1500.0,
-        "y": 4.0,
+        "y": 3.0,
         "z": 650.0
       },
       "size": {
-        "x": 10.0,
-        "y": 8.0,
-        "z": 100.0
+        "x": 2.0,
+        "y": 6.0,
+        "z": 1300.0
       },
-      "material": "park-ground",
+      "material": "earth",
       "collision": true,
       "yawDegrees": 0
     },
     {
-      "id": "edge-1-700",
-      "center": {
-        "x": 1500.0,
-        "y": 4.75,
-        "z": 750.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 9.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-800",
-      "center": {
-        "x": 1500.0,
-        "y": 2.5,
-        "z": 850.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-900",
-      "center": {
-        "x": 1500.0,
-        "y": 3.25,
-        "z": 950.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 6.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-1000",
-      "center": {
-        "x": 1500.0,
-        "y": 4.0,
-        "z": 1050.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 8.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-1100",
-      "center": {
-        "x": 1500.0,
-        "y": 4.75,
-        "z": 1150.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 9.5,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-1-1200",
-      "center": {
-        "x": 1500.0,
-        "y": 2.5,
-        "z": 1250.0
-      },
-      "size": {
-        "x": 10.0,
-        "y": 5.0,
-        "z": 100.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-0",
-      "center": {
-        "x": 50.0,
-        "y": 2.5,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-100",
-      "center": {
-        "x": 150.0,
-        "y": 3.25,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-200",
-      "center": {
-        "x": 250.0,
-        "y": 4.0,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-300",
-      "center": {
-        "x": 350.0,
-        "y": 4.75,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 9.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-400",
-      "center": {
-        "x": 450.0,
-        "y": 2.5,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-500",
-      "center": {
-        "x": 550.0,
-        "y": 3.25,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-600",
-      "center": {
-        "x": 650.0,
-        "y": 4.0,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-700",
+      "id": "woodland-core-2",
       "center": {
         "x": 750.0,
-        "y": 4.75,
+        "y": 3.0,
         "z": 0.0
       },
       "size": {
-        "x": 100.0,
-        "y": 9.5,
-        "z": 10.0
+        "x": 1500.0,
+        "y": 6.0,
+        "z": 2.0
       },
-      "material": "park-ground",
+      "material": "earth",
       "collision": true,
       "yawDegrees": 0
     },
     {
-      "id": "edge-2-800",
-      "center": {
-        "x": 850.0,
-        "y": 2.5,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-900",
-      "center": {
-        "x": 950.0,
-        "y": 3.25,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-1000",
-      "center": {
-        "x": 1050.0,
-        "y": 4.0,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-1100",
-      "center": {
-        "x": 1150.0,
-        "y": 4.75,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 9.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-1200",
-      "center": {
-        "x": 1250.0,
-        "y": 2.5,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-1300",
-      "center": {
-        "x": 1350.0,
-        "y": 3.25,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-2-1400",
-      "center": {
-        "x": 1450.0,
-        "y": 4.0,
-        "z": 0.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-0",
-      "center": {
-        "x": 50.0,
-        "y": 2.5,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-100",
-      "center": {
-        "x": 150.0,
-        "y": 3.25,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-200",
-      "center": {
-        "x": 250.0,
-        "y": 4.0,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-300",
-      "center": {
-        "x": 350.0,
-        "y": 4.75,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 9.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-400",
-      "center": {
-        "x": 450.0,
-        "y": 2.5,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-500",
-      "center": {
-        "x": 550.0,
-        "y": 3.25,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-600",
-      "center": {
-        "x": 650.0,
-        "y": 4.0,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-700",
+      "id": "woodland-core-3",
       "center": {
         "x": 750.0,
-        "y": 4.75,
+        "y": 3.0,
         "z": 1300.0
       },
       "size": {
-        "x": 100.0,
-        "y": 9.5,
-        "z": 10.0
+        "x": 1500.0,
+        "y": 6.0,
+        "z": 2.0
       },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-800",
-      "center": {
-        "x": 850.0,
-        "y": 2.5,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-900",
-      "center": {
-        "x": 950.0,
-        "y": 3.25,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-1000",
-      "center": {
-        "x": 1050.0,
-        "y": 4.0,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-1100",
-      "center": {
-        "x": 1150.0,
-        "y": 4.75,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 9.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-1200",
-      "center": {
-        "x": 1250.0,
-        "y": 2.5,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 5.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-1300",
-      "center": {
-        "x": 1350.0,
-        "y": 3.25,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 6.5,
-        "z": 10.0
-      },
-      "material": "park-ground",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "edge-3-1400",
-      "center": {
-        "x": 1450.0,
-        "y": 4.0,
-        "z": 1300.0
-      },
-      "size": {
-        "x": 100.0,
-        "y": 8.0,
-        "z": 10.0
-      },
-      "material": "park-ground",
+      "material": "earth",
       "collision": true,
       "yawDegrees": 0
     }
@@ -9381,6 +8549,234 @@
   ],
   "surfaces": [
     {
+      "id": "woodland-bank-0-0",
+      "geometryId": "woodland-bank-0-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-160",
+      "geometryId": "woodland-bank-0-160",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-320",
+      "geometryId": "woodland-bank-0-320",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-480",
+      "geometryId": "woodland-bank-0-480",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-640",
+      "geometryId": "woodland-bank-0-640",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-800",
+      "geometryId": "woodland-bank-0-800",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-960",
+      "geometryId": "woodland-bank-0-960",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-1120",
+      "geometryId": "woodland-bank-0-1120",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-0-1280",
+      "geometryId": "woodland-bank-0-1280",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-0",
+      "geometryId": "woodland-bank-1-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-160",
+      "geometryId": "woodland-bank-1-160",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-320",
+      "geometryId": "woodland-bank-1-320",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-480",
+      "geometryId": "woodland-bank-1-480",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-640",
+      "geometryId": "woodland-bank-1-640",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-800",
+      "geometryId": "woodland-bank-1-800",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-960",
+      "geometryId": "woodland-bank-1-960",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-1120",
+      "geometryId": "woodland-bank-1-1120",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-1-1280",
+      "geometryId": "woodland-bank-1-1280",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-0",
+      "geometryId": "woodland-bank-2-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-160",
+      "geometryId": "woodland-bank-2-160",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-320",
+      "geometryId": "woodland-bank-2-320",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-480",
+      "geometryId": "woodland-bank-2-480",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-640",
+      "geometryId": "woodland-bank-2-640",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-800",
+      "geometryId": "woodland-bank-2-800",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-960",
+      "geometryId": "woodland-bank-2-960",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-1120",
+      "geometryId": "woodland-bank-2-1120",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-1280",
+      "geometryId": "woodland-bank-2-1280",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-2-1440",
+      "geometryId": "woodland-bank-2-1440",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-0",
+      "geometryId": "woodland-bank-3-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-160",
+      "geometryId": "woodland-bank-3-160",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-320",
+      "geometryId": "woodland-bank-3-320",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-480",
+      "geometryId": "woodland-bank-3-480",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-640",
+      "geometryId": "woodland-bank-3-640",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-800",
+      "geometryId": "woodland-bank-3-800",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-960",
+      "geometryId": "woodland-bank-3-960",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-1120",
+      "geometryId": "woodland-bank-3-1120",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-1280",
+      "geometryId": "woodland-bank-3-1280",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "woodland-bank-3-1440",
+      "geometryId": "woodland-bank-3-1440",
+      "level": 0,
+      "grip": 1
+    },
+    {
       "id": "road-arrival-walk-0",
       "geometryId": "road-arrival-walk-0",
       "level": 0,
@@ -9921,12 +9317,6 @@
       "grip": 1
     },
     {
-      "id": "ground-0-1280",
-      "geometryId": "ground-0-1280",
-      "level": 0,
-      "grip": 1
-    },
-    {
       "id": "ground-160-0-region0",
       "geometryId": "ground-160-0-region0",
       "level": 0,
@@ -9995,12 +9385,6 @@
     {
       "id": "ground-160-1120",
       "geometryId": "ground-160-1120",
-      "level": 0,
-      "grip": 1
-    },
-    {
-      "id": "ground-160-1280",
-      "geometryId": "ground-160-1280",
       "level": 0,
       "grip": 1
     },
@@ -10083,12 +9467,6 @@
       "grip": 1
     },
     {
-      "id": "ground-320-1280",
-      "geometryId": "ground-320-1280",
-      "level": 0,
-      "grip": 1
-    },
-    {
       "id": "ground-480-0",
       "geometryId": "ground-480-0",
       "level": 0,
@@ -10149,12 +9527,6 @@
       "grip": 1
     },
     {
-      "id": "ground-480-1280",
-      "geometryId": "ground-480-1280",
-      "level": 0,
-      "grip": 1
-    },
-    {
       "id": "ground-640-0",
       "geometryId": "ground-640-0",
       "level": 0,
@@ -10187,12 +9559,6 @@
     {
       "id": "ground-640-1120",
       "geometryId": "ground-640-1120",
-      "level": 0,
-      "grip": 1
-    },
-    {
-      "id": "ground-640-1280",
-      "geometryId": "ground-640-1280",
       "level": 0,
       "grip": 1
     },
@@ -10235,12 +9601,6 @@
     {
       "id": "ground-800-1120",
       "geometryId": "ground-800-1120",
-      "level": 0,
-      "grip": 1
-    },
-    {
-      "id": "ground-800-1280",
-      "geometryId": "ground-800-1280",
       "level": 0,
       "grip": 1
     },
@@ -10289,12 +9649,6 @@
     {
       "id": "ground-960-1120",
       "geometryId": "ground-960-1120",
-      "level": 0,
-      "grip": 1
-    },
-    {
-      "id": "ground-960-1280",
-      "geometryId": "ground-960-1280",
       "level": 0,
       "grip": 1
     },
@@ -10359,12 +9713,6 @@
       "grip": 1
     },
     {
-      "id": "ground-1120-1280",
-      "geometryId": "ground-1120-1280",
-      "level": 0,
-      "grip": 1
-    },
-    {
       "id": "ground-1280-0",
       "geometryId": "ground-1280-0",
       "level": 0,
@@ -10421,12 +9769,6 @@
     {
       "id": "ground-1280-1120",
       "geometryId": "ground-1280-1120",
-      "level": 0,
-      "grip": 1
-    },
-    {
-      "id": "ground-1280-1280",
-      "geometryId": "ground-1280-1280",
       "level": 0,
       "grip": 1
     },
@@ -10493,12 +9835,6 @@
     {
       "id": "ground-1440-1120",
       "geometryId": "ground-1440-1120",
-      "level": 0,
-      "grip": 1
-    },
-    {
-      "id": "ground-1440-1280",
-      "geometryId": "ground-1440-1280",
       "level": 0,
       "grip": 1
     }
@@ -10673,6 +10009,1374 @@
       ],
       "material": "cyan",
       "collision": false,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-0",
+      "vertices": [
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 160.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 160.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-160",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 160.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 320.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 320.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 160.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-320",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 320.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 480.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 480.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 320.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-480",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 480.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 640.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 640.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 480.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-640",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 640.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 800.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 800.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 640.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-800",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 800.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 960.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 960.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 800.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-960",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 960.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 1120.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 1120.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 960.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-1120",
+      "vertices": [
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 1120.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 20.0,
+          "y": 3.42857,
+          "z": 1280.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 1280.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 1120.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2,
+        0,
+        4,
+        3
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-0-1280",
+      "vertices": [
+        {
+          "x": 20.0,
+          "y": 3.42857,
+          "z": 1280.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 1280.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-0",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 160.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 160.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-160",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 160.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 320.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 320.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 160.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-320",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 320.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 480.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 480.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 320.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-480",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 480.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 640.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 640.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 480.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-640",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 640.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 800.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 800.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 640.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-800",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 800.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 960.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 960.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 800.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-960",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 960.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 1120.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 1120.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 960.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-1120",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 1120.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 1280.0
+        },
+        {
+          "x": 1480.0,
+          "y": 3.42857,
+          "z": 1280.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 1120.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2,
+        0,
+        4,
+        3
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-1-1280",
+      "vertices": [
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 1280.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 1480.0,
+          "y": 3.42857,
+          "z": 1280.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-0",
+      "vertices": [
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 160.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-160",
+      "vertices": [
+        {
+          "x": 160.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 320.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-320",
+      "vertices": [
+        {
+          "x": 320.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 480.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 480.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-480",
+      "vertices": [
+        {
+          "x": 480.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 640.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 640.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 480.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-640",
+      "vertices": [
+        {
+          "x": 640.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 800.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 800.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 640.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-800",
+      "vertices": [
+        {
+          "x": 800.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 960.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 960.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 800.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-960",
+      "vertices": [
+        {
+          "x": 960.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1120.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1120.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 960.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-1120",
+      "vertices": [
+        {
+          "x": 1120.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1280.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1280.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 1120.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-1280",
+      "vertices": [
+        {
+          "x": 1280.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1440.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 1280.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-2-1440",
+      "vertices": [
+        {
+          "x": 1440.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 0.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 35.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-0",
+      "vertices": [
+        {
+          "x": 0.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 160.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-160",
+      "vertices": [
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 320.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 160.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-320",
+      "vertices": [
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 480.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 480.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 320.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-480",
+      "vertices": [
+        {
+          "x": 480.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 640.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 640.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 480.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-640",
+      "vertices": [
+        {
+          "x": 640.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 800.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 800.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 640.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-800",
+      "vertices": [
+        {
+          "x": 800.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 960.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 960.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 800.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-960",
+      "vertices": [
+        {
+          "x": 960.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1120.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1120.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 960.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-1120",
+      "vertices": [
+        {
+          "x": 1120.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1280.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1280.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 1120.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-1280",
+      "vertices": [
+        {
+          "x": 1280.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1440.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 1280.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "woodland-bank-3-1440",
+      "vertices": [
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1500.0,
+          "y": 8.0,
+          "z": 1300.0
+        },
+        {
+          "x": 1440.0,
+          "y": 8.0,
+          "z": 1300.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2
+      ],
+      "material": "grass",
+      "collision": true,
       "triangleMaterials": []
     },
     {
@@ -16953,6 +17657,21 @@
           "z": 160.0
         },
         {
+          "x": 100.0,
+          "y": 0.0,
+          "z": 100.0
+        },
+        {
+          "x": 100.0,
+          "y": 0.0,
+          "z": 100.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 160.0
+        },
+        {
           "x": 90.0,
           "y": 0.0,
           "z": 160.0
@@ -16967,9 +17686,12 @@
         0,
         2,
         1,
-        0,
         3,
-        2
+        5,
+        4,
+        3,
+        6,
+        5
       ],
       "material": "district-warm",
       "collision": true,
@@ -16979,14 +17701,9 @@
       "id": "ground-0-0",
       "vertices": [
         {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 160.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 160.0,
@@ -16994,7 +17711,27 @@
           "z": 100.0
         },
         {
-          "x": 0.0,
+          "x": 100.0,
+          "y": 0.0,
+          "z": 100.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 100.0,
+          "y": 0.0,
+          "z": 100.0
+        },
+        {
+          "x": 35.0,
           "y": 0.0,
           "z": 100.0
         },
@@ -17004,12 +17741,12 @@
           "z": 160.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 160.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 100.0
         },
@@ -17029,9 +17766,12 @@
         4,
         6,
         5,
-        4,
         7,
-        6
+        9,
+        8,
+        7,
+        10,
+        9
       ],
       "material": "district-garden",
       "collision": true,
@@ -17168,14 +17908,14 @@
           "z": 320.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 320.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 181.71866
+          "z": 184.63533
         },
         {
           "x": 90.0,
@@ -17183,7 +17923,7 @@
           "z": 189.21866
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 160.0
         },
@@ -17198,9 +17938,9 @@
           "z": 189.21866
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 181.71866
+          "z": 184.63533
         }
       ],
       "indices": [
@@ -17297,14 +18037,14 @@
           "z": 480.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 480.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 383.33333
+          "z": 374.0
         },
         {
           "x": 106.25,
@@ -17317,17 +18057,17 @@
           "z": 355.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 383.33333
+          "z": 374.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 355.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 320.0
         },
@@ -17342,7 +18082,7 @@
           "z": 355.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 355.0
         }
@@ -17380,14 +18120,14 @@
           "z": 640.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 640.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 602.41379
+          "z": 606.03448
         },
         {
           "x": 159.02495,
@@ -17415,7 +18155,7 @@
           "z": 618.86465
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 480.0
         },
@@ -17435,9 +18175,9 @@
           "z": 618.86811
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 602.41379
+          "z": 606.03448
         }
       ],
       "indices": [
@@ -17471,7 +18211,7 @@
       "id": "ground-0-640",
       "vertices": [
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 640.0
         },
@@ -17486,7 +18226,7 @@
           "z": 800.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 800.0
         }
@@ -17517,14 +18257,14 @@
           "z": 960.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 960.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 815.875
+          "z": 816.75
         },
         {
           "x": 139.95288,
@@ -17572,7 +18312,7 @@
           "z": 819.71625
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 800.0
         },
@@ -17587,9 +18327,9 @@
           "z": 819.71625
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 815.875
+          "z": 816.75
         },
         {
           "x": 149.13152,
@@ -17665,17 +18405,17 @@
           "z": 1120.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 1120.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 1110.41667
+          "z": 1102.39583
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 960.0
         },
@@ -17690,9 +18430,9 @@
           "z": 1073.75
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 1110.41667
+          "z": 1102.39583
         }
       ],
       "indices": [
@@ -17717,7 +18457,7 @@
       "id": "ground-0-1120",
       "vertices": [
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
           "z": 1120.0
         },
@@ -17729,12 +18469,27 @@
         {
           "x": 160.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1140.0
         },
         {
-          "x": 0.0,
+          "x": 35.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 1140.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 35.0,
+          "y": 0.0,
+          "z": 1265.0
         }
       ],
       "indices": [
@@ -17743,43 +18498,10 @@
         1,
         0,
         3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
-      "id": "ground-0-1280",
-      "vertices": [
-        {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 160.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 160.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
         2,
-        1,
-        0,
-        3,
-        2
+        4,
+        6,
+        5
       ],
       "material": "district-garden",
       "collision": true,
@@ -17825,14 +18547,9 @@
       "id": "ground-160-0",
       "vertices": [
         {
-          "x": 160.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 320.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 320.0,
@@ -17843,6 +18560,11 @@
           "x": 160.0,
           "y": 0.0,
           "z": 100.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -19395,39 +20117,54 @@
       "id": "ground-160-1120",
       "vertices": [
         {
-          "x": 320.0,
+          "x": 160.0,
           "y": 0.0,
-          "z": 1190.0
+          "z": 1120.0
         },
         {
-          "x": 320.0,
+          "x": 180.0,
           "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 220.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 310.0,
-          "y": 0.0,
-          "z": 1190.0
-        },
-        {
-          "x": 310.0,
-          "y": 0.0,
-          "z": 1190.0
-        },
-        {
-          "x": 220.0,
-          "y": 0.0,
-          "z": 1280.0
+          "z": 1120.0
         },
         {
           "x": 160.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1140.0
+        },
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 1190.0
+        },
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 235.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 310.0,
+          "y": 0.0,
+          "z": 1190.0
+        },
+        {
+          "x": 310.0,
+          "y": 0.0,
+          "z": 1190.0
+        },
+        {
+          "x": 235.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 1265.0
         },
         {
           "x": 160.0,
@@ -19455,7 +20192,7 @@
           "z": 1170.0
         },
         {
-          "x": 160.0,
+          "x": 180.0,
           "y": 0.0,
           "z": 1120.0
         },
@@ -19473,69 +20210,44 @@
           "x": 160.0,
           "y": 0.0,
           "z": 1170.0
+        },
+        {
+          "x": 160.0,
+          "y": 0.0,
+          "z": 1140.0
         }
       ],
       "indices": [
         0,
         2,
         1,
-        0,
         3,
-        2,
-        4,
-        6,
         5,
         4,
-        7,
+        3,
         6,
-        8,
-        10,
+        5,
+        7,
         9,
         8,
-        11,
+        7,
         10,
-        12,
-        14,
+        9,
+        11,
         13,
         12,
+        11,
+        14,
+        13,
         15,
-        14
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
-      "id": "ground-160-1280",
-      "vertices": [
-        {
-          "x": 160.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 320.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 320.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 160.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
+        17,
+        16,
+        15,
+        18,
+        17,
+        15,
+        19,
+        18
       ],
       "material": "district-garden",
       "collision": true,
@@ -19581,14 +20293,9 @@
       "id": "ground-320-0",
       "vertices": [
         {
-          "x": 320.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 480.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 480.0,
@@ -19599,6 +20306,11 @@
           "x": 320.0,
           "y": 0.0,
           "z": 100.0
+        },
+        {
+          "x": 320.0,
+          "y": 0.0,
+          "z": 35.0
         },
         {
           "x": 480.0,
@@ -21362,12 +22074,12 @@
         {
           "x": 480.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
-          "x": 455.55635,
+          "x": 440.55635,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 365.55635,
@@ -21375,14 +22087,14 @@
           "z": 1190.0
         },
         {
-          "x": 455.55635,
+          "x": 440.55635,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 320.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 320.0,
@@ -21414,53 +22126,12 @@
       "triangleMaterials": []
     },
     {
-      "id": "ground-320-1280",
-      "vertices": [
-        {
-          "x": 320.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 480.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 480.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 320.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
       "id": "ground-480-0",
       "vertices": [
         {
-          "x": 480.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 640.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 640.0,
@@ -21471,6 +22142,11 @@
           "x": 480.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 480.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -22405,12 +23081,12 @@
         {
           "x": 640.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
-          "x": 620.0,
+          "x": 613.25,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 535.0,
@@ -22423,14 +23099,14 @@
           "z": 1120.0
         },
         {
-          "x": 620.0,
+          "x": 613.25,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 535.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 535.0,
@@ -22440,12 +23116,12 @@
         {
           "x": 535.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 480.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 480.0,
@@ -22478,53 +23154,12 @@
       "triangleMaterials": []
     },
     {
-      "id": "ground-480-1280",
-      "vertices": [
-        {
-          "x": 480.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 640.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 640.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 480.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
       "id": "ground-640-0",
       "vertices": [
         {
-          "x": 640.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 800.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 800.0,
@@ -22535,6 +23170,11 @@
           "x": 640.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 640.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -23855,48 +24495,12 @@
         {
           "x": 800.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 640.0,
           "y": 0.0,
-          "z": 1280.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
-      "id": "ground-640-1280",
-      "vertices": [
-        {
-          "x": 640.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 800.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 800.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 640.0,
-          "y": 0.0,
-          "z": 1300.0
+          "z": 1265.0
         }
       ],
       "indices": [
@@ -23915,14 +24519,9 @@
       "id": "ground-800-0",
       "vertices": [
         {
-          "x": 800.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 960.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 960.0,
@@ -23933,6 +24532,11 @@
           "x": 800.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 800.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -24418,12 +25022,12 @@
         {
           "x": 960.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 800.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         }
       ],
       "indices": [
@@ -24442,53 +25046,12 @@
       "triangleMaterials": []
     },
     {
-      "id": "ground-800-1280",
-      "vertices": [
-        {
-          "x": 800.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 960.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 960.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 800.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
       "id": "ground-960-0",
       "vertices": [
         {
-          "x": 960.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 1120.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 1120.0,
@@ -24499,6 +25062,11 @@
           "x": 960.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 960.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -25433,12 +26001,12 @@
         {
           "x": 1120.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 960.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 960.0,
@@ -25462,53 +26030,12 @@
       "triangleMaterials": []
     },
     {
-      "id": "ground-960-1280",
-      "vertices": [
-        {
-          "x": 960.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1120.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1120.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 960.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
       "id": "ground-1120-0",
       "vertices": [
         {
-          "x": 1120.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 1280.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
           "x": 1280.0,
@@ -25519,6 +26046,11 @@
           "x": 1120.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 1120.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -26942,12 +27474,12 @@
         {
           "x": 1280.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1262.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1262.0,
@@ -26957,12 +27489,12 @@
         {
           "x": 1262.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
-          "x": 1230.8,
+          "x": 1233.2,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1238.8,
@@ -26990,14 +27522,14 @@
           "z": 1230.0
         },
         {
-          "x": 1230.8,
+          "x": 1233.2,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
-          "x": 1126.9025,
+          "x": 1144.4025,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1185.23583,
@@ -27010,14 +27542,14 @@
           "z": 1230.0
         },
         {
-          "x": 1126.9025,
+          "x": 1144.4025,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1120.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1120.0,
@@ -27072,53 +27604,12 @@
       "triangleMaterials": []
     },
     {
-      "id": "ground-1120-1280",
-      "vertices": [
-        {
-          "x": 1120.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1280.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1280.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 1120.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
       "id": "ground-1280-0",
       "vertices": [
         {
-          "x": 1280.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
           "x": 1440.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 60.0
         },
         {
           "x": 1440.0,
@@ -27126,18 +27617,49 @@
           "z": 160.0
         },
         {
+          "x": 1340.0,
+          "y": 0.0,
+          "z": 160.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 60.0
+        },
+        {
+          "x": 1340.0,
+          "y": 0.0,
+          "z": 160.0
+        },
+        {
           "x": 1280.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 1280.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
         0,
         2,
         1,
-        0,
         3,
-        2
+        5,
+        4,
+        3,
+        6,
+        5,
+        3,
+        7,
+        6
       ],
       "material": "district-garden",
       "collision": true,
@@ -28294,12 +28816,12 @@
         {
           "x": 1440.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1280.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1280.0,
@@ -28320,56 +28842,15 @@
       "triangleMaterials": []
     },
     {
-      "id": "ground-1280-1280",
-      "vertices": [
-        {
-          "x": 1280.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1440.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1440.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 1280.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
-        3,
-        2
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
       "id": "ground-1440-0",
       "vertices": [
         {
-          "x": 1440.0,
+          "x": 1465.0,
           "y": 0.0,
-          "z": 0.0
+          "z": 35.0
         },
         {
-          "x": 1500.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 160.0
         },
@@ -28377,6 +28858,26 @@
           "x": 1440.0,
           "y": 0.0,
           "z": 160.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 60.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 35.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 60.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 35.0
         }
       ],
       "indices": [
@@ -28385,7 +28886,10 @@
         1,
         0,
         3,
-        2
+        2,
+        4,
+        6,
+        5
       ],
       "material": "district-garden",
       "collision": true,
@@ -28400,12 +28904,12 @@
           "z": 160.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 160.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 320.0
         },
@@ -28436,12 +28940,12 @@
           "z": 320.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 320.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 480.0
         },
@@ -28472,12 +28976,12 @@
           "z": 480.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 480.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 640.0
         },
@@ -28508,12 +29012,12 @@
           "z": 640.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 640.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 800.0
         },
@@ -28580,12 +29084,12 @@
           "z": 800.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 800.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 950.0
         },
@@ -28595,12 +29099,12 @@
           "z": 950.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 950.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 960.0
         },
@@ -28678,12 +29182,12 @@
           "z": 960.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 960.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 1120.0
         },
@@ -28745,24 +29249,39 @@
       "id": "ground-1440-1120",
       "vertices": [
         {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
+          "x": 1440.0,
+          "y": 0.0,
+          "z": 1240.0
+        },
+        {
+          "x": 1465.0,
+          "y": 0.0,
+          "z": 1265.0
+        },
+        {
           "x": 1450.0,
           "y": 0.0,
           "z": 1120.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
           "z": 1120.0
         },
         {
-          "x": 1500.0,
+          "x": 1465.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1265.0
         },
         {
           "x": 1450.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1250.0
         },
         {
           "x": 1450.0,
@@ -28772,12 +29291,12 @@
         {
           "x": 1450.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1250.0
         },
         {
           "x": 1440.0,
           "y": 0.0,
-          "z": 1280.0
+          "z": 1240.0
         },
         {
           "x": 1440.0,
@@ -28789,51 +29308,18 @@
         0,
         2,
         1,
-        0,
         3,
-        2,
-        4,
-        6,
         5,
         4,
-        7,
-        6
-      ],
-      "material": "district-garden",
-      "collision": true,
-      "triangleMaterials": []
-    },
-    {
-      "id": "ground-1440-1280",
-      "vertices": [
-        {
-          "x": 1440.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1500.0,
-          "y": 0.0,
-          "z": 1280.0
-        },
-        {
-          "x": 1500.0,
-          "y": 0.0,
-          "z": 1300.0
-        },
-        {
-          "x": 1440.0,
-          "y": 0.0,
-          "z": 1300.0
-        }
-      ],
-      "indices": [
-        0,
-        2,
-        1,
-        0,
         3,
-        2
+        6,
+        5,
+        7,
+        9,
+        8,
+        7,
+        10,
+        9
       ],
       "material": "district-garden",
       "collision": true,

@@ -20,8 +20,8 @@
 <polyline points="1480,350 1480,580 1400,660 1390,900" stroke="#b2b8b7" stroke-width="24" fill="none" stroke-linejoin="round"/>
 <polyline points="1190,400 850,530" stroke="#b2b8b7" stroke-width="24" fill="none" stroke-linejoin="round"/>
 <polyline points="1190,400 1430,240 1480,350" stroke="#b2b8b7" stroke-width="22" fill="none" stroke-linejoin="round"/>
-<polyline points="1530,240 1610,240 1610,440 1430,440 1430,340 1530,240" stroke="#daaf68" stroke-width="20" fill="none" stroke-linejoin="round"/>
-<polyline points="1530,440 1610,440 1610,240 1430,240 1430,340 1530,440" stroke="#daaf68" stroke-width="20" fill="none" stroke-linejoin="round"/>
+<polyline points="1530,240 1610,240 1610,440 1430,440 1430,340 1570,340 1610,240" stroke="#daaf68" stroke-width="20" fill="none" stroke-linejoin="round"/>
+<polyline points="1530,440 1610,440 1610,240 1430,240 1430,340 1570,340 1610,440" stroke="#daaf68" stroke-width="20" fill="none" stroke-linejoin="round"/>
 <polyline points="1620,1120 1460,1210 840,1210" stroke="#b2b8b7" stroke-width="26" fill="none" stroke-linejoin="round"/>
 <polyline points="540,670 620,720" stroke="#b2b8b7" stroke-width="18" fill="none" stroke-linejoin="round"/>
 <polyline points="590,820 520,1020" stroke="#b2b8b7" stroke-width="18" fill="none" stroke-linejoin="round"/>
@@ -152,8 +152,8 @@
 <circle cx="1371.0" cy="895.0" r="5" fill="#f8d25c"/>
 <circle cx="1405.8125" cy="915.125" r="5" fill="#f8d25c"/>
 <circle cx="1472.8" cy="350.0" r="5" fill="#f8d25c"/>
+<circle cx="1484.25" cy="340.0" r="5" fill="#f8d25c"/>
 <circle cx="1480.0" cy="371.08333" r="5" fill="#f8d25c"/>
-<circle cx="1502.0" cy="350.0" r="5" fill="#f8d25c"/>
 <circle cx="1587.06667" cy="1113.06667" r="5" fill="#f8d25c"/>
 <circle cx="216.9" cy="1170.1" r="5" fill="#f8d25c"/>
 <circle cx="234.98667" cy="1200.54667" r="5" fill="#f8d25c"/>
@@ -173,8 +173,8 @@
 <circle cx="1351.6381" cy="180.0" r="5" fill="#f8d25c"/>
 <circle cx="436.8" cy="1203.7" r="5" fill="#f8d25c"/>
 <circle cx="1637.26667" cy="912.8" r="5" fill="#f8d25c"/>
+<circle cx="1570.68571" cy="180.0" r="5" fill="#f8d25c"/>
 <circle cx="997.6" cy="296.4" r="5" fill="#f8d25c"/>
-<circle cx="1588.20952" cy="180.0" r="5" fill="#f8d25c"/>
 <circle cx="1263.22222" cy="1044.88889" r="5" fill="#f8d25c"/>
 <circle cx="312.23333" cy="1001.43333" r="5" fill="#f8d25c"/>
 <circle cx="1683.46" cy="564.02" r="5" fill="#f8d25c"/>
@@ -197,10 +197,9 @@
 <circle cx="309.53333" cy="621.46667" r="5" fill="#f8d25c"/>
 <circle cx="1248.3" cy="516.6" r="5" fill="#f8d25c"/>
 <circle cx="957.35238" cy="180.0" r="5" fill="#f8d25c"/>
+<circle cx="1702.11429" cy="180.0" r="5" fill="#f8d25c"/>
 <circle cx="1480.0" cy="524.41667" r="5" fill="#f8d25c"/>
 <circle cx="1465.76" cy="1206.76" r="5" fill="#f8d25c"/>
-<circle cx="1471.2381" cy="180.0" r="5" fill="#f8d25c"/>
-<circle cx="1702.11429" cy="180.0" r="5" fill="#f8d25c"/>
 <circle cx="1396.3" cy="748.8" r="5" fill="#f8d25c"/>
 <circle cx="576.4" cy="609.33333" r="5" fill="#f8d25c"/>
 <circle cx="1099.0" cy="351.0" r="5" fill="#f8d25c"/>
@@ -209,6 +208,7 @@
 <circle cx="1016.44" cy="915.92" r="5" fill="#f8d25c"/>
 <circle cx="187.26667" cy="381.28889" r="5" fill="#f8d25c"/>
 <circle cx="1295.96667" cy="611.93333" r="5" fill="#f8d25c"/>
+<circle cx="1193.0" cy="964.8" r="5" fill="#f8d25c"/>
 <circle cx="200.0" cy="220.0" r="10" fill="#83d6ff"/>
 <circle cx="1010.0" cy="800.0" r="10" fill="#83d6ff"/>
 <circle cx="1720.0" cy="350.0" r="10" fill="#83d6ff"/>

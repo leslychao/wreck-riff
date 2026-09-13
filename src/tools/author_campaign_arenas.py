@@ -111,13 +111,27 @@ class Location:
     def launch(self,name,a,b,flight=2.6):self.special.append((name,a,b,flight))
     def boundaries(self):
         theme=self.data['metadata']['theme']
+        if theme=='CARNIVAL':
+            banks=[[(0,0),(35,35),(35,self.depth-35),(0,self.depth)],[(self.width,0),(self.width,self.depth),(self.width-35,self.depth-35),(self.width-35,35)],[(0,0),(self.width,0),(self.width-35,35),(35,35)],[(0,self.depth),(35,self.depth-35),(self.width-35,self.depth-35),(self.width,self.depth)]]
+            for side,bank in enumerate(banks):
+                self.holes.append(bank)
+                for start in range(0,self.depth if side<2 else self.width,160):
+                    clip=rect(0,self.width,start,min(start+160,self.depth)) if side<2 else rect(start,min(start+160,self.width),0,self.depth)
+                    piece=ccw(bank)
+                    for aa,bb in zip(clip,clip[1:]+clip[:1]):piece=half(piece,aa,bb) if piece else []
+                    if piece:self.mesh(f'woodland-bank-{side}-{start}',[piece],lambda x,z:8*(1-min(x,self.width-x,z,self.depth-z)/35),'grass')
+            # Low boundary core is buried under the sloping wooded bank.
+            for side in range(4):
+                if side<2:self.box(f'woodland-core-{side}',(0 if side==0 else self.width,3,self.depth/2),(2,6,self.depth),'earth')
+                else:self.box(f'woodland-core-{side}',(self.width/2,3,0 if side==2 else self.depth),(self.width,6,2),'earth')
+            return
         for side in range(4):
             length=self.depth if side<2 else self.width
             for start in range(0,length,100):
-                end=min(length,start+100);mid=(start+end)/2;h=(8+(start//100)%3*3) if theme=='NEON' else 5+(start//100)%4*1.5
-                mat='dark-concrete' if theme=='NEON' else 'rust' if theme=='CONSTRUCTION' else 'park-ground'
-                if side<2:self.box(f'edge-{side}-{start}',(0 if side==0 else self.width,h/2,mid),(10,h,end-start),mat)
-                else:self.box(f'edge-{side}-{start}',(mid,h/2,0 if side==2 else self.depth),(end-start,h,10),mat)
+                end=min(length,start+100);mid=(start+end)/2;h=(22+(start//100)%4*11) if theme=='NEON' else 3+(start//100)%3*.5
+                mat=('brick' if (start//100)%2 else 'dark-concrete') if theme=='NEON' else 'rust';depth=60 if theme=='NEON' else 2
+                if side<2:self.box(f'edge-{side}-{start}',(0 if side==0 else self.width,h/2,mid),(depth,h,end-start),mat)
+                else:self.box(f'edge-{side}-{start}',(mid,h/2,0 if side==2 else self.depth),(end-start,h,depth),mat)
     def compile_geometry(self):
         claimed={};ground_clips=list(self.holes)
         for path in self.paths:

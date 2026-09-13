@@ -1,6 +1,7 @@
-package game.wreckriff.ai;
+package game.wreckriff.simulation;
 
 import com.jme3.math.*;
+import game.wreckriff.ai.*;
 import game.wreckriff.arena.*;
 import game.wreckriff.combat.*;
 import game.wreckriff.config.*;
@@ -104,7 +105,7 @@ class BotSupplyRoutingTest {
         final MatchSession session;final NavGraph graph;final SupplyWorld world;final BotController bots;
         final AtomicReference<List<ArenaDefinition.Pickup>> active;
         Rig(ArenaDefinition arena,int start) {
-            session=new MatchSession(73,arena,MatchSession.Mode.ARENA,COMBAT);session.phase=MatchSession.Phase.ARENA_COMBAT;
+            session=new MatchSession(73,arena,arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA,COMBAT);session.phase=MatchSession.Phase.ARENA_COMBAT;
             for(var vehicle:session.vehicles)if(vehicle.id!=0)vehicle.hp=0;
             graph=new NavGraph(arena);world=new SupplyWorld(arena);world.place(0,graph.position(start));
             active=new AtomicReference<>(arena.pickups());bots=new BotController(session,arena,graph,AiRules.load(),active::get);
