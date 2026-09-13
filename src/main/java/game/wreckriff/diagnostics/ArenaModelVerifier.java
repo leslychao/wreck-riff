@@ -19,6 +19,9 @@ public final class ArenaModelVerifier {
     private static final String MANIFEST="models/arenas/provenance.json";
     private ArenaModelVerifier() { }
     public static List<VerifyAssets.Asset> verify()throws Exception {
+        return verify(new DesktopAssetManager(true));
+    }
+    public static List<VerifyAssets.Asset> verify(com.jme3.asset.AssetManager manager)throws Exception {
         List<VerifyAssets.Asset> result=new ArrayList<>();byte[] manifest=resource(MANIFEST);
         JsonObject evidence=JsonParser.parseString(new String(manifest,StandardCharsets.UTF_8)).getAsJsonObject();
         if(evidence.get("schemaVersion").getAsInt()!=1||!"ORIGINAL_PROJECT_CONTENT".equals(evidence.get("origin").getAsString())
@@ -36,7 +39,7 @@ public final class ArenaModelVerifier {
             if(arena.layoutRevision()>=3&&scene.models().size()<3)throw new IOException("Missing authored architecture for "+arena.id());
         }
         Set<String> expected=Set.copyOf(required);Map<String,Spatial> models=new HashMap<>();Map<String,Integer> counts=new HashMap<>();
-        var manager=new DesktopAssetManager(true);SurfaceMaterials.lightingDefinition(manager);
+        SurfaceMaterials.lightingDefinition(manager);
         for(var element:evidence.getAsJsonArray("assets")) {
             var item=element.getAsJsonObject();String path=item.get("path").getAsString();
             if(!required.remove(path))throw new IOException("Unused or duplicate architecture: "+path);

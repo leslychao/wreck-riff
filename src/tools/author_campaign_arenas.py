@@ -56,7 +56,7 @@ class Location:
     def __init__(self,identity,title,theme,width,depth,enemies,boss):
         self.resource='arena-'+identity.replace('_','-');self.width=width;self.depth=depth
         self.data=dict(schemaVersion=4,id=identity,metadata=dict(title=title,theme=theme,normalEnemies=enemies,durationSeconds=0,recoveryCost=0,introduction='',music=f'audio/music/{identity}-normal.wav',bossMusic=f'audio/music/{identity}-boss.wav'),bounds=dict(minX=0,maxX=width,minZ=0,maxZ=depth,recoveryY=-45),boxes=[],ramps=[],spawns=[],pickups=[],hazards=[],nodes=[],edges=[],surfaces=[],launchPads=[],drops=[],destructibles=[],secrets=[],barriers=[],bosses=[boss],layoutRevision=3,meshes=[],districts=[],roads=[])
-        self.points={};self.paths=[];self.node_ids={};self.footprints=[];self.holes=[];self.special=[];self.regions=[];self.district_specs=[];self.sites=[];self.models=[];self.fixed=[]
+        self.points={};self.paths=[];self.node_ids={};self.footprints=[];self.holes=[];self.special=[];self.regions=[];self.district_specs=[];self.sites=[];self.models=[];self.fixed=[];self.deck_openings={}
     def box(self,name,center,size,material='concrete',collision=True,yaw=0):
         assert min(size)>0,(name,size)
         self.data['boxes'].append(dict(id=name,center=vec(center),size=vec(size),material=material,collision=collision,yawDegrees=yaw));return name
@@ -126,7 +126,7 @@ class Location:
             for segment,(first,last) in enumerate(zip(path['names'],path['names'][1:])):
                 a,b=self.points[first],self.points[last];dx,dz=b[0]-a[0],b[2]-a[2];length=math.hypot(dx,dz);sx,sz=dz/length*path['width']/2,-dx/length*path['width']/2
                 poly=ccw([(a[0]+sx,a[2]+sz),(b[0]+sx,b[2]+sz),(b[0]-sx,b[2]-sz),(a[0]-sx,a[2]-sz)])
-                flat=abs(a[1]-b[1])<.0001;bucket=round(a[1],3) if flat else None;pieces=cut([poly],claimed.get(bucket,[])) if flat else [poly]
+                flat=abs(a[1]-b[1])<.0001;bucket=round(a[1],3) if flat else None;pieces=cut([poly],claimed.get(bucket,[])+self.deck_openings.get(bucket,[])) if flat else [poly]
                 if flat:claimed.setdefault(bucket,[]).append(poly)
                 if flat and abs(a[1])<.0001:ground_clips.append(poly)
                 height=lambda x,z,a=a,b=b,dx=dx,dz=dz,length=length:a[1]+(b[1]-a[1])*((x-a[0])*dx+(z-a[2])*dz)/(length*length)
@@ -150,7 +150,7 @@ class Location:
                 if identity:path['geometryIds'].append(identity)
                 self.footprints.append((poly,a,b,path))
         for name,poly,y,material,level in self.fixed:
-            pieces=cut([poly],claimed.get(y,[]));self.mesh(name,pieces,y,material,level)
+            pieces=cut([poly],claimed.get(y,[])+self.deck_openings.get(y,[]));self.mesh(name,pieces,y,material,level)
         for x in range(0,self.width,160):
             for z in range(0,self.depth,160):
                 pieces=cut([rect(x,min(x+160,self.width),z,min(z+160,self.depth))],ground_clips)
@@ -318,8 +318,10 @@ def neon():
     a.data['metadata']['introduction']='Городские кварталы, торговый пассаж, связные дворы, диагональная эстакада и настоящий многоэтажный паркинг.'
     a.holes=[rect(1163,1217,400,960)]
     a.fixed=[('underpass-floor',rect(1163,1217,540,820),-12,'road-surface',-1),('parking-first-floor',rect(1400,1660,200,500),8,'concrete',1),('parking-roof-deck',rect(1400,1660,200,500),16,'concrete',2)]
+    a.deck_openings={8:[rect(1410,1530,220,260)],16:[rect(1410,1530,420,460)]}
     a.points=dict(sw=(200,0,220),s=(790,0,180),se=(1710,0,180),w=(170,0,600),nw=(200,0,1200),n=(840,0,1210),ne=(1620,0,1120),e=(1650,0,760),home_w=(260,0,430),home_c=(480,0,400),home_e=(660,0,470),home_n=(430,0,640),market_w=(620,0,720),market_in=(750,0,720),market_c=(850,0,720),market_n=(850,0,900),market_e=(1010,0,800),market_s=(850,0,530),business_w=(330,0,970),business_c=(520,0,1020),business_e=(780,0,1040),tech_w=(1020,0,980),tech_in=(1090,0,980),tech_c=(1090,0,1040),tech_e=(1240,0,1040),tn=(1190,0,960),tnb=(1190,-12,820),tc=(1190,-12,680),tsb=(1190,-12,540),ts=(1190,0,400),park_w=(1360,0,350),park_c=(1480,0,350),park_e=(1600,0,350),park_out=(1720,0,350),park_s=(1430,0,240),p1s=(1530,8,240),p1e=(1610,8,240),p1ne=(1610,8,440),p1nw=(1430,8,440),p1w=(1430,8,340),p2nw=(1530,16,440),p2ne=(1610,16,440),p2se=(1610,16,240),p2sw=(1430,16,240),p2w=(1430,16,340),park_n=(1480,0,580),express_s=(930,0,260),express_a=(1050,20,550),express_b=(1320,20,960),express_n=(1460,0,1210),transport_c=(1390,0,900),alley_a=(540,0,670),alley_b=(590,0,820),cut_a=(1300,0,620),cut_b=(1400,0,660))
-    for name,path,w in [('south-avenue','sw s express_s ts park_w park_c park_e park_out',30),('south-service','s se park_out e ne',24),('west-boulevard','sw w business_w nw n tech_e ne',32),('market-avenue','w home_n market_w market_in market_c market_e transport_c e',26),('north-business','business_w business_c business_e n',26),('business-market','business_c market_n market_e',24),('market-passage','market_c market_n business_e',20),('market-loading','market_w alley_a home_e market_s market_c',20),('residential-courts','sw home_w home_c home_e s',20),('courtyard-link','home_c home_n',18),('technical-service','market_e tech_w tech_in tech_c tech_e tn',22),('technical-exit','tech_w business_e',22),('transport-services','tech_e transport_c ne',26),('parking-north-entry','park_c park_n cut_b transport_c',24),('parking-west-entry','ts market_s',24),('tunnel-south-approach','ts park_s park_c',22),('parking-level1','p1s p1e p1ne p1nw p1w p1s',20),('parking-roof-circuit','p2nw p2ne p2se p2sw p2w p2nw',20),('express-north-approach','ne express_n n',26),('alley-west','alley_a market_w',18),('alley-north','alley_b business_c',18),('industrial-shortcut-south','cut_a ts',22),('industrial-shortcut-north','cut_b park_n',22)]:a.road(name,path,w)
+    a.points.update(p1return=(1570,8,340),p2return=(1570,16,340))
+    for name,path,w in [('south-avenue','sw s express_s ts park_w park_c park_e park_out',30),('south-service','s se park_out e ne',24),('west-boulevard','sw w business_w nw n tech_e ne',32),('market-avenue','w home_n market_w market_in market_c market_e transport_c e',26),('north-business','business_w business_c business_e n',26),('business-market','business_c market_n market_e',24),('market-passage','market_c market_n business_e',20),('market-loading','market_w alley_a home_e market_s market_c',20),('residential-courts','sw home_w home_c home_e s',20),('courtyard-link','home_c home_n',18),('technical-service','market_e tech_w tech_in tech_c tech_e tn',22),('technical-exit','tech_w business_e',22),('transport-services','tech_e transport_c ne',26),('parking-north-entry','park_c park_n cut_b transport_c',24),('parking-west-entry','ts market_s',24),('tunnel-south-approach','ts park_s park_c',22),('parking-level1','p1s p1e p1ne p1nw p1w p1return p1e',20),('parking-roof-circuit','p2nw p2ne p2se p2sw p2w p2return p2ne',20),('express-north-approach','ne express_n n',26),('alley-west','alley_a market_w',18),('alley-north','alley_b business_c',18),('industrial-shortcut-south','cut_a ts',22),('industrial-shortcut-north','cut_b park_n',22)]:a.road(name,path,w)
     a.road('tunnel-north-ramp','tn tnb',54,'road-surface','RAMP');a.road('underpass','tnb tc tsb',54);a.road('tunnel-south-ramp','tsb ts',54,'road-surface','RAMP')
     a.road('parking-ramp-one','park_s p1s',24,'concrete','RAMP');a.road('parking-ramp-two','p1nw p2nw',24,'concrete','RAMP')
     a.road('express-rise','express_s express_a',34,'concrete','RAMP');a.road('express-diagonal','express_a express_b',34,'concrete');a.road('express-fall','express_b express_n',34,'concrete','RAMP')
