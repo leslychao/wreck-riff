@@ -19,7 +19,9 @@ class ArenaShortcutBombTest {
         for(var state:session.vehicles){state.protectionTicks=0;if(state.id>0)state.hp=0;}
         var arena=new ArenaSystems(session,definition);var combat=new CombatSystem(session,session.combatRules);
         combat.configureArenaDamage(arena::damageTargets,arena::damageObject);
-        var panel=definition.destructibles().stream().filter(o->o.id().equals("short-cut")).findFirst().orElseThrow();
+        var panel=definition.destructibles().stream().filter(o->o.id().equals("warehouse-service-gate")).findFirst().orElseThrow();
+        assertTrue(definition.edges().stream().anyMatch(edge->edge.type()==ArenaDefinition.Transition.OPENABLE&&edge.objectId().equals(panel.id())),
+                "The destroyed panel must open an authored shortcut");
         var box=definition.boxes().stream().filter(b->b.id().equals(panel.geometryId())).findFirst().orElseThrow();
         var world=new BombWorld(box.center().vector().add(box.rotation().mult(new Vector3f(-box.size().x()/2-.8f,-box.size().y()/2,0))));
         long explosions=0;

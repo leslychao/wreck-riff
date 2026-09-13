@@ -33,7 +33,7 @@ public final class ArenaFactory {
         var names=new LinkedHashSet<String>();
         definition.boxes().forEach(part->names.add(surfaceMaterial(part,definition.metadata().theme())));
         definition.ramps().forEach(ramp->names.add(ramp.material()));
-        definition.meshes().forEach(mesh->names.add(mesh.material()));
+        definition.meshes().forEach(mesh->{names.add(mesh.material());names.addAll(mesh.triangleMaterials());});
         names.addAll(ArenaArt.surfaceMaterials(art));
         return SurfaceMaterials.texturesFor(names);
     }
@@ -43,6 +43,10 @@ public final class ArenaFactory {
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         List<ArenaContent.StaticBody> bodies=new ArrayList<>();
         Set<String> replaced=new HashSet<>();
+        for(var model:art.models())if(!model.collisionGeometryIds().isEmpty()
+                &&(definition.destructibles().stream().anyMatch(object->object.geometryId().equals(model.anchor()))
+                ||definition.barriers().stream().anyMatch(object->object.geometryId().equals(model.anchor()))))
+            throw new IllegalArgumentException("Structural model collision cannot follow a moving/destroyed anchor: "+model.id());
         for(var model:art.models())for(String geometry:model.collisionGeometryIds()) {
             if(!replaced.add(geometry))throw new IllegalArgumentException("Repeated structural model replacement: "+geometry);
             if(definition.boxes().stream().noneMatch(box->box.id().equals(geometry)))throw new IllegalArgumentException("Missing model proxy: "+geometry);
@@ -71,7 +75,7 @@ public final class ArenaFactory {
         for(var surface:definition.meshes()) {
             List<Vector3f> vertices=new ArrayList<>();for(int index:surface.indices())vertices.add(surface.vertices().get(index).vector());
             Mesh mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
-            Geometry visual=new Geometry(surface.id(),mesh);visual.setMaterial(material(surface.material()));root.attachChild(visual);
+            for(Geometry visual:surfaceVisuals(surface,mesh))root.attachChild(visual);
             if(surface.collision())bodies.add(new ArenaContent.StaticBody(surface.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
         }
         // Independent cells keep distant districts cullable; movable object visuals retain their identity.
@@ -94,6 +98,23 @@ public final class ArenaFactory {
                 geometry.getMaterial().getParam("NormalMap")!=null && geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(geometry.getMesh());});
         return new ArenaContent(root,bodies,definition.spawns(),definition.pickups(),new NavGraph(definition));
+    }
+    /** Triangle finishes partition the original road; no coplanar paint layer or extra physics owner. */
+    List<Geometry> surfaceVisuals(ArenaDefinition.TriangleSurface surface,Mesh uniformMesh) {
+        if(surface.triangleMaterials().isEmpty()) {
+            Geometry visual=new Geometry(surface.id(),uniformMesh);visual.setMaterial(material(surface.material()));return List.of(visual);
+        }
+        Map<String,List<Vector3f>> finishes=new LinkedHashMap<>();
+        for(int triangle=0;triangle<surface.indices().size()/3;triangle++) {
+            List<Vector3f> vertices=finishes.computeIfAbsent(surface.materialAtTriangle(triangle),ignored->new ArrayList<>());
+            for(int point=0;point<3;point++)vertices.add(surface.vertices().get(surface.indices().get(triangle*3+point)).vector());
+        }
+        List<Geometry> visuals=new ArrayList<>();
+        for(var finish:finishes.entrySet()) {
+            Geometry visual=new Geometry(surface.id()+"-finish-"+finish.getKey(),SurfaceMesh.triangles(finish.getValue(),tileSize(finish.getKey())));
+            visual.setMaterial(material(finish.getKey()));visuals.add(visual);
+        }
+        return List.copyOf(visuals);
     }
     private void addModelCollisions(ArenaArt.Scene art,List<ArenaContent.StaticBody> bodies) {
         SurfaceMaterials.lightingDefinition(assets);

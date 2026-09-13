@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "origin": "ORIGINAL_PROJECT_CONTENT",
+  "status": "HISTORICAL_LAYOUT_REVISION_2",
+  "runtime": false,
+  "files": [
+    {
+      "path": "arena-art-construction-17.json",
+      "sha256": "68995d1668bb10f75174b9953f5acdfbd9b4d51dcd91ac13d6fb8aa97dc296eb"
+    },
+    {
+      "path": "arena-art-euphoria-park.json",
+      "sha256": "32d295f07b902f89ac9ea481de9372251ed309e5e359c15cb42e2f46914727e5"
+    },
+    {
+      "path": "arena-art-neon-zero.json",
+      "sha256": "2a4a8c18b81ab7b3dacb3bf0f94a2491ec27f9c4f992974919d7391d07febcc0"
+    },
+    {
+      "path": "arena-construction-17.json",
+      "sha256": "141467f10451115ad1963f33d5844ea8c8ea88cec13bfc65de2f2738038a1bd0"
+    },
+    {
+      "path": "arena-euphoria-park.json",
+      "sha256": "12e1c0381c1ca321408f3334753777cfcee6cc05c63ff837bce8517e91080fe5"
+    },
+    {
+      "path": "arena-neon-zero.json",
+      "sha256": "1884011402211bc7981c6c7f6677f47e0edc44b5b7593ed67be14915a6bef658"
+    },
+    {
+      "path": "ArenaArt.java.txt",
+      "sha256": "8b140b51fadf393ee8692c15427695bfeee607fca0a8b46c19a6da7e71e6bc17"
+    },
+    {
+      "path": "author_arena_art.py",
+      "sha256": "a4320c33d8e2136b8680cd5895d192bf864cc3ca0d463fbeae1cbd66c19e26c0"
+    },
+    {
+      "path": "author_campaign_arenas.py",
+      "sha256": "2c6931621d7ad5e18026d06abcb682bd37e51ef30c6a010e578a0049f12d4926"
+    },
+    {
+      "path": "README.md",
+      "sha256": "1ccafab4ce66407eaae4444a92400a704d6330c0b24836a9810c3487e6b4c93c"
+    }
+  ]
+}

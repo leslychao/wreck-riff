@@ -304,7 +304,7 @@
         "z": 190.0
       },
       "material": "glass",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -496,7 +496,7 @@
         "z": 150.0
       },
       "material": "steel",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -608,7 +608,7 @@
         "z": 110.0
       },
       "material": "concrete",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {

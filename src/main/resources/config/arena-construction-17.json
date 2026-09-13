@@ -48,7 +48,7 @@
         "z": 130.0
       },
       "material": "concrete",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -288,7 +288,7 @@
         "z": 200.0
       },
       "material": "rust",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -560,7 +560,7 @@
         "z": 135.0
       },
       "material": "blue",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {

@@ -62,6 +62,7 @@ class RosterPersistenceTest {
         }
         String original=old.toString();Files.writeString(directory.resolve("stats.json"),original);
         try(var loaded=new ProgressStore(directory,game.wreckriff.simulation.MatchCheckpoint.references(game.wreckriff.arena.ArenaRegistry.load()))) {
+            assertTrue(loaded.writable(),loaded.warning());
             assertEquals(previous.revision()+1,loaded.snapshot().revision());
             assertEquals(previous.attemptSequence(),loaded.snapshot().attemptSequence());
             assertNull(loaded.snapshot().activeAttempt());
@@ -70,6 +71,9 @@ class RosterPersistenceTest {
             assertEquals("rivet",saved.profileId());assertEquals(730,saved.player().hp());
             assertEquals(0L,saved.player().abilityCooldownTicks().get("special"));
             assertEquals(51L,saved.player().abilityCooldownTicks().get("freeze"));
+            assertTrue(saved.player().weapons().values().stream().allMatch(weapon->weapon.ammunition()==0));
+            assertTrue(loaded.snapshot().historicalLayouts().get("revision-1").checkpoint().player().weapons().values()
+                    .stream().allMatch(weapon->weapon.ammunition()==2),"Historical ammunition survives the empty-start migration");
             assertTrue(loaded.flush(Duration.ofSeconds(5)));
             assertEquals(original,Files.readString(directory.resolve("stats.json.v2.bak")));
         }

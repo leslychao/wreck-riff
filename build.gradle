@@ -206,6 +206,28 @@ tasks.register('reviewArenaRoutes', JavaExec) {
     }
 }
 
+tasks.register('profileArena', JavaExec) {
+    description = 'Short real-window arena measurement: 30 seconds warmup and 60 seconds recorded, with audio'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = application.mainClass
+    environment 'LOCALAPPDATA', layout.buildDirectory.dir('diagnostic-profile').get().asFile.absolutePath
+    args '--dev', '--seed=42', '--ai-player', '--resolution=1080p', '--profile', '--benchmark-seconds=60'
+    args '--arena=' + (project.findProperty('profileArenaId') ?: 'construction_17')
+}
+
+tasks.register('saturationReview', JavaExec) {
+    description = 'Real-window, audible native ordnance limit and Retry inspection'
+    dependsOn tasks.named('physicsTestClasses'),tasks.named('classes')
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'game.wreckriff.diagnostics.NativeOrdnanceSaturationReview'
+    doFirst {
+        def identity = new Properties()
+        file("$buildDir/generated-resources/build-info.properties").withInputStream { identity.load(it) }
+        args layout.buildDirectory.dir('reports/ordnance-saturation-review').get().asFile.absolutePath, identity.getProperty('sourceSha256')
+    }
+}
+
 tasks.register('physicsTest', Test) {
     description = 'Real Minie/Bullet integration tests without a graphics context'
     testClassesDirs = sourceSets.physicsTest.output.classesDirs
@@ -223,7 +245,7 @@ tasks.register('smokeTest', JavaExec) {
     dependsOn tasks.named('classes')
     classpath = sourceSets.main.runtimeClasspath
     mainClass = application.mainClass
-    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=600'
+    args '--dev', '--seed=42', '--ai-player', '--smoke-seconds=60'
 }
 tasks.register('packageWindows', Exec) {
     dependsOn tasks.named('installDist'), tasks.named('verifyAssets')

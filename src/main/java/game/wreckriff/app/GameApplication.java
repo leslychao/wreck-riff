@@ -311,6 +311,7 @@ public final class GameApplication extends SimpleApplication {
         for(var style:OrdnanceStyle.values())
             stages.add(new MatchLoading.Stage("Боеприпасы: "+style.name(),()->style.load(assetManager)));
         var decodedModels=new ArrayList<com.jme3.scene.Spatial>();
+        stages.add(new MatchLoading.Stage("Материалы архитектуры",()->SurfaceMaterials.lightingDefinition(assetManager)));
         for(String model:ArenaArt.modelAssets(arenaArt))
             stages.add(new MatchLoading.Stage("Архитектура",()->decodedModels.add(assetManager.loadModel(model))));
         stages.add(new MatchLoading.Stage("Окружение",()->{

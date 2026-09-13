@@ -37,7 +37,7 @@ public final class ArenaArt {
             if(id==null||id.isBlank()||group==null||anchor==null||!localModel(asset)||distantAsset==null
                     ||!distantAsset.isEmpty()&&!localModel(distantAsset)||size.x()<=0||size.y()<=0||size.z()<=0
                     ||!Float.isFinite(lodDistance)||lodDistance<=0)throw new IllegalArgumentException("Invalid authored model instance");
-            if(!collisionGeometryIds.isEmpty()&&(!group.isEmpty()||!anchor.isEmpty()))throw new IllegalArgumentException("Structural model collision must be static");
+            if(!collisionGeometryIds.isEmpty()&&!group.isEmpty())throw new IllegalArgumentException("Structural model collision must be static");
         }
         private static boolean localModel(String asset) {
             return asset!=null&&asset.startsWith("models/arenas/")&&asset.endsWith(".j3o")&&!asset.contains("..")&&!asset.contains(":")&&!asset.contains("\\");

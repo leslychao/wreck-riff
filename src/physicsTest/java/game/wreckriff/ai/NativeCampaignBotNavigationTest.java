@@ -11,6 +11,7 @@ import com.jme3.renderer.Camera;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 import java.util.*;
+import java.nio.file.*;
 import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,28 +21,31 @@ class NativeCampaignBotNavigationTest {
     static final VehicleRules RULES=VehicleRules.load();
     static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
     static final Map<String,ArenaContent> CONTENT=new HashMap<>();
+    record ReviewRoute(String arenaId,String id,String kind,List<ArenaDefinition.Vec3> points) {}
+    record ReviewRoutes(int schemaVersion,List<ReviewRoute> routes) {}
+    static final List<ReviewRoute> REVIEW_ROUTES=reviewRoutes();
+    static List<ReviewRoute> reviewRoutes() {
+        try(var reader=Files.newBufferedReader(Path.of("src/tools/assets/architecture/review-routes.json"))) {
+            return Configs.gson().fromJson(reader,ReviewRoutes.class).routes();
+        } catch(java.io.IOException error) {throw new java.io.UncheckedIOException(error);}
+    }
     static Stream<Arguments> ramps() {
         return Stream.of(
                 new String[]{"construction_17","pit-west-slope"},
-                new String[]{"construction_17","interchange-south-ramp"},
-                new String[]{"neon_zero","underpass-west-ramp"},
-                new String[]{"neon_zero","parking-west-ramp"},
-                new String[]{"euphoria_park","west-lake-bridge"},
-                new String[]{"euphoria_park","north-lake-bridge"})
+                new String[]{"construction_17","road-interchange-rise-0"},
+                new String[]{"neon_zero","road-tunnel-south-ramp-0"},
+                new String[]{"neon_zero","road-parking-ramp-one-0"},
+                new String[]{"euphoria_park","road-west-bridge-rise-0"},
+                new String[]{"euphoria_park","road-north-bridge-fall-0"})
                 .flatMap(row->Stream.of(1,2,3,-1).map(id->Arguments.of(row[0],row[1],id)));
     }
     static Stream<Arguments> interiors() {
-        return Stream.of(
-                new String[]{"construction_17","unfinished-apartments-roof"},
-                new String[]{"construction_17","concrete-plant-roof"},
-                new String[]{"construction_17","warehouse-roof"},
-                new String[]{"neon_zero","shopping-passage-roof"},
-                new String[]{"neon_zero","technical-complex-roof"},
-                new String[]{"neon_zero","parking-ground-floor-roof"},
-                new String[]{"euphoria_park","circus-roof"},
-                new String[]{"euphoria_park","ride-pavilion-roof"},
-                new String[]{"euphoria_park","repair-depot-roof"})
-                .flatMap(row->Stream.of(1,2,3,-1).map(id->Arguments.of(row[0],row[1],id)));
+        return REVIEW_ROUTES.stream().filter(r->r.kind().equals("interior"))
+                .flatMap(route->Stream.of(1,2,3,-1).map(id->Arguments.of(route.arenaId(),route.id(),id)));
+    }
+    static Stream<Arguments> districts() {
+        return REVIEW_ROUTES.stream().filter(r->r.kind().equals("district"))
+                .flatMap(route->Stream.of(1,2,3,-1).map(id->Arguments.of(route.arenaId(),route.id(),id)));
     }
     static Stream<Integer> emceePads() {
         return java.util.stream.IntStream.range(0,REGISTRY.definition("euphoria_park").launchPads().size()).boxed();
@@ -90,32 +94,39 @@ class NativeCampaignBotNavigationTest {
 
     @ParameterizedTest(name="{0} {1} participant={2}") @MethodSource("interiors")
     void allChassisAndTheMapBossCrossTheEntireInteriorWithAClearCamera(String arenaId,String roofId,int participant) {
+        driveReviewRoute(arenaId,roofId,participant);
+    }
+    @ParameterizedTest(name="{0} {1} participant={2}") @MethodSource("districts")
+    void allChassisAndTheMapBossDriveTheDistrictApproachCombatAreaAndExit(String arenaId,String districtId,int participant) {
+        driveReviewRoute(arenaId,districtId,participant);
+    }
+    private void driveReviewRoute(String arenaId,String roofId,int participant) {
         var arena=REGISTRY.definition(arenaId);
-        var roof=arena.boxes().stream().filter(b->b.id().equals(roofId)).findFirst().orElseThrow();
-        float entrance=roof.center().x()-roof.size().x()/2,exit=roof.center().x()+roof.size().x()/2;
-        var corridor=arena.nodes().stream().filter(n->Math.abs(n.position().z()-roof.center().z())<2&&n.position().y()==0).toList();
-        Vector3f start=corridor.stream().filter(n->n.position().x()<entrance-10)
-                .max(Comparator.comparingDouble(n->n.position().x())).orElseThrow().position().vector();
-        Vector3f goal=corridor.stream().filter(n->n.position().x()>exit+10)
-                .min(Comparator.comparingDouble(n->n.position().x())).orElseThrow().position().vector();
-        var pickup=new ArenaDefinition.Pickup("interior-repair",ArenaDefinition.PickupType.REPAIR,
-                new ArenaDefinition.Vec3(goal.x,goal.y,goal.z),3600);
-        try(var rig=new Rig(repairFixture(arena,pickup),participant,participant<0,start,Vector3f.UNIT_X)) {
+        var route=REVIEW_ROUTES.stream().filter(r->r.arenaId().equals(arenaId)&&r.id().equals(roofId)).findFirst().orElseThrow();
+        assertTrue(route.points().size()>=3,"Review must include an approach, combat area and exit");
+        Vector3f start=route.points().getFirst().vector(),goal=route.points().getLast().vector();
+        var targets=new ArrayList<ArenaDefinition.Pickup>();
+        for(int i=1;i<route.points().size();i++)targets.add(new ArenaDefinition.Pickup("interior-route-"+i,
+                ArenaDefinition.PickupType.REPAIR,route.points().get(i),3600));
+        try(var rig=new Rig(arena.withPickups(targets),participant,participant<0,start,
+                route.points().get(1).vector().subtract(start).setY(0).normalizeLocal(),targets)) {
             var camera=new Camera(1920,1080);var cameraRules=CameraRules.load();var chase=new ChaseCamera(camera,cameraRules);
-            boolean arrived=false,inside=false;
+            boolean arrived=false;int reached=0;
             for(int tick=0;tick<7200&&!arrived;tick++) {
                 rig.tick();var position=rig.world.position(rig.id);
-                if(position.x>entrance+10&&position.x<exit-10) {
-                    assertTrue(Math.abs(position.z-roof.center().z())<roof.size().z()/2-4,"AI must stay within the through corridor");
-                    assertTrue(position.y<roof.center().y()-roof.size().y()/2,"The bot must pass under the real ceiling");
-                    inside=true;
+                var target=targets.get(rig.waypointIndex).position().vector();
+                if(position.subtract(target).setY(0).length()<8&&Math.abs(position.y-target.y)<4
+                        &&rig.world.supportedWheelContacts(rig.id)==4) {
+                    reached++;
+                    if(rig.waypointIndex+1<targets.size())rig.waypointIndex++;
+                    else arrived=true;
                 }
                 chase.update(rig.world,rig.id,1,1f/120,false,false,0);
                 assertNull(rig.world.staticSweep(position.add(0,cameraRules.lookHeight(),0),camera.getLocation(),cameraRules.sweepRadius()),
                         "The camera must remain clear of the authored interior walls and roof");
-                arrived=position.subtract(goal).setY(0).length()<8&&rig.world.supportedWheelContacts(rig.id)==4;
             }
-            assertTrue(inside,"The route must enter the interior, not drive around it");
+            assertEquals(targets.size(),reached,"The vehicle must visit every authored turn before the exit: "+arenaId+" / "+roofId
+                    +" / "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id));
             assertTrue(arrived,"AI did not leave the opposite opening: "+arenaId+" / "+roofId+" / "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id));
             assertEquals(0,rig.world.teleportGeneration(rig.id));
         }
@@ -150,8 +161,13 @@ class NativeCampaignBotNavigationTest {
     static final class Rig implements AutoCloseable {
         final PhysicsWorld world=new PhysicsWorld(RULES);final MatchSession session;final ArenaSystems systems;
         final BotController bots;final VehicleController driver;final int id;final List<GameEvent> events=new ArrayList<>();
+        final List<ArenaDefinition.Pickup> routeTargets;int waypointIndex;
         game.wreckriff.input.VehicleCommand command;
         Rig(ArenaDefinition arena,int participant,boolean boss,Vector3f start,Vector3f direction) {
+            this(arena,participant,boss,start,direction,null);
+        }
+        Rig(ArenaDefinition arena,int participant,boolean boss,Vector3f start,Vector3f direction,List<ArenaDefinition.Pickup> targets) {
+            routeTargets=targets;
             session=new MatchSession(73,arena,boss?MatchSession.Mode.BOSS_DUEL:MatchSession.Mode.ARENA,COMBAT);
             id=boss?session.registerBoss(arena.bosses().getFirst()).id:participant;
             for(var state:session.vehicles)state.hp=state.id==id?state.maximumHp*.1f:0;
@@ -163,13 +179,17 @@ class NativeCampaignBotNavigationTest {
             world.addVehicle(id,start.add(0,profile.roadOffset()+.3f,0),new Quaternion().fromAngleAxis((float)Math.atan2(direction.x,direction.z),Vector3f.UNIT_Y),profile);
             for(int tick=0;tick<360;tick++)world.step();
             driver=new VehicleController(world,session.vehicle(id),RULES,arena.bounds(),arena.metadata().recoveryCost());driver.recordSafePose(0);
-            systems=new ArenaSystems(session,arena);bots=new BotController(session,arena,new NavGraph(arena),AiRules.load(),systems::activePickups);
+            systems=new ArenaSystems(session,arena);bots=new BotController(session,arena,new NavGraph(arena),AiRules.load(),
+                    ()->routeTargets==null?systems.activePickups():List.of(routeTargets.get(waypointIndex)));
         }
         void tick() {
             command=bots.commands(world).get(id).withoutAttacks();var recovery=driver.prepare(command,session.tick);
             assertFalse(recovery.recovered()||recovery.fatal(),"Native route used recovery: "+world.position(id)+" / "+bots.navigation(id));
             systems.beforePhysics(world,Map.of(id,driver));driver.drive(command);world.step();
-            systems.afterPhysics(world,Map.of(id,driver));driver.recordSafePose(session.tick);systems.collectPickups(world);
+            systems.afterPhysics(world,Map.of(id,driver));driver.recordSafePose(session.tick);
+            // Route probes select successive destinations without healing away the navigation intent.
+            // The vehicle and its momentum remain continuous through every interior turn.
+            if(routeTargets==null)systems.collectPickups(world);
             events.addAll(systems.drainEvents());bots.drainBossCommands();session.tick++;
         }
         public void close(){world.close();}

@@ -18,8 +18,11 @@ class NativeArenaDrivingTest {
             var session=new MatchSession(42,arena,MatchSession.Mode.BOSS_DUEL,Configs.load("combat",CombatRules.class));
             var gravel=arena.surfaces().stream().filter(s->s.id().equals("pit-floor")).findFirst().orElseThrow();
             assertEquals(.8f,gravel.grip(),"Excavation gravel must retain its authored lower grip");
-            var pit=arena.boxes().stream().filter(b->b.id().equals(gravel.geometryId())).findFirst().orElseThrow();
-            var point=pit.center().vector().add(0,pit.size().y()/2,0);
+            var pit=arena.meshes().stream().filter(b->b.id().equals(gravel.geometryId())).findFirst().orElseThrow();
+            var point=new Vector3f();
+            for(var vertex:pit.vertices())point.addLocal(vertex.vector());
+            point.divideLocal(pit.vertices().size());
+            point.y=arena.surfaceHeight(gravel.id(),point.x,point.z);
             var body=world.addVehicle(0,point.add(0,2,0),new Quaternion());
             var driver=new VehicleController(world,session.vehicle(0),rules,arena.bounds(),arena.metadata().recoveryCost());
             for(int i=0;i<360;i++)world.step();

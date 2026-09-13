@@ -18,7 +18,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Compare actual jME-decoded channels, not merely PNG hashes or a few sampled texels. */
 class DiffuseTextureAssetsTest {
     private static final List<String> MATERIALS = List.of("asphalt_02", "cracked_concrete",
-            "metal_plate_02", "blue_metal_plate", "rusty_metal_03");
+            "metal_plate_02", "blue_metal_plate", "rusty_metal_03", "leafy_grass", "brown_mud",
+            "gravelly_sand", "red_brick_03", "wood_planks_grey");
+    private static final List<String> ORIGINAL_SIXTEEN_BIT=List.of("cracked_concrete","metal_plate_02","blue_metal_plate","rusty_metal_03");
 
     @Test void runtimeDiffuseUsesEightBitPngWithoutChangingResolutionOrAlpha() throws Exception {
         for (String material : MATERIALS) {
@@ -61,8 +63,11 @@ class DiffuseTextureAssetsTest {
             assertEquals(hash(original), item.get("sourceSha256").getAsString(), path);
             assertEquals(hash(derivative), item.get("sha256").getAsString(), path);
             assertEquals("CC0-1.0", item.get("license").getAsString(), path);
-            if (path.contains("/asphalt_02/")) {
-                assertEquals("Unmodified 2K PNG; sRGB color", item.get("transformation").getAsString());
+            String material=path.split("/")[2];
+            if(ORIGINAL_SIXTEEN_BIT.contains(material))assertEquals(16,original[24],"Preserve existing 16-bit original: "+path);
+            if (original[24]==8) {
+                assertArrayEquals(original,derivative,"An 8-bit original needs no pixel conversion: "+path);
+                assertTrue(item.get("transformation").getAsString().startsWith("Unmodified 2K PNG; sRGB color"));
             } else {
                 assertEquals(16, original[24], "High-bit-depth original must be preserved: " + path);
                 assertTrue(item.get("transformation").getAsString().contains("BufferedImage.getRGB"), path);

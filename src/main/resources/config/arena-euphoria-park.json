@@ -208,7 +208,7 @@
         "z": 180.0
       },
       "material": "faded-red",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -368,7 +368,7 @@
         "z": 150.0
       },
       "material": "purple",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -528,7 +528,7 @@
         "z": 130.0
       },
       "material": "steel",
-      "collision": true,
+      "collision": false,
       "yawDegrees": 0
     },
     {

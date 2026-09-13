@@ -49,7 +49,7 @@ class CampaignNavigationTest {
 
     @Test void confirmedDeckContactLetsALongBossPassTheFinalNodeOfItsConnectedRamp() {
         var source=arenas.definition("construction_17");var graph=new NavGraph(source);
-        var ramp=source.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.RAMP&&e.objectId().equals("interchange-south-ramp")).toList();
+        var ramp=source.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.RAMP&&e.objectId().equals("road-interchange-rise-0")).toList();
         var last=ramp.getLast();
         int continuation=graph.links(last.to()).stream().filter(e->e.type()==ArenaDefinition.Transition.ROAD).findFirst().orElseThrow().to();
         var pickups=new ArrayList<>(source.pickups().stream().filter(p->p.type()!=ArenaDefinition.PickupType.REPAIR).toList());
@@ -95,12 +95,17 @@ class CampaignNavigationTest {
 
     @Test void periodicReplanStaysOnTheCurrentRoadWhenACrossingStreetHasANearerSample() {
         var source=arenas.definition("neon_zero");
+        var sourceGraph=new NavGraph(source);
+        var edge=source.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.ROAD).filter(e->{
+            var middle=sourceGraph.position(e.from()).interpolateLocal(sourceGraph.position(e.to()),.53f);
+            int nearest=sourceGraph.nearest(middle);return nearest!=e.from()&&nearest!=e.to();
+        }).findFirst().orElseThrow();
+        var goal=sourceGraph.position(edge.to());
         var arena=source.withPickups(List.of(new ArenaDefinition.Pickup("route-goal",ArenaDefinition.PickupType.REPAIR,
-                new ArenaDefinition.Vec3(510,0,920),3600)));
+                new ArenaDefinition.Vec3(goal.x,goal.y,goal.z),3600)));
         var session=new MatchSession(73,arena,MatchSession.Mode.ARENA,combat);
         for(var vehicle:session.vehicles)vehicle.hp=vehicle.id==0?vehicle.maximumHp*.1f:0;
         var graph=new NavGraph(arena);var world=new RoadWorld(arena);
-        var edge=arena.edges().stream().filter(e->e.id().equals("market-backdoor-homes-core-2")).findFirst().orElseThrow();
         world.positions.put(0,graph.position(edge.from()).add(0,world.profile(0).roadOffset(),0));
         var bots=new BotController(session,arena,graph,AiRules.load());bots.commands(world);
         assertEquals(edge.id(),bots.navigation(0).transition().edgeId());
@@ -128,7 +133,7 @@ class CampaignNavigationTest {
 
     @Test void aChangedPassageRevisionInvalidatesTheBotsSavedRouteImmediatelyAtItsNextDecision() {
         var source=arenas.definition("construction_17");
-        var passage=source.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.OPENABLE&&e.objectId().equals("short-cut")).findFirst().orElseThrow();
+        var passage=source.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.OPENABLE&&e.objectId().equals("warehouse-service-gate")).findFirst().orElseThrow();
         var target=source.nodes().stream().filter(n->n.id()==passage.to()).findFirst().orElseThrow();
         var pickups=new ArrayList<>(source.pickups().stream().filter(p->p.type()!=ArenaDefinition.PickupType.REPAIR).toList());
         pickups.add(new ArenaDefinition.Pickup("route-test",ArenaDefinition.PickupType.REPAIR,target.position(),3600));
@@ -137,7 +142,7 @@ class CampaignNavigationTest {
         var world=new RoadWorld(arena);world.positions.put(0,new NavGraph(arena).position(passage.from()).add(0,world.profile(0).roadOffset(),0));
         var graph=new NavGraph(arena);var bots=new BotController(session,arena,graph,AiRules.load());bots.commands(world);
         assertFalse(bots.route(0).isEmpty());assertEquals(0,bots.navigation(0).revision());
-        graph.setOpen("short-cut",true);session.tick=12;bots.commands(world);
+        graph.setOpen(passage.objectId(),true);session.tick=12;bots.commands(world);
         assertEquals(graph.revision(),bots.navigation(0).revision());assertEquals(1,bots.navigation(0).revision());
     }
 
@@ -167,6 +172,7 @@ class CampaignNavigationTest {
     @Test void prefectRequestsOnlyAuthoredProtocolTargetsAtTheFourteenSecondLimit() {
         var arena=arenas.definition("neon_zero");var session=new MatchSession(2,arena,MatchSession.Mode.BOSS_DUEL,combat);
         var boss=session.registerBoss(arena.bosses().getFirst());session.phase=MatchSession.Phase.BOSS_COMBAT;session.bossMode=2;
+        boss.weapon(WeaponType.HOMING).ammo=2;
         var world=new RoadWorld(arena);world.profiles.put(boss.id,VehicleProfile.boss(boss.profileId,vehicleRules));
         world.positions.put(boss.id,new Vector3f(40,world.profile(boss.id).roadOffset(),40));world.positions.put(0,new Vector3f(40,.51f,80));
         var bots=new BotController(session,arena,AiRules.load());session.tick=720;bots.commands(world);
@@ -196,7 +202,7 @@ class CampaignNavigationTest {
             if(contexts.containsKey(id))return contexts.get(id);
             var point=position(id).add(0,-profile(id).roadOffset(),0);
             var surface=arena.surfaceAt(point,0,.2f).orElse(arena.surfaces().getFirst());
-            boolean slope=arena.meshes().stream().anyMatch(m->m.id().equals(surface.geometryId()));
+            boolean slope=arena.surfaceNormal(surface.id(),point.x,point.z).y<.999f;
             return new RoadContext(surface.id(),surface.level(),surface.grip(),slope?RoadContext.Motion.RAMP:RoadContext.Motion.ROAD,"","",surface.level());
         }
         public boolean grounded(int id){return !roadContext(id).flying();}

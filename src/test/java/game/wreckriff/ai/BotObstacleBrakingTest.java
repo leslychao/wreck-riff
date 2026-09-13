@@ -53,6 +53,7 @@ class BotObstacleBrakingTest {
         final ProbeWorld world=new ProbeWorld();
         final BotController bots;
         Fixture() {
+            session.vehicle(0).weapon(game.wreckriff.combat.WeaponType.POWER).ammo=2;
             for(int id=2;id<5;id++)session.vehicle(id).hp=0;
             world.delegate.positions[0]=new Vector3f(0,.8f,-50);
             world.delegate.positions[1]=new Vector3f(0,.8f,15);

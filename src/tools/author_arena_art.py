@@ -1,217 +1,122 @@
-"""Original scenery for the three large campaign locations; explicit offline tool.
+"""Original authored architecture, fixtures and mechanical scenery for revision 3.
 
-Uses the canonical layout, existing local texture sets, and deterministic original
-geometry. Revision 1 scenery and authoring source live in assets/campaign-layouts-revision1.
-Dead Air Yard retains its existing scene without any regeneration.
+Canonical pavement is already in ArenaDefinition. No road overlays, anonymous
+block grids, decorative paving sheets, or shared drive-through hall generator.
 """
 import json
 import math
-from author_campaign_arenas import OUT,vec,construction,neon,carnival
+from author_campaign_arenas import ROOT,OUT,vec,construction,neon,carnival
 
 class Scene:
     def __init__(self,location):
-        self.location=location
-        self.data=json.loads((OUT/(location.resource+'.json')).read_text(encoding='utf-8'))
-        self.parts=[];self.groups=[];self.anchor='';self.group=''
+        self.location=location;self.data=json.loads((OUT/(location.resource+'.json')).read_text(encoding='utf-8'));self.parts=[];self.groups=[];self.models=[];self.lights=[];self.anchor='';self.group=''
     def part(self,name,pos,size,material,shape='BOX',rotation=(0,0,0)):
         self.parts.append(dict(id=f'{name}-{len(self.parts):05}',group=self.group,anchor=self.anchor,shape=shape,material=material,position=vec(pos),size=vec(size),rotation=vec(rotation)))
-    def cylinder(self,name,p,r,h,material):self.part(name,p,(r*2,r*2,h),material,'CYLINDER',(90,0,0))
-    def beam(self,name,a,b,width,material):
+    def cylinder(self,name,p,r,h,mat):self.part(name,p,(r*2,r*2,h),mat,'CYLINDER',(90,0,0))
+    def beam(self,name,a,b,width,mat):
         dx,dy,dz=(b[i]-a[i] for i in range(3));length=math.sqrt(dx*dx+dy*dy+dz*dz)
-        self.part(name,tuple((a[i]+b[i])/2 for i in range(3)),(width,width,length),material,'CYLINDER',(-math.degrees(math.asin(dy/length)),math.degrees(math.atan2(dx,dz)),0))
-    def motion(self,name,p,kind,period=12):
-        self.groups.append(dict(id=name,position=vec(p),motion=kind,period=period,phase=0));self.group=name
-    def facade(self,box):
-        self.anchor=box['id'];c,s=box['center'],box['size'];x,y,z=c['x'],c['y'],c['z'];w,h,d=s['x'],s['y'],s['z']
-        if min(w,d)<10 or h<5:return
-        for side in (-1,1):
-            face=z+side*(d/2+.015)
-            self.part('building-coping',(x,y+h/2-.5,face),(w,.4,.03),'steel')
-            for floor in range(max(1,min(10,int(h/7)))):
-                yy=y-h/2+4+floor*7
-                if yy+2>y+h/2:continue
-                for column in range(max(1,int(w/11))):
-                    xx=x-w/2+5+column*11
-                    self.part('window-recess',(xx,yy,face),(4,2.5,.03),'black')
-                    color='light-cyan' if self.data['metadata']['theme']=='NEON' else 'light-amber'
-                    if (column+floor)%4!=0:self.part('window-pane',(xx,yy,face+side*.016),(3.2,1.6,.015),color)
-            for xx in (x-w/2+1,x+w/2-1):self.part('facade-pier',(xx,y,face),(1,h,.03),'dark-concrete')
-        self.part('roof-mechanical',(x,y+h/2+2,z),(w*.3,4,d*.3),'black')
-        self.cylinder('roof-extractor',(x+w*.25,y+h/2+2,z),2,3,'steel')
+        self.part(name,tuple((a[i]+b[i])/2 for i in range(3)),(width,width,length),mat,'CYLINDER',(-math.degrees(math.asin(dy/length)),math.degrees(math.atan2(dx,dz)),0))
+    def model(self,name,asset,pos,scale=(1,1,1),rotation=(0,0,0),proxies=(),lod=280):
+        self.models.append(dict(id=name,group='',anchor=self.anchor,asset=f'models/arenas/{asset}.j3o',distantAsset=f'models/arenas/{asset}-lod.j3o',position=vec(pos),size=vec(scale),rotation=vec(rotation),lodDistance=lod,collisionGeometryIds=list(proxies)))
+    def light(self,name,p,color=(1,.78,.5),radius=30):self.lights.append(dict(id=name,position=vec(p),color=vec(color),radius=radius))
+    def hero(self,proxy,asset,y=None):
+        b=next(b for b in self.data['boxes'] if b['id']==proxy+'-roof');c=b['center'];bottom=c['y']-b['size']['y']/2
+        self.anchor=b['id'];self.model(proxy,asset,(c['x'],bottom if y is None else y,c['z']),proxies=[b['id']]);b['collision']=False
+    def facade(self,b):
+        c,s=b['center'],b['size'];x,y,z=c['x'],c['y'],c['z'];w,h,d=s['x'],s['y'],s['z'];self.anchor=b['id']
+        if min(w,d)<24 or h<8 or 'roof' in b['id'] or b['id'].startswith(('edge-','pile-','silo-')):return
+        # Window frames project by decimetres; no near-coplanar millimetre stacks.
+        floor_count=min(12,int(h/4.5));columns=min(14,max(2,int(w/8)));base=y-h/2
+        for sign in (-1,1):
+            face=z+sign*(d/2+.22)
+            for floor in range(floor_count):
+                for col in range(columns):
+                    xx=x-w/2+(col+.5)*w/columns;yy=base+3+floor*4.5
+                    self.part('architectural-window',(xx,yy,face),(3.8,2.2,.32),'glass')
+                    if self.data['metadata']['theme']=='NEON' and (col+floor*3)%7==0:self.part('occupied-window',(xx,yy,face+sign*.24),(3.0,1.5,.12),'light-amber')
+            self.part('parapet-coping',(x,y+h/2+.2,z+sign*(d/2-.4)),(w,.5,.8),'steel')
+        self.part('roof-service-unit',(x-w*.22,y+h/2+1.5,z),(max(5,w*.15),3,max(4,d*.16)),'steel')
+        self.part('street-address',(x-w*.25,base+4.5,z-d/2-.5),(7,2,.3),'ivory')
     def common(self):
-        self.district_paving()
-        for b in self.data['boxes']:
-            if b['id'].find('-block-')>=0 or b['id'].startswith('silo-base'):self.facade(b)
-        for b in self.data['boxes']:
-            if not b['id'].endswith('-wall'):continue
-            self.anchor=b['id'];c,s=b['center'],b['size'];side=-1 if '-north-' in b['id'] else 1
-            # Structural wall panels stay flush; drive-through portals retain their full clearance.
-            for x in range(int(c['x']-s['x']/2+10),int(c['x']+s['x']/2-8),18):
-                self.part('hall-column-seam',(x,c['y'],c['z']+side*1.015),(.12,s['y']-.2,.025),'black')
-                self.part('clerestory',(x,s['y']*.78,c['z']+side*1.024),(11,3,.02),'black')
-                self.part('clerestory-glass',(x,s['y']*.78,c['z']+side*1.04),(9,1.7,.018),'light-white')
-        # Authored roads are texture-backed flush overlays on known collision surfaces.
-        done=set();junctions={}
-        for edge in self.data['edges']:
-            if edge['type'] in ('LAUNCH','OPENABLE'):continue
-            a,b=(self.data['nodes'][edge[k]] for k in ('from','to'))
-            p,q=a['position'],b['position'];key=tuple(sorted((a['id'],b['id'])))
-            if key in done:continue
-            done.add(key)
-            dx,dy,dz=q['x']-p['x'],q['y']-p['y'],q['z']-p['z'];horizontal=math.hypot(dx,dz);length=math.hypot(horizontal,dy)
-            angle=-math.degrees(math.atan2(dz,dx));slope=math.degrees(math.atan2(dy,horizontal));rotation=(0,angle,slope)
-            self.anchor=a['surfaceId']
-            centre=((p['x']+q['x'])/2,(p['y']+q['y'])/2+.018,(p['z']+q['z'])/2)
-            self.part('road-shoulder',centre,(length+.25,.01,edge['width']+4),'road-shoulder',rotation=rotation)
-            self.part('road-asphalt',centre,(length+.25,.012,edge['width']),'road-surface',rotation=rotation)
-            for sign in (-1,1):
-                side=sign*(edge['width']/2-.65)
-                self.part('road-edge-line',(centre[0]+dz/horizontal*side,centre[1]+.007,centre[2]-dx/horizontal*side),
-                    (length,.004,.32),'road-marking',rotation=rotation)
-            for n in range(max(1,int(length/21))):
-                t=(n+.5)/max(1,int(length/21));x,y,z=p['x']+dx*t,p['y']+dy*t,p['z']+dz*t
-                # Nine-metre markings remain part of the structural LOD for a legible whole-map road network.
-                self.part('lane-dash',(x,y+.027,z),(9,.004,.32),'road-marking',rotation=rotation)
-            if abs(dy)<.001:
-                for node in (a,b):junctions[node['id']]=max(junctions.get(node['id'],0),edge['width']/2)
-            if abs(dy)<.001 and a['id']%4==0:
-                self.part('asphalt-repair',((p['x']+q['x'])/2,p['y']+.029,(p['z']+q['z'])/2),(3,.008,5),'road-patch','PATCH',(0,angle,0))
-        for node_id,radius in junctions.items():
-            node=self.data['nodes'][node_id];p=node['position'];x,y,z=p['x'],p['y'],p['z']
-            if not self.supported_tile(x,z,y,radius*2+4):continue
-            self.anchor=node['surfaceId']
-            self.cylinder('road-shoulder-junction',(x,y+.018,z),radius+2,.01,'road-shoulder')
-            self.cylinder('road-asphalt-junction',(x,y+.02,z),radius,.012,'road-surface')
-    def supported_tile(self,x,z,y,size):
-        for dx,dz in [(0,0),(-.5,-.5),(.5,-.5),(.5,.5),(-.5,.5)]:
-            try:self.location.surface((x+dx*size,y,z+dz*size))
-            except ValueError:return False
-        return True
-    def district_paving(self):
-        # Broad, flush material regions distinguish actual facilities without adding walls or collision.
-        sites={
-            'CONSTRUCTION':[(380,580,360,580,-14,'district-earth'),(420,910,730,885,0,'district-service'),
-                (930,1310,440,650,0,'district-slate'),(910,1320,95,265,0,'district-earth'),(910,1230,820,1040,16,'district-service')],
-            'NEON':[(790,1130,220,530,0,'district-slate'),(285,730,385,625,0,'district-warm'),
-                (340,680,810,1160,0,'district-garden'),(805,995,545,855,-12,'district-service'),(1130,1520,840,1150,0,'district-service')],
-            'CARNIVAL':[(95,500,70,320,0,'district-warm'),(170,455,335,565,0,'district-fair'),
-                (640,810,580,750,3,'district-warm'),(995,1340,455,810,0,'district-slate'),
-                (135,565,980,1190,0,'district-fair'),(1025,1400,855,1130,0,'district-service')]}
-        for x1,x2,z1,z2,y,material in sites[self.data['metadata']['theme']]:
-            for x in range(x1+15,x2,30):
-                for z in range(z1+15,z2,30):
-                    if not self.supported_tile(x,z,y,30):continue
-                    self.anchor=self.location.surface((x,y,z))
-                    self.part('district-paving',(x,y+.012,z),(30,.004,30),material)
-    def crane(self,name,x,z,base=0,height=85,reach=110,anchor=None):
-        # Gantry parts are high above drivable space; solid tower base is canonical geometry.
-        self.anchor=anchor or ('pit-crane-foundation' if name=='pit' else 'silo-base-1')
-        for y in range(int(base),int(base+height),10):
-            for sign in (-1,1):
-                self.beam('crane-lattice-leg',(x+sign*5,y,z-5),(x+sign*5,y+10,z-5),.8,'yellow')
-                self.beam('crane-lattice-brace',(x-5,y,z-5),(x+5,y+10,z-5),.35,'steel')
-                self.beam('crane-lattice-leg',(x+sign*5,y,z+5),(x+sign*5,y+10,z+5),.8,'yellow')
-                self.beam('crane-lattice-brace',(x-5,y,z+5),(x+5,y+10,z+5),.35,'steel')
-        self.beam('crane-boom',(x-reach/3,base+height,z),(x+reach,base+height,z),2,'yellow')
-        self.beam('crane-tension',(x,base+height+15,z),(x+reach,base+height,z),.35,'steel')
-        self.part('crane-counterweight',(x-reach/3,base+height,z),(14,7,12),'concrete')
+        for b in self.data['boxes']:self.facade(b)
+        used=set()
+        for path in self.location.paths:
+            if path['kind']!='ROAD':continue
+            names=path['names']
+            for index,name in enumerate(names[:-1]):
+                if name in used:continue
+                used.add(name);p=self.location.points[name];q=self.location.points[names[index+1]]
+                if p[1]!=0:continue
+                dx,dz=q[0]-p[0],q[2]-p[2];length=math.hypot(dx,dz);side=path['width']/2+5;x,z=p[0]+dz/length*side,p[2]-dx/length*side
+                if not self.location.clear((x,0,z),3):continue
+                self.anchor='';height=8 if self.data['metadata']['theme']=='CARNIVAL' else 11
+                self.cylinder('road-fixture-column',(x,height/2,z),.22,height,'steel');self.part('road-fixture-head',(x,height,z),(1.8,.6,1.2),'steel');self.part('road-fixture-lens',(x,height-.4,z),(1.2,.15,.8),'light-amber' if self.data['metadata']['theme']!='NEON' else 'light-white')
+                if len(self.lights)<24:self.light('road-fixture-'+name,(x,height-.8,z),(1,.8,.5) if self.data['metadata']['theme']!='NEON' else (.6,.8,1),24)
+        # Each raised span has fascia, underside and grounded supports. These are
+        # structural faces offset below the canonical road, never a second top sheet.
+        for path in self.location.paths:
+            if not any(self.location.points[n][1]>2 for n in path['names']):continue
+            if not any(word in path['id'] for word in ('bridge','express','interchange')):continue
+            for first,last in zip(path['names'],path['names'][1:]):
+                p,q=self.location.points[first],self.location.points[last];dx,dz=q[0]-p[0],q[2]-p[2];length=math.hypot(dx,dz);sx,sz=dz/length*path['width']/2,-dx/length*path['width']/2
+                self.anchor=''
+                for sign in (-1,1):self.beam('bridge-edge-girder',(p[0]+sx*sign,p[1]-1,p[2]+sz*sign),(q[0]+sx*sign,q[1]-1,q[2]+sz*sign),1.3,'steel')
+                angle=-math.degrees(math.atan2(dz,dx));slope=math.degrees(math.atan2(q[1]-p[1],length))
+                self.part('bridge-underside',((p[0]+q[0])/2,(p[1]+q[1])/2-1,(p[2]+q[2])/2),(math.hypot(length,q[1]-p[1]),.35,path['width']),'concrete',rotation=(0,angle,slope))
     def construction(self):
-        # Industrial outskirts are asymmetrical works complexes, all beyond the solid perimeter.
-        self.anchor='exterior'
-        for x,z,w,d,h in [(-105,250,180,320,25),(260,-130,410,180,32),(1110,-155,550,200,22),
-                           (1730,910,210,430,36),(980,1320,450,180,18)]:
-            self.part('external-factory',(x,h/2,z),(w,h,d),'rust')
-            for n in range(3):
-                self.part('factory-sawtooth-roof',(x+(n-1)*w/3,h+4,z),(w/3-2,8,d),'steel',rotation=(0,0,7))
-        for x,z in [(1480,-95),(1535,-95),(1590,-95),(-95,960),(-155,960),(-215,960)]:
-            self.cylinder('external-cement-silo',(x,45,z),24,90,'ivory')
-            self.cylinder('silo-crown',(x,93,z),17,6,'steel')
-            self.beam('silo-feed-pipe',(x,80,z),(x,80,z+60),3,'rust')
-        for x,z,h in [(80,-170,160),(1770,980,130),(1810,980,190)]:
-            self.cylinder('industrial-chimney',(x,h/2,z),10,h,'rust')
-            for y in range(35,h,35):self.cylinder('chimney-band',(x,y,z),10.2,9,'ivory')
-        self.crane('outer-rail',240,1300,0,95,150,'exterior')
-        self.crane('outer-yard',1690,240,0,140,110,'exterior')
-        self.crane('pit',355,330,0,95,120);self.crane('plant',1120,390,48,65,100)
-        self.anchor='unfinished-floor-32'
-        for x in range(440,900,25):
-            for z in (780,840):
-                self.part('unfinished-frame',(x,37,z),(1.2,30,1.2),'concrete')
-                self.part('exposed-rebar',(x,55,z),(.12,7,.12),'rust')
-        self.anchor='interchange-deck'
-        for x in range(910,1240,18):self.part('roof-expansion-joint',(x,16.024,930),(.06,.004,245),'roof-seam')
-        for b in self.data['boxes']:
-            if '-block-' not in b['id']:continue
-            self.anchor=b['id'];c,s=b['center'],b['size']
-            for n in range(4):self.part('construction-panel',(c['x'],c['y']+s['y']/2+.2+n*.65,c['z']),(s['x']*.85,.4,s['z']*.85),'concrete')
-    def neon(self):
-        self.anchor='exterior'
-        # Unequal joined city blocks continue four different street edges beyond the playable district.
-        for index,(x,z,w,d,h) in enumerate([(-125,280,210,420,92),(-160,1120,260,380,180),(270,-135,370,220,70),
-            (650,-185,260,300,230),(1140,-160,420,250,116),(1610,-120,280,210,58),
-            (1970,240,280,360,205),(1960,890,250,550,82),(1910,1350,160,230,165),
-            (340,1540,580,240,45),(890,1580,310,300,260),(1470,1540,490,240,126)]):
-            self.part('city-backdrop-podium',(x,15,z),(w+20,30,d+20),'dark-concrete')
-            self.part('city-backdrop-tower',(x,h/2,z),(w,h,d),'black' if index%3 else 'blue')
-            self.part('city-backdrop-setback',(x-w*.15,h+18,z),(w*.58,36,d*.6),'dark-concrete')
-            color='light-cyan' if index%2 else 'light-magenta'
+        for proxy,asset in [('unfinished-apartments','unfinished-frame'),('concrete-plant','plant-sawtooth'),('warehouse','warehouse-trusses')]:self.hero(proxy,asset)
+        for i,(x,z) in enumerate([(1020,370),(1130,375),(1350,440)]):self.anchor='silo-base-'+str(i);self.model('cement-silo-'+str(i),'cement-silo',(x,3,z))
+        self.anchor='pit-crane-foundation';x,z=316,691
+        for y in range(0,80,10):
             for sign in (-1,1):
-                face=z+sign*(d/2+.03)
-                for level in range(1,int(h/11)):
-                    self.part('city-ribbon-window',(x,level*11,face),(w*.86,.75,.035),color)
-                self.part('city-sign',(x-w*.35,h*.58,face+sign*.02),(5,h*.55,.04),color)
-        for b in self.data['boxes']:
-            if '-block-' not in b['id']:continue
-            self.anchor=b['id'];c,s=b['center'],b['size'];x,y,z=c['x'],c['y'],c['z'];top=y+s['y']/2
-            color='light-cyan' if int(x)%3 else 'light-magenta'
-            for side in (-1,1):self.part('neon-tower-trim',(x+side*(s['x']/2-.1),y,z-s['z']/2-.028),(.16,s['y'],.035),color)
-            self.part('neon-tower-roof',(x,top+.2,z),(s['x'],.2,s['z']),color)
-        self.anchor='shopping-passage-north-wall';self.motion('market-screen',(510,19,466.9),'SCREEN',8)
-        for i in range(12):self.part('market-screen-pixel',((i-6)*6,0,0),(4,9,.03),'light-magenta' if i%3 else 'light-cyan')
-        self.group=''
-    def carnival(self):
+                self.beam('crane-leg',(x+sign*4,y,z-4),(x+sign*4,y+10,z-4),.65,'yellow');self.beam('crane-brace',(x-4,y,z-4),(x+4,y+10,z-4),.3,'steel')
+        self.beam('crane-jib',(x-28,80,z),(x+145,80,z),1.8,'yellow');self.beam('crane-cable',(x+125,80,z),(x+125,5,z),.16,'steel');self.part('crane-counterweight',(x-28,78,z),(12,8,12),'concrete')
+        for i,(p,q) in enumerate([((1020,45,370),(1110,27,540)),((1130,45,375),(1110,27,540)),((1350,45,440),(1110,27,540))]):self.anchor='plant-mixer-core';self.beam('cement-feed',p,q,1.8,'steel')
+        for x,z in [(1040,540),(1150,680),(1180,270),(390,880)]:self.light(f'industrial-work-{x}',(x,11,z),(1,.82,.57),38)
         self.anchor='exterior'
-        # The park runs into wooded banks and an open northern shore, rather than a city-box horizon.
-        for i,(x,z,w,d,h) in enumerate([(-120,170,220,360,55),(-175,575,320,530,90),(-105,1110,180,400,48),
-             (245,-170,600,280,60),(890,-170,770,290,85),(1610,310,190,430,55),(1640,880,250,640,100)]):
-            self.part('wooded-bank',(x,-12,z),(w,h,d),'park-ground','SPHERE')
-            for n in range(9):
-                tx=x+math.cos(n*2.1+i)*w*.32;tz=z+math.sin(n*1.7+i)*d*.34
-                ty=9+(n*7)%18
-                self.cylinder('park-tree-trunk',(tx,ty/2,tz),1.3,ty,'rust')
-                self.part('park-tree-crown',(tx,ty+5,tz),(18+(n%3)*5,20+(n%4)*3,22),'park-leaf','SPHERE')
-        self.part('outer-lake-coast',(830,-3,1560),(1600,3,450),'cyan')
-        for x,z,w in [(110,1355,220),(360,1430,320),(1370,1410,280)]:
-            self.part('shore-bank',(x,0,z),(w,30,100),'park-ground','SPHERE')
+        for x,z,w,d in [(450,-140,700,180),(-120,900,170,450),(1680,600,130,800)]:
+            self.part('industrial-neighbor',(x,12,z),(w,24,d),'brick')
+            for offset in (-.3,0,.3):self.cylinder('factory-chimney',(x+w*offset,38,z),5,76,'rust')
+    def neon(self):
+        for proxy,asset in [('shopping-passage','passage-glass'),('technical-complex','technical-rooftop'),('parking-ground-floor','parking-ceiling')]:self.hero(proxy,asset)
+        self.anchor='shopping-passage-roof';self.groups.append(dict(id='market-screen',position=vec((780,12,674)),motion='SCREEN',period=8,phase=0));self.group='market-screen'
+        for i in range(8):self.part('market-screen-pixel',((i-4)*3.6,0,0),(2.9,5,.2),'light-magenta' if i%3 else 'light-cyan')
+        self.group=''
+        for i,(x,y,z,color) in enumerate([(750,10,730,(.45,.75,1)),(850,12,830,(1,.4,.7)),(1090,9,990,(.6,.85,1)),(1480,5,350,(1,.8,.55)),(1190,-5,580,(.5,.75,1)),(1190,-5,700,(.5,.75,1)),(1190,-5,800,(.5,.75,1))]):
+            self.light('interior-light-'+str(i),(x,y,z),color,28);self.part('interior-light-fixture',(x,y+.5,z),(6,.4,1),'steel');self.part('interior-light-lens',(x,y+.25,z),(5,.12,.6),'light-white')
+        for name in ('meridian-tower','exchange-tower'):
+            b=next(b for b in self.data['boxes'] if b['id']==name);c,s=b['center'],b['size'];self.anchor=name
+            for sign in (-1,1):self.part('vertical-neon-sign',(c['x']+sign*(s['x']/2-.8),c['y'],c['z']-s['z']/2-.6),(1.2,s['y']*.8,.5),'light-cyan' if name=='meridian-tower' else 'light-magenta')
+        self.anchor='exterior'
+        for i,(x,z,w,d,h) in enumerate([(-95,200,180,250,50),(-130,1100,240,380,120),(480,1500,650,170,65),(1150,1500,380,170,170),(1900,1100,160,500,88),(1870,300,120,400,110),(750,-130,700,210,45)]):
+            self.part('city-continuation',(x,h/2,z),(w,h,d),'brick' if i%2 else 'dark-concrete');self.part('city-roof-setback',(x,h+7,z),(w*.65,14,d*.65),'blue')
+    def carnival(self):
+        for proxy,asset in [('circus','circus-canopy'),('ride-pavilion','orbit-shell'),('repair-depot','depot-gantry')]:self.hero(proxy,asset)
         self.anchor='ferris-foundation'
-        for side in (-1,1):self.beam('ferris-support',(1125+side*20,4,650),(1125,75,650),2,'ivory')
-        self.motion('euphoria-ferris-wheel',(1125,75,650),'ROTATE_Z',60)
-        radius=65
-        for n in range(32):
-            angle=n*math.tau/32;next_angle=(n+1)*math.tau/32
-            p=(math.cos(angle)*radius,math.sin(angle)*radius,0);q=(math.cos(next_angle)*radius,math.sin(next_angle)*radius,0)
-            self.beam('ferris-rim',p,q,1.3,'ivory')
-            if n%2==0:
-                self.beam('ferris-spoke',(0,0,0),p,.35,'steel');self.part('ferris-cabin',p,(7,5,5),'faded-red' if n%4 else 'blue')
-        self.group='';self.anchor='circus-roof'
-        for n in range(20):self.part('circus-canopy',(160+n*20,33,1090),(10,1,68),'ivory' if n%2 else 'faded-red')
-        self.anchor='carousel-base'
-        self.cylinder('carousel-crown',(310,12,265),24,2,'ivory')
-        for n in range(12):
-            angle=n*math.tau/12;x,z=310+math.cos(angle)*21,265+math.sin(angle)*21
-            self.cylinder('carousel-pole',(x,7,z),.35,10,'yellow')
+        for sign in (-1,1):self.beam('ferris-support',(1300+sign*28,3,700),(1300,65,700),2,'ivory')
+        self.groups.append(dict(id='euphoria-ferris-wheel',position=vec((1300,65,700)),motion='ROTATE_Z',period=60,phase=0));self.group='euphoria-ferris-wheel'
+        for i in range(32):
+            a=i*math.tau/32;b=(i+1)*math.tau/32;p=(math.cos(a)*58,math.sin(a)*58,0);q=(math.cos(b)*58,math.sin(b)*58,0);self.beam('wheel-rim',p,q,1.2,'ivory')
+            if i%2==0:self.beam('wheel-spoke',(0,0,0),p,.3,'steel');self.part('wheel-gondola',p,(6,4,4),'faded-red' if i%4 else 'blue')
+        self.group='';self.anchor='carousel-base';self.cylinder('carousel-roof',(925,11,155),25,2,'ivory')
+        for i in range(12):self.cylinder('carousel-pole',(925+math.cos(i*math.tau/12)*20,6,155+math.sin(i*math.tau/12)*20),.25,10,'yellow')
         for b in self.data['boxes']:
-            if '-block-' not in b['id']:continue
-            self.anchor=b['id'];c,s=b['center'],b['size']
-            for side in (-1,1):
-                self.part('fair-awning',(c['x'],c['y']+s['y']/2-1,c['z']+side*s['z']/2),(s['x'],2,.025),'faded-red')
-                for n in range(8):self.part('fair-marquee',(c['x']-s['x']/2+4+n*7,c['y']+s['y']/2+.2,c['z']+side*s['z']/2),(.5,.5,.05),'light-amber')
+            if not b['id'].startswith('fair-stall-'):continue
+            c,s=b['center'],b['size'];self.anchor=b['id'];self.part('stall-canopy',(c['x'],7,c['z']-s['z']/2-2),(s['x']+1,1,5),'ivory',rotation=(0,b['yawDegrees'],0));self.part('stall-counter',(c['x'],2,c['z']-s['z']/2-.5),(s['x']*.8,.7,1.3),'wood')
+        for i,p in enumerate([(330,12,1030),(400,12,1090),(1210,13,450),(1300,13,515),(1200,10,1040),(1260,10,1100)]):self.light('park-worklight-'+str(i),p,(1,.72,.4),32)
+        self.anchor='exterior'
+        # Continuous wooded setting beyond the physical park edge; no floating oval hill islands.
+        for i in range(36):
+            side=i%4;t=(i//4+.5)/9
+            x,z=(-35-t*40,t*1300) if side==0 else (1535+t*35,t*1300) if side==1 else (t*1500,-45) if side==2 else (t*1500,1340)
+            self.model('woodland-tree-'+str(i),'park-tree',(x,0,z),(1.5+(i%3)*.3,1.3+(i%4)*.2,1.5+(i%3)*.3),lod=350)
+        self.part('south-woodland-ground',(750,-2,-110),(1850,4,220),'grass');self.part('north-woodland-ground',(750,-2,1400),(1850,4,200),'grass');self.part('west-woodland-ground',(-100,-2,650),(200,4,1300),'grass');self.part('east-woodland-ground',(1600,-2,650),(200,4,1300),'grass')
     def save(self):
-        data=dict(schemaVersion=1,arenaId=self.data['id'],source='src/tools/author_arena_art.py; original Wreck Riff large locations, 2026-09-13',
-            license='Original project-authored geometry; uses existing locally licensed surface materials.',groups=self.groups,parts=self.parts)
-        path=OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json')
-        path.write_text(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8');print(path.name,len(self.parts),'parts')
-
+        # Model roof geometry is the single visible/physical source; former analytical
+        # proxy is metadata only, excluded from ordinary solids by collision:false.
+        (OUT/(self.location.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
+        (OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json')).write_text(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
 if __name__=='__main__':
     for factory,method in [(construction,'construction'),(neon,'neon'),(carnival,'carnival')]:
-        location=factory();scene=Scene(location);scene.common();getattr(scene,method)();scene.save()
+        scene=Scene(factory());scene.common();getattr(scene,method)();scene.save()

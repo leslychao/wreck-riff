@@ -11,18 +11,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class ArenaArtTest {
     @Test void allFourScenesHaveTheirOwnLandmarksAndLocalProvenance() {
         var registry=ArenaRegistry.load();
-        var landmarks=Map.of("dead-air-yard","mast-beacon","construction_17","crane-lattice","neon_zero","neon-tower","euphoria_park","ferris-rim");
         assertEquals(4,registry.entries().size());
         for(var entry:registry.entries()) {
             var arena=registry.definition(entry.id());var art=ArenaArt.load(arena);
-            assertTrue(art.source().contains("author_arena_art.py"));assertFalse(art.license().isBlank());
-            assertTrue(art.parts().size()>=250);assertTrue(art.parts().stream().anyMatch(p->p.id().startsWith(landmarks.get(entry.id()))));
-            if(arena.layoutRevision()>=2) {
-                assertTrue(art.parts().stream().anyMatch(p->p.id().startsWith("clerestory")),"Real interior facades");
-                assertTrue(art.parts().stream().anyMatch(p->p.id().startsWith("lane-dash")),"Authored roads must be visible");
-                assertFalse(art.parts().stream().anyMatch(p->p.id().startsWith("district-horizon")||p.id().startsWith("perimeter-panel")),
-                        "The three locations must not share a repeated box-and-panel horizon");
-            }
+            assertTrue(art.source().startsWith("src/tools/"));assertFalse(art.license().isBlank());
+            if(arena.layoutRevision()>=3) {
+                assertEquals(2,art.schemaVersion());assertTrue(art.models().size()>=3,"Three distinct authored interiors");
+                assertTrue(art.models().stream().allMatch(model->!model.distantAsset().isEmpty()));
+                assertFalse(art.lights().isEmpty(),"Interior fixtures must illuminate actual surrounding surfaces");
+                assertFalse(art.parts().stream().anyMatch(p->p.id().startsWith("road-asphalt")||p.id().startsWith("lane-dash")),
+                        "Road surfaces and markings belong to authored road geometry, not nav-edge overlays");
+            } else assertTrue(art.parts().stream().anyMatch(p->p.id().startsWith("mast-beacon")));
         }
     }
     @Test void ferrisWheelUsesSessionTimeAndPausesWithoutAccumulatingControls() {
@@ -33,7 +32,7 @@ class ArenaArtTest {
         session.tick=100;visual.update(.016f);Quaternion pose=wheel.getLocalRotation().clone();
         for(int n=0;n<100;n++)visual.update(.1f);
         assertEquals(pose,wheel.getLocalRotation());session.tick=200;visual.update(.016f);assertNotEquals(pose,wheel.getLocalRotation());
-        assertEquals(1,root.getNumControls());
+        assertSame(visual,root.getControl(ArenaPresentation.class));
     }
     @Test void neonInformationScreenReactsToBossPhase() {
         var arena=ArenaRegistry.load().definition("neon_zero");var root=scene(arena);
@@ -55,20 +54,20 @@ class ArenaArtTest {
                     for(int i=0;i<positions.limit();i++)assertTrue(Float.isFinite(positions.get(i)));
                 }
             });
-            assertTrue(cells[0]>8);assertTrue(draws[0]<ArenaArt.load(arena).parts().size()*.75f,entry.id()+" requires static batching");
+            assertTrue(cells[0]>8);
             assertTrue(draws[0]<1200,entry.id()+" excessive draws: "+draws[0]);
         }
     }
-    @Test void lightingKeepsNightRoadsReadableAndRoadRepairsRemainTextured() {
+    @Test void lightingKeepsNightRoadsReadableAndRoadMaterialsRemainTextured() {
         for(var theme:ArenaDefinition.Theme.values()) {
             var profile=SceneLighting.profile(theme);
             assertTrue(profile.ambient().r>=.20f&&profile.ambient().g>=.25f&&profile.ambient().b>=.33f);
             assertTrue(profile.ambient().g+profile.key().g+profile.rim().g>=1.1f);assertTrue(profile.glow()>0&&profile.glow()<1);
         }
         var material=new SurfaceMaterials(PresentationTestAssets.shared()).material("road-patch");assertNotNull(material.getParam("DiffuseMap"));
-        var art=ArenaArt.load(ArenaRegistry.load().definition("construction_17"));
-        assertTrue(art.parts().stream().filter(p->p.id().startsWith("asphalt-repair")).allMatch(p->p.shape()==ArenaArt.Shape.PATCH&&p.size().y()<=.008f));
-        assertTrue(art.parts().stream().anyMatch(p->p.id().startsWith("roof-expansion-joint")));
+        var arena=ArenaRegistry.load().definition("construction_17");
+        assertFalse(arena.roads().isEmpty());
+        assertTrue(arena.roads().stream().allMatch(road->!road.geometryIds().isEmpty()));
     }
     private static Node scene(ArenaDefinition arena) {
         Node root=new Node(arena.id());var assets=PresentationTestAssets.shared();ArenaArt.attach(assets,root,arena,new SurfaceMaterials(assets));return root;

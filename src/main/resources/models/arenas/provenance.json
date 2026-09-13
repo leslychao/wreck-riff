@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "origin": "ORIGINAL_PROJECT_CONTENT",
+  "converter": "src/tools/java/game/wreckriff/tools/PrepareArenaModels.java",
+  "converterSha256": "c9cfb1cf4ab5ffbd279185b278381bc10f2f6084bc009ba795440b23ad58204a",
+  "generator": "src/tools/author_arena_models.py",
+  "generatorSha256": "1f1e8d7faa1e5463dc574420b4419062c4e1b707d21810af4ccdfab421534b61",
+  "transformation": "Local GLB geometry, authored UVs and normals; named surface materials replaced by shared lit Phong materials; tangent generation; jME binary export",
+  "artisticStatus": "NEEDS_CREATIVE_REVIEW",
+  "assets": [
+    {
+      "path": "models/arenas/cement-silo-lod.j3o",
+      "source": "src/tools/assets/architecture/cement-silo-lod.glb",
+      "sourceSha256": "3542f52b6d2ed3f74a18e7a337cc7ea71f2839104d74ca06543a051c0b8c795e",
+      "sourceBlend": "src/tools/assets/architecture/cement-silo-lod.blend",
+      "sourceBlendSha256": "8fe24cd9a454602ce653a77fcccbfeee3105a75990e74fe840654df1cc263407",
+      "sha256": "c0a9f6c254d254c52ab80f26d0aaa8d2435af0c6b7203c6167d47146f553aed5",
+      "triangles": 176,
+      "materials": [
+        "ivory",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/cement-silo.j3o",
+      "source": "src/tools/assets/architecture/cement-silo.glb",
+      "sourceSha256": "e54ff6248d8acd874ba7d2806352915e72741f5ac6dce62ab21822d119ac8396",
+      "sourceBlend": "src/tools/assets/architecture/cement-silo.blend",
+      "sourceBlendSha256": "0f4ca01d37e3f37503c27347dccd24f4455686ba9a0b0e9fb4e377377d0726c7",
+      "sha256": "f05ea8336f5ebf4ebd0ad49e40c583911db09316d84fd27cb2d1da48556a5ba4",
+      "triangles": 1308,
+      "materials": [
+        "ivory",
+        "rust",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/circus-canopy-lod.j3o",
+      "source": "src/tools/assets/architecture/circus-canopy-lod.glb",
+      "sourceSha256": "1b5ef75cda1295bdabe1a46cbd7d04320c8846a9ec7780456dc8586c69db7e25",
+      "sourceBlend": "src/tools/assets/architecture/circus-canopy-lod.blend",
+      "sourceBlendSha256": "3738d9368fb3a2de46da6931ccde047a08fdaf088e517c112d9696935a160a18",
+      "sha256": "8ecfd4645a455d0c47b8f733d4236bf2ae6ee472183689e3f15716aeb1f04b06",
+      "triangles": 64,
+      "materials": [
+        "faded-red",
+        "ivory",
+        "yellow"
+      ]
+    },
+    {
+      "path": "models/arenas/circus-canopy.j3o",
+      "source": "src/tools/assets/architecture/circus-canopy.glb",
+      "sourceSha256": "5bbadd9972fae66d128cd99ce9cf2f9a52ff915054c3327a285885b3af7e3d3d",
+      "sourceBlend": "src/tools/assets/architecture/circus-canopy.blend",
+      "sourceBlendSha256": "1beb90f5d45f2596dffcf1649f2cad84361189b9c8a6ad4c23dcad1f79331d36",
+      "sha256": "02bca275670ebc61951d780b4b55cf7e0a25061e096321dbc847e8461e1c1f90",
+      "triangles": 352,
+      "materials": [
+        "faded-red",
+        "ivory",
+        "steel",
+        "yellow"
+      ]
+    },
+    {
+      "path": "models/arenas/depot-gantry-lod.j3o",
+      "source": "src/tools/assets/architecture/depot-gantry-lod.glb",
+      "sourceSha256": "5b0548c63bf0749ed97e54a4a25578c0a89f296f01f465896063aa1e5efba8a0",
+      "sourceBlend": "src/tools/assets/architecture/depot-gantry-lod.blend",
+      "sourceBlendSha256": "a4e3188456782f6796a90e7dc8599749182538a0d4a209237c031ea28c313a7e",
+      "sha256": "30563869c1a93fb1d820db76efa4aa50de35935eb4d5760b46b3c710bb015c8b",
+      "triangles": 44,
+      "materials": [
+        "steel",
+        "yellow"
+      ]
+    },
+    {
+      "path": "models/arenas/depot-gantry.j3o",
+      "source": "src/tools/assets/architecture/depot-gantry.glb",
+      "sourceSha256": "6db85c89bedfe57104c5830b36d4eb6d67bad0c6e0d1da44524e615a02b99518",
+      "sourceBlend": "src/tools/assets/architecture/depot-gantry.blend",
+      "sourceBlendSha256": "c2269e684f7acb1afea6e2241da8d1c151420a2bbb8531a896057ac8370d8704",
+      "sha256": "59a10818d65d959f7c34e839d47f630b82518df4183882407aeaee2e5f906fa8",
+      "triangles": 232,
+      "materials": [
+        "steel",
+        "yellow"
+      ]
+    },
+    {
+      "path": "models/arenas/orbit-shell-lod.j3o",
+      "source": "src/tools/assets/architecture/orbit-shell-lod.glb",
+      "sourceSha256": "117256b2fc073c4922cf0def6707053a06fcf70affb3bd81d07648824e36ae99",
+      "sourceBlend": "src/tools/assets/architecture/orbit-shell-lod.blend",
+      "sourceBlendSha256": "7a1ed772818fc3b89447d93efaeee3ecd714e71690b5eaecd43414782756ff45",
+      "sha256": "da144da89c947e9a9a8104c7f4c91f82f73e95b6a26ed3fdfcbe1b473b552865",
+      "triangles": 52,
+      "materials": [
+        "purple",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/orbit-shell.j3o",
+      "source": "src/tools/assets/architecture/orbit-shell.glb",
+      "sourceSha256": "fe86e18e604e0f58c9333eefa43f5f19197197fcb14541a6e5a22be807e07b4b",
+      "sourceBlend": "src/tools/assets/architecture/orbit-shell.blend",
+      "sourceBlendSha256": "832872df33f5125f89f6a92ab0b03d58311322cdbee471b2e1845e4bd044b6cb",
+      "sha256": "69584fb36bb05b268db00c6f89465a322b037c53b9773b65c58b1dd62adc5308",
+      "triangles": 2340,
+      "materials": [
+        "ivory",
+        "purple",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/park-tree-lod.j3o",
+      "source": "src/tools/assets/architecture/park-tree-lod.glb",
+      "sourceSha256": "e7630ce10ca71263e8cfe61e098693e05d4b9d3fb64a79bedb6cb9eaeeff3156",
+      "sourceBlend": "src/tools/assets/architecture/park-tree-lod.blend",
+      "sourceBlendSha256": "53fa67e8311df12eeefd851b697b3a32995b9323b5037907124237f76cbe7138",
+      "sha256": "97c5f9af380f4642ac5e9738a25fe02f0290dd7ae40773211fae9d359afc98ce",
+      "triangles": 96,
+      "materials": [
+        "grass",
+        "wood"
+      ]
+    },
+    {
+      "path": "models/arenas/park-tree.j3o",
+      "source": "src/tools/assets/architecture/park-tree.glb",
+      "sourceSha256": "38d5f2b3cefc751cbeff02ef1ca92581c2c91c480b509834617aeb907edb2332",
+      "sourceBlend": "src/tools/assets/architecture/park-tree.blend",
+      "sourceBlendSha256": "c987a9f849e80272ea9622f6d38fd1ba4d29bbc20425d8ce71d52dafebb10fdb",
+      "sha256": "b55a4eaa982468fffdde300222cfdf2c4e6bdb340084ba16b2a151f618735fb3",
+      "triangles": 288,
+      "materials": [
+        "grass",
+        "wood"
+      ]
+    },
+    {
+      "path": "models/arenas/parking-ceiling-lod.j3o",
+      "source": "src/tools/assets/architecture/parking-ceiling-lod.glb",
+      "sourceSha256": "3439a09ece51e8c72a539e362c6a76d11ad806de2afc833bef712aa86466b191",
+      "sourceBlend": "src/tools/assets/architecture/parking-ceiling-lod.blend",
+      "sourceBlendSha256": "73c0921cf8c884a73a4d5f99552b57cee261804d5659ee05112062efb01c9c10",
+      "sha256": "c5f6a753703034260b5a90aed002f0e6dc1bcb7398607ce74628adfb1420a301",
+      "triangles": 36,
+      "materials": [
+        "concrete"
+      ]
+    },
+    {
+      "path": "models/arenas/parking-ceiling.j3o",
+      "source": "src/tools/assets/architecture/parking-ceiling.glb",
+      "sourceSha256": "cbc0edf05ccc307a1d2728850fcda6e11f4a10833a5e31b5e7460cc010d5158d",
+      "sourceBlend": "src/tools/assets/architecture/parking-ceiling.blend",
+      "sourceBlendSha256": "531d122eb6264694913244b15dcf85a07acc8af1b85a7aa7fb331c5c432802e9",
+      "sha256": "33a4954518f9557e723bbc522fbbf35b330ced297bbb2e84799132ac264b2f6b",
+      "triangles": 216,
+      "materials": [
+        "concrete",
+        "light-white"
+      ]
+    },
+    {
+      "path": "models/arenas/passage-glass-lod.j3o",
+      "source": "src/tools/assets/architecture/passage-glass-lod.glb",
+      "sourceSha256": "708cfd2e674a663ce1b60208b90b172cf625041a9d4ffb4f08e6aed7137883a0",
+      "sourceBlend": "src/tools/assets/architecture/passage-glass-lod.blend",
+      "sourceBlendSha256": "b2a019b2770589184a64f73cf6cca91f598bc4a72a923155c021e80b4943f8e8",
+      "sha256": "3509babfce68cf1713a7797705fd7e29ef1589c54a340d2dc65c692304007881",
+      "triangles": 268,
+      "materials": [
+        "glass",
+        "ivory",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/passage-glass.j3o",
+      "source": "src/tools/assets/architecture/passage-glass.glb",
+      "sourceSha256": "d45d4da377d7295640d9c6ac2082f048f255573af0c29a14edff482f8ee297f1",
+      "sourceBlend": "src/tools/assets/architecture/passage-glass.blend",
+      "sourceBlendSha256": "5e986779ca4792e257552cf230b5ce964c05070782fe291fd1f6d8ba19fda117",
+      "sha256": "31d3b1e6a914fcf58763bf7d98874431598186f3fccedb6990e0a17049359067",
+      "triangles": 3364,
+      "materials": [
+        "glass",
+        "ivory",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/plant-sawtooth-lod.j3o",
+      "source": "src/tools/assets/architecture/plant-sawtooth-lod.glb",
+      "sourceSha256": "bf4454a0990a148a610ba605f40618e03e8e129bcfc4257f1661cd24cf38d7e3",
+      "sourceBlend": "src/tools/assets/architecture/plant-sawtooth-lod.blend",
+      "sourceBlendSha256": "5d0ab0868a5d00497cef26d734d1e29464f31002b1b34cc1103bbd66e4104e2b",
+      "sha256": "d3ca5815bf6c4f5d73d628d4e2ebd39519a1d43d07b6786aa8847d8f595fae8c",
+      "triangles": 40,
+      "materials": [
+        "glass",
+        "rust",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/plant-sawtooth.j3o",
+      "source": "src/tools/assets/architecture/plant-sawtooth.glb",
+      "sourceSha256": "c48c4342f54d5f301d0c1e8dc9be8043376838e90b4f242250cdce77a0581f9a",
+      "sourceBlend": "src/tools/assets/architecture/plant-sawtooth.blend",
+      "sourceBlendSha256": "eb2073a2c5e0e858140b0013e91c45953b1570c9c4a85fa6af77ae1dbd7c517b",
+      "sha256": "8246f624371cb0a68266278979bfe456ba02948239e58b9de26e5b2b86d9afe1",
+      "triangles": 1012,
+      "materials": [
+        "glass",
+        "rust",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/technical-rooftop-lod.j3o",
+      "source": "src/tools/assets/architecture/technical-rooftop-lod.glb",
+      "sourceSha256": "eb0ab02dca85dd8a69938503a8f09607c898d3e3f944e337cb1c9a1edb87eb0c",
+      "sourceBlend": "src/tools/assets/architecture/technical-rooftop-lod.blend",
+      "sourceBlendSha256": "4075c2ab7b55c8692392b125a8460edb7566c2d1f99d71a9712a60877fe851fa",
+      "sha256": "3f7c8a84117f9e389cff2786429815a8637ddae128ba759bcb051e35bbc2cf29",
+      "triangles": 56,
+      "materials": [
+        "dark-concrete",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/technical-rooftop.j3o",
+      "source": "src/tools/assets/architecture/technical-rooftop.glb",
+      "sourceSha256": "7c6731e421aa37431bdf795ffebe5bc1749c930798c54e5a76ebd3b6510dadff",
+      "sourceBlend": "src/tools/assets/architecture/technical-rooftop.blend",
+      "sourceBlendSha256": "9d0dafa701888faf28891334d65cd1a2ca58385b496259bad73ed944c95af1ea",
+      "sha256": "b5972a5a9d52eefb9cff8d48d81bd87b0d10cc673251639eccf43913dfdf13db",
+      "triangles": 276,
+      "materials": [
+        "black",
+        "dark-concrete",
+        "rust",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/unfinished-frame-lod.j3o",
+      "source": "src/tools/assets/architecture/unfinished-frame-lod.glb",
+      "sourceSha256": "126f0e4e2c4d087cba56b759ef43aa934aa9d2bd87efc9cf9301ae846364ba32",
+      "sourceBlend": "src/tools/assets/architecture/unfinished-frame-lod.blend",
+      "sourceBlendSha256": "a1ccfddbcd4ad06d16c6da959395b90f9aa0997a8096ab4a28c413e9059177d3",
+      "sha256": "28b048c006d8deb8399e5bcc1dfae82fc616bd70b2ab32a087a8652257360659",
+      "triangles": 72,
+      "materials": [
+        "concrete"
+      ]
+    },
+    {
+      "path": "models/arenas/unfinished-frame.j3o",
+      "source": "src/tools/assets/architecture/unfinished-frame.glb",
+      "sourceSha256": "bef11e7f2e3fff1edf68f1d0329bfc4bdfb4210b45223fb1dbf7b84d2174e47d",
+      "sourceBlend": "src/tools/assets/architecture/unfinished-frame.blend",
+      "sourceBlendSha256": "cea98fc9e8c70fe172998677b87e20678965f23ee14b91d3f73d7806c15c088b",
+      "sha256": "cff37e75af3795f9191966952a8b3014b0ea40a15c305b87d5e5f6c1521dc80a",
+      "triangles": 408,
+      "materials": [
+        "concrete",
+        "rust"
+      ]
+    },
+    {
+      "path": "models/arenas/warehouse-trusses-lod.j3o",
+      "source": "src/tools/assets/architecture/warehouse-trusses-lod.glb",
+      "sourceSha256": "02dec28bcfcf9d0ea911285dcc7d0bc4139febc8d6193a4665935f806d8a0133",
+      "sourceBlend": "src/tools/assets/architecture/warehouse-trusses-lod.blend",
+      "sourceBlendSha256": "cad2402264aca058cc643e919f28d5afde80ffbcfae35018090daba52eee5f30",
+      "sha256": "486692097581b068809bdb0dec57e596527c136673f22f1f6a5e34e8db42a66a",
+      "triangles": 44,
+      "materials": [
+        "blue",
+        "steel"
+      ]
+    },
+    {
+      "path": "models/arenas/warehouse-trusses.j3o",
+      "source": "src/tools/assets/architecture/warehouse-trusses.glb",
+      "sourceSha256": "aa65796c3bb5a87062e2cff7168861dcd0cbc143baef68536f60e8701c2d5ae2",
+      "sourceBlend": "src/tools/assets/architecture/warehouse-trusses.blend",
+      "sourceBlendSha256": "27b7d051f63ff34205e7752bea0e11f9285954e4b660c7e0dff52dab2dbb1bbc",
+      "sha256": "dbffef4d09274591dd81a6f248f5bfaefbff4b8d7da4014f1a7017f478201605",
+      "triangles": 748,
+      "materials": [
+        "blue",
+        "steel"
+      ]
+    }
+  ]
+}

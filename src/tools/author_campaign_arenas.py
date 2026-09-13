@@ -67,15 +67,16 @@ class Location:
         x1,x2,z1,z2=bounds;return self.box(name,((x1+x2)/2,base+height/2,(z1+z2)/2),(x2-x1,height,z2-z1),material)
     def roof(self,name,bounds,y,material='steel'):
         x1,x2,z1,z2=bounds;return self.box(name+'-roof',((x1+x2)/2,y+.6,(z1+z2)/2),(x2-x1,1.2,z2-z1),material)
-    def mesh(self,name,polys,height=0,material='concrete',level=0,drive=True):
-        verts=[];indices=[]
-        for poly in polys:
-            if len(poly)<3:continue
-            poly=ccw(poly);base=len(verts);verts.extend(vec((x,height(x,z) if callable(height) else height,z)) for x,z in poly)
-            for i in range(1,len(poly)-1):
-                if abs(area([poly[0],poly[i],poly[i+1]]))>.0001:indices.extend((base,base+i+1,base+i))
+    def mesh(self,name,polys,height=0,material='concrete',level=0,drive=True,additional=()):
+        verts=[];indices=[];triangle_materials=[]
+        for layer,tag in [(polys,material),*additional]:
+            for poly in layer:
+                if len(poly)<3:continue
+                poly=ccw(poly);base=len(verts);verts.extend(vec((x,height(x,z) if callable(height) else height,z)) for x,z in poly)
+                for i in range(1,len(poly)-1):
+                    if abs(area([poly[0],poly[i],poly[i+1]]))>.0001:indices.extend((base,base+i+1,base+i));triangle_materials.append(tag)
         if not indices:return None
-        self.data['meshes'].append(dict(id=name,vertices=verts,indices=indices,material=material,collision=drive))
+        self.data['meshes'].append(dict(id=name,vertices=verts,indices=indices,material=material,collision=drive,triangleMaterials=triangle_materials if len(set(triangle_materials))>1 else []))
         if drive:self.data['surfaces'].append(dict(id=name,geometryId=name,level=level,grip=1))
         return name
     def surface_at(self,p):
@@ -129,7 +130,23 @@ class Location:
                 if flat:claimed.setdefault(bucket,[]).append(poly)
                 if flat and abs(a[1])<.0001:ground_clips.append(poly)
                 height=lambda x,z,a=a,b=b,dx=dx,dz=dz,length=length:a[1]+(b[1]-a[1])*((x-a[0])*dx+(z-a[2])*dz)/(length*length)
-                identity=self.mesh(f'road-{path["id"]}-{segment}',pieces,height,path['material'],0 if a[1]==b[1]==0 else -1 if min(a[1],b[1])<0 else 1)
+                level=0 if a[1]==b[1]==0 else -1 if min(a[1],b[1])<0 else 1
+                paint=[];paint_pieces=[]
+                # Paint occupies its own triangles in the road surface. It is not
+                # a decal sheet. Junction approaches and park promenades stay clear.
+                marked=flat and length>48 and self.data['metadata']['theme']!='CARNIVAL' and path['width']>=26 and path['kind']=='ROAD'
+                if marked:
+                    ux,uz=dx/length,dz/length;vx,vz=dz/length,-dx/length
+                    for t in range(22,int(length)-25,22):
+                        cx,cz=a[0]+ux*t,a[2]+uz*t
+                        paint.append(ccw([(cx-ux*4-vx*.16,cz-uz*4-vz*.16),(cx+ux*4-vx*.16,cz+uz*4-vz*.16),(cx+ux*4+vx*.16,cz+uz*4+vz*.16),(cx-ux*4+vx*.16,cz-uz*4+vz*.16)]))
+                    for marking in paint:
+                        for piece in pieces:
+                            clipped=piece
+                            for v,w in zip(marking,marking[1:]+marking[:1]):clipped=half(clipped,v,w) if clipped else []
+                            if clipped:paint_pieces.append(clipped)
+                    pieces=cut(pieces,paint)
+                identity=self.mesh(f'road-{path["id"]}-{segment}',pieces,height,path['material'],level,additional=[(paint_pieces,'road-marking')] if paint_pieces else [])
                 if identity:path['geometryIds'].append(identity)
                 self.footprints.append((poly,a,b,path))
         for name,poly,y,material,level in self.fixed:
@@ -238,6 +255,11 @@ class Location:
             e['clearance']=round(clearance,3)
     def finish(self,counts):
         self.boundaries();self.compile_geometry();self.compile_nav();self.validate();self.supplies(counts);SOURCE.mkdir(parents=True,exist_ok=True)
+        # The authored model replaces these metadata proxies in both rendering and
+        # the single PhysicsSpace. Keep authoring clearance conservative beforehand.
+        hero_roofs={'unfinished-apartments-roof','concrete-plant-roof','warehouse-roof','shopping-passage-roof','technical-complex-roof','parking-ground-floor-roof','circus-roof','ride-pavilion-roof','repair-depot-roof'}
+        for box in self.data['boxes']:
+            if box['id'] in hero_roofs:box['collision']=False
         (OUT/(self.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         (SOURCE/(self.data['id']+'-design.json')).write_text(json.dumps(dict(sites=self.sites,districts=self.data['districts'],roads=self.data['roads'],supply=self.supply_report),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         print(self.data['id'],len(self.data['boxes']),'solids',len(self.data['meshes']),'meshes',len(self.data['nodes']),'nodes',len(self.data['pickups']),'pickups')

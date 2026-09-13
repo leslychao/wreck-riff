@@ -9,6 +9,7 @@ import com.jme3.system.AppSettings;
 import com.jme3.system.NativeLibraryLoader;
 import game.wreckriff.arena.*;
 import game.wreckriff.config.NativeSetup;
+import game.wreckriff.config.BuildInfo;
 import game.wreckriff.presentation.SceneLighting;
 import java.io.File;
 import java.io.IOException;
@@ -97,7 +98,8 @@ public final class ArenaRouteReview extends SimpleApplication {
                 if(routeIndex==routes.size()) {
                     Files.writeString(output.resolve("review.json"),new GsonBuilder().setPrettyPrinting().create().toJson(Map.of(
                             "status","VISUAL_CAPTURE_COMPLETE","acceptance","OWNER_REVIEW_PENDING","performanceEvidence",false,
-                            "resolution",List.of(1920,1080),"routes",routes,"captures",captures)));
+                            "build",BuildInfo.current(),"audio",false,"camera","authored route inspection",
+                            "resolution",List.of(cam.getWidth(),cam.getHeight()),"routes",routes,"captures",captures)));
                     complete.countDown();
                 } else nextRoute();
             }

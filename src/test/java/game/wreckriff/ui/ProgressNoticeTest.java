@@ -27,7 +27,7 @@ class ProgressNoticeTest {
         var presenter=new ProgressNotice();
         var first=presenter.update(game.wreckriff.config.ProgressStore.MIGRATION_NOTICE,true,true,0);
         assertEquals(game.wreckriff.config.ProgressStore.MIGRATION_NOTICE,first.announcement());
-        assertTrue(first.announcement().contains("Карты обновлены"));assertFalse(first.indicator().contains("not saved"));
+        assertTrue(first.announcement().contains("Карты и снабжение обновлены"));assertFalse(first.indicator().contains("not saved"));
         var done=presenter.update(game.wreckriff.config.ProgressStore.MIGRATION_NOTICE,false,true,1);
         assertEquals("",done.announcement());assertEquals("",done.indicator());
         var failed=presenter.update("Migration could not save",true,true,2);

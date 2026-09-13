@@ -16,7 +16,7 @@ class ArenaRegistryTest {
             ArenaDefinition arena=registry.definition(registry.campaignIds().get(i));
             assertEquals(counts[i]+1,arena.spawns().size(),arena.id());
             assertEquals(0,arena.metadata().durationSeconds());
-            assertEquals(3,arena.schemaVersion());assertEquals(2,arena.layoutRevision());
+            assertEquals(4,arena.schemaVersion());assertEquals(3,arena.layoutRevision());
             assertEquals(sizes[i][0],arena.bounds().maxX()-arena.bounds().minX());
             assertEquals(sizes[i][1],arena.bounds().maxZ()-arena.bounds().minZ());
             assertEquals(i==2?6:5,arena.districts().size());

@@ -57,16 +57,23 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
         }
     }
     /** Indexed, top-facing authored triangles; the same vertices drive rendering and collision. */
-    public record TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision) {
+    public record TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision,List<String> triangleMaterials) {
+        public TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision) {
+            this(id,vertices,indices,material,collision,List.of());
+        }
         public TriangleSurface {
             text(id,"mesh");text(material,"material");vertices=List.copyOf(vertices);indices=List.copyOf(indices);
+            triangleMaterials=List.copyOf(triangleMaterials);
             require(vertices.size()>=3&&!indices.isEmpty()&&indices.size()%3==0,"Invalid triangle mesh: "+id);
+            require(triangleMaterials.isEmpty()||triangleMaterials.size()==indices.size()/3,"Invalid triangle material count: "+id);
+            for(String faceMaterial:triangleMaterials)text(faceMaterial,"triangle material");
             for(int index:indices)require(index>=0&&index<vertices.size(),"Invalid triangle index: "+id);
             for(int i=0;i<indices.size();i+=3) {
                 Vector3f a=vertices.get(indices.get(i)).vector(),b=vertices.get(indices.get(i+1)).vector(),c=vertices.get(indices.get(i+2)).vector();
                 require(b.subtract(a).cross(c.subtract(a)).y>1e-5f,"Driving triangles must face upwards: "+id);
             }
         }
+        public String materialAtTriangle(int triangle) {return triangleMaterials.isEmpty()?material:triangleMaterials.get(triangle);}
         private int triangleAt(float x,float z) {
             for(int i=0;i<indices.size();i+=3) {
                 Vec3 a=vertices.get(indices.get(i)),b=vertices.get(indices.get(i+1)),c=vertices.get(indices.get(i+2));
@@ -314,17 +321,18 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
         Surface found=null;float nearest=tolerance;
         // Reject spatial/height misses before searching the short surface catalogue.
         // Large locations have many non-road buildings but usually only one local support.
+        // Shared seams keep their first authored support, matching navigation authoring.
         for(var box:boxes)if(box.collision&&box.containsXZ(point.x,point.z,inset)) {
             float distance=Math.abs(point.y-box.center.y-box.size.y/2);
-            if(distance<=nearest)for(var surface:surfaces)if(surface.geometryId.equals(box.id)){found=surface;nearest=distance;break;}
+            if(distance<nearest||(found==null&&distance<=nearest))for(var surface:surfaces)if(surface.geometryId.equals(box.id)){found=surface;nearest=distance;break;}
         }
         for(var ramp:ramps)if(ramp.containsXZ(point.x,point.z,inset)) {
             float distance=Math.abs(point.y-ramp.heightAt(point.x,point.z));
-            if(distance<=nearest)for(var surface:surfaces)if(surface.geometryId.equals(ramp.id)){found=surface;nearest=distance;break;}
+            if(distance<nearest||(found==null&&distance<=nearest))for(var surface:surfaces)if(surface.geometryId.equals(ramp.id)){found=surface;nearest=distance;break;}
         }
         for(var mesh:meshes)if(mesh.collision&&mesh.containsXZ(point.x,point.z,inset)) {
             float distance=Math.abs(point.y-mesh.heightAt(point.x,point.z));
-            if(distance<=nearest)for(var surface:surfaces)if(surface.geometryId.equals(mesh.id)){found=surface;nearest=distance;break;}
+            if(distance<nearest||(found==null&&distance<=nearest))for(var surface:surfaces)if(surface.geometryId.equals(mesh.id)){found=surface;nearest=distance;break;}
         }
         return Optional.ofNullable(found);
     }
