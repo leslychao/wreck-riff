@@ -10,6 +10,39 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CombatVisualsTest {
+    @Test void destroyedBurstCapturesItsFullTravelAndRetiresWhenSampledCeilingMoves() {
+        Node scene=new Node();long[] revision={4};float[] farthest={0};int[] captures={0};
+        WorldQuery delegate=world();
+        WorldQuery movingCeiling=(WorldQuery)java.lang.reflect.Proxy.newProxyInstance(WorldQuery.class.getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->{
+            if(method.getName().equals("surfaceRevision"))return revision[0];
+            if(method.getName().equals("staticSweep")) {
+                Vector3f a=(Vector3f)args[0],b=(Vector3f)args[1];
+                if((float)args[2]==.025f){captures[0]++;farthest[0]=Math.max(farthest[0],a.distance(b));}
+                if(b.y>8&&a.y<8)return new WorldQuery.Hit(-1,a.clone().interpolateLocal(b,(8-a.y)/(b.y-a.y)),Vector3f.UNIT_Y.negate(),.5f,"ceiling");
+                return null;
+            }
+            return method.invoke(delegate,args);
+        });
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,movingCeiling)) {
+            visuals.accept(List.of(event(GameEvent.Type.DESTROYED,1,"destroyed",0)));
+            assertEquals(6,captures[0]);assertTrue(farthest[0]>=12.3f,"Full smoke travel plus extent must include ceilings above the former 6.75m radius");
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,.04f);
+            assertTrue(batch(scene,"particles-and-tracers").getMesh().getVertexCount()>0);
+            revision[0]=5;
+            for(int frame=0;frame<4;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.05f);
+            assertEquals(0,batch(scene,"particles-and-tracers").getMesh().getVertexCount(),"Moving geometry retires unchecked gas within .13s");
+            assertEquals(6,captures[0],"Old particles do not take new envelope sweeps");
+        }
+    }
+    @Test void simultaneousBurstsShareThePerFrameSurfaceQueryCeiling() {
+        Node scene=new Node();int[] queries={0};
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world(queries,false))) {
+            for(int i=0;i<20;i++)visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,i,"power",0)));
+            assertEquals(CombatVisuals.BURST_SURFACE_QUERY_LIMIT,queries[0]);
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            assertEquals(CombatVisuals.BURST_SURFACE_QUERY_LIMIT,visuals.statistics().get("burstSurfaceQueriesLastFrame"));
+        }
+    }
     @Test void externalPresentationClockKeepsTraceAlignedAndResultsTailExpires() {
         Node scene=new Node();
         try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {

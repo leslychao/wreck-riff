@@ -24,6 +24,15 @@ site passports, actual district polygons, road/surface/nav links and supply dist
    subtraction therefore cannot accumulate holes or duplicate IDs across runs.
    JSON and design outputs are published through atomic sibling-file replacement.
 
+   The final pass includes `dress_construction.py`, `dress_neon.py` and
+   `dress_carnival.py`. Their named foreground installations have specific public,
+   production or repair functions and retain the verified road envelopes. Carnival
+   shopfronts face their nearest approach; circus sectors have stepped supporting
+   terraces, the ride core has a drive mechanism, and the depot has open workbenches.
+   `test_construction_foreground.py` and `test_carnival_foreground.py` check solid
+   footprints against every full driving corridor plus four metres, supply/spawn
+   preservation and the presence of foreground near the actual review routes.
+
 The model generator owns each hero roof's vertices; the same placed high-detail mesh
 is the rendered roof and its static collision shape. Named box proxies retain useful
 authoring dimensions but have `collision:false`; they are omitted from the renderer.

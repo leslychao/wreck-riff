@@ -39,6 +39,7 @@ class NativeOrdnanceReviewLifecycleTest {
         assertTrue(NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(1920,1080,1920,1080,29_900_000_000L));
         assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(3840,2160,3840,2160,30_000_000_000L));
         assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(0,0,0,0,30_000_000_000L));
+        assertThrows(IllegalStateException.class,()->NativeOrdnanceSaturationReview.awaitPerformanceFramebuffer(1920,1080,1920,1080,31_000_000_000L));
     }
     @ParameterizedTest @ValueSource(booleans={false,true})
     void initializationFailureExitsTwoWithoutWaitingForTheRenderThreadEvenIfShutdownFails(boolean shutdownFails) throws Exception {

@@ -18,6 +18,8 @@ class NativeFirstSupplyTravelTest {
     private record Candidate(ArenaDefinition.Pickup pickup,float metres) {}
 
     @Test void everySpawnAndChassisCanActuallyCollectTwoSeparateLocalOffensivePickupsInTheRequestedTime() throws Exception {
+        Path reportPath=Path.of("build","reports","first-supply-travel.json");
+        Files.createDirectories(reportPath.getParent());Files.deleteIfExists(reportPath);
         var results=new ArrayList<Map<String,Object>>();var failures=new ArrayList<String>();int largeStarts=0;
         for(String arenaId:List.of("dead-air-yard","construction_17","neon_zero","euphoria_park")) {
             var arena=NativeCampaignBotNavigationTest.REGISTRY.definition(arenaId);
@@ -43,12 +45,11 @@ class NativeFirstSupplyTravelTest {
                 }
             }
         }
-        var report=new LinkedHashMap<String,Object>();report.put("schemaVersion",1);
+        var report=new LinkedHashMap<String,Object>();report.put("schemaVersion",1);report.put("status",failures.isEmpty()?"PASS":"FAIL");report.put("measuredAt",java.time.Instant.now().toString());
         report.put("method","Native Minie PhysicsWorld, ordinary BotController and VehicleController at 120 Hz. Every authored start and yaw, at rest after suspension settling, is measured independently for all three chassis. Two distinct Homing/Power/Cannon locations are ranked by traversable ground route, including endpoint connectors. Each run exposes just that real authored pickup to isolate its availability; positions, grant amounts, collection rules, vehicle tuning, hazards and geometry remain unchanged. Full HP and zero ammo match a fresh start. Arrival requires the actual PICKUP event and an increased ammo slot, never proximity alone. Setup settling is excluded; protection and collection delays during the run are included. No teleport or recovery is accepted.");
         report.put("limitation","The isolated drives establish physical travel and collection time for each alternative. Simultaneous contention, independent road branches and player driving quality require separate gameplay review.");
         report.put("largeMapStarts",largeStarts);report.put("runs",results);
         report.put("timeRanking","The first accessible pickup is the faster of the two actually measured collections, including authored spawn yaw and turn time. The other distinct candidate is the second alternative; route distance is only used to select candidates, never to assign first-arrival timing.");
-        Path reportPath=Path.of("build","reports","first-supply-travel.json");Files.createDirectories(reportPath.getParent());
         Files.writeString(reportPath,new GsonBuilder().setPrettyPrinting().create().toJson(report)+"\n",StandardCharsets.UTF_8);
         assertEquals(33,largeStarts,"Every player and initial-rival spawn on all three large maps must be measured");
         assertTrue(failures.isEmpty(),String.join("\n",failures));

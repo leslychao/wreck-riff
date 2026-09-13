@@ -368,7 +368,7 @@ public final class VerifyAssets {
             assets.add(asset(path,"arena-art",resource(path),scene.source()+"; "+scene.license(),"SCENE_VALIDATED"));
         }
         for(String source:List.of("src/tools/author_campaign_arenas.py","src/tools/author_arena_art.py",
-                "src/tools/dress_construction.py","src/tools/dress_neon.py")) {
+                "src/tools/dress_construction.py","src/tools/dress_neon.py","src/tools/dress_carnival.py")) {
             byte[] bytes=Files.readAllBytes(Path.of(source));
             assets.add(asset(source,"procedural-source",bytes,"Offline original location and workplace authoring","SOURCE_HASH_VERIFIED"));
         }

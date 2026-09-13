@@ -740,54 +740,6 @@
       "yawDegrees": -0.0
     },
     {
-      "id": "warehouse-rack-0",
-      "center": {
-        "x": 1150.0,
-        "y": 3.5,
-        "z": 201.5
-      },
-      "size": {
-        "x": 24.0,
-        "y": 7.0,
-        "z": 23.0
-      },
-      "material": "steel",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "warehouse-rack-1",
-      "center": {
-        "x": 1210.0,
-        "y": 3.5,
-        "z": 201.5
-      },
-      "size": {
-        "x": 24.0,
-        "y": 7.0,
-        "z": 23.0
-      },
-      "material": "steel",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
-      "id": "warehouse-rack-2",
-      "center": {
-        "x": 1315.0,
-        "y": 3.5,
-        "z": 201.5
-      },
-      "size": {
-        "x": 24.0,
-        "y": 7.0,
-        "z": 23.0
-      },
-      "material": "steel",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
       "id": "warehouse-dispatch-office",
       "center": {
         "x": 1382.5,
@@ -2448,6 +2400,1686 @@
         "z": 0.45
       },
       "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-upright--7--3",
+      "center": {
+        "x": 1143.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-upright--7-3",
+      "center": {
+        "x": 1143.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth--7-1",
+      "center": {
+        "x": 1143.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth--7-3.5",
+      "center": {
+        "x": 1143.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth--7-6",
+      "center": {
+        "x": 1143.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-upright-0--3",
+      "center": {
+        "x": 1150.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-upright-0-3",
+      "center": {
+        "x": 1150.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth-0-1",
+      "center": {
+        "x": 1150.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth-0-3.5",
+      "center": {
+        "x": 1150.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth-0-6",
+      "center": {
+        "x": 1150.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-upright-7--3",
+      "center": {
+        "x": 1157.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-upright-7-3",
+      "center": {
+        "x": 1157.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth-7-1",
+      "center": {
+        "x": 1157.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth-7-3.5",
+      "center": {
+        "x": 1157.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-depth-7-6",
+      "center": {
+        "x": 1157.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-load-beam-1--3",
+      "center": {
+        "x": 1150.0,
+        "y": 1.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-load-beam-1-3",
+      "center": {
+        "x": 1150.0,
+        "y": 1.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-pallet-1-0",
+      "center": {
+        "x": 1146.5,
+        "y": 1.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-stored-load-1-0",
+      "center": {
+        "x": 1146.5,
+        "y": 2.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-pallet-1-1",
+      "center": {
+        "x": 1153.5,
+        "y": 1.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-stored-load-1-1",
+      "center": {
+        "x": 1153.5,
+        "y": 2.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-load-beam-3.5--3",
+      "center": {
+        "x": 1150.0,
+        "y": 3.5,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-load-beam-3.5-3",
+      "center": {
+        "x": 1150.0,
+        "y": 3.5,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-pallet-3.5-0",
+      "center": {
+        "x": 1146.5,
+        "y": 3.95,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-stored-load-3.5-0",
+      "center": {
+        "x": 1146.5,
+        "y": 4.8,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-pallet-3.5-1",
+      "center": {
+        "x": 1153.5,
+        "y": 3.95,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-stored-load-3.5-1",
+      "center": {
+        "x": 1153.5,
+        "y": 4.8,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-load-beam-6--3",
+      "center": {
+        "x": 1150.0,
+        "y": 6.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-rack-load-beam-6-3",
+      "center": {
+        "x": 1150.0,
+        "y": 6.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-pallet-6-0",
+      "center": {
+        "x": 1146.5,
+        "y": 6.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-stored-load-6-0",
+      "center": {
+        "x": 1146.5,
+        "y": 7.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-pallet-6-1",
+      "center": {
+        "x": 1153.5,
+        "y": 6.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-stored-load-6-1",
+      "center": {
+        "x": 1153.5,
+        "y": 7.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-post-protector--7",
+      "center": {
+        "x": 1143.0,
+        "y": 0.7,
+        "z": 197.8
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-0-post-protector-7",
+      "center": {
+        "x": 1157.0,
+        "y": 0.7,
+        "z": 197.8
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-upright--7--3",
+      "center": {
+        "x": 1203.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-upright--7-3",
+      "center": {
+        "x": 1203.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth--7-1",
+      "center": {
+        "x": 1203.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth--7-3.5",
+      "center": {
+        "x": 1203.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth--7-6",
+      "center": {
+        "x": 1203.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-upright-0--3",
+      "center": {
+        "x": 1210.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-upright-0-3",
+      "center": {
+        "x": 1210.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth-0-1",
+      "center": {
+        "x": 1210.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth-0-3.5",
+      "center": {
+        "x": 1210.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth-0-6",
+      "center": {
+        "x": 1210.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-upright-7--3",
+      "center": {
+        "x": 1217.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-upright-7-3",
+      "center": {
+        "x": 1217.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth-7-1",
+      "center": {
+        "x": 1217.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth-7-3.5",
+      "center": {
+        "x": 1217.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-depth-7-6",
+      "center": {
+        "x": 1217.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-load-beam-1--3",
+      "center": {
+        "x": 1210.0,
+        "y": 1.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-load-beam-1-3",
+      "center": {
+        "x": 1210.0,
+        "y": 1.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-pallet-1-0",
+      "center": {
+        "x": 1206.5,
+        "y": 1.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-stored-load-1-0",
+      "center": {
+        "x": 1206.5,
+        "y": 2.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-pallet-1-1",
+      "center": {
+        "x": 1213.5,
+        "y": 1.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-stored-load-1-1",
+      "center": {
+        "x": 1213.5,
+        "y": 2.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-load-beam-3.5--3",
+      "center": {
+        "x": 1210.0,
+        "y": 3.5,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-load-beam-3.5-3",
+      "center": {
+        "x": 1210.0,
+        "y": 3.5,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-pallet-3.5-0",
+      "center": {
+        "x": 1206.5,
+        "y": 3.95,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-stored-load-3.5-0",
+      "center": {
+        "x": 1206.5,
+        "y": 4.8,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-pallet-3.5-1",
+      "center": {
+        "x": 1213.5,
+        "y": 3.95,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-stored-load-3.5-1",
+      "center": {
+        "x": 1213.5,
+        "y": 4.8,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-load-beam-6--3",
+      "center": {
+        "x": 1210.0,
+        "y": 6.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-rack-load-beam-6-3",
+      "center": {
+        "x": 1210.0,
+        "y": 6.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-pallet-6-0",
+      "center": {
+        "x": 1206.5,
+        "y": 6.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-stored-load-6-0",
+      "center": {
+        "x": 1206.5,
+        "y": 7.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-pallet-6-1",
+      "center": {
+        "x": 1213.5,
+        "y": 6.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-stored-load-6-1",
+      "center": {
+        "x": 1213.5,
+        "y": 7.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-post-protector--7",
+      "center": {
+        "x": 1203.0,
+        "y": 0.7,
+        "z": 197.8
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-1-post-protector-7",
+      "center": {
+        "x": 1217.0,
+        "y": 0.7,
+        "z": 197.8
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-upright--7--3",
+      "center": {
+        "x": 1308.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-upright--7-3",
+      "center": {
+        "x": 1308.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth--7-1",
+      "center": {
+        "x": 1308.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth--7-3.5",
+      "center": {
+        "x": 1308.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth--7-6",
+      "center": {
+        "x": 1308.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-upright-0--3",
+      "center": {
+        "x": 1315.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-upright-0-3",
+      "center": {
+        "x": 1315.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth-0-1",
+      "center": {
+        "x": 1315.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth-0-3.5",
+      "center": {
+        "x": 1315.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth-0-6",
+      "center": {
+        "x": 1315.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-upright-7--3",
+      "center": {
+        "x": 1322.0,
+        "y": 4.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-upright-7-3",
+      "center": {
+        "x": 1322.0,
+        "y": 4.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth-7-1",
+      "center": {
+        "x": 1322.0,
+        "y": 1.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth-7-3.5",
+      "center": {
+        "x": 1322.0,
+        "y": 3.5,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-depth-7-6",
+      "center": {
+        "x": 1322.0,
+        "y": 6.0,
+        "z": 201.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-load-beam-1--3",
+      "center": {
+        "x": 1315.0,
+        "y": 1.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-load-beam-1-3",
+      "center": {
+        "x": 1315.0,
+        "y": 1.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-pallet-1-0",
+      "center": {
+        "x": 1311.5,
+        "y": 1.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-stored-load-1-0",
+      "center": {
+        "x": 1311.5,
+        "y": 2.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-pallet-1-1",
+      "center": {
+        "x": 1318.5,
+        "y": 1.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-stored-load-1-1",
+      "center": {
+        "x": 1318.5,
+        "y": 2.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-load-beam-3.5--3",
+      "center": {
+        "x": 1315.0,
+        "y": 3.5,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-load-beam-3.5-3",
+      "center": {
+        "x": 1315.0,
+        "y": 3.5,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-pallet-3.5-0",
+      "center": {
+        "x": 1311.5,
+        "y": 3.95,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-stored-load-3.5-0",
+      "center": {
+        "x": 1311.5,
+        "y": 4.8,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-pallet-3.5-1",
+      "center": {
+        "x": 1318.5,
+        "y": 3.95,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-stored-load-3.5-1",
+      "center": {
+        "x": 1318.5,
+        "y": 4.8,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-load-beam-6--3",
+      "center": {
+        "x": 1315.0,
+        "y": 6.0,
+        "z": 198.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-rack-load-beam-6-3",
+      "center": {
+        "x": 1315.0,
+        "y": 6.0,
+        "z": 204.5
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-pallet-6-0",
+      "center": {
+        "x": 1311.5,
+        "y": 6.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-stored-load-6-0",
+      "center": {
+        "x": 1311.5,
+        "y": 7.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-pallet-6-1",
+      "center": {
+        "x": 1318.5,
+        "y": 6.45,
+        "z": 201.5
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-stored-load-6-1",
+      "center": {
+        "x": 1318.5,
+        "y": 7.3,
+        "z": 201.5
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-post-protector--7",
+      "center": {
+        "x": 1308.0,
+        "y": 0.7,
+        "z": 197.8
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-original-rack-2-post-protector-7",
+      "center": {
+        "x": 1322.0,
+        "y": 0.7,
+        "z": 197.8
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
       "collision": true,
       "yawDegrees": 0
     },
@@ -4697,6 +6329,4966 @@
         "x": 1524.21324,
         "y": 2.1,
         "z": 926.46467
+      },
+      "size": {
+        "x": 3.6,
+        "y": 2.4,
+        "z": 16.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-frame-west-casting-casting-table",
+      "center": {
+        "x": 397.0,
+        "y": 1.0,
+        "z": 899.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 2.0,
+        "z": 10.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-side-shutter--7.5",
+      "center": {
+        "x": 389.5,
+        "y": 2.0,
+        "z": 899.0
+      },
+      "size": {
+        "x": 0.35,
+        "y": 2.0,
+        "z": 10.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-side-shutter-7.5",
+      "center": {
+        "x": 404.5,
+        "y": 2.0,
+        "z": 899.0
+      },
+      "size": {
+        "x": 0.35,
+        "y": 2.0,
+        "z": 10.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-end-shutter--5",
+      "center": {
+        "x": 397.0,
+        "y": 2.0,
+        "z": 894.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 2.0,
+        "z": 0.35
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-end-shutter-5",
+      "center": {
+        "x": 397.0,
+        "y": 2.0,
+        "z": 904.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 2.0,
+        "z": 0.35
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-hoist-leg--6",
+      "center": {
+        "x": 391.0,
+        "y": 5.0,
+        "z": 893.2
+      },
+      "size": {
+        "x": 0.7,
+        "y": 10.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-hoist-leg-6",
+      "center": {
+        "x": 403.0,
+        "y": 5.0,
+        "z": 893.2
+      },
+      "size": {
+        "x": 0.7,
+        "y": 10.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-west-casting-hoist-beam",
+      "center": {
+        "x": 397.0,
+        "y": 10.0,
+        "z": 893.2
+      },
+      "size": {
+        "x": 13.5,
+        "y": 0.8,
+        "z": 1.0
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-bed-leg--7",
+      "center": {
+        "x": 463.0,
+        "y": 1.0,
+        "z": 897.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 2.0,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-bed-leg-7",
+      "center": {
+        "x": 477.0,
+        "y": 1.0,
+        "z": 897.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 2.0,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-roller-bed",
+      "center": {
+        "x": 470.0,
+        "y": 2.1,
+        "z": 897.0
+      },
+      "size": {
+        "x": 17.0,
+        "y": 0.5,
+        "z": 3.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-press-base",
+      "center": {
+        "x": 474.0,
+        "y": 1.4,
+        "z": 894.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.8,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-press-column-2.5",
+      "center": {
+        "x": 472.5,
+        "y": 3.8,
+        "z": 894.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 4.8,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-press-column-5.5",
+      "center": {
+        "x": 475.5,
+        "y": 3.8,
+        "z": 894.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 4.8,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-press-head",
+      "center": {
+        "x": 474.0,
+        "y": 6.0,
+        "z": 894.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 0.8,
+        "z": 3.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-central-fabrication-cuttings-bin",
+      "center": {
+        "x": 465.0,
+        "y": 0.8,
+        "z": 901.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.6,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-plinth",
+      "center": {
+        "x": 432.0,
+        "y": 0.35,
+        "z": 895.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-rear",
+      "center": {
+        "x": 432.0,
+        "y": 2.5,
+        "z": 897.2
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-side-0",
+      "center": {
+        "x": 429.0,
+        "y": 2.5,
+        "z": 895.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-side-1",
+      "center": {
+        "x": 435.0,
+        "y": 2.5,
+        "z": 895.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-front",
+      "center": {
+        "x": 433.0,
+        "y": 1.5,
+        "z": 892.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-window",
+      "center": {
+        "x": 433.0,
+        "y": 3.35,
+        "z": 892.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-casting-control-operator-roof",
+      "center": {
+        "x": 432.0,
+        "y": 4.8,
+        "z": 895.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-plinth",
+      "center": {
+        "x": 520.0,
+        "y": 0.35,
+        "z": 827.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-rear",
+      "center": {
+        "x": 522.2,
+        "y": 2.5,
+        "z": 827.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-side-0",
+      "center": {
+        "x": 520.0,
+        "y": 2.5,
+        "z": 830.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-side-1",
+      "center": {
+        "x": 520.0,
+        "y": 2.5,
+        "z": 824.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-front",
+      "center": {
+        "x": 517.8,
+        "y": 1.5,
+        "z": 826.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-window",
+      "center": {
+        "x": 517.8,
+        "y": 3.35,
+        "z": 826.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-turn-supervision-operator-roof",
+      "center": {
+        "x": 520.0,
+        "y": 4.8,
+        "z": 827.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-south-panels-steel-foot-0",
+      "center": {
+        "x": 403.0,
+        "y": 0.35,
+        "z": 826.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 9.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-rack-post-0",
+      "center": {
+        "x": 403.0,
+        "y": 4.8,
+        "z": 826.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 8.2,
+        "z": 0.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-steel-foot-1",
+      "center": {
+        "x": 417.0,
+        "y": 0.35,
+        "z": 826.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 9.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-rack-post-1",
+      "center": {
+        "x": 417.0,
+        "y": 4.8,
+        "z": 826.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 8.2,
+        "z": 0.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-panel-0",
+      "center": {
+        "x": 410.0,
+        "y": 4.1,
+        "z": 823.5
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-panel-1",
+      "center": {
+        "x": 410.0,
+        "y": 4.1,
+        "z": 824.8
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-panel-2",
+      "center": {
+        "x": 410.0,
+        "y": 4.1,
+        "z": 827.2
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-south-panels-panel-3",
+      "center": {
+        "x": 410.0,
+        "y": 4.1,
+        "z": 828.5
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-north-electricity-transformer-foot",
+      "center": {
+        "x": 470.0,
+        "y": 0.4,
+        "z": 980.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.8,
+        "z": 6.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-north-electricity-transformer",
+      "center": {
+        "x": 470.0,
+        "y": 2.8,
+        "z": 980.0
+      },
+      "size": {
+        "x": 5.0,
+        "y": 4.0,
+        "z": 4.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-north-electricity-cable-tray",
+      "center": {
+        "x": 470.0,
+        "y": 0.45,
+        "z": 985.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 0.7,
+        "z": 1.5
+      },
+      "material": "black",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-plinth",
+      "center": {
+        "x": 470.0,
+        "y": 0.35,
+        "z": 1025.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-rear",
+      "center": {
+        "x": 472.2,
+        "y": 2.5,
+        "z": 1025.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-side-0",
+      "center": {
+        "x": 470.0,
+        "y": 2.5,
+        "z": 1028.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-side-1",
+      "center": {
+        "x": 470.0,
+        "y": 2.5,
+        "z": 1022.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-front",
+      "center": {
+        "x": 467.8,
+        "y": 1.5,
+        "z": 1024.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-window",
+      "center": {
+        "x": 467.8,
+        "y": 3.35,
+        "z": 1024.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-frame-exit-operator-operator-roof",
+      "center": {
+        "x": 470.0,
+        "y": 4.8,
+        "z": 1025.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-west-batching-batch-foot",
+      "center": {
+        "x": 1025.0,
+        "y": 0.4,
+        "z": 564.0
+      },
+      "size": {
+        "x": 13.0,
+        "y": 0.8,
+        "z": 12.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-metering-hopper-0-proxy",
+      "center": {
+        "x": 1028.4,
+        "y": 5.8,
+        "z": 563.0
+      },
+      "size": {
+        "x": 5.06,
+        "y": 10.0,
+        "z": 5.06
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-metering-hopper-1-proxy",
+      "center": {
+        "x": 1021.6,
+        "y": 5.8,
+        "z": 563.0
+      },
+      "size": {
+        "x": 5.06,
+        "y": 10.0,
+        "z": 5.06
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-mixer",
+      "center": {
+        "x": 1025.0,
+        "y": 2.8,
+        "z": 567.0
+      },
+      "size": {
+        "x": 10.0,
+        "y": 3.0,
+        "z": 4.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-discharge-belt",
+      "center": {
+        "x": 1025.0,
+        "y": 2.0,
+        "z": 572.0
+      },
+      "size": {
+        "x": 3.8,
+        "y": 0.9,
+        "z": 8.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-belt-foot--1.6",
+      "center": {
+        "x": 1026.6,
+        "y": 0.9,
+        "z": 574.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.8,
+        "z": 0.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-belt-foot-1.6",
+      "center": {
+        "x": 1023.4,
+        "y": 0.9,
+        "z": 574.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.8,
+        "z": 0.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-west-batching-mixer-motor",
+      "center": {
+        "x": 1019.0,
+        "y": 2.3,
+        "z": 567.0
+      },
+      "size": {
+        "x": 1.8,
+        "y": 2.0,
+        "z": 3.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-batch-foot",
+      "center": {
+        "x": 1115.0,
+        "y": 0.4,
+        "z": 643.0
+      },
+      "size": {
+        "x": 13.0,
+        "y": 0.8,
+        "z": 12.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-metering-hopper-0-proxy",
+      "center": {
+        "x": 1111.6,
+        "y": 5.8,
+        "z": 644.0
+      },
+      "size": {
+        "x": 5.06,
+        "y": 10.0,
+        "z": 5.06
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-metering-hopper-1-proxy",
+      "center": {
+        "x": 1118.4,
+        "y": 5.8,
+        "z": 644.0
+      },
+      "size": {
+        "x": 5.06,
+        "y": 10.0,
+        "z": 5.06
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-mixer",
+      "center": {
+        "x": 1115.0,
+        "y": 2.8,
+        "z": 640.0
+      },
+      "size": {
+        "x": 10.0,
+        "y": 3.0,
+        "z": 4.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-discharge-belt",
+      "center": {
+        "x": 1115.0,
+        "y": 2.0,
+        "z": 635.0
+      },
+      "size": {
+        "x": 3.8,
+        "y": 0.9,
+        "z": 8.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-belt-foot--1.6",
+      "center": {
+        "x": 1113.4,
+        "y": 0.9,
+        "z": 633.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.8,
+        "z": 0.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-belt-foot-1.6",
+      "center": {
+        "x": 1116.6,
+        "y": 0.9,
+        "z": 633.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.8,
+        "z": 0.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-inner-batching-mixer-motor",
+      "center": {
+        "x": 1121.0,
+        "y": 2.3,
+        "z": 640.0
+      },
+      "size": {
+        "x": 1.8,
+        "y": 2.0,
+        "z": 3.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-plinth",
+      "center": {
+        "x": 1080.0,
+        "y": 0.35,
+        "z": 635.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-rear",
+      "center": {
+        "x": 1080.0,
+        "y": 2.5,
+        "z": 637.2
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-side-0",
+      "center": {
+        "x": 1077.0,
+        "y": 2.5,
+        "z": 635.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-side-1",
+      "center": {
+        "x": 1083.0,
+        "y": 2.5,
+        "z": 635.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-front",
+      "center": {
+        "x": 1081.0,
+        "y": 1.5,
+        "z": 632.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-window",
+      "center": {
+        "x": 1081.0,
+        "y": 3.35,
+        "z": 632.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-production-control-operator-roof",
+      "center": {
+        "x": 1080.0,
+        "y": 4.8,
+        "z": 635.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-reclaim-water-pump-bed",
+      "center": {
+        "x": 1192.0,
+        "y": 0.3,
+        "z": 572.0
+      },
+      "size": {
+        "x": 10.0,
+        "y": 0.6,
+        "z": 9.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-reclaim-water-water-separator-proxy",
+      "center": {
+        "x": 1190.0,
+        "y": 4.1,
+        "z": 572.0
+      },
+      "size": {
+        "x": 4.62,
+        "y": 7.0,
+        "z": 4.62
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-reclaim-water-electric-pump",
+      "center": {
+        "x": 1195.0,
+        "y": 1.4,
+        "z": 572.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 2.1,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-sill",
+      "center": {
+        "x": 1118.0,
+        "y": 0.65,
+        "z": 742.0
+      },
+      "size": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 8.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-buffer--6",
+      "center": {
+        "x": 1113.6,
+        "y": 0.95,
+        "z": 748.0
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.5,
+        "z": 0.8
+      },
+      "material": "rubber",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-buffer-6",
+      "center": {
+        "x": 1113.6,
+        "y": 0.95,
+        "z": 736.0
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.5,
+        "z": 0.8
+      },
+      "material": "rubber",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-post--7",
+      "center": {
+        "x": 1121.0,
+        "y": 4.0,
+        "z": 749.0
+      },
+      "size": {
+        "x": 0.65,
+        "y": 8.0,
+        "z": 0.65
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-post-7",
+      "center": {
+        "x": 1121.0,
+        "y": 4.0,
+        "z": 735.0
+      },
+      "size": {
+        "x": 0.65,
+        "y": 8.0,
+        "z": 0.65
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-head",
+      "center": {
+        "x": 1121.0,
+        "y": 8.0,
+        "z": 742.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 0.6,
+        "z": 1.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-packaged-panel",
+      "center": {
+        "x": 1119.0,
+        "y": 2.1,
+        "z": 742.0
+      },
+      "size": {
+        "x": 11.0,
+        "y": 2.7,
+        "z": 4.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-north-dispatch-dock-control",
+      "center": {
+        "x": 1116.0,
+        "y": 2.2,
+        "z": 735.0
+      },
+      "size": {
+        "x": 1.6,
+        "y": 2.5,
+        "z": 1.1
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-plinth",
+      "center": {
+        "x": 1390.0,
+        "y": 0.35,
+        "z": 747.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-rear",
+      "center": {
+        "x": 1390.0,
+        "y": 2.5,
+        "z": 744.8
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-side-0",
+      "center": {
+        "x": 1393.0,
+        "y": 2.5,
+        "z": 747.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-side-1",
+      "center": {
+        "x": 1387.0,
+        "y": 2.5,
+        "z": 747.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-front",
+      "center": {
+        "x": 1389.0,
+        "y": 1.5,
+        "z": 749.2
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-window",
+      "center": {
+        "x": 1389.0,
+        "y": 3.35,
+        "z": 749.2
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-plant-east-operator-operator-roof",
+      "center": {
+        "x": 1390.0,
+        "y": 4.8,
+        "z": 747.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-upright--7--3",
+      "center": {
+        "x": 1158.0,
+        "y": 4.0,
+        "z": 275.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-upright--7-3",
+      "center": {
+        "x": 1158.0,
+        "y": 4.0,
+        "z": 281.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth--7-1",
+      "center": {
+        "x": 1158.0,
+        "y": 1.0,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth--7-3.5",
+      "center": {
+        "x": 1158.0,
+        "y": 3.5,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth--7-6",
+      "center": {
+        "x": 1158.0,
+        "y": 6.0,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-upright-0--3",
+      "center": {
+        "x": 1165.0,
+        "y": 4.0,
+        "z": 275.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-upright-0-3",
+      "center": {
+        "x": 1165.0,
+        "y": 4.0,
+        "z": 281.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth-0-1",
+      "center": {
+        "x": 1165.0,
+        "y": 1.0,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth-0-3.5",
+      "center": {
+        "x": 1165.0,
+        "y": 3.5,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth-0-6",
+      "center": {
+        "x": 1165.0,
+        "y": 6.0,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-upright-7--3",
+      "center": {
+        "x": 1172.0,
+        "y": 4.0,
+        "z": 275.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-upright-7-3",
+      "center": {
+        "x": 1172.0,
+        "y": 4.0,
+        "z": 281.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth-7-1",
+      "center": {
+        "x": 1172.0,
+        "y": 1.0,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth-7-3.5",
+      "center": {
+        "x": 1172.0,
+        "y": 3.5,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-depth-7-6",
+      "center": {
+        "x": 1172.0,
+        "y": 6.0,
+        "z": 278.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-load-beam-1--3",
+      "center": {
+        "x": 1165.0,
+        "y": 1.0,
+        "z": 275.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-load-beam-1-3",
+      "center": {
+        "x": 1165.0,
+        "y": 1.0,
+        "z": 281.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-pallet-1-0",
+      "center": {
+        "x": 1161.5,
+        "y": 1.45,
+        "z": 278.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-stored-load-1-0",
+      "center": {
+        "x": 1161.5,
+        "y": 2.3,
+        "z": 278.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-pallet-1-1",
+      "center": {
+        "x": 1168.5,
+        "y": 1.45,
+        "z": 278.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-stored-load-1-1",
+      "center": {
+        "x": 1168.5,
+        "y": 2.3,
+        "z": 278.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-load-beam-3.5--3",
+      "center": {
+        "x": 1165.0,
+        "y": 3.5,
+        "z": 275.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-load-beam-3.5-3",
+      "center": {
+        "x": 1165.0,
+        "y": 3.5,
+        "z": 281.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-pallet-3.5-0",
+      "center": {
+        "x": 1161.5,
+        "y": 3.95,
+        "z": 278.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-stored-load-3.5-0",
+      "center": {
+        "x": 1161.5,
+        "y": 4.8,
+        "z": 278.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-pallet-3.5-1",
+      "center": {
+        "x": 1168.5,
+        "y": 3.95,
+        "z": 278.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-stored-load-3.5-1",
+      "center": {
+        "x": 1168.5,
+        "y": 4.8,
+        "z": 278.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-load-beam-6--3",
+      "center": {
+        "x": 1165.0,
+        "y": 6.0,
+        "z": 275.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-rack-load-beam-6-3",
+      "center": {
+        "x": 1165.0,
+        "y": 6.0,
+        "z": 281.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-pallet-6-0",
+      "center": {
+        "x": 1161.5,
+        "y": 6.45,
+        "z": 278.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-stored-load-6-0",
+      "center": {
+        "x": 1161.5,
+        "y": 7.3,
+        "z": 278.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-pallet-6-1",
+      "center": {
+        "x": 1168.5,
+        "y": 6.45,
+        "z": 278.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-stored-load-6-1",
+      "center": {
+        "x": 1168.5,
+        "y": 7.3,
+        "z": 278.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-post-protector--7",
+      "center": {
+        "x": 1158.0,
+        "y": 0.7,
+        "z": 274.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-a-post-protector-7",
+      "center": {
+        "x": 1172.0,
+        "y": 0.7,
+        "z": 274.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-upright--7--3",
+      "center": {
+        "x": 1211.0,
+        "y": 4.0,
+        "z": 279.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-upright--7-3",
+      "center": {
+        "x": 1211.0,
+        "y": 4.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth--7-1",
+      "center": {
+        "x": 1211.0,
+        "y": 1.0,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth--7-3.5",
+      "center": {
+        "x": 1211.0,
+        "y": 3.5,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth--7-6",
+      "center": {
+        "x": 1211.0,
+        "y": 6.0,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-upright-0--3",
+      "center": {
+        "x": 1218.0,
+        "y": 4.0,
+        "z": 279.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-upright-0-3",
+      "center": {
+        "x": 1218.0,
+        "y": 4.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth-0-1",
+      "center": {
+        "x": 1218.0,
+        "y": 1.0,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth-0-3.5",
+      "center": {
+        "x": 1218.0,
+        "y": 3.5,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth-0-6",
+      "center": {
+        "x": 1218.0,
+        "y": 6.0,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-upright-7--3",
+      "center": {
+        "x": 1225.0,
+        "y": 4.0,
+        "z": 279.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-upright-7-3",
+      "center": {
+        "x": 1225.0,
+        "y": 4.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth-7-1",
+      "center": {
+        "x": 1225.0,
+        "y": 1.0,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth-7-3.5",
+      "center": {
+        "x": 1225.0,
+        "y": 3.5,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-depth-7-6",
+      "center": {
+        "x": 1225.0,
+        "y": 6.0,
+        "z": 282.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-load-beam-1--3",
+      "center": {
+        "x": 1218.0,
+        "y": 1.0,
+        "z": 279.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-load-beam-1-3",
+      "center": {
+        "x": 1218.0,
+        "y": 1.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-pallet-1-0",
+      "center": {
+        "x": 1214.5,
+        "y": 1.45,
+        "z": 282.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-stored-load-1-0",
+      "center": {
+        "x": 1214.5,
+        "y": 2.3,
+        "z": 282.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-pallet-1-1",
+      "center": {
+        "x": 1221.5,
+        "y": 1.45,
+        "z": 282.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-stored-load-1-1",
+      "center": {
+        "x": 1221.5,
+        "y": 2.3,
+        "z": 282.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-load-beam-3.5--3",
+      "center": {
+        "x": 1218.0,
+        "y": 3.5,
+        "z": 279.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-load-beam-3.5-3",
+      "center": {
+        "x": 1218.0,
+        "y": 3.5,
+        "z": 285.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-pallet-3.5-0",
+      "center": {
+        "x": 1214.5,
+        "y": 3.95,
+        "z": 282.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-stored-load-3.5-0",
+      "center": {
+        "x": 1214.5,
+        "y": 4.8,
+        "z": 282.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-pallet-3.5-1",
+      "center": {
+        "x": 1221.5,
+        "y": 3.95,
+        "z": 282.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-stored-load-3.5-1",
+      "center": {
+        "x": 1221.5,
+        "y": 4.8,
+        "z": 282.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-load-beam-6--3",
+      "center": {
+        "x": 1218.0,
+        "y": 6.0,
+        "z": 279.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-rack-load-beam-6-3",
+      "center": {
+        "x": 1218.0,
+        "y": 6.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-pallet-6-0",
+      "center": {
+        "x": 1214.5,
+        "y": 6.45,
+        "z": 282.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-stored-load-6-0",
+      "center": {
+        "x": 1214.5,
+        "y": 7.3,
+        "z": 282.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-pallet-6-1",
+      "center": {
+        "x": 1221.5,
+        "y": 6.45,
+        "z": 282.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-stored-load-6-1",
+      "center": {
+        "x": 1221.5,
+        "y": 7.3,
+        "z": 282.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-post-protector--7",
+      "center": {
+        "x": 1211.0,
+        "y": 0.7,
+        "z": 278.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-rack-b-post-protector-7",
+      "center": {
+        "x": 1225.0,
+        "y": 0.7,
+        "z": 278.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-upright--7--3",
+      "center": {
+        "x": 1248.0,
+        "y": 4.0,
+        "z": 202.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-upright--7-3",
+      "center": {
+        "x": 1248.0,
+        "y": 4.0,
+        "z": 208.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth--7-1",
+      "center": {
+        "x": 1248.0,
+        "y": 1.0,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth--7-3.5",
+      "center": {
+        "x": 1248.0,
+        "y": 3.5,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth--7-6",
+      "center": {
+        "x": 1248.0,
+        "y": 6.0,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-upright-0--3",
+      "center": {
+        "x": 1255.0,
+        "y": 4.0,
+        "z": 202.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-upright-0-3",
+      "center": {
+        "x": 1255.0,
+        "y": 4.0,
+        "z": 208.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth-0-1",
+      "center": {
+        "x": 1255.0,
+        "y": 1.0,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth-0-3.5",
+      "center": {
+        "x": 1255.0,
+        "y": 3.5,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth-0-6",
+      "center": {
+        "x": 1255.0,
+        "y": 6.0,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-upright-7--3",
+      "center": {
+        "x": 1262.0,
+        "y": 4.0,
+        "z": 202.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-upright-7-3",
+      "center": {
+        "x": 1262.0,
+        "y": 4.0,
+        "z": 208.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth-7-1",
+      "center": {
+        "x": 1262.0,
+        "y": 1.0,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth-7-3.5",
+      "center": {
+        "x": 1262.0,
+        "y": 3.5,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-depth-7-6",
+      "center": {
+        "x": 1262.0,
+        "y": 6.0,
+        "z": 205.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-load-beam-1--3",
+      "center": {
+        "x": 1255.0,
+        "y": 1.0,
+        "z": 202.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-load-beam-1-3",
+      "center": {
+        "x": 1255.0,
+        "y": 1.0,
+        "z": 208.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-pallet-1-0",
+      "center": {
+        "x": 1251.5,
+        "y": 1.45,
+        "z": 205.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-stored-load-1-0",
+      "center": {
+        "x": 1251.5,
+        "y": 2.3,
+        "z": 205.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-pallet-1-1",
+      "center": {
+        "x": 1258.5,
+        "y": 1.45,
+        "z": 205.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-stored-load-1-1",
+      "center": {
+        "x": 1258.5,
+        "y": 2.3,
+        "z": 205.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-load-beam-3.5--3",
+      "center": {
+        "x": 1255.0,
+        "y": 3.5,
+        "z": 202.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-load-beam-3.5-3",
+      "center": {
+        "x": 1255.0,
+        "y": 3.5,
+        "z": 208.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-pallet-3.5-0",
+      "center": {
+        "x": 1251.5,
+        "y": 3.95,
+        "z": 205.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-stored-load-3.5-0",
+      "center": {
+        "x": 1251.5,
+        "y": 4.8,
+        "z": 205.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-pallet-3.5-1",
+      "center": {
+        "x": 1258.5,
+        "y": 3.95,
+        "z": 205.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-stored-load-3.5-1",
+      "center": {
+        "x": 1258.5,
+        "y": 4.8,
+        "z": 205.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-load-beam-6--3",
+      "center": {
+        "x": 1255.0,
+        "y": 6.0,
+        "z": 202.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-rack-load-beam-6-3",
+      "center": {
+        "x": 1255.0,
+        "y": 6.0,
+        "z": 208.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-pallet-6-0",
+      "center": {
+        "x": 1251.5,
+        "y": 6.45,
+        "z": 205.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-stored-load-6-0",
+      "center": {
+        "x": 1251.5,
+        "y": 7.3,
+        "z": 205.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-pallet-6-1",
+      "center": {
+        "x": 1258.5,
+        "y": 6.45,
+        "z": 205.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-stored-load-6-1",
+      "center": {
+        "x": 1258.5,
+        "y": 7.3,
+        "z": 205.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-post-protector--7",
+      "center": {
+        "x": 1248.0,
+        "y": 0.7,
+        "z": 201.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-turn-rack-post-protector-7",
+      "center": {
+        "x": 1262.0,
+        "y": 0.7,
+        "z": 201.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-plinth",
+      "center": {
+        "x": 1188.0,
+        "y": 0.35,
+        "z": 280.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-rear",
+      "center": {
+        "x": 1188.0,
+        "y": 2.5,
+        "z": 282.2
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-side-0",
+      "center": {
+        "x": 1185.0,
+        "y": 2.5,
+        "z": 280.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-side-1",
+      "center": {
+        "x": 1191.0,
+        "y": 2.5,
+        "z": 280.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-front",
+      "center": {
+        "x": 1189.0,
+        "y": 1.5,
+        "z": 277.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-window",
+      "center": {
+        "x": 1189.0,
+        "y": 3.35,
+        "z": 277.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-packing-control-operator-roof",
+      "center": {
+        "x": 1188.0,
+        "y": 4.8,
+        "z": 280.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-sill",
+      "center": {
+        "x": 1298.0,
+        "y": 0.65,
+        "z": 279.0
+      },
+      "size": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 8.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-buffer--6",
+      "center": {
+        "x": 1293.6,
+        "y": 0.95,
+        "z": 285.0
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.5,
+        "z": 0.8
+      },
+      "material": "rubber",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-buffer-6",
+      "center": {
+        "x": 1293.6,
+        "y": 0.95,
+        "z": 273.0
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.5,
+        "z": 0.8
+      },
+      "material": "rubber",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-post--7",
+      "center": {
+        "x": 1301.0,
+        "y": 4.0,
+        "z": 286.0
+      },
+      "size": {
+        "x": 0.65,
+        "y": 8.0,
+        "z": 0.65
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-post-7",
+      "center": {
+        "x": 1301.0,
+        "y": 4.0,
+        "z": 272.0
+      },
+      "size": {
+        "x": 0.65,
+        "y": 8.0,
+        "z": 0.65
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-head",
+      "center": {
+        "x": 1301.0,
+        "y": 8.0,
+        "z": 279.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 0.6,
+        "z": 1.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-packaged-panel",
+      "center": {
+        "x": 1299.0,
+        "y": 2.1,
+        "z": 279.0
+      },
+      "size": {
+        "x": 11.0,
+        "y": 2.7,
+        "z": 4.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-east-dock-dock-control",
+      "center": {
+        "x": 1296.0,
+        "y": 2.2,
+        "z": 272.0
+      },
+      "size": {
+        "x": 1.6,
+        "y": 2.5,
+        "z": 1.1
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-sill",
+      "center": {
+        "x": 1098.0,
+        "y": 0.65,
+        "z": 282.0
+      },
+      "size": {
+        "x": 17.0,
+        "y": 1.3,
+        "z": 8.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-buffer--6",
+      "center": {
+        "x": 1092.0,
+        "y": 0.95,
+        "z": 277.6
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.5,
+        "z": 0.8
+      },
+      "material": "rubber",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-buffer-6",
+      "center": {
+        "x": 1104.0,
+        "y": 0.95,
+        "z": 277.6
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.5,
+        "z": 0.8
+      },
+      "material": "rubber",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-post--7",
+      "center": {
+        "x": 1091.0,
+        "y": 4.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 0.65,
+        "y": 8.0,
+        "z": 0.65
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-post-7",
+      "center": {
+        "x": 1105.0,
+        "y": 4.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 0.65,
+        "y": 8.0,
+        "z": 0.65
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-head",
+      "center": {
+        "x": 1098.0,
+        "y": 8.0,
+        "z": 285.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 0.6,
+        "z": 1.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-packaged-panel",
+      "center": {
+        "x": 1098.0,
+        "y": 2.1,
+        "z": 283.0
+      },
+      "size": {
+        "x": 11.0,
+        "y": 2.7,
+        "z": 4.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-receiving-dock-dock-control",
+      "center": {
+        "x": 1105.0,
+        "y": 2.2,
+        "z": 280.0
+      },
+      "size": {
+        "x": 1.6,
+        "y": 2.5,
+        "z": 1.1
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-steel-foot-0",
+      "center": {
+        "x": 1300.0,
+        "y": 0.35,
+        "z": 369.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 9.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-rack-post-0",
+      "center": {
+        "x": 1300.0,
+        "y": 4.8,
+        "z": 369.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 8.2,
+        "z": 0.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-steel-foot-1",
+      "center": {
+        "x": 1300.0,
+        "y": 0.35,
+        "z": 355.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 9.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-rack-post-1",
+      "center": {
+        "x": 1300.0,
+        "y": 4.8,
+        "z": 355.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 8.2,
+        "z": 0.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-panel-0",
+      "center": {
+        "x": 1297.5,
+        "y": 4.1,
+        "z": 362.0
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-panel-1",
+      "center": {
+        "x": 1298.8,
+        "y": 4.1,
+        "z": 362.0
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-panel-2",
+      "center": {
+        "x": 1301.2,
+        "y": 4.1,
+        "z": 362.0
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-warehouse-north-release-panel-3",
+      "center": {
+        "x": 1302.5,
+        "y": 4.1,
+        "z": 362.0
+      },
+      "size": {
+        "x": 18.0,
+        "y": 6.6,
+        "z": 0.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 90
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-bed-leg--7",
+      "center": {
+        "x": 415.0,
+        "y": -13.0,
+        "z": 570.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 2.0,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-bed-leg-7",
+      "center": {
+        "x": 429.0,
+        "y": -13.0,
+        "z": 570.0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 2.0,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-roller-bed",
+      "center": {
+        "x": 422.0,
+        "y": -11.9,
+        "z": 570.0
+      },
+      "size": {
+        "x": 17.0,
+        "y": 0.5,
+        "z": 3.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-press-base",
+      "center": {
+        "x": 426.0,
+        "y": -12.6,
+        "z": 567.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.8,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-press-column-2.5",
+      "center": {
+        "x": 424.5,
+        "y": -10.2,
+        "z": 567.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 4.8,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-press-column-5.5",
+      "center": {
+        "x": 427.5,
+        "y": -10.2,
+        "z": 567.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 4.8,
+        "z": 0.6
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-press-head",
+      "center": {
+        "x": 426.0,
+        "y": -8.0,
+        "z": 567.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 0.8,
+        "z": 3.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-rebar-bending-cuttings-bin",
+      "center": {
+        "x": 417.0,
+        "y": -13.2,
+        "z": 574.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.6,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-dewatering-pump-bed",
+      "center": {
+        "x": 527.0,
+        "y": -13.7,
+        "z": 565.0
+      },
+      "size": {
+        "x": 10.0,
+        "y": 0.6,
+        "z": 9.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-dewatering-water-separator-proxy",
+      "center": {
+        "x": 525.0,
+        "y": -9.9,
+        "z": 565.0
+      },
+      "size": {
+        "x": 4.62,
+        "y": 7.0,
+        "z": 4.62
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-dewatering-electric-pump",
+      "center": {
+        "x": 530.0,
+        "y": -12.6,
+        "z": 565.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 2.1,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-plinth",
+      "center": {
+        "x": 495.0,
+        "y": -13.65,
+        "z": 490.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-rear",
+      "center": {
+        "x": 495.0,
+        "y": -11.5,
+        "z": 487.8
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-side-0",
+      "center": {
+        "x": 498.0,
+        "y": -11.5,
+        "z": 490.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-side-1",
+      "center": {
+        "x": 492.0,
+        "y": -11.5,
+        "z": 490.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-front",
+      "center": {
+        "x": 494.0,
+        "y": -12.5,
+        "z": 492.2
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-window",
+      "center": {
+        "x": 494.0,
+        "y": -10.65,
+        "z": 492.2
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-casting-control-operator-roof",
+      "center": {
+        "x": 495.0,
+        "y": -9.2,
+        "z": 490.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-upright--7--3",
+      "center": {
+        "x": 233.0,
+        "y": 4.0,
+        "z": 572.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-upright--7-3",
+      "center": {
+        "x": 233.0,
+        "y": 4.0,
+        "z": 578.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth--7-1",
+      "center": {
+        "x": 233.0,
+        "y": 1.0,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth--7-3.5",
+      "center": {
+        "x": 233.0,
+        "y": 3.5,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth--7-6",
+      "center": {
+        "x": 233.0,
+        "y": 6.0,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-upright-0--3",
+      "center": {
+        "x": 240.0,
+        "y": 4.0,
+        "z": 572.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-upright-0-3",
+      "center": {
+        "x": 240.0,
+        "y": 4.0,
+        "z": 578.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth-0-1",
+      "center": {
+        "x": 240.0,
+        "y": 1.0,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth-0-3.5",
+      "center": {
+        "x": 240.0,
+        "y": 3.5,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth-0-6",
+      "center": {
+        "x": 240.0,
+        "y": 6.0,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-upright-7--3",
+      "center": {
+        "x": 247.0,
+        "y": 4.0,
+        "z": 572.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-upright-7-3",
+      "center": {
+        "x": 247.0,
+        "y": 4.0,
+        "z": 578.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 8.0,
+        "z": 0.4
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth-7-1",
+      "center": {
+        "x": 247.0,
+        "y": 1.0,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth-7-3.5",
+      "center": {
+        "x": 247.0,
+        "y": 3.5,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-depth-7-6",
+      "center": {
+        "x": 247.0,
+        "y": 6.0,
+        "z": 575.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.35,
+        "z": 6.5
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-load-beam-1--3",
+      "center": {
+        "x": 240.0,
+        "y": 1.0,
+        "z": 572.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-load-beam-1-3",
+      "center": {
+        "x": 240.0,
+        "y": 1.0,
+        "z": 578.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-pallet-1-0",
+      "center": {
+        "x": 236.5,
+        "y": 1.45,
+        "z": 575.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-stored-load-1-0",
+      "center": {
+        "x": 236.5,
+        "y": 2.3,
+        "z": 575.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-pallet-1-1",
+      "center": {
+        "x": 243.5,
+        "y": 1.45,
+        "z": 575.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-stored-load-1-1",
+      "center": {
+        "x": 243.5,
+        "y": 2.3,
+        "z": 575.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-load-beam-3.5--3",
+      "center": {
+        "x": 240.0,
+        "y": 3.5,
+        "z": 572.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-load-beam-3.5-3",
+      "center": {
+        "x": 240.0,
+        "y": 3.5,
+        "z": 578.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-pallet-3.5-0",
+      "center": {
+        "x": 236.5,
+        "y": 3.95,
+        "z": 575.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-stored-load-3.5-0",
+      "center": {
+        "x": 236.5,
+        "y": 4.8,
+        "z": 575.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-pallet-3.5-1",
+      "center": {
+        "x": 243.5,
+        "y": 3.95,
+        "z": 575.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-stored-load-3.5-1",
+      "center": {
+        "x": 243.5,
+        "y": 4.8,
+        "z": 575.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-load-beam-6--3",
+      "center": {
+        "x": 240.0,
+        "y": 6.0,
+        "z": 572.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-rack-load-beam-6-3",
+      "center": {
+        "x": 240.0,
+        "y": 6.0,
+        "z": 578.0
+      },
+      "size": {
+        "x": 14.6,
+        "y": 0.42,
+        "z": 0.35
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-pallet-6-0",
+      "center": {
+        "x": 236.5,
+        "y": 6.45,
+        "z": 575.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-stored-load-6-0",
+      "center": {
+        "x": 236.5,
+        "y": 7.3,
+        "z": 575.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-pallet-6-1",
+      "center": {
+        "x": 243.5,
+        "y": 6.45,
+        "z": 575.0
+      },
+      "size": {
+        "x": 5.8,
+        "y": 0.45,
+        "z": 5.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-stored-load-6-1",
+      "center": {
+        "x": 243.5,
+        "y": 7.3,
+        "z": 575.0
+      },
+      "size": {
+        "x": 4.8,
+        "y": 1.3,
+        "z": 4.7
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-post-protector--7",
+      "center": {
+        "x": 233.0,
+        "y": 0.7,
+        "z": 571.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-pit-west-landing-store-post-protector-7",
+      "center": {
+        "x": 247.0,
+        "y": 0.7,
+        "z": 571.3
+      },
+      "size": {
+        "x": 0.9,
+        "y": 1.4,
+        "z": 0.9
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-mast-foot",
+      "center": {
+        "x": 1305.0,
+        "y": 0.5,
+        "z": 979.0
+      },
+      "size": {
+        "x": 9.0,
+        "y": 1.0,
+        "z": 9.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-erection-leg--2--2",
+      "center": {
+        "x": 1303.0,
+        "y": 10.0,
+        "z": 977.0
+      },
+      "size": {
+        "x": 0.7,
+        "y": 20.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-erection-leg--2-2",
+      "center": {
+        "x": 1303.0,
+        "y": 10.0,
+        "z": 981.0
+      },
+      "size": {
+        "x": 0.7,
+        "y": 20.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-erection-leg-2--2",
+      "center": {
+        "x": 1307.0,
+        "y": 10.0,
+        "z": 977.0
+      },
+      "size": {
+        "x": 0.7,
+        "y": 20.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-erection-leg-2-2",
+      "center": {
+        "x": 1307.0,
+        "y": 10.0,
+        "z": 981.0
+      },
+      "size": {
+        "x": 0.7,
+        "y": 20.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-mast-head",
+      "center": {
+        "x": 1305.0,
+        "y": 20.0,
+        "z": 979.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 1.0,
+        "z": 7.0
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-lifting-winch",
+      "center": {
+        "x": 1306.0,
+        "y": 18.0,
+        "z": 979.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 2.0,
+        "z": 3.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-bearing-cradle-0",
+      "center": {
+        "x": 1300.0,
+        "y": 1.5,
+        "z": 985.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 3.0,
+        "z": 5.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-bearing-assembly-bearing-cradle-1",
+      "center": {
+        "x": 1310.0,
+        "y": 1.5,
+        "z": 985.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 3.0,
+        "z": 5.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-casting-table",
+      "center": {
+        "x": 1185.0,
+        "y": 1.0,
+        "z": 890.0
+      },
+      "size": {
+        "x": 15.0,
+        "y": 2.0,
+        "z": 10.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-side-shutter--7.5",
+      "center": {
+        "x": 1179.25467,
+        "y": 2.0,
+        "z": 894.82091
+      },
+      "size": {
+        "x": 0.35,
+        "y": 2.0,
+        "z": 10.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-side-shutter-7.5",
+      "center": {
+        "x": 1190.74533,
+        "y": 2.0,
+        "z": 885.17909
+      },
+      "size": {
+        "x": 0.35,
+        "y": 2.0,
+        "z": 10.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-end-shutter--5",
+      "center": {
+        "x": 1181.78606,
+        "y": 2.0,
+        "z": 886.16978
+      },
+      "size": {
+        "x": 15.0,
+        "y": 2.0,
+        "z": 0.35
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-end-shutter-5",
+      "center": {
+        "x": 1188.21394,
+        "y": 2.0,
+        "z": 893.83022
+      },
+      "size": {
+        "x": 15.0,
+        "y": 2.0,
+        "z": 0.35
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-hoist-leg--6",
+      "center": {
+        "x": 1176.67557,
+        "y": 5.0,
+        "z": 889.41367
+      },
+      "size": {
+        "x": 0.7,
+        "y": 10.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-hoist-leg-6",
+      "center": {
+        "x": 1185.8681,
+        "y": 5.0,
+        "z": 881.70022
+      },
+      "size": {
+        "x": 0.7,
+        "y": 10.0,
+        "z": 0.7
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-south-casting-hoist-beam",
+      "center": {
+        "x": 1181.27183,
+        "y": 10.0,
+        "z": 885.55694
+      },
+      "size": {
+        "x": 13.5,
+        "y": 0.8,
+        "z": 1.0
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-plinth",
+      "center": {
+        "x": 1380.0,
+        "y": 0.35,
+        "z": 1060.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.7,
+        "z": 5.5
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-rear",
+      "center": {
+        "x": 1380.0,
+        "y": 2.5,
+        "z": 1062.2
+      },
+      "size": {
+        "x": 6.0,
+        "y": 4.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-side-0",
+      "center": {
+        "x": 1377.0,
+        "y": 2.5,
+        "z": 1060.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-side-1",
+      "center": {
+        "x": 1383.0,
+        "y": 2.5,
+        "z": 1060.0
+      },
+      "size": {
+        "x": 0.3,
+        "y": 4.3,
+        "z": 4.7
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-front",
+      "center": {
+        "x": 1381.0,
+        "y": 1.5,
+        "z": 1057.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 2.3,
+        "z": 0.3
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-window",
+      "center": {
+        "x": 1381.0,
+        "y": 3.35,
+        "z": 1057.8
+      },
+      "size": {
+        "x": 4.0,
+        "y": 1.4,
+        "z": 0.22
+      },
+      "material": "glass",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-north-control-operator-roof",
+      "center": {
+        "x": 1380.0,
+        "y": 4.8,
+        "z": 1060.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.45,
+        "z": 5.8
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-erection-power-transformer-foot",
+      "center": {
+        "x": 1288.0,
+        "y": 0.4,
+        "z": 945.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.8,
+        "z": 6.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-erection-power-transformer",
+      "center": {
+        "x": 1288.0,
+        "y": 2.8,
+        "z": 945.0
+      },
+      "size": {
+        "x": 5.0,
+        "y": 4.0,
+        "z": 4.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-erection-power-cable-tray",
+      "center": {
+        "x": 1288.0,
+        "y": 0.45,
+        "z": 950.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 0.7,
+        "z": 1.5
+      },
+      "material": "black",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-construction-interchange-exit-beam-delivery-sleeper-0",
+      "center": {
+        "x": 1457.42885,
+        "y": 0.45,
+        "z": 1081.93582
+      },
+      "size": {
+        "x": 17.0,
+        "y": 0.9,
+        "z": 1.5
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-exit-beam-delivery-sleeper-1",
+      "center": {
+        "x": 1462.57115,
+        "y": 0.45,
+        "z": 1088.06418
+      },
+      "size": {
+        "x": 17.0,
+        "y": 0.9,
+        "z": 1.5
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-exit-beam-delivery-precast-0",
+      "center": {
+        "x": 1455.78676,
+        "y": 2.1,
+        "z": 1088.53533
+      },
+      "size": {
+        "x": 3.6,
+        "y": 2.4,
+        "z": 16.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-exit-beam-delivery-precast-1",
+      "center": {
+        "x": 1460.0,
+        "y": 2.1,
+        "z": 1085.0
+      },
+      "size": {
+        "x": 3.6,
+        "y": 2.4,
+        "z": 16.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 40
+    },
+    {
+      "id": "dress-construction-interchange-exit-beam-delivery-precast-2",
+      "center": {
+        "x": 1464.21324,
+        "y": 2.1,
+        "z": 1081.46467
       },
       "size": {
         "x": 3.6,

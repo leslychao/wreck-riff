@@ -303,8 +303,9 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             throw new IllegalStateException("Performance window is not drawable");
     }
     static boolean awaitPerformanceFramebuffer(int width,int height,int cameraWidth,int cameraHeight,long elapsedNanos) {
+        if(elapsedNanos>=30_000_000_000L)throw new IllegalStateException("Timed out waiting 30 seconds for the real 1920x1080 framebuffer and camera: framebuffer="
+                +width+"x"+height+", camera="+cameraWidth+"x"+cameraHeight);
         if(width==1920&&height==1080&&cameraWidth==width&&cameraHeight==height)return true;
-        if(elapsedNanos>=30_000_000_000L)validatePerformanceFramebuffer(width,height,cameraWidth,cameraHeight);
         return false;
     }
     static void validatePerformanceFramebuffer(int width,int height,int cameraWidth,int cameraHeight) {

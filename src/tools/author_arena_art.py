@@ -27,7 +27,7 @@ class Scene:
         self.anchor=b['id'];self.model(proxy,asset,(c['x'],bottom if y is None else y,c['z']),proxies=[b['id']]);b['collision']=False
     def facade(self,b):
         c,s=b['center'],b['size'];x,y,z=c['x'],c['y'],c['z'];w,h,d=s['x'],s['y'],s['z'];self.anchor=b['id']
-        if min(w,d)<24 or h<8 or 'roof' in b['id'] or b['id'].startswith(('edge-','pile-','silo-')):return
+        if not b['collision'] or min(w,d)<24 or h<8 or 'roof' in b['id'] or b['id'].startswith(('edge-','pile-','silo-','fair-stall-','fair-shop-','ticket-office-')):return
         # Window frames project by decimetres; no near-coplanar millimetre stacks.
         floor_count=min(12,int(h/4.5));columns=min(14,max(2,int(w/8)));base=y-h/2
         for sign in (-1,1):
@@ -107,12 +107,6 @@ class Scene:
             if i%2==0:self.beam('wheel-spoke',(0,0,0),p,.3,'steel');self.part('wheel-gondola',p,(6,4,4),'faded-red' if i%4 else 'blue')
         self.group='';self.anchor='carousel-base';self.cylinder('carousel-roof',(925,11,155),25,2,'ivory')
         for i in range(12):self.cylinder('carousel-pole',(925+math.cos(i*math.tau/12)*20,6,155+math.sin(i*math.tau/12)*20),.25,10,'yellow')
-        for b in self.data['boxes']:
-            if not b['id'].startswith(('fair-stall-','fair-shop-')):continue
-            c,s=b['center'],b['size'];self.anchor=b['id'];self.part('stall-canopy',(c['x'],7,c['z']-s['z']/2-2),(s['x']+1,1,5),'ivory',rotation=(0,b['yawDegrees'],0));self.part('stall-counter',(c['x'],2,c['z']-s['z']/2-.5),(s['x']*.8,.7,1.3),'wood')
-            self.part('stall-sign',(c['x'],5.3,c['z']-s['z']/2-.7),(s['x']*.65,1.5,.45),'yellow' if 'shop-' in b['id'] else 'ivory')
-            self.part('service-door',(c['x']-s['x']*.2,2.1,c['z']+s['z']/2+.35),(2.4,4.2,.6),'steel')
-            self.part('shop-roof-vent',(c['x']+s['x']*.25,s['y']+1,c['z']),(2,2,2),'steel')
         # Small furnished pockets outside all road corridors, grouped by use.
         self.anchor=''
         for i,(x,z) in enumerate([(145,330),(255,365),(280,610),(350,750),(450,825),(575,930),(905,885),(1015,760),(1045,550),(970,395),(550,425),(225,960),(460,1165),(1100,1140),(1340,935)]):
@@ -146,7 +140,7 @@ class Scene:
         # proxy is metadata only, excluded from ordinary solids by collision:false.
         write_text_atomic(OUT/(self.location.resource+'.json'),json.dumps(self.data,ensure_ascii=False,indent=2)+'\n')
         self.location.write_design()
-        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; src/tools/dress_construction.py; src/tools/dress_neon.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
+        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; src/tools/dress_construction.py; src/tools/dress_neon.py; src/tools/dress_carnival.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
         write_text_atomic(OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json'),json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
 if __name__=='__main__':
     for factory,method in [(construction,'construction'),(neon,'neon'),(carnival,'carnival')]:
@@ -156,6 +150,9 @@ if __name__=='__main__':
             dress(scene)
         elif method=='neon':
             from dress_neon import dress
+            dress(scene)
+        elif method=='carnival':
+            from dress_carnival import dress
             dress(scene)
         scene.save()
     write_review_routes()

@@ -129,5 +129,31 @@ class VehicleDamageVisualTest {
         VehicleVisual.acceptPresented(car,hit(2100,20));VehicleVisual.updatePresentation(car,.12f,null);
         assertSame(data,paint.getMesh().getMorphTargets()[1].getBuffer(VertexBuffer.Type.Position));assertTrue(gpu.isUpdateNeeded(),"In-place composites must be uploaded even when jME reuses the same FloatBuffer");VehicleVisual.close(car);
     }
+    @Test void detailedDamageStampCannotPaintAnotherPackedPart() {
+        var assets=PresentationTestAssets.shared();var data=VehicleModelData.load(assets,"rivet");var door=data.lods.getFirst().stream().filter(p->p.name().equals("panel-door-right")).findFirst().orElseThrow();
+        var uv=door.stages()[0].getFloatBuffer(VertexBuffer.Type.TexCoord);Vector2f center=new Vector2f();float greatest=0;
+        for(int i=0;i<uv.limit();i+=6){float area=Math.abs((uv.get(i+2)-uv.get(i))*(uv.get(i+5)-uv.get(i+1))-(uv.get(i+4)-uv.get(i))*(uv.get(i+3)-uv.get(i+1)));if(area>greatest){greatest=area;center.set((uv.get(i)+uv.get(i+2)+uv.get(i+4))/3,(uv.get(i+1)+uv.get(i+3)+uv.get(i+5))/3);}}
+        var marks=new VehicleDamageMarks(assets,"rivet");marks.hit(Vector3f.ZERO,Vector3f.UNIT_X,center,1,false,false,99,door.islandId(),2);byte[] mask=marks.snapshot();
+        var ownership=com.jme3.texture.image.ImageRaster.create(new SurfaceMaterials.TextureUse("DamageMap","textures/vehicles/rivet/damage-ownership.png",false).load(assets).getImage());ColorRGBA pixel=new ColorRGBA();int painted=0;
+        for(int y=0;y<512;y++)for(int x=0;x<512;x++)if((mask[(y*512+x)*4]&255)>0){ownership.getPixel(x,y,pixel);assertEquals(door.islandId(),Math.round(pixel.r*255));painted++;}
+        assertTrue(painted>0,"Prepared stamp must reach its own canonical island");marks.close();
+    }
+    @Test void fullRepairAcrossHpStageUsesTheWholeThreeHundredMillisecondTransition() {
+        Node car=car();VehicleVisual.updateDamage(car,.5f);VehicleVisual.updatePresentation(car,.12f,null);
+        VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.REPAIRED,3000,0,0,Vector3f.ZERO,"repair",400).withHealthChange(new HealthChange(400,800)));
+        VehicleVisual.updateDamage(car,1);VehicleVisual.updatePresentation(car,.15f,null);
+        assertEquals(.5f,((Geometry)car.getChild("paint")).getMorphState()[1],.001f);VehicleVisual.close(car);
+    }
+    @Test void hitCrossingIntoModerateDamageDetachesWithoutWaitingForAnotherHit() {
+        Node car=car();VehicleVisual.updateDamage(car,.55f);VehicleVisual.updatePresentation(car,.12f,null);
+        VehicleVisual.acceptPresented(car,hit(3100,100).withHealthChange(new HealthChange(440,340)));VehicleVisual.updateDamage(car,340f/800);VehicleVisual.updatePresentation(car,.12f,null);
+        assertEquals(1,VehicleVisual.drainDetached(car).size());VehicleVisual.close(car);
+    }
+    @Test void lodSwitchKeepsTheVisibleDamageTransitionPhase() {
+        Node car=car();VehicleVisual.updateDamage(car,.5f);VehicleVisual.updatePresentation(car,.06f,null);
+        Camera camera=new Camera(1920,1080);camera.setFrustumPerspective(60,1920f/1080,.1f,1000);camera.setLocation(new Vector3f(0,0,-100));camera.lookAt(Vector3f.ZERO,Vector3f.UNIT_Y);car.updateGeometricState();
+        VehicleVisual.updatePresentation(car,0,camera);assertEquals(2,(Integer)car.getUserData("vehicleLod"));
+        assertEquals(.5f,((Geometry)((Node)car.getChild("lod2")).getChild("paint")).getMorphState()[1],.001f);VehicleVisual.close(car);
+    }
     private static float[] points(Mesh mesh){var b=mesh.getFloatBuffer(VertexBuffer.Type.Position);float[] result=new float[b.limit()];for(int i=0;i<result.length;i++)result[i]=b.get(i);return result;}
 }

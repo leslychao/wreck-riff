@@ -204,7 +204,7 @@ def _street_faces(scene):
     # Continuous floor bands and deeper ground-floor shopfronts identify the building.
     for building in list(scene.data['boxes']):
         c,s=building['center'],building['size'];w,h,d=s['x'],s['y'],s['z']
-        if min(w,d)<24 or h<8 or 'roof' in building['id'] or building['id'].startswith(('edge-','dress-')):continue
+        if not building['collision'] or min(w,d)<24 or h<8 or 'roof' in building['id'] or building['id'].startswith(('edge-','dress-')):continue
         scene.anchor=building['id'];base=c['y']-h/2
         for side in (-1,1):
             x=c['x']+side*(w/2+.24)
@@ -294,3 +294,4 @@ def dress(scene):
         scene.part('service-shutter',(x,2.6,back+.18),(min(8,s['x']*.45),5.2,.28),'steel')
         for sign in (-1,1):scene.part('service-corner-guard',(x+sign*4,1.4,back+.4),(.4,2.8,.5),'yellow')
     scene.anchor='';print('neon dressing:',city.count,'solids;',len(city.installed),'foreground places; sidewalks replace underlying terrain')
+    return city.installed
