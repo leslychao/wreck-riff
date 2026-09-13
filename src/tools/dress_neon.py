@@ -6,12 +6,46 @@ another visible floor. All substantial street furniture has the same visual and
 collision geometry in ArenaDefinition.
 """
 import math
+from collections import defaultdict
 from author_campaign_arenas import ccw, cut, area, vec
 
 
 def _rectangle(x, z, width, depth):
     return ccw([(x-width/2,z-depth/2),(x+width/2,z-depth/2),
                 (x+width/2,z+depth/2),(x-width/2,z+depth/2)])
+
+
+def _box_polygon(box):
+    c,s=box['center'],box['size'];angle=math.radians(box['yawDegrees'])
+    return ccw([(c['x']+math.cos(angle)*x+math.sin(angle)*z,
+                 c['z']-math.sin(angle)*x+math.cos(angle)*z)
+                for x,z in _rectangle(0,0,s['x'],s['z'])])
+
+
+def _add_curbs(walks,height=.14):
+    """Close the exposed outside edge, never duplicate an internal polygon seam."""
+    edges=[];points=set()
+    for mesh,polygons in walks:
+        for polygon in polygons:
+            for a,b in zip(ccw(polygon),ccw(polygon)[1:]+ccw(polygon)[:1]):
+                edges.append((mesh,a,b));points.add(a);points.add(b)
+    segments=defaultdict(list)
+    for mesh,a,b in edges:
+        dx,dz=b[0]-a[0],b[1]-a[1];length2=dx*dx+dz*dz
+        if length2<1e-10:continue
+        splits=[0.,1.]
+        for p in points:
+            t=((p[0]-a[0])*dx+(p[1]-a[1])*dz)/length2
+            if 1e-6<t<1-1e-6 and abs((p[0]-a[0])*dz-(p[1]-a[1])*dx)<1e-5*math.sqrt(length2):splits.append(t)
+        splits=sorted(set(round(t,9) for t in splits))
+        for start,end in zip(splits,splits[1:]):
+            p=(round(a[0]+start*dx,5),round(a[1]+start*dz,5));q=(round(a[0]+end*dx,5),round(a[1]+end*dz,5))
+            if p!=q:segments[tuple(sorted((p,q)))].append((mesh,p,q))
+    for matching in segments.values():
+        if len(matching)!=1:continue
+        mesh,a,b=matching[0];base=len(mesh['vertices'])
+        mesh['vertices'].extend(vec(p) for p in [(a[0],0,a[1]),(b[0],0,b[1]),(b[0],height,b[1]),(a[0],height,a[1])])
+        mesh['indices'].extend((base,base+3,base+2,base,base+2,base+1))
 
 
 def _road_polygons(scene):
@@ -42,8 +76,8 @@ def _faces(polygons, height, material):
 
 
 def _sidewalks(scene):
-    roads=_road_polygons(scene);claimed=[];walks=[]
-    buildings=[_rectangle(b['center']['x'],b['center']['z'],b['size']['x'],b['size']['z'])
+    roads=_road_polygons(scene);claimed=[];walks=[];walk_meshes=[]
+    buildings=[_box_polygon(b)
                for b in scene.data['boxes'] if b['collision'] and b['size']['y']>2]
     cuts=[road[0] for road in roads]+buildings+scene.location.holes
     for number,(_,a,b,path) in enumerate(roads):
@@ -62,10 +96,11 @@ def _sidewalks(scene):
             vertices,indices,_=_faces(pieces,.14,'district-slate')
             if not indices:continue
             identity=f'dress-neon-sidewalk-{number}-{side}'
-            scene.data['meshes'].append(dict(id=identity,vertices=vertices,indices=indices,
-                material='district-slate',collision=True,triangleMaterials=[]))
+            mesh=dict(id=identity,vertices=vertices,indices=indices,material='district-slate',collision=True,triangleMaterials=[])
+            scene.data['meshes'].append(mesh);walk_meshes.append((mesh,pieces))
             scene.data['surfaces'].append(dict(id=identity,geometryId=identity,level=0,grip=1))
             walks.extend(pieces);claimed.extend(pieces)
+    _add_curbs(walk_meshes)
     # Remove terrain beneath the concrete, including normal/specular shading.
     # The 14 cm curb does not rely on a depth offset to hide a duplicate sheet.
     for mesh in scene.data['meshes']:
@@ -85,13 +120,13 @@ def _sidewalks(scene):
 
 class City:
     def __init__(self,scene):self.scene=scene;self.count=0
-    def clear(self,x,z,radius):
-        if not self.scene.location.landscape_clear(x,z,radius+3):return False
+    def clear(self,x,z,radius,ignore=()):
+        if not self.scene.location.landscape_clear(x,z,radius+3,ignore):return False
         for pickup in self.scene.data['pickups']:
             p=pickup['position']
             if abs(p['y'])<4 and math.hypot(p['x']-x,p['z']-z)<radius+8:return False
         for box in self.scene.data['boxes']:
-            if not box['collision']:continue
+            if not box['collision'] or box['id'] in ignore:continue
             c,s=box['center'],box['size']
             if c['y']-s['y']/2>5:continue
             if abs(x-c['x'])<s['x']/2+radius and abs(z-c['z'])<s['z']/2+radius:return False
@@ -155,7 +190,7 @@ def dress(scene):
         x,z=c['x'],c['z']-s['z']/2
         width=min(18,s['x']*.65)
         # The canopy is a real obstruction above head height, outside the driving corridor.
-        if city.clear(x,z-4,math.hypot(width,5)/2):
+        if city.clear(x,z-2.7,math.hypot(width,5)/2,ignore=(building['id'],)):
             city.solid(building['id']+'-entrance-canopy',(x,5.8,z-2.7),(width,.45,5),'steel')
         scene.anchor=building['id']
         scene.part('entry-doors',(x,2.2,z-.18),(min(6,s['x']*.45),4.4,.28),'glass')

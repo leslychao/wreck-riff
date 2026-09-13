@@ -6,12 +6,25 @@ terrain under pavement. Earlier generators and outputs: assets/campaign-layouts-
 import collections
 import json
 import math
+import os
+import tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'src/main/resources/config'
 SOURCE=ROOT/'src/tools/assets/arena-revision3'
 AMMO=('HOMING_AMMO','POWER_AMMO','NAPALM_AMMO','BALLISTIC_AMMO','CANNON_AMMO','MINE_AMMO')
 AMMO_COUNTS={'construction_17':(18,18,12,8,10,6),'neon_zero':(24,24,16,10,14,8),'euphoria_park':(30,30,20,12,18,10)}
+
+def write_text_atomic(path,text):
+    """Publish complete generated files, including when a build reads alongside us."""
+    path.parent.mkdir(parents=True,exist_ok=True)
+    temporary=None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',newline='\n',dir=path.parent,prefix=path.name+'.',suffix='.tmp',delete=False) as output:
+            temporary=Path(output.name);output.write(text);output.flush();os.fsync(output.fileno())
+        os.replace(temporary,path)
+    finally:
+        if temporary is not None and temporary.exists():temporary.unlink()
 def vec(p):return dict(zip(('x','y','z'),(round(float(v),5) for v in p)))
 def point(v):return tuple(v[k] for k in ('x','y','z'))
 def dist(a,b):return math.sqrt(sum((a[i]-b[i])**2 for i in range(3)))
@@ -110,7 +123,7 @@ class Location:
         else:self.data['destructibles'].append(dict(id=name,geometryId=geometry,maximumHp=25))
         self.road(name,a+' '+b,22,kind='OPENABLE',object_id=name)
     def launch(self,name,a,b,flight=2.6):self.special.append((name,a,b,flight))
-    def landscape_clear(self,x,z,radius=8):
+    def landscape_clear(self,x,z,radius=8,ignore=()):
         for path in self.paths:
             for first,last in zip(path['names'],path['names'][1:]):
                 a,b=self.points[first],self.points[last];dx,dz=b[0]-a[0],b[2]-a[2];t=max(0,min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz)))
@@ -296,14 +309,15 @@ class Location:
         # the single PhysicsSpace. Keep authoring clearance conservative beforehand.
         hero_roofs={'unfinished-apartments-roof','concrete-plant-roof','warehouse-roof','shopping-passage-roof','technical-complex-roof','parking-ground-floor-roof','circus-roof','ride-pavilion-roof','repair-depot-roof'}
         for box in self.data['boxes']:
+            if box['id'] in ignore:continue
             if box['id'] in hero_roofs:box['collision']=False
         return self.data
     def write_design(self):
         SOURCE.mkdir(parents=True,exist_ok=True)
-        (SOURCE/(self.data['id']+'-design.json')).write_text(json.dumps(dict(sites=self.sites,districts=self.data['districts'],roads=self.data['roads'],supply=self.supply_report,trees=self.trees),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        write_text_atomic(SOURCE/(self.data['id']+'-design.json'),json.dumps(dict(sites=self.sites,districts=self.data['districts'],roads=self.data['roads'],supply=self.supply_report,trees=self.trees),ensure_ascii=False,indent=2)+'\n')
     def finish(self,counts=None):
         self.compile(counts)
-        (OUT/(self.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        write_text_atomic(OUT/(self.resource+'.json'),json.dumps(self.data,ensure_ascii=False,indent=2)+'\n')
         self.write_design()
         print(self.data['id'],len(self.data['boxes']),'solids',len(self.data['meshes']),'meshes',len(self.data['nodes']),'nodes',len(self.data['pickups']),'pickups')
 
@@ -493,7 +507,7 @@ def expand_yard():
                     if abs(p[0]-c['x'])<s['x']/2+2.5 and abs(p[2]-c['z'])<s['z']/2+2.5:valid=False;break
                 if valid:chosen=p;break
             assert chosen,kind;sockets.remove(chosen);data['pickups'].append(dict(id='additional-'+kind.lower()+'-'+str(len(data['pickups'])),type=kind,position=vec(chosen),respawnTicks=3000))
-    path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    write_text_atomic(path,json.dumps(data,ensure_ascii=False,indent=2)+'\n')
 
 def main():
     for factory in (construction,neon,carnival):factory().finish()
@@ -527,7 +541,7 @@ def write_review_routes():
         for p in data['spawns']:elements.append(f'<circle cx="{p["position"]["x"]}" cy="{p["position"]["z"]}" r="10" fill="#83d6ff"/>')
         elements.append('</g>')
         for d in data['districts']:elements.append(f'<text x="{d["center"]["x"]}" y="{a.depth-d["center"]["z"]-38}" fill="white" text-anchor="middle" font-size="22" font-family="sans-serif">{html.escape(d["title"])}</text>')
-        elements.append('</svg>');(SOURCE/(identity+'-plan.svg')).write_text('\n'.join(elements),encoding='utf-8')
-    path=ROOT/'src/tools/assets/architecture';path.mkdir(parents=True,exist_ok=True);(path/'review-routes.json').write_text(json.dumps(dict(schemaVersion=1,routes=routes),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        elements.append('</svg>');write_text_atomic(SOURCE/(identity+'-plan.svg'),'\n'.join(elements))
+    path=ROOT/'src/tools/assets/architecture';write_text_atomic(path/'review-routes.json',json.dumps(dict(schemaVersion=1,routes=routes),ensure_ascii=False,indent=2)+'\n')
 if __name__=='__main__':main()
 

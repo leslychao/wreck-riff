@@ -39,9 +39,11 @@ public final class VehicleVisual {
         if(vehicle.getChild("boss-panels")==null)return;
         boolean alive=!Integer.valueOf(4).equals(vehicle.getUserData("damageStage"));
         vulnerable&=alive;
-        vehicle.getChild("boss-panels").setCullHint(phase==2?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
-        vehicle.getChild("service-cover").setCullHint(vulnerable?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
-        vehicle.getChild("service-core").setCullHint(vulnerable?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
+        for(Spatial child:vehicle.getChildren())if(child instanceof Node lod&&child.getName().startsWith("lod")) {
+            lod.getChild("boss-panels").setCullHint(phase==2?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
+            lod.getChild("service-cover").setCullHint(vulnerable?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
+            lod.getChild("service-core").setCullHint(vulnerable?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
+        }
         vehicle.setUserData("bossVisualPhase",phase);vehicle.setUserData("servicePanelOpen",vulnerable);
         clearBossTelegraph(vehicle,true);
     }
@@ -67,13 +69,15 @@ public final class VehicleVisual {
         bossLights(vehicle,color,glow&&alive,false);
     }
     private static void bossLights(Node vehicle,ColorRGBA color,boolean glow,boolean warning) {
-        Geometry lights=(Geometry)vehicle.getChild("headlights");
-        if(lights==null)return;
+        for(Spatial child:vehicle.getChildren())if(child instanceof Node lod&&child.getName().startsWith("lod")) {
+        Geometry lights=(Geometry)lod.getChild("headlights");
+        if(lights==null)continue;
         // Keep the damaged mesh intact, but never dim a gameplay warning to the broken lamps' 1.5%.
         // Ordinary per-lamp blackout returns as soon as the preparation ends.
         lights.getMaterial().setBoolean("VertexColor",!warning);
         lights.getMaterial().setColor("Color",color);
         lights.getMaterial().setColor("GlowColor",glow?color.mult(.35f):ColorRGBA.Black);
+        }
     }
 
     public static void updateDamage(Node vehicle,float hpFraction){vehicle.getControl(VehicleDamageVisual.class).damage(hpFraction);}

@@ -6,7 +6,7 @@ block grids, decorative paving sheets, or shared drive-through hall generator.
 import copy
 import json
 import math
-from author_campaign_arenas import ROOT,OUT,vec,construction,neon,carnival,write_review_routes
+from author_campaign_arenas import ROOT,OUT,vec,construction,neon,carnival,write_review_routes,write_text_atomic
 
 class Scene:
     def __init__(self,location):
@@ -153,10 +153,10 @@ class Scene:
     def save(self):
         # Model roof geometry is the single visible/physical source; former analytical
         # proxy is metadata only, excluded from ordinary solids by collision:false.
-        (OUT/(self.location.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        write_text_atomic(OUT/(self.location.resource+'.json'),json.dumps(self.data,ensure_ascii=False,indent=2)+'\n')
         self.location.write_design()
         data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; src/tools/dress_construction.py; src/tools/dress_neon.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
-        (OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json')).write_text(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
+        write_text_atomic(OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json'),json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
 if __name__=='__main__':
     for factory,method in [(construction,'construction'),(neon,'neon'),(carnival,'carnival')]:
         scene=Scene(factory());scene.common();getattr(scene,method)()

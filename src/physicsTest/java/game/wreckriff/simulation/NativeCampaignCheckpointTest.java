@@ -30,8 +30,16 @@ class NativeCampaignCheckpointTest {
             player.abilityCooldown(AbilityId.SHIELD,91);player.selectedWeapon=WeaponType.CANNON;
             for(var rival:original.session.vehicles)if(!rival.player)
                 original.runtime.combat().queueDamage(rival.id,0,100000,"fixture",80000+rival.id);
-            original.runtime.tick(Map.of(),false);
+            long repairTick=original.session.tick;
+            var transitionEvents=original.runtime.tick(Map.of(),false);
             assertEquals(MatchSession.Phase.BOSS_ENTRY,original.session.phase);assertEquals(520,player.hp);
+            var repairs=transitionEvents.stream().filter(event->event.type()==GameEvent.Type.REPAIRED).toList();
+            assertEquals(1,repairs.size());var repair=repairs.getFirst();
+            assertEquals("pre-boss-repair",repair.kind());assertEquals(new HealthChange(100,520),repair.healthChange());
+            assertEquals(420,repair.value());assertEquals(0,repair.subjectId());assertEquals(0,repair.sourceId());
+            assertEquals(original.session.sessionId,repair.sessionId());assertEquals(repairTick,repair.simulationTick());
+            assertEquals(transitionEvents.indexOf(repair),repair.ordinalWithinTick());
+            assertEquals(original.world.position(0),repair.position());
             Vector3f position=original.world.position(0);long generation=original.world.teleportGeneration(0);
             checkpoint=original.runtime.checkpoint(ProgressStore.CheckpointStage.BOSS);
             MatchCheckpoint.validateReferences(registry,checkpoint);
@@ -57,7 +65,9 @@ class NativeCampaignCheckpointTest {
             assertEquals(4,retry.world.wheelContacts(0));
             assertTrue(retry.runtime.combat().projectiles().isEmpty());assertTrue(retry.runtime.combat().mines().isEmpty());
             assertTrue(retry.runtime.combat().fireZones().isEmpty());assertFalse(retry.runtime.hasWrecks());
-            retry.runtime.tick(Map.of(),false);
+            var retryEvents=retry.runtime.tick(Map.of(),false);
+            assertTrue(retryEvents.stream().noneMatch(event->event.type()==GameEvent.Type.REPAIRED),
+                    "Restoring a checkpoint must not apply or present another pre-boss repair");
             assertTrue(retry.session.bossParticipantId>=0,"At least one specified boss entrance must be free");
             assertEquals(arena.bosses().getFirst().maximumHp(),retry.session.vehicle(retry.session.bossParticipantId).hp);
             assertTrue(retry.session.vehicle(retry.session.bossParticipantId).weapons().stream().allMatch(slot->slot.ammo==0));

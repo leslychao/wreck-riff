@@ -16,6 +16,11 @@ import com.jme3.system.*;
 import game.wreckriff.audio.AudioDirector;
 import game.wreckriff.presentation.*;
 import game.wreckriff.simulation.MatchSession;
+import game.wreckriff.simulation.SimulationLoop;
+import game.wreckriff.config.MatchRules;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.openal.AL10;
+import org.lwjgl.openal.ALC10;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -45,6 +50,9 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
     private final FrameMetrics combatFrames=new FrameMetrics(),setupFrames=new FrameMetrics();
     private final List<Double> retryMilliseconds=new ArrayList<>();
     private StageProfiler profiler;
+    private SimulationLoop performanceLoop;
+    private Map<String,Object> audioDevice=Map.of();
+    private final int[] framebufferWidth={0},framebufferHeight={0};
     private boolean measuredFrame,previousMeasuredFrame,pendingRetry;
     private int setupFramesRemaining,activeCapFrames,completedCycles;
     private long previousFrameNanos,activeSimulationTicks,maximumHeapBytes;
@@ -59,15 +67,22 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         if(args.length==3&&(seconds<60||seconds>90))throw new IllegalArgumentException("Performance measurement must last 60..90 active seconds");
         Path output=Path.of(args[0]).toAbsolutePath();Files.createDirectories(output);
         Files.deleteIfExists(output.resolve(seconds==0?"review.json":"performance.json"));
-        var app=new NativeOrdnanceSaturationReview(output,args[1],seconds);var settings=new AppSettings(true);
-        settings.setTitle("Wreck Riff / Native combat ordnance limits");settings.setResolution(1920,1080);settings.setSamples(4);
-        settings.setGammaCorrection(true);settings.setVSync(false);settings.setFrameRate(seconds==0?60:0);
+        var app=new NativeOrdnanceSaturationReview(output,args[1],seconds);var settings=reviewSettings(seconds);
         if(seconds>0)app.setPauseOnLostFocus(false);
         app.setSettings(settings);app.setShowSettings(false);app.start(JmeContext.Type.Display);
+    }
+    static AppSettings reviewSettings(int seconds) {
+        if(seconds!=0&&(seconds<60||seconds>90))throw new IllegalArgumentException("Performance measurement must last 60..90 active seconds");
+        var settings=new AppSettings(true);
+        settings.setTitle("Wreck Riff / Native combat ordnance limits");settings.setResolution(1920,1080);settings.setSamples(4);
+        settings.setGammaCorrection(true);settings.setVSync(false);settings.setFrameRate(seconds==0?60:0);
+        settings.setFullscreen(seconds>0);settings.setResizable(false);settings.setAudioRenderer(AppSettings.LWJGL_OPENAL);
+        return settings;
     }
     @Override public void simpleInitApp() {
         long initializationStarted=System.nanoTime();
         if(context.getType()!=JmeContext.Type.Display||audioRenderer==null)throw new IllegalStateException("A real window and audio device are required");
+        if(performanceSeconds>0)validatePerformanceDevice();
         try(var input=getClass().getResourceAsStream("/build-info.properties")) {
             if(input==null)throw new IllegalStateException("Image build-info missing");buildInfo.load(input);
         } catch(Exception failure){throw new IllegalStateException("Cannot identify the running image",failure);}
@@ -83,6 +98,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         sound=new AudioDirector(assetManager,audioRenderer,listener,rootNode);sound.setVolumes(.8f,.3f,.8f);
         beginAttempt();initialLoadMilliseconds=(System.nanoTime()-initializationStarted)/1_000_000.0;
         if(performanceSeconds>0) {
+            performanceLoop=new SimulationLoop(MatchRules.load());
             profiler=new StageProfiler();profiler.attachGpu(renderer);setupFramesRemaining=2;
             setAppProfiler(new AppProfiler() {
                 @Override public void appStep(AppStep step) {
@@ -161,13 +177,13 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         previousFrameNanos=now;
         if(combatFrames.seconds()>=performanceSeconds) {measuredFrame=false;finishPerformance();return;}
         if(pendingRetry) {
-            long started=System.nanoTime();float carriedTime=accumulator;
+            long started=System.nanoTime();
             attempts.add(rig.evidence());completedCycles++;
             visuals.close();rig.combat.clear();
             retryCleared=range.getChild("ordnance-models")==null&&rig.combat.projectiles().isEmpty()&&rig.combat.mines().isEmpty();
             if(!retryCleared)throw new IllegalStateException("Retry retained combat states or presentation instances");
             sound.stopMatch();rig.close();range.detachAllChildren();cars.clear();attempt++;beginAttempt();
-            accumulator=carriedTime;pendingRetry=false;setupFramesRemaining=2;
+            pendingRetry=false;setupFramesRemaining=2;
             retryMilliseconds.add((System.nanoTime()-started)/1_000_000.0);
         }
         measuredFrame=setupFramesRemaining==0;
@@ -179,16 +195,19 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         long started=System.nanoTime();sound.updatePresentation(dt);
         if(measuredFrame)profiler.record(StageProfiler.Stage.AUDIO,System.nanoTime()-started);
         if(measuredFrame) {
-            // Retain all wall time and any remainder across Retry. There is no .25s clamp
-            // or per-frame substep limit that could conceal lost simulation time.
-            submittedSimulationSeconds+=dt;accumulator+=dt;started=System.nanoTime();
-            while(accumulator>=MatchSession.DT) {
+            // Exercise the shipped catch-up policy and retain its measured lost time.
+            // Setup does not advance/reset this loop; its partial step survives Retry.
+            submittedSimulationSeconds+=dt;started=System.nanoTime();
+            performanceLoop.advance(dt,true,()->{
+                long beforeTick=rig.session.tick;
                 var events=rig.step(phase==Phase.FILL,profiler);visuals.accept(events);sound.accept(events);
-                accumulator-=MatchSession.DT;activeSimulationTicks++;
-                if(phase==Phase.FILL&&rig.saturated()){phase=Phase.DRAIN;break;}
+                long actualSteps=rig.session.tick-beforeTick;
+                if(actualSteps!=1)throw new IllegalStateException("A fixed-step callback advanced "+actualSteps+" combat ticks");
+                activeSimulationTicks+=actualSteps;
+                if(phase==Phase.FILL&&rig.saturated())phase=Phase.DRAIN;
                 if(phase==Phase.FILL&&rig.scriptTicks()>600)throw new IllegalStateException("Active saturation failed: "+rig.evidence());
-                if(phase==Phase.DRAIN&&rig.combat.projectiles().isEmpty()){pendingRetry=true;break;}
-            }
+                if(phase==Phase.DRAIN&&rig.combat.projectiles().isEmpty())pendingRetry=true;
+            });
             profiler.record(StageProfiler.Stage.SIMULATION,System.nanoTime()-started);
             long used=Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();maximumHeapBytes=Math.max(maximumHeapBytes,used);
         }
@@ -201,31 +220,58 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
                 +"1920x1080 / MSAA 4 / audio on / VSync off / uncapped. Loading and two setup-render frames are measured separately.");
     }
     private void finishPerformance() {
+        validatePerformanceDevice();
         done=true;attempts.add(rig.evidence());
         var profiling=profiler.snapshot();var gpu=(Map<?,?>)profiling.get("gpuTiming");
         var gpuFrames=gpu.get("frames") instanceof Map<?,?> frames?frames:Map.of();
         boolean gpuSampled=gpuFrames.get("frames") instanceof Number frames&&frames.longValue()>0;
+        double remaining=performanceLoop.alpha()*SimulationLoop.STEP;
+        double balanceError=submittedSimulationSeconds-performanceLoop.steps()*SimulationLoop.STEP-performanceLoop.droppedSimulationTime()-remaining;
+        boolean timeValid=activeSimulationTicks==performanceLoop.steps()&&performanceLoop.droppedSimulationTime()==0&&Math.abs(balanceError)<.000001;
         boolean samplesValid=combatFrames.count()>0&&activeCapFrames>0&&completedCycles>0&&"SUPPORTED".equals(gpu.get("status"))&&gpuSampled;
         try {
             var evidence=new LinkedHashMap<String,Object>();evidence.put("status",samplesValid?"COMPLETE":"INVALID");evidence.put("runId",runId);
             evidence.put("sourceSha256",buildInfo.getProperty("sourceSha256"));evidence.put("context",context.getType().name());
             evidence.put("resolution",List.of(cam.getWidth(),cam.getHeight()));evidence.put("msaa",context.getSettings().getSamples());
+            evidence.put("framebuffer",List.of(framebufferWidth[0],framebufferHeight[0]));evidence.put("fullscreen",true);evidence.put("audioDevice",audioDevice);
             evidence.put("audioEnabled",audioRenderer!=null);evidence.put("vsync",context.getSettings().isVSync());evidence.put("frameRateLimit",context.getSettings().getFrameRate());
             evidence.put("activeCombatFrames",combatFrames.snapshot());evidence.put("profiling",profiling);
-            evidence.put("frameTimeGate",samplesValid&&combatFrames.withinTarget()?"PASS":"FAIL");
+            evidence.put("frameTimeGate",samplesValid&&timeValid&&combatFrames.withinTarget()?"PASS":"FAIL");
             evidence.put("completedCycles",completedCycles);evidence.put("activeFramesAtBothCaps",activeCapFrames);evidence.put("maximumFrustumInstances",maximumFrustumInstances);
-            evidence.put("activeSimulationTicks",activeSimulationTicks);evidence.put("unspentAccumulatorSeconds",accumulator);evidence.put("discardedSimulationSeconds",0);
+            evidence.put("activeSimulationTicks",activeSimulationTicks);evidence.put("simulationLoopSteps",performanceLoop.steps());
+            evidence.put("unspentAccumulatorSeconds",remaining);evidence.put("discardedSimulationSeconds",performanceLoop.droppedSimulationTime());
             evidence.put("submittedSimulationSeconds",submittedSimulationSeconds);
-            evidence.put("simulationTimeBalanceErrorSeconds",submittedSimulationSeconds-activeSimulationTicks*(double)MatchSession.DT-accumulator);
+            evidence.put("simulationTimeBalanceErrorSeconds",balanceError);evidence.put("simulationTimeGate",timeValid?"PASS":"FAIL");
             evidence.put("initialFixtureLoadMs",initialLoadMilliseconds);evidence.put("retryFixtureLoadMs",retryMilliseconds);evidence.put("excludedSetupFrames",setupFrames.snapshot());
-            evidence.put("setupPolicy","Initial fixture creation, Retry and two presentation frames per attempt are outside active combat samples. Their frame times and fixture load durations are retained separately. All combat dt and substep remainder are retained.");
+            evidence.put("setupPolicy","Initial fixture creation, Retry and two presentation frames per attempt are outside active combat samples. Their durations are retained separately. The shipped SimulationLoop owns combat catch-up; actual steps, discarded time and the remainder surviving Retry are recorded.");
             evidence.put("maximumUsedJavaHeapBytes",maximumHeapBytes);evidence.put("memoryScope","Java heap only; process RSS must be measured by the external runner.");
             evidence.put("attempts",attempts);evidence.put("retryCleared",retryCleared);
             evidence.put("scope","60-90 second active native ordnance stress scene with stationary chassis. No map navigation AI or prolonged stability/owner acceptance claim.");
             Files.writeString(output.resolve("performance.json"),new GsonBuilder().setPrettyPrinting().create().toJson(evidence)+"\n",StandardCharsets.UTF_8);
             System.out.println("NATIVE_ORDNANCE_PERFORMANCE "+evidence.get("frameTimeGate")+": "+output.resolve("performance.json"));
         } catch(Exception failure){throw new IllegalStateException("Native performance evidence failed",failure);}
-        stop();
+        stop(false);
+    }
+    private void validatePerformanceDevice() {
+        long window=GLFW.glfwGetCurrentContext();
+        if(window==0||GLFW.glfwGetWindowMonitor(window)==0)throw new IllegalStateException("Performance requires an actual fullscreen GLFW window");
+        GLFW.glfwGetFramebufferSize(window,framebufferWidth,framebufferHeight);
+        validatePerformanceFramebuffer(framebufferWidth[0],framebufferHeight[0],cam.getWidth(),cam.getHeight());
+        if(context.getSettings().getSamples()!=4||context.getSettings().isVSync()||context.getSettings().getFrameRate()!=0)
+            throw new IllegalStateException("Performance requires MSAA 4, VSync off and no frame-rate cap");
+        if(audioRenderer==null)throw new IllegalStateException("Performance requires a real audio renderer");
+        long audioContext=ALC10.alcGetCurrentContext();
+        long device=audioContext==0?0:ALC10.alcGetContextsDevice(audioContext);
+        if(device==0)throw new IllegalStateException("No open native OpenAL device/context");
+        boolean hasDisconnect=ALC10.alcIsExtensionPresent(device,"ALC_EXT_disconnect");
+        if(hasDisconnect&&ALC10.alcGetInteger(device,com.jme3.audio.openal.ALC.ALC_CONNECTED)==ALC10.ALC_FALSE)
+            throw new IllegalStateException("Native OpenAL device disconnected");
+        audioDevice=Map.of("opened",true,"device",Objects.toString(ALC10.alcGetString(device,ALC10.ALC_DEVICE_SPECIFIER),"unknown"),
+                "renderer",Objects.toString(AL10.alGetString(AL10.AL_RENDERER),"unknown"),"disconnectQuerySupported",hasDisconnect);
+    }
+    static void validatePerformanceFramebuffer(int width,int height,int cameraWidth,int cameraHeight) {
+        if(width!=1920||height!=1080||cameraWidth!=width||cameraHeight!=height)
+            throw new IllegalStateException("Performance requires a 1920x1080 framebuffer and camera; actual framebuffer="+width+"x"+height+", camera="+cameraWidth+"x"+cameraHeight);
     }
     private void updatePresentation(float dt) {
         for(var entry:cars.entrySet()){entry.getValue().setLocalTranslation(rig.world.position(entry.getKey()));entry.getValue().setLocalRotation(rig.world.rotation(entry.getKey()));}
@@ -256,10 +302,11 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             Files.writeString(output.resolve("review.json"),new GsonBuilder().setPrettyPrinting().create().toJson(evidence)+"\n",StandardCharsets.UTF_8);
             System.out.println("NATIVE_ORDNANCE_SATURATION PASS: "+output.resolve("review.json"));
         } catch(Exception failure){throw new IllegalStateException("Native saturation evidence failed",failure);}
-        stop();
+        stop(false);
     }
     @Override public void destroy(){setAppProfiler(null);if(profiler!=null)profiler.close();if(visuals!=null)visuals.close();if(rig!=null)rig.close();if(sound!=null)sound.close();super.destroy();}
     @Override public void handleError(String message,Throwable failure) {
+        done=true;measuredFrame=false;
         System.err.println(message);failure.printStackTrace();
         try {
             var evidence=new LinkedHashMap<String,Object>();evidence.put("status","FAIL");evidence.put("runId",runId);
@@ -267,6 +314,9 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             evidence.put("phase",phase==null?"INITIALIZING":phase.name());evidence.put("message",message);evidence.put("failure",failure.toString());
             Files.writeString(output.resolve("failure-"+runId+".json"),new GsonBuilder().setPrettyPrinting().create().toJson(evidence)+"\n",StandardCharsets.UTF_8);
         } catch(Exception reportingFailure){System.err.println("Could not retain failure report: "+reportingFailure);}
-        stop();System.exit(2);
+        // Initialization failures may arrive on the render thread before the context is
+        // fully created. Waiting for that same thread to stop would deadlock the runner.
+        try {if(context!=null)stop(false);}catch(Throwable shutdownFailure){System.err.println("Non-blocking shutdown failed: "+shutdownFailure);}
+        finally {System.exit(2);}
     }
 }

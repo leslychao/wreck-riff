@@ -45,7 +45,7 @@ class VehicleDamageVisualTest {
         GameEvent shot=new GameEvent(GameEvent.Type.SHOT,9,0,0,Vector3f.ZERO,"machine-gun",0).withEmission(new ShotEmission("machine-gun-muzzle-0",Vector3f.UNIT_Z,Vector3f.ZERO));
         VehicleVisual.acceptPresented(car,shot);VehicleVisual.updatePresentation(car,.01f,null);var mount=car.getChild("mount-machine-gun-0");float recoil=mount.getLocalTranslation().z;assertTrue(recoil<0);
         VehicleVisual.updatePresentation(car,0,null);assertEquals(recoil,mount.getLocalTranslation().z);assertEquals(socket,car.getChild("machine-gun-muzzle-0").getLocalTransform());
-        VehicleVisual.updatePresentation(car,.15f,null);assertEquals(0,mount.getLocalTranslation().z);VehicleVisual.close(car);
+        VehicleVisual.updatePresentation(car,.15f,null);assertEquals(0,mount.getLocalTranslation().z,.00001f);VehicleVisual.close(car);
     }
     @Test void lodUsesScreenCoverageWithHysteresisAndStatusSharesActiveDamageMesh() {
         Node car=car();Camera camera=new Camera(1920,1080);camera.setFrustumPerspective(60,1920f/1080,.1f,1000);camera.setLocation(new Vector3f(0,0,-100));camera.lookAt(Vector3f.ZERO,Vector3f.UNIT_Y);

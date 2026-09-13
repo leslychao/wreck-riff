@@ -36,7 +36,7 @@ class CombatVisualsTest {
                     }
                 }
             }});
-            assertEquals(3,draws[0],"Three effect batches; ordnance geometry exists only for live IDs");
+            assertEquals(4,draws[0],"Four effect batches; ordnance geometry exists only for live IDs");
             for(int frame=0;frame<200;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),session,.02f);
             assertEquals(0,visuals.effectCount());
         }
@@ -169,8 +169,8 @@ class CombatVisualsTest {
             Vector3f end=left.add(0,0,.4f);
             visuals.accept(List.of(shot(1,0,left,end),shot(2,0,right,end),shot(3,0,left,end)));
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
-            var positions=batch(scene,"particles-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.Position);
-            var shapes=batch(scene,"particles-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.TexCoord2);
+            var positions=batch(scene,"sparks-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.Position);
+            var shapes=batch(scene,"sparks-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.TexCoord2);
             int flash=0;for(int vertex=0;vertex<positions.limit()/3;vertex+=6)if(shapes.get(vertex*2+1)==2) {
                 assertEquals(flash==1?right:left,point(positions,vertex));flash++;
             }
@@ -191,12 +191,12 @@ class CombatVisualsTest {
             visuals.accept(List.of(shield,hit,hit,shield));
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
             assertEquals(0,batch(scene,"impact-fragments").getMesh().getVertexCount());
-            assertEquals(0,batch(scene,"particles-and-tracers").getMesh().getVertexCount());
+            assertEquals(0,batch(scene,"sparks-and-tracers").getMesh().getVertexCount());
             visuals.acceptPresented(List.of(hit,shield));
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
-            assertEquals(12*6,batch(scene,"particles-and-tracers").getMesh().getVertexCount());
+            assertEquals(12*6,batch(scene,"sparks-and-tracers").getMesh().getVertexCount());
             assertEquals(16*3+3*36,batch(scene,"impact-fragments").getMesh().getVertexCount());
-            var positions=batch(scene,"particles-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.Position);
+            var positions=batch(scene,"sparks-and-tracers").getMesh().getFloatBuffer(VertexBuffer.Type.Position);
             for(int spark=0;spark<12;spark++)assertEquals(end.add(normal.mult(.025f)),point(positions,spark*6));
             int count=visuals.effectCount();visuals.acceptPresented(List.of(hit,shield));assertEquals(count,visuals.effectCount());
             for(int frame=0;frame<30;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.02f);
@@ -213,7 +213,7 @@ class CombatVisualsTest {
             visuals.accept(List.of(new GameEvent(GameEvent.Type.IMPACT,3,1,0,end,"machine-gun",8,start,Vector3f.UNIT_Z),
                     new GameEvent(GameEvent.Type.SHIELD_HIT,3,1,0,end,"machine-gun",8,start,Vector3f.UNIT_Z)));
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,.02f);baseline.update(List.of(),List.of(),List.of(),List.of(),null,.02f);
-            assertEquals(6*6+12,batch(scene,"particles-and-tracers").getMesh().getVertexCount(),"Muzzle flashes, muzzle smoke and third tracer remain visible");
+            assertEquals(3*6+12,batch(scene,"sparks-and-tracers").getMesh().getVertexCount(),"Muzzle flashes and third tracer remain visible");
             var death=new GameEvent(GameEvent.Type.DESTROYED,9,1,0,end,"machine-gun",0);
             visuals.accept(List.of(death));baseline.accept(List.of(death));
             for(int frame=0;frame<7;frame++) {
@@ -247,7 +247,7 @@ class CombatVisualsTest {
         }
     }
     private static void assertSameEffects(Node actual,Node expected) {
-        for(String name:List.of("particles-and-tracers","impact-fragments")) {
+        for(String name:List.of("particles-and-tracers","sparks-and-tracers","impact-fragments")) {
             Mesh a=batch(actual,name).getMesh(),b=batch(expected,name).getMesh();assertEquals(b.getVertexCount(),a.getVertexCount());
             for(var kind:List.of(VertexBuffer.Type.Position,VertexBuffer.Type.Color)) {
                 var ap=a.getFloatBuffer(kind);var bp=b.getFloatBuffer(kind);assertEquals(bp.limit(),ap.limit());
@@ -398,7 +398,7 @@ class CombatVisualsTest {
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
             Mesh mesh=batch(scene,"particles-and-tracers").getMesh();var points=mesh.getFloatBuffer(VertexBuffer.Type.Position);int near=0;
             for(int vertex=0;vertex<mesh.getVertexCount();vertex+=6)if(point(points,vertex).distance(new Vector3f(0,1,8))<2)near++;
-            assertTrue(near>=40,"Player hit survives far-effect pressure");assertTrue(mesh.getVertexCount()<=CombatVisuals.PARTICLE_LIMIT*6);
+            assertTrue(near>=24,"Player hit survives far-effect pressure");assertTrue(mesh.getVertexCount()<=CombatVisuals.PARTICLE_LIMIT*6);
             Mesh fragments=batch(scene,"impact-fragments").getMesh();assertTrue(fragments.getVertexCount()<=CombatVisuals.SHARD_LIMIT*36);
             assertTrue(fragments.getVertexCount()>0);
         }
@@ -436,7 +436,7 @@ class CombatVisualsTest {
                 visuals.pickupBurst(kind,new Vector3f(2,1.1f,4));
                 assertEquals(10,visuals.effectCount());
                 visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
-                var mesh=batch(scene,"particles-and-tracers").getMesh();var buffer=mesh.getFloatBuffer(VertexBuffer.Type.Color);
+                var mesh=batch(scene,"sparks-and-tracers").getMesh();var buffer=mesh.getFloatBuffer(VertexBuffer.Type.Color);
                 colors.add(new ColorRGBA(buffer.get(0),buffer.get(1),buffer.get(2),buffer.get(3)));
                 assertEquals(60,mesh.getVertexCount());
                 for(int frame=0;frame<5;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
@@ -481,7 +481,7 @@ class CombatVisualsTest {
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
             visuals.accept(List.of(new GameEvent(GameEvent.Type.EXPLOSION,9,-1,0,new Vector3f(0,1,8),"cannon-ricochet",0,new Vector3f(0,1,7),Vector3f.UNIT_Z.negate())));
             visuals.update(List.of(),List.of(),List.of(),List.of(),null,.06f);
-            Mesh mesh=batch(scene,"particles-and-tracers").getMesh();var shape=mesh.getFloatBuffer(VertexBuffer.Type.TexCoord2);
+            Mesh mesh=batch(scene,"sparks-and-tracers").getMesh();var shape=mesh.getFloatBuffer(VertexBuffer.Type.TexCoord2);
             assertTrue(mesh.getVertexCount()>0);
             for(int vertex=0;vertex<mesh.getVertexCount();vertex++)assertEquals(2,shape.get(vertex*2+1),"Ricochet emits sparks, not flame or smoke");
             for(var light:scene.getLocalLightList())assertFalse(light.isEnabled());
@@ -622,8 +622,8 @@ class CombatVisualsTest {
                 visuals.acceptPresented(List.of(hit));visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
                 Mesh fragments=batch(scene,"impact-fragments").getMesh();
                 assertTrue(fragments.getVertexCount()>0);assertNotNull(fragments.getBuffer(VertexBuffer.Type.Normal));
-                if(surface==ContactSurface.GLASS)assertEquals(0,batch(scene,"particles-and-tracers").getMesh().getVertexCount(),"Glass chips do not create metal sparks");
-                else assertEquals(12*6,batch(scene,"particles-and-tracers").getMesh().getVertexCount());
+                if(surface==ContactSurface.GLASS)assertEquals(0,batch(scene,"sparks-and-tracers").getMesh().getVertexCount(),"Glass chips do not create metal sparks");
+                else assertEquals(12*6,batch(scene,"sparks-and-tracers").getMesh().getVertexCount());
             }
         }
     }

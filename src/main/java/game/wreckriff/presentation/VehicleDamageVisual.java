@@ -29,7 +29,9 @@ final class VehicleDamageVisual extends AbstractControl {
             this.source=source;this.geometry=geometry;this.lod=lod;base=positions(source.stages()[0]);from=base.clone();to=base.clone();
             Mesh mesh=source.stages()[0].clone();mesh.addMorphTarget(previous);mesh.addMorphTarget(next);geometry.setMesh(mesh);
             for(MorphTarget target:List.of(previous,next))for(var kind:List.of(VertexBuffer.Type.Position,VertexBuffer.Type.Normal,VertexBuffer.Type.Tangent))target.setBuffer(kind,BufferUtils.createFloatBuffer(new float[base.length]));
-            geometry.setMorphState(new float[]{1,0});geometry.setNbSimultaneousGPUMorph(2);
+            // jME initializes MorphWeights and shader buffer counts on its first real render.
+            // Pre-setting NbSimultaneousGPUMorph skips that initialization in jME 3.8.1.
+            geometry.setMorphState(new float[]{1,0});
             if(source.name().equals("headlights")||source.name().equals("taillights")){float[] colors=new float[base.length/3*4];Arrays.fill(colors,1);mesh.setBuffer(VertexBuffer.Type.Color,4,colors);}
             BoundingBox bound=(BoundingBox)source.stages()[0].getBound().clone();bound.setXExtent(bound.getXExtent()+MAX_DENT);bound.setYExtent(bound.getYExtent()+MAX_DENT);bound.setZExtent(bound.getZExtent()+MAX_DENT);mesh.setBound(bound);
         }
@@ -47,6 +49,7 @@ final class VehicleDamageVisual extends AbstractControl {
     private final Set<String> detached=new HashSet<>();private final List<VehicleVisual.DetachedPanel> pending=new ArrayList<>();private final LinkedHashSet<String> seen=new LinkedHashSet<>();
     private int stage,lod;private float elapsed=1,duration=DAMAGE_SECONDS,pendingDuration=-1,maximumHp=Float.NaN;private long repairRevision;
     private final float[] lampDamage=new float[2];
+    private final List<Geometry> wheelGeometry=new ArrayList<>();private final List<Mesh[]> wheelLods=new ArrayList<>();
     private record Anchor(Part part,int triangle,float a,float b,float c,Vector3f point,Vector3f normal,Vector2f uv) {}
     static void install(AssetManager assets,Node root,VehicleProfile profile,int livery){root.addControl(new VehicleDamageVisual(assets,root,profile,livery));root.addControl(new MorphControl());}
     private VehicleDamageVisual(AssetManager assets,Node root,VehicleProfile profile,int livery) {
@@ -58,20 +61,22 @@ final class VehicleDamageVisual extends AbstractControl {
                 var material=geometry.getMaterial();if(material.getMaterialDef().getMaterialParam("DamageMap")!=null)material.setTexture("DamageMap",marks.texture);
                 if(name.equals("paint")||name.startsWith("panel-")) {ColorRGBA tint=switch(Math.floorMod(livery,5)){case 1->new ColorRGBA(.8f,.72f,1,1);case 2->new ColorRGBA(1,.85f,.5f,1);case 3->new ColorRGBA(.5f,1,1,1);case 4->new ColorRGBA(.72f,1,.55f,1);default->ColorRGBA.White;};material.setColor("Diffuse",tint);material.setColor("Ambient",tint);}
                 Part part=new Part(data,geometry,level);parts.add(part);
-                if(name.startsWith("grinder-roller-")){Node roller=new Node(level==0?name:name+"-lod"+level);roller.attachChild(geometry);levels[level].attachChild(roller);geometry.setName(name+"-mesh");}else levels[level].attachChild(geometry);
+                if(name.startsWith("grinder-roller-")){Node roller=new Node(level==0?name:name+"-lod"+level);Vector3f centre=new Vector3f(name.endsWith("left")?-.62f:.62f,.42f,2.78f);roller.setLocalTranslation(centre);geometry.setLocalTranslation(centre.negate());roller.attachChild(geometry);levels[level].attachChild(roller);geometry.setName(name+"-mesh");}else levels[level].attachChild(geometry);
                 if(name.equals("service-core"))geometry.setCullHint(Spatial.CullHint.Always);
                 if(name.equals("paint")||name.equals("glass")||name.startsWith("panel-")){status(assets,part,frostLevels[level],"frost-",new ColorRGBA(.31f,.72f,.93f,.32f));status(assets,part,shieldLevels[level],"shield-",new ColorRGBA(.055f,.48f,1,.14f));}
             }
         }
         for(int wheel=0;wheel<4;wheel++) {
             Node axle=new Node("wheel-"+wheel);axle.setLocalScale(profile.wheelRadius()/.38f);axle.setLocalTranslation(profile.wheelConnection(wheel).add(0,-profile.suspensionRestLength(),0));
-            for(var data:model.lods.get(0))if(data.name().startsWith("wheel-"+wheel+"-")){Geometry g=new Geometry(data.name(),data.stages()[0]);g.setMaterial(VehicleMaterials.create(assets,profile.id(),data.name().endsWith("tyre")?"rubber-trim":"steel"));axle.attachChild(g);}root.attachChild(axle);
+            for(var data:model.lods.get(0))if(data.name().startsWith("wheel-"+wheel+"-")){Geometry g=new Geometry(data.name(),data.stages()[0]);g.setMaterial(VehicleMaterials.create(assets,profile.id(),data.name().endsWith("tyre")?"rubber-trim":"steel"));axle.attachChild(g);
+                Mesh[] wheelMeshes=new Mesh[3];for(int level=0;level<3;level++)for(var candidate:model.lods.get(level))if(candidate.name().equals(data.name()))wheelMeshes[level]=candidate.stages()[0];wheelGeometry.add(g);wheelLods.add(wheelMeshes);
+            }root.attachChild(axle);
         }
         root.attachChild(frost);root.attachChild(shield);effects(false,false);selectLod(0);root.setUserData("damageStage",0);root.setUserData("repairRevision",0L);
     }
     private static void status(AssetManager assets,Part part,Node parent,String prefix,ColorRGBA color) {
         Geometry overlay=new Geometry(prefix+part.source.name(),part.geometry.getMesh());Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");material.setColor("Color",color);material.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);material.getAdditionalRenderState().setDepthWrite(false);material.getAdditionalRenderState().setPolyOffset(-1,-1);
-        overlay.setMaterial(material);overlay.setQueueBucket(RenderQueue.Bucket.Transparent);overlay.setShadowMode(RenderQueue.ShadowMode.Off);overlay.setMorphState(new float[]{1,0});overlay.setNbSimultaneousGPUMorph(2);parent.attachChild(overlay);part.overlays.add(overlay);
+        overlay.setMaterial(material);overlay.setQueueBucket(RenderQueue.Bucket.Transparent);overlay.setShadowMode(RenderQueue.ShadowMode.Off);overlay.setMorphState(new float[]{1,0});parent.attachChild(overlay);part.overlays.add(overlay);
     }
     static int stage(float hp){if(!Float.isFinite(hp))throw new IllegalArgumentException("Finite HP fraction required");return hp<=0?4:hp<=.25f?3:hp<=.5f?2:hp<=.75f?1:0;}
     void configureMaximumHp(float value){if(!Float.isFinite(value)||value<=0)throw new IllegalArgumentException("Positive authoritative maximum HP required");maximumHp=value;}
@@ -115,9 +120,10 @@ final class VehicleDamageVisual extends AbstractControl {
             float pixels=size*camera.getFrustumNear()*camera.getHeight()/(Math.max(.001f,camera.getFrustumTop()-camera.getFrustumBottom())*depth);
             int next=lod;if(lod==0&&pixels<180*.85f)next=pixels<60*.85f?2:1;else if(lod==1){if(pixels>180*1.15f)next=0;else if(pixels<60*.85f)next=2;}else if(lod==2&&pixels>60*1.15f)next=pixels>180*1.15f?0:1;
             if(next!=lod)selectLod(next);}
+        if(profile.id().equals("grinder"))for(String side:List.of("left","right")){Spatial near=root.getChild("grinder-roller-"+side);for(int level=1;level<3;level++)root.getChild("grinder-roller-"+side+"-lod"+level).setLocalRotation(near.getLocalRotation());}
     }
     private static void weights(Part part,float blend){float[] w=part.geometry.getMorphState();w[0]=1-blend;w[1]=blend;part.geometry.setMorphState(w);for(Geometry g:part.overlays){g.setMorphState(w.clone());g.setDirtyMorph(true);}}
-    private void selectLod(int value){boolean changed=lod!=value;lod=value;for(int i=0;i<3;i++){var c=i==lod?Spatial.CullHint.Inherit:Spatial.CullHint.Always;levels[i].setCullHint(c);frostLevels[i].setCullHint(c);shieldLevels[i].setCullHint(c);}root.setUserData("vehicleLod",lod);if(changed){compose(DAMAGE_SECONDS);elapsed=duration;for(Part p:parts)if(p.lod==lod)weights(p,1);}}
+    private void selectLod(int value){boolean changed=lod!=value;lod=value;for(int i=0;i<3;i++){var c=i==lod?Spatial.CullHint.Inherit:Spatial.CullHint.Always;levels[i].setCullHint(c);frostLevels[i].setCullHint(c);shieldLevels[i].setCullHint(c);}for(int i=0;i<wheelGeometry.size();i++)wheelGeometry.get(i).setMesh(wheelLods.get(i)[lod]);root.setUserData("vehicleLod",lod);if(changed){compose(DAMAGE_SECONDS);elapsed=duration;for(Part p:parts)if(p.lod==lod)weights(p,1);}}
     private void updateDetached(){for(Part p:parts)if(PANELS.contains(p.source.name())){var c=detached.contains(p.source.name())?Spatial.CullHint.Always:Spatial.CullHint.Inherit;p.geometry.setCullHint(c);for(Geometry g:p.overlays)g.setCullHint(c);}}
     void effects(boolean frozen,boolean shielded){frost.setCullHint(frozen&&stage<4?Spatial.CullHint.Inherit:Spatial.CullHint.Always);shield.setCullHint(shielded&&stage<4?Spatial.CullHint.Inherit:Spatial.CullHint.Always);}
     List<VehicleVisual.DetachedPanel> drainDetached(){var result=List.copyOf(pending);pending.clear();return result;}
@@ -126,7 +132,7 @@ final class VehicleDamageVisual extends AbstractControl {
     GameEvent refineContact(GameEvent event) {
         if(event.vehicleContact()==null)return event;Anchor a=anchor(event.vehicleContact().localPoint(),event.vehicleContact().localNormal());if(a==null)return event;
         ContactSurface surface=a.part.source.name().equals("glass")?ContactSurface.GLASS:a.part.source.name().contains("rubber")?ContactSurface.RUBBER:ContactSurface.METAL;
-        return event.withContact(surface,new VehicleContact(a.point,a.normal)).forPresentation(root.localToWorld(a.point,null),root.getWorldRotation().mult(a.normal));
+        return event.withContact(surface,new VehicleContact(a.point,a.normal));
     }
     private Anchor anchor(Vector3f point,Vector3f normal) {
         if(normal.lengthSquared()<.01f)return null;Vector3f direction=normal.normalize();float reach=Math.max(1,profile.width());Ray ray=new Ray(point.add(direction.mult(reach)),direction.negate());ray.setLimit(reach*2);

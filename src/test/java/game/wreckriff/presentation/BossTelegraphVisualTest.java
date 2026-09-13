@@ -61,6 +61,6 @@ class BossTelegraphVisualTest {
         int[] draws={0},triangles={0};model.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
             for(Spatial parent=geometry;parent!=null;parent=parent.getParent())if(parent.getLocalCullHint()==Spatial.CullHint.Always)return;
             draws[0]++;triangles[0]+=geometry.getMesh().getTriangleCount();
-        }});assertTrue(draws[0]<=22);assertTrue(triangles[0]<=12000);
+        }});assertTrue(draws[0]<=40,"Prepared boss and two status passes stay bounded");assertTrue(triangles[0]<=96000,"At most three bounded 32K passes including both status overlays");
     }
 }
