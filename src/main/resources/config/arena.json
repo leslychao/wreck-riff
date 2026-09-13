@@ -552,9 +552,9 @@
       "id": "homing-south",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 12,
-        "y": 0,
-        "z": -36
+        "x": 20.0,
+        "y": 0.0,
+        "z": -40.0
       },
       "respawnTicks": 1440
     },
@@ -642,9 +642,9 @@
       "id": "additional-power_ammo-17",
       "type": "POWER_AMMO",
       "position": {
-        "x": -15.0,
+        "x": 20.0,
         "y": 0.0,
-        "z": -50.0
+        "z": -58.0
       },
       "respawnTicks": 3000
     },

@@ -27,11 +27,33 @@ vec2 frameUv(vec2 uv, float frame, float grid, float gutter) {
     vec2 cell = vec2(mod(frame, grid), floor(frame / grid));
     return (cell + gutter + clamp(uv, 0.0, 1.0) * (1.0 - gutter * 2.0)) / grid;
 }
+vec4 atlasSample(sampler2D atlas, vec2 uv, float resolution) {
+#if __VERSION__ >= 130
+    // Eight gutter pixels remain one full texel at mip 3. Clamp derivatives
+    // there so far-away billows cannot sample another animation frame's mip.
+    vec2 dx=dFdx(uv),dy=dFdy(uv);
+    float maximum=8.0/resolution;
+    dx*=min(1.0,maximum/max(length(dx),0.000001));
+    dy*=min(1.0,maximum/max(length(dy),0.000001));
+    return textureGrad(atlas,uv,dx,dy);
+#else
+    return texture2D(atlas,uv);
+#endif
+}
 vec4 baked(sampler2D atlas, vec2 uv) {
     float current = clamp(effectAnimation.x, 0.0, 63.0);
-    vec4 first = texture2D(atlas, frameUv(uv, floor(current), 8.0, 0.03125));
-    vec4 next = texture2D(atlas, frameUv(uv, min(63.0, floor(current) + 1.0), 8.0, 0.03125));
+    vec4 first = atlasSample(atlas, frameUv(uv, floor(current), 8.0, 0.03125),2048.0);
+    vec4 next = atlasSample(atlas, frameUv(uv, min(63.0, floor(current) + 1.0), 8.0, 0.03125),2048.0);
     return mix(first, next, fract(current));
+}
+vec3 fireRadiance(vec4 volume, float heat) {
+    // Temperature is carried by the baked light, never a new analytic flame mask.
+    // Preserve its turbulent bright/dark fronts instead of tinting every lobe brown.
+    float temperature=clamp(dot(volume.rgb,vec3(.15,.70,.15))*1.4,0.0,1.0);
+    vec3 edge=vec3(1.0,.12,.008);
+    vec3 front=mix(edge,vec3(1.4,.70,.06),smoothstep(.10,.45,temperature));
+    vec3 core=mix(front,vec3(1.65,1.35,.62),smoothstep(.40,.85,temperature));
+    return mix(vec3(.24,.23,.22)*mix(vec3(.6),vec3(1.0),volume.rgb),core,heat);
 }
 float surfaceFade() {
 #ifdef SOFT_PARTICLES
@@ -116,23 +138,27 @@ void main() {
             // A density gradient plus rounded lobe normal adds directional scene
             // lighting without another normal atlas or a light loop per fragment.
             vec2 offset = vec2(1.0 / 240.0, 0.0);
-            float dx = baked(m_SmokeAtlas, clamp(texUv + offset.xy, 0.0, 1.0)).a - volume.a;
-            float dy = baked(m_SmokeAtlas, clamp(texUv + offset.yx, 0.0, 1.0)).a - volume.a;
+            float dx = (effectShape > 6.5 && effectShape < 7.5 ? baked(m_DustAtlas, clamp(texUv + offset.xy, 0.0, 1.0)).a : baked(m_SmokeAtlas, clamp(texUv + offset.xy, 0.0, 1.0)).a) - volume.a;
+            float dy = (effectShape > 6.5 && effectShape < 7.5 ? baked(m_DustAtlas, clamp(texUv + offset.yx, 0.0, 1.0)).a : baked(m_SmokeAtlas, clamp(texUv + offset.yx, 0.0, 1.0)).a) - volume.a;
             vec3 normal = normalize(vec3(-uv.x - dx * 7.0, -uv.y - dy * 7.0, .8));
             vec3 light = m_FillLight.rgb * .8 + m_KeyLight.rgb * (.23 + .60 * max(0.0, dot(normal, -m_LightDirection)));
             color *= mix(vec3(.65), volume.rgb, .4) * light;
+        } else if (effectShape > 8.5) {
+            // The auxiliary atlas is baked orange. Cryogenic cores share its soft
+            // silhouette only; multiplying its RGB would turn the ice yellow-green.
+            volume = atlasSample(m_AuxiliaryAtlas, frameUv(texUv, floor(effectVariation.y * 7.99), 4.0, .03125),1024.0);
         } else if (effectShape > 7.5) {
-            volume = baked(m_FlameAtlas, texUv);color *= volume.rgb * 1.6;
+            volume = baked(m_FlameAtlas, texUv);color *= fireRadiance(volume,1.0);
         } else if (effectShape > 3.5) {
-            volume = baked(m_BlastAtlas, texUv);color *= volume.rgb * 1.6;
+            volume = baked(m_BlastAtlas, texUv);color *= fireRadiance(volume,1.0-smoothstep(4.5,15.0,mod(effectAnimation.x,21.0)));
         } else {
-            volume = texture2D(m_AuxiliaryAtlas, frameUv(texUv, floor(effectVariation.y * 7.99), 4.0, .03125));
+            volume = atlasSample(m_AuxiliaryAtlas, frameUv(texUv, floor(effectVariation.y * 7.99), 4.0, .03125),1024.0);
             color *= volume.rgb;
         }
         coverage = volume.a;
     }
     float alpha = effectColor.a * coverage * surfaceFade();
-    if ((effectShape > 1.5 && effectShape < 2.5) || (effectShape > 3.5 && effectShape < 4.5))
+    if ((effectShape > 1.5 && effectShape < 2.5) || (effectShape > 3.5 && effectShape < 4.5) || effectShape > 8.5)
         alpha *= mix(0.25, 1.0, m_FlashIntensity);
     if (alpha < 0.003) discard;
     gl_FragColor = vec4(color, alpha);

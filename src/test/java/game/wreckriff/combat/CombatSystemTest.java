@@ -22,6 +22,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Pure combat rules. Fake geometry is intentional here; real sweeps have physicsTest coverage. */
 class CombatSystemTest {
+    @Test void shieldedOverkillReportsOnlyRemainingHpAcrossBothAcceptedContacts() {
+        var target=session.vehicle(1);target.hp=1;target.shieldTicks=120;
+        Vector3f point=new Vector3f(.2f,.4f,8),normal=Vector3f.UNIT_Z.negate();
+        var local=new VehicleContact(new Vector3f(.2f,.4f,-2),normal);
+        world.positions[1].set(0,0,10);world.rayHit=new WorldQuery.Hit(1,point,normal,.2f,null,ContactSurface.METAL,local);
+        combat.beginTick(Map.of(0,machineGun(),2,machineGun()),world);combat.advanceProjectiles(world);combat.resolveDamage(world);
+        var events=combat.drainEvents();var losses=events.stream().filter(e->e.type()==GameEvent.Type.DAMAGE).toList();
+        assertEquals(2,losses.size());assertEquals(0,target.hp);
+        assertEquals(1,losses.stream().mapToDouble(GameEvent::value).sum(),.000001);
+        assertEquals(new HealthChange(1,.5f),losses.getFirst().healthChange());
+        assertEquals(new HealthChange(.5f,0),losses.getLast().healthChange());
+        for(var loss:losses) {
+            assertEquals(.5f,loss.value());assertEquals(local,loss.vehicleContact());assertEquals(point,loss.position());
+            assertEquals(world.machineGunMuzzle(loss.sourceId(),0),loss.origin());
+        }
+        assertEquals(.5f,session.vehicle(0).damageDealt);assertEquals(.5f,session.vehicle(2).damageDealt);
+        assertEquals(1,session.vehicle(0).eliminations);assertEquals(0,session.vehicle(2).eliminations);
+        var shield=events.stream().filter(e->e.type()==GameEvent.Type.SHIELD_HIT).findFirst().orElseThrow();
+        assertEquals(rules.machineGun().damage(),shield.value(),.0001f,"Shield reaction retains incoming energy; DAMAGE reports actual lost HP");
+        assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.DESTROYED).count());
+    }
     @Test void acceptedDamagePreservesSweptLocalContactAndActualShieldLoss() {
         Vector3f point=new Vector3f(.2f,.4f,8),normal=new Vector3f(0,0,-1);
         // Contact belongs to an earlier sweep pose, deliberately different from the final world pose.

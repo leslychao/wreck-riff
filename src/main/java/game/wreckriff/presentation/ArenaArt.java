@@ -13,6 +13,8 @@ import com.jme3.renderer.ViewPort;
 import game.wreckriff.arena.ArenaDefinition;
 import game.wreckriff.config.Configs;
 import jme3tools.optimize.GeometryBatchFactory;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /** Loads local authored scenery. Layout/randomisation belongs to the offline authoring source. */
@@ -77,7 +79,32 @@ public final class ArenaArt {
         attach(assets,root,definition,materials,load(definition));
     }
     public static List<String> surfaceMaterials(Scene scene) {
-        return scene.parts().stream().filter(ArenaArt::usesSurfaceMaterial).map(Part::material).distinct().toList();
+        LinkedHashSet<String> materials=new LinkedHashSet<>();
+        scene.parts().stream().filter(ArenaArt::usesSurfaceMaterial).map(Part::material).forEach(materials::add);
+        for(String asset:modelAssets(scene)) {
+            var modelMaterials=ModelMaterials.BY_ASSET.get(asset);
+            if(modelMaterials==null)throw new IllegalArgumentException("Missing authored model material manifest: "+asset);
+            materials.addAll(modelMaterials);
+        }
+        return List.copyOf(materials);
+    }
+    /** Exported metadata lets staged loading enumerate real model textures before decoding any j3o. */
+    private static final class ModelMaterials {
+        private static final Map<String,List<String>> BY_ASSET=load();
+        private static Map<String,List<String>> load() {
+            try(InputStream stream=ArenaArt.class.getResourceAsStream("/models/arenas/provenance.json")) {
+                if(stream==null)throw new IOException("Missing local architecture manifest");
+                var json=com.google.gson.JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject();
+                Map<String,List<String>> result=new LinkedHashMap<>();
+                for(var element:json.getAsJsonArray("assets")) {
+                    var entry=element.getAsJsonObject();List<String> materials=new ArrayList<>();
+                    for(var material:entry.getAsJsonArray("materials"))materials.add(material.getAsString());
+                    if(result.put(entry.get("path").getAsString(),List.copyOf(materials))!=null)
+                        throw new IOException("Duplicate architecture manifest entry");
+                }
+                return Map.copyOf(result);
+            } catch(IOException exception) {throw new UncheckedIOException(exception);}
+        }
     }
     public static List<String> modelAssets(Scene scene) {
         LinkedHashSet<String> paths=new LinkedHashSet<>();

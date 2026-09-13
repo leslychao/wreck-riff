@@ -94,12 +94,12 @@ def volume_scene():
     links.new(radius.outputs["Value"], edge.inputs[1])
     noise = node(nodes, "ShaderNodeTexNoise", noise_dimensions="4D")
     noise.inputs["Scale"].default_value = 5
-    noise.inputs["Detail"].default_value = 4
-    noise.inputs["Roughness"].default_value = .68
+    noise.inputs["Detail"].default_value = 6
+    noise.inputs["Roughness"].default_value = .72
     links.new(tex.outputs["Generated"], noise.inputs["Vector"])
     turbulence = node(nodes, "ShaderNodeMath", operation="MULTIPLY_ADD")
-    turbulence.inputs[1].default_value = .31
-    turbulence.inputs[2].default_value = -.13
+    turbulence.inputs[1].default_value = .58
+    turbulence.inputs[2].default_value = -.27
     links.new(noise.outputs["Fac"], turbulence.inputs[0])
     mask = node(nodes, "ShaderNodeMath", operation="ADD")
     links.new(edge.outputs[0], mask.inputs[0])
@@ -108,11 +108,22 @@ def volume_scene():
     links.new(mask.outputs[0], positive.inputs[0])
     positive.inputs[1].default_value = 0
     density = node(nodes, "ShaderNodeMath", operation="MULTIPLY")
-    links.new(positive.outputs[0], density.inputs[0])
+    # Density cavities and coherent thick lobes produce real volume self-shadow,
+    # rather than perturbing only the edge of an otherwise uniform soft sphere.
+    billows = node(nodes, "ShaderNodeMapRange")
+    billows.inputs["From Min"].default_value = .34
+    billows.inputs["From Max"].default_value = .67
+    billows.inputs["To Min"].default_value = .04
+    billows.inputs["To Max"].default_value = 2.6
+    links.new(noise.outputs["Fac"], billows.inputs["Value"])
+    sculpt = node(nodes, "ShaderNodeMath", operation="MULTIPLY")
+    links.new(positive.outputs[0], sculpt.inputs[0])
+    links.new(billows.outputs["Result"], sculpt.inputs[1])
+    links.new(sculpt.outputs[0], density.inputs[0])
     density.inputs[1].default_value = 14
     links.new(density.outputs[0], shader.inputs["Density"])
     glow = node(nodes, "ShaderNodeMath", operation="MULTIPLY")
-    links.new(positive.outputs[0], glow.inputs[0])
+    links.new(sculpt.outputs[0], glow.inputs[0])
     glow.inputs[1].default_value = 0
     links.new(glow.outputs[0], shader.inputs["Emission Strength"])
     color = node(nodes, "ShaderNodeValToRGB")
@@ -133,10 +144,15 @@ def bake_family(family, setup):
     atlas = np.zeros((SIZE, SIZE, 4), dtype=np.float32)
     for frame in range(FRAMES):
         t = frame / (FRAMES - 1)
+        variant = 0
+        if family == "blast":
+            variant = min(frame // 21, 2)
+            t = (frame % 21) / 20 if frame < 63 else 1.0
         seed = {"smoke": 11, "flame": 31, "blast": 51, "dust": 71}[family]
-        noise.inputs["W"].default_value = seed + t * (2.8 if family == "flame" else 1.3)
-        noise.inputs["Scale"].default_value = (4.5 + t * 3) if family in ("flame", "blast") else 5.5
+        noise.inputs["W"].default_value = seed + variant * 7.3 + t * (2.1 if family == "flame" else 1.15)
+        noise.inputs["Scale"].default_value = (3.3 + t * 2) if family in ("flame", "blast") else 4.0
         cloud.scale = (1, .8, 1.0)
+        cloud.rotation_euler = (0, 0, 0)
         density.inputs[1].default_value = 15 * (.85 - t * .4)
         glow.inputs[1].default_value = 0
         shader.inputs["Color"].default_value = (.72, .72, .72, 1)
@@ -146,7 +162,8 @@ def bake_family(family, setup):
             density.inputs[1].default_value = 5
             shader.inputs["Color"].default_value = (.14, .065, .02, 1)
         elif family == "blast":
-            cloud.scale = (.7 + .28 * t, .72, .65 + .32 * t)
+            cloud.scale = (.7 + .28 * t + variant * .035, .72, .65 + .32 * t - variant * .035)
+            cloud.rotation_euler = (0, variant * .31, 0)
             glow.inputs[1].default_value = max(0, 10 * (1 - t * 1.5))
             density.inputs[1].default_value = 9 + t * 4
             shader.inputs["Color"].default_value = (.19 + t * .25,) * 3 + (1,)
@@ -213,6 +230,7 @@ def main():
     recipes = {
         "schemaVersion": 1, "frames": FRAMES, "grid": GRID, "gutter": GUTTER,
         "atlasSize": SIZE, "auxiliarySize": 1024, "residentLimitBytes": 128*1024*1024,
+        "blastVariants": 3, "blastFramesPerVariant": 21,
         "explosions": {
             "homing": [1.0, .075, .45, 1.6, 18, 8, 8],
             "power": [1.3, .09, .62, 2.1, 24, 12, 12],

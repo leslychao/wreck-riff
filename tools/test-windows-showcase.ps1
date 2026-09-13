@@ -21,6 +21,12 @@ if((Get-Item -LiteralPath $reportPath).LastWriteTimeUtc -lt $started) {throw 'Sh
 $evidence=Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
 $directory=Split-Path -Parent $reportPath
 $captures=@(Get-ChildItem -LiteralPath (Join-Path $directory 'captures') -Filter '*.png' -File)
+$requiredComboCaptures=@('combo-freeze-launch','combo-freeze-flight','combo-freeze-hit','combo-ballistic-launch',
+    'combo-ballistic-warning','combo-ballistic-hit-1','combo-ballistic-hit-2','combo-ballistic-hit-3','combo-ballistic-hit-4','combo-freeze-ended')
+$missingComboCaptures=@($requiredComboCaptures | Where-Object {
+    $capturePattern='-'+[regex]::Escape($_)+'-'
+    !($captures | Where-Object {$_.Name -match $capturePattern -and $_.Length -gt 0})
+})
 $artifacts=@('showcase.avi','audio.wav','audio-events.json','AUDIO_README.txt')
 $artifactsPresent=$true
 foreach($artifact in $artifacts) {
@@ -28,12 +34,15 @@ foreach($artifact in $artifacts) {
     if(!(Test-Path -LiteralPath $file) -or (Get-Item -LiteralPath $file).Length -eq 0) {$artifactsPresent=$false}
 }
 $passed=$launcherExitCode -eq 0 -and $evidence.status -eq 'PASS' -and $evidence.mode -eq 'showcase' `
-    -and $evidence.audioEnabled -and $evidence.windowVisible -and $evidence.showcase.seconds -ge 40 `
-    -and $captures.Count -ge 17 -and $artifactsPresent
+    -and $evidence.audioEnabled -and $evidence.windowVisible -and $evidence.showcase.seconds -ge 49 `
+    -and $evidence.showcase.freezeBallisticCombo.damagingCharges -eq 4 `
+    -and $evidence.showcase.freezeBallisticCombo.allHitsWhileFrozen -and $evidence.showcase.freezeBallisticCombo.controlEnded `
+    -and $captures.Count -ge 17 -and $missingComboCaptures.Count -eq 0 -and $artifactsPresent
 $result=[ordered]@{
     status=$(if($passed){'PASS'}else{'FAIL'});sourceSha256=$evidence.sourceSha256
     runRoot=$runRoot;diagnosticPath=$reportPath;artifactDirectory=$directory
     launcherExitCode=$launcherExitCode;captureCount=$captures.Count;artifactsPresent=$artifactsPresent
+    missingComboCaptures=$missingComboCaptures
     audio='Reconstructed allocated game voices; not native OpenAL/HRTF recording'
 }
 Copy-Item -LiteralPath $reportPath -Destination (Join-Path $runRoot 'diagnostic-result.json')

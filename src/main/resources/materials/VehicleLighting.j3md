@@ -2,6 +2,7 @@ MaterialDef Phong Lighting {
 
     MaterialParameters {
         Texture2D DamageMap -LINEAR
+        Float Heat : 0
         Float Damage
         Float Glass
         Int BoundDrawBuffer

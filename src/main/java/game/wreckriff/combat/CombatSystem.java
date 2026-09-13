@@ -143,11 +143,11 @@ public final class CombatSystem {
         final ProjectileState carrier;
         final Vector3f area,station;
         final int arrivalTicks;
-        int targetId,planned,released;
+        int planned,released;
         long nextPlanTick=Long.MAX_VALUE;
         Salvo(ProjectileState carrier,Vector3f area,int arrivalTicks) {
             this.carrier=carrier;this.area=area.clone();station=new Vector3f();
-            this.arrivalTicks=arrivalTicks;targetId=carrier.targetId;
+            this.arrivalTicks=arrivalTicks;
         }
     }
     private static final class FallingCharge {
@@ -327,7 +327,8 @@ public final class CombatSystem {
     private void acceptAbility(VehicleState vehicle,AbilityId ability,WorldQuery world) {
         if(ability!=AbilityId.FREEZE||vehicle.abilityCooldown(ability)>0)return;
         if(ability==AbilityId.FREEZE&&!projectileCapacity(1)) {denied(vehicle,world,"projectile-limit");return;}
-        intents.add(new ShotIntent(nextShotId++,vehicle.id,"freeze",-1,0,0,0));
+        int target=selectAimedTarget(vehicle.id,rules.control().freezeSpeed()*rules.control().freezeTtlSeconds(),world);
+        intents.add(new ShotIntent(nextShotId++,vehicle.id,"freeze",target,0,0,0));
         vehicle.abilityCooldown(ability,ticks(rules.control().freezeCooldownSeconds()));
     }
 
@@ -498,25 +499,7 @@ public final class CombatSystem {
 
     private void updateLock(VehicleState owner, WorldQuery world) {
         Lock lock = locks.computeIfAbsent(owner.id, ignored -> new Lock());
-        Vector3f origin = world.muzzle(owner.id);
-        Vector3f forward = world.forward(owner.id).normalizeLocal();
-        int candidate = -1;
-        float bestCosine = -1;
-        float bestDistance = Float.POSITIVE_INFINITY;
-        float minimumCosine = (float) Math.cos(radians(rules.targeting().acquisitionConeDegrees()));
-        for (VehicleState target : orderedVehicles) {
-            if (!target.alive() || target.id == owner.id) continue;
-            Vector3f displacement = world.position(target.id).subtract(origin);
-            float distance = displacement.length();
-            if (distance == 0 || distance > rules.targeting().acquisitionRange()) continue;
-            float cosine = forward.dot(displacement) / distance;
-            if (cosine < minimumCosine || !world.visible(origin, world.position(target.id), target.id)) continue;
-            if (cosine > bestCosine || (Float.compare(cosine, bestCosine) == 0 && distance < bestDistance)) {
-                candidate = target.id;
-                bestCosine = cosine;
-                bestDistance = distance;
-            }
-        }
+        int candidate=selectAimedTarget(owner.id,rules.targeting().acquisitionRange(),world);
         if (candidate < 0) {
             lock.candidate = -1;
             lock.continuousTicks = 0;
@@ -526,6 +509,33 @@ public final class CombatSystem {
         } else {
             lock.continuousTicks = Math.min(ticks(rules.targeting().acquisitionSeconds()), lock.continuousTicks + 1);
         }
+    }
+
+    /** Homing waits for this candidate; Freeze accepts it immediately within its flight budget. */
+    private int selectAimedTarget(int ownerId,float range,WorldQuery world) {
+        Vector3f origin = world.muzzle(ownerId);
+        Vector3f forward = world.forward(ownerId).normalizeLocal();
+        int candidate = -1;
+        float bestCosine = -1;
+        float bestDistance = Float.POSITIVE_INFINITY;
+        float minimumCosine = (float) Math.cos(radians(rules.targeting().acquisitionConeDegrees()));
+        for (VehicleState target : orderedVehicles) {
+            if (!target.alive() || target.id == ownerId) continue;
+            Vector3f displacement = world.position(target.id).subtract(origin);
+            float distance = displacement.length();
+            if (distance == 0 || distance > range) continue;
+            float cosine = forward.dot(displacement) / distance;
+            // Float pose subtraction and normalization can put an exact cone edge two ULPs outside.
+            if (cosine < minimumCosine-2*Math.ulp(minimumCosine)
+                    || !world.visible(origin, world.position(target.id), target.id)) continue;
+            if (cosine > bestCosine || (Float.compare(cosine, bestCosine) == 0
+                    && (distance < bestDistance || (Float.compare(distance,bestDistance)==0 && target.id<candidate)))) {
+                candidate = target.id;
+                bestCosine = cosine;
+                bestDistance = distance;
+            }
+        }
+        return candidate;
     }
 
     public int lockTarget(int vehicleId) {
@@ -658,7 +668,10 @@ public final class CombatSystem {
             displacement=projectile.velocity.mult(MatchSession.DT).addLocal(0,-.5f*rules.napalm().gravity()*MatchSession.DT*MatchSession.DT,0);
             projectile.velocity.y-=rules.napalm().gravity()*MatchSession.DT;
             projectile.direction.set(projectile.velocity).normalizeLocal();
-        } else displacement=projectile.direction.mult(rules.control().freezeSpeed()*MatchSession.DT);
+        } else {
+            guide(projectile,world);
+            displacement=projectile.direction.mult(rules.control().freezeSpeed()*MatchSession.DT);
+        }
         Vector3f end=projectile.position.add(displacement);
         WorldQuery.Hit hit=world.sweep(projectile.position,end,napalm?rules.projectileRadius():rules.control().freezeRadius(),projectile.ownerId());
         projectile.remainingTicks--;
@@ -996,6 +1009,8 @@ public final class CombatSystem {
     }
     private void advanceCarrier(ProjectileState carrier,WorldQuery world) {
         Salvo salvo=salvos.get(carrier.id());if(salvo==null) {carrier.exploded=true;return;}
+        if(carrier.targetId>=0&&(!session.vehicle(carrier.targetId).alive()
+                ||!world.visible(carrier.position,world.position(carrier.targetId),carrier.targetId)))carrier.targetId=-1;
         if(carrier.ageTicks<salvo.arrivalTicks) {
             Vector3f end=carrier.position.add(carrier.velocity.mult(MatchSession.DT)).addLocal(0,-.5f*rules.ballistic().gravity()*MatchSession.DT*MatchSession.DT,0);
             WorldQuery.Hit hit=world.sweep(carrier.position,end,rules.projectileRadius(),carrier.ownerId());
@@ -1014,16 +1029,14 @@ public final class CombatSystem {
     }
     private void planCharge(Salvo salvo,WorldQuery world) {
         var ballistic=rules.ballistic();
-        if(salvo.targetId>=0) {
-            if(!session.vehicle(salvo.targetId).alive()||!world.visible(salvo.carrier.position,world.position(salvo.targetId),salvo.targetId))salvo.targetId=-1;
-            else if(salvo.planned==0)salvo.area.set(groundPoint(ballisticAim(salvo.targetId,world),world));
-        }
+        int target=salvo.carrier.targetId;
+        if(target>=0)salvo.area.set(groundPoint(ballisticAim(target,world),world));
         float spread=ballistic.spread();Vector3f offset=switch(salvo.planned) {
             case 0->new Vector3f(-spread,0,0);case 1->new Vector3f(0,0,spread);
             case 2->new Vector3f(spread,0,0);default->new Vector3f(0,0,-spread);
         };
         Vector3f origin=salvo.carrier.position.clone();
-        // The first warning commits the whole salvo. Later charges never move its centre.
+        // Each warning commits this charge's launch arc; later charges use the target's latest aim.
         Vector3f aim=groundPoint(salvo.area.add(offset),world)
                 .addLocal(0,rules.projectileRadius(),0);
         float duration=Math.max(.5f,(float)Math.sqrt(2*Math.max(.1f,origin.y-aim.y)/ballistic.gravity()));
@@ -1032,7 +1045,7 @@ public final class CombatSystem {
         Prediction prediction=predictCharge(origin,velocity,lifeTicks,world);
         if(prediction==null) {reservedCharges--;salvo.released++;return;}
         long id=nextShotId++,release=session.tick+ticks(ballistic.minimumWarningSeconds());
-        FallingCharge charge=new FallingCharge(id,salvo.carrier.ownerId(),salvo.carrier.id(),salvo.targetId,
+        FallingCharge charge=new FallingCharge(id,salvo.carrier.ownerId(),salvo.carrier.id(),target,
                 origin,velocity,offset,prediction,release,lifeTicks);
         pendingCharges.add(charge);warnings.put(id,charge);
     }
@@ -1055,7 +1068,7 @@ public final class CombatSystem {
             FallingCharge charge=iterator.next();if(session.tick<charge.releaseTick)continue;
             Salvo salvo=salvos.get(charge.carrierId);
             if(salvo==null)throw new IllegalStateException("Orphaned ballistic reservation");
-            int target=salvo.targetId<0?-1:charge.targetId;
+            int target=salvo.carrier.targetId<0?-1:charge.targetId;
             if(target>=0&&(!session.vehicle(target).alive()||!world.visible(charge.origin,world.position(target),target)))target=-1;
             ProjectileState projectile=new ProjectileState(charge.id,charge.ownerId,"ballistic-fall",charge.origin,
                     charge.velocity,charge.lifeTicks,target);

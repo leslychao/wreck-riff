@@ -1,11 +1,35 @@
 package game.wreckriff.simulation;
 
 import com.jme3.math.*;
+import game.wreckriff.presentation.ContactPresentationTimeline;
 import org.junit.jupiter.api.Test;
+import java.util.List;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ContactContractTest {
+    @Test void deferredMovingContactKeepsItsOriginalDeadlineAndUsesThePresentedTargetPose() {
+        UUID session=UUID.randomUUID();Vector3f point=new Vector3f(0,0,18);
+        var contact=VehicleContact.atPose(point,Vector3f.UNIT_X,new Vector3f(-1,0,18),new Quaternion());
+        var hit=new GameEvent(GameEvent.Type.IMPACT,41,1,0,point,"machine-gun",0,Vector3f.ZERO,Vector3f.UNIT_X)
+                .withContact(ContactSurface.METAL,contact).inSession(session).atTick(120,0);
+        var damage=new GameEvent(GameEvent.Type.DAMAGE,41,1,0,point,"machine-gun",7,Vector3f.ZERO,Vector3f.UNIT_X)
+                .withContact(ContactSurface.METAL,contact).withHealthChange(new HealthChange(100,93)).inSession(session).atTick(120,1);
+        try(var timeline=new ContactPresentationTimeline(session)) {
+            timeline.accept(List.of(hit,damage),1+1.0/120);
+            assertTrue(timeline.advanceTo(1.099).isEmpty());assertEquals(100,timeline.visibleHp(1,93,100));
+            Quaternion renderedRotation=new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y);
+            Vector3f renderedPosition=new Vector3f(5,0,18);
+            var presented=timeline.advanceTo(1.101).stream().map(event->event.forPresentation(
+                    renderedPosition.add(renderedRotation.mult(event.vehicleContact().localPoint())),
+                    renderedRotation.mult(event.vehicleContact().localNormal()))).toList();
+            assertEquals(2,presented.size());assertEquals(presented.getFirst().position(),presented.getLast().position());
+            assertTrue(presented.getFirst().position().distance(new Vector3f(5,0,17))<.0001f);
+            assertTrue(presented.getFirst().normal().distance(Vector3f.UNIT_Z.negate())<.0001f);
+            assertEquals(point,hit.position());assertEquals(Vector3f.ZERO,presented.getFirst().origin());
+            assertEquals(contact,presented.getFirst().vehicleContact());assertEquals(93,timeline.visibleHp(1,93,100));
+        }
+    }
     @Test void presentationProjectionCopiesWorldPoseWithoutChangingAuthoritativeContactOrTiming() {
         var local=new VehicleContact(new Vector3f(1,.2f,0),Vector3f.UNIT_X);
         var shot=new ShotEmission("weapon-muzzle",Vector3f.UNIT_Z,new Vector3f(10,0,0));

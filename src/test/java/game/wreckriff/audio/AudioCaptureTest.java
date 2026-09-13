@@ -92,7 +92,7 @@ class AudioCaptureTest {
         assertTrue(Files.readString(directory.resolve("AUDIO_README.txt")).contains("not an exact native OpenAL"));
     }
     @Test void rejectsUnboundedInputsAndClockRewindsAndCoalescesSameTimeUpdates() throws Exception {
-        assertThrows(IllegalArgumentException.class,()->new AudioCapture(directory,()->0,41));
+        assertThrows(IllegalArgumentException.class,()->new AudioCapture(directory,()->0,61));
         assertThrows(IllegalArgumentException.class,()->new AudioCapture(directory,()->0,Double.NaN));
         double[] time={0};Object voice=new Object();
         try(AudioCapture capture=new AudioCapture(directory,()->time[0],.1)) {
@@ -107,6 +107,37 @@ class AudioCaptureTest {
         }
         JsonArray states=journal().getAsJsonArray("voices").get(0).getAsJsonObject().getAsJsonArray("states");
         assertEquals(1,states.size());assertEquals(.2,states.get(0).getAsJsonObject().get("volume").getAsDouble(),1e-6);
+    }
+    @Test void recordsTheEndOfTheFortyNineSecondShowcaseAndStopsCollectingAtItsExactDuration() throws Exception {
+        double[] time={100};
+        try(AudioCapture capture=new AudioCapture(directory,()->time[0],49)) {
+            time[0]=148.98;observe(capture,new Object(),"audio/engine-idle.wav",.1f);
+            time[0]=149;observe(capture,new Object(),"audio/engine-idle.wav",.1f);
+            time[0]=150;observe(capture,new Object(),"audio/engine-idle.wav",.1f);
+        }
+        JsonObject recorded=journal();assertEquals(49,recorded.get("durationSeconds").getAsDouble());
+        assertEquals(49,recorded.get("observedSeconds").getAsDouble());assertEquals(1,recorded.getAsJsonArray("voices").size());
+        var voice=recorded.getAsJsonArray("voices").get(0).getAsJsonObject();assertEquals(49,voice.get("endSeconds").getAsDouble());
+        assertEquals(48.98,voice.getAsJsonArray("states").get(0).getAsJsonObject().get("seconds").getAsDouble(),1e-8);
+        byte[] rendered=pcm(directory.resolve("audio.wav"));assertEquals(49*48_000*4,rendered.length);
+        long endingEnergy=0;for(int frame=49*48_000-960;frame<49*48_000;frame++)endingEnergy+=Math.abs(sample(rendered,frame,0));
+        assertTrue(endingEnergy>0,"The final combo sounds after 40 seconds must be included in the exported mix");
+    }
+    @Test void sixtySecondCaptureRetainsTheFiniteSnapshotBudgetAndRejectsTheNextDistinctState() {
+        double[] time={0};Object voice=new Object();
+        // An overflowing diagnostic is deliberately discarded: no files or native handles are opened until close().
+        AudioCapture capture=new AudioCapture(directory,()->time[0],60);
+        int budget=32*120*60;
+        assertDoesNotThrow(()->{
+            for(int i=0;i<budget;i++) {
+                time[0]=i/4000.0;
+                observe(capture,voice,"audio/engine-idle.wav",i%2==0?.1f:.2f);
+            }
+        });
+        assertDoesNotThrow(()->observe(capture,voice,"audio/engine-idle.wav",.3f),"Same-time replacement consumes no extra snapshot");
+        time[0]=budget/4000.0;
+        assertThrows(IllegalStateException.class,()->observe(capture,voice,"audio/engine-idle.wav",.4f));
+        capture.stopAll();
     }
     private static void observe(AudioCapture capture,Object identity,String asset,float volume) {
         capture.observe(identity,asset,false,false,volume,1,Vector3f.ZERO,Vector3f.ZERO,Vector3f.UNIT_X,10,100,0);

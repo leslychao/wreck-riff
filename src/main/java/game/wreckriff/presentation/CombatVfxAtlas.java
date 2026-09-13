@@ -24,7 +24,8 @@ public final class CombatVfxAtlas {
             if(stream==null)throw new IllegalStateException("Missing offline VFX bake: vfx/recipes.json");
             recipes=JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject();
         } catch(IOException exception) {throw new IllegalStateException("Cannot read VFX recipes",exception);}
-        if(recipes.get("schemaVersion").getAsInt()!=1||recipes.get("frames").getAsInt()!=64||recipes.get("grid").getAsInt()!=8)
+        if(recipes.get("schemaVersion").getAsInt()!=1||recipes.get("frames").getAsInt()!=64||recipes.get("grid").getAsInt()!=8
+                ||recipes.get("blastVariants").getAsInt()!=3||recipes.get("blastFramesPerVariant").getAsInt()!=21)
             throw new IllegalStateException("Unsupported VFX atlas layout");
         var definitions=new LinkedHashMap<String,Explosion>();
         for(var entry:recipes.getAsJsonObject("explosions").entrySet()) {
@@ -63,4 +64,7 @@ public final class CombatVfxAtlas {
         return bytes;
     }
     static float frame(float age,float lifetime) {return Math.clamp(age/Math.max(.001f,lifetime),0,1)*63;}
+    static float blastFrame(float age,float lifetime,float variation) {
+        return Math.clamp((int)(variation*3),0,2)*21+Math.clamp(age/Math.max(.001f,lifetime),0,1)*20;
+    }
 }

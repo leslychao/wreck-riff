@@ -281,11 +281,11 @@
         205,
         206,
         207,
-        271,
-        375,
-        376,
-        377,
-        378
+        278,
+        385,
+        386,
+        387,
+        388
       ],
       "boundary": [
         {
@@ -353,13 +353,19 @@
         223,
         224,
         225,
-        252,
-        253,
-        254,
-        304,
-        374,
-        375,
-        376
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        259,
+        260,
+        261,
+        311,
+        384,
+        385,
+        386
       ],
       "boundary": [
         {
@@ -431,12 +437,6 @@
         216,
         217,
         226,
-        227,
-        228,
-        229,
-        230,
-        231,
-        232,
         233,
         234,
         235,
@@ -447,11 +447,18 @@
         240,
         241,
         242,
+        243,
+        244,
+        245,
+        246,
         247,
         248,
         249,
-        250,
-        251
+        254,
+        255,
+        256,
+        257,
+        258
       ],
       "boundary": [
         {
@@ -526,76 +533,76 @@
         172,
         173,
         174,
-        257,
-        258,
-        259,
-        260,
-        261,
-        262,
-        263,
         264,
         265,
         266,
+        267,
+        268,
+        269,
+        270,
+        271,
         272,
         273,
-        274,
-        275,
-        276,
-        277,
-        278,
         279,
         280,
         281,
         282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
         289,
-        290,
-        291,
-        292,
-        293,
-        294,
-        295,
         296,
-        356,
-        357,
-        358,
-        359,
-        360,
-        361,
-        362,
-        363,
-        364,
-        365,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
         366,
         367,
         368,
         369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
         379,
-        385,
-        386,
-        387,
-        388,
         389,
-        390,
-        391,
-        392,
-        393,
-        394,
-        412,
-        413,
-        414,
-        415,
-        416,
-        417,
-        418,
-        419,
-        420,
-        421,
-        422,
+        396,
+        397,
+        398,
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
         423,
         424,
         425,
         426,
-        427
+        427,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438
       ],
       "boundary": [
         {
@@ -668,21 +675,15 @@
         65,
         66,
         67,
-        283,
-        284,
-        285,
-        286,
-        287,
-        288,
-        297,
-        298,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        304,
         305,
         306,
-        307,
-        308,
-        309,
-        310,
-        311,
         312,
         313,
         314,
@@ -727,20 +728,31 @@
         353,
         354,
         355,
-        380,
-        381,
-        382,
-        383,
-        384,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        390,
+        391,
+        392,
+        393,
+        394,
         395,
-        396,
-        397,
-        398,
-        399,
-        400,
-        401,
-        402,
-        403
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414
       ],
       "boundary": [
         {
@@ -1116,6 +1128,26 @@
       ]
     },
     {
+      "id": "residential-market-entry",
+      "title": "residential market entry",
+      "width": 24,
+      "geometryIds": [
+        "road-residential-market-entry-0",
+        "road-residential-market-entry-1"
+      ],
+      "navNodeIds": [
+        216,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        155
+      ]
+    },
+    {
       "id": "residential-courts",
       "title": "residential courts",
       "width": 20,
@@ -1127,13 +1159,6 @@
       ],
       "navNodeIds": [
         0,
-        226,
-        227,
-        228,
-        229,
-        230,
-        231,
-        232,
         233,
         234,
         235,
@@ -1141,7 +1166,6 @@
         237,
         238,
         239,
-        216,
         240,
         241,
         242,
@@ -1149,6 +1173,14 @@
         244,
         245,
         246,
+        216,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
         14
       ]
     },
@@ -1160,12 +1192,12 @@
         "road-courtyard-link-0"
       ],
       "navNodeIds": [
-        235,
-        247,
-        248,
-        249,
-        250,
-        251,
+        242,
+        254,
+        255,
+        256,
+        257,
+        258,
         144
       ]
     },
@@ -1182,22 +1214,22 @@
       ],
       "navNodeIds": [
         159,
-        252,
-        253,
-        254,
-        255,
-        256,
-        257,
-        258,
         259,
         260,
         261,
         262,
         263,
-        130,
         264,
         265,
-        266
+        266,
+        267,
+        268,
+        269,
+        270,
+        130,
+        271,
+        272,
+        273
       ]
     },
     {
@@ -1208,12 +1240,12 @@
         "road-technical-exit-0"
       ],
       "navNodeIds": [
-        256,
-        267,
-        268,
-        269,
-        270,
-        271,
+        263,
+        274,
+        275,
+        276,
+        277,
+        278,
         185
       ]
     },
@@ -1227,18 +1259,18 @@
       ],
       "navNodeIds": [
         130,
-        272,
-        273,
-        274,
-        275,
-        168,
-        276,
-        277,
-        278,
         279,
         280,
         281,
         282,
+        168,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
         81
       ]
     },
@@ -1253,13 +1285,6 @@
       ],
       "navNodeIds": [
         32,
-        283,
-        284,
-        285,
-        286,
-        287,
-        288,
-        289,
         290,
         291,
         292,
@@ -1267,6 +1292,13 @@
         294,
         295,
         296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
         168
       ]
     },
@@ -1275,31 +1307,12 @@
       "title": "parking west entry",
       "width": 24,
       "geometryIds": [
-        "road-parking-west-entry-0"
+        "road-parking-west-entry-0",
+        "road-parking-west-entry-1"
       ],
       "navNodeIds": [
         25,
-        297,
-        298,
-        299,
-        300,
-        301,
-        302,
-        303,
         304,
-        221
-      ]
-    },
-    {
-      "id": "tunnel-south-approach",
-      "title": "tunnel south approach",
-      "width": 22,
-      "geometryIds": [
-        "road-tunnel-south-approach-0",
-        "road-tunnel-south-approach-1"
-      ],
-      "navNodeIds": [
-        25,
         305,
         306,
         307,
@@ -1307,9 +1320,43 @@
         309,
         310,
         311,
+        221
+      ]
+    },
+    {
+      "id": "tunnel-south-approach",
+      "title": "tunnel south approach",
+      "width": 24,
+      "geometryIds": [
+        "road-tunnel-south-approach-0",
+        "road-tunnel-south-approach-1"
+      ],
+      "navNodeIds": [
+        25,
         312,
         313,
-        32
+        314,
+        315,
+        316,
+        317,
+        318,
+        319
+      ]
+    },
+    {
+      "id": "parking-ramp-approach",
+      "title": "parking ramp approach",
+      "width": 24,
+      "geometryIds": [
+        "road-parking-ramp-approach-1"
+      ],
+      "navNodeIds": [
+        32,
+        31,
+        30,
+        320,
+        321,
+        317
       ]
     },
     {
@@ -1325,14 +1372,6 @@
         "road-parking-level1-5"
       ],
       "navNodeIds": [
-        314,
-        315,
-        316,
-        317,
-        318,
-        319,
-        320,
-        321,
         322,
         323,
         324,
@@ -1345,7 +1384,32 @@
         331,
         332,
         333,
-        334
+        334,
+        335,
+        336
+      ]
+    },
+    {
+      "id": "parking-level1-return",
+      "title": "parking level1 return",
+      "width": 20,
+      "geometryIds": [
+        "road-parking-level1-return-0",
+        "road-parking-level1-return-1",
+        "road-parking-level1-return-2"
+      ],
+      "navNodeIds": [
+        335,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        323
       ]
     },
     {
@@ -1361,17 +1425,6 @@
         "road-parking-roof-circuit-5"
       ],
       "navNodeIds": [
-        335,
-        336,
-        337,
-        338,
-        339,
-        340,
-        341,
-        342,
-        343,
-        344,
-        345,
         346,
         347,
         348,
@@ -1381,7 +1434,17 @@
         352,
         353,
         354,
-        355
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365
       ]
     },
     {
@@ -1394,16 +1457,6 @@
       ],
       "navNodeIds": [
         81,
-        356,
-        357,
-        358,
-        359,
-        360,
-        361,
-        362,
-        363,
-        364,
-        365,
         366,
         367,
         368,
@@ -1412,6 +1465,16 @@
         371,
         372,
         373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
         120
       ]
     },
@@ -1438,11 +1501,11 @@
         "road-alley-north-0"
       ],
       "navNodeIds": [
-        374,
-        375,
-        376,
-        377,
-        378,
+        384,
+        385,
+        386,
+        387,
+        388,
         179
       ]
     },
@@ -1451,15 +1514,17 @@
       "title": "industrial shortcut south",
       "width": 22,
       "geometryIds": [
-        "road-industrial-shortcut-south-0"
+        "road-industrial-shortcut-south-0",
+        "road-industrial-shortcut-south-1"
       ],
       "navNodeIds": [
-        379,
-        380,
-        381,
-        382,
-        383,
-        384,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
         25
       ]
     },
@@ -1472,10 +1537,10 @@
         "road-parking-north-entry-0"
       ],
       "navNodeIds": [
-        291,
-        290,
-        289,
-        288
+        298,
+        297,
+        296,
+        295
       ]
     },
     {
@@ -1486,11 +1551,11 @@
         "road-tunnel-north-ramp-0"
       ],
       "navNodeIds": [
-        266,
-        385,
-        386,
-        387,
-        388
+        273,
+        396,
+        397,
+        398,
+        399
       ]
     },
     {
@@ -1502,15 +1567,15 @@
         "road-underpass-1"
       ],
       "navNodeIds": [
-        388,
-        389,
-        390,
-        391,
-        392,
-        393,
-        394,
-        395,
-        396
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407
       ]
     },
     {
@@ -1521,10 +1586,10 @@
         "road-tunnel-south-ramp-0"
       ],
       "navNodeIds": [
-        396,
-        397,
-        398,
-        399,
+        407,
+        408,
+        409,
+        410,
         25
       ]
     },
@@ -1536,10 +1601,10 @@
         "road-parking-ramp-one-0"
       ],
       "navNodeIds": [
-        311,
-        400,
-        401,
-        314
+        319,
+        411,
+        412,
+        322
       ]
     },
     {
@@ -1550,10 +1615,10 @@
         "road-parking-ramp-two-0"
       ],
       "navNodeIds": [
-        325,
-        402,
-        403,
-        335
+        336,
+        413,
+        414,
+        346
       ]
     },
     {
@@ -1565,28 +1630,6 @@
       ],
       "navNodeIds": [
         18,
-        404,
-        405,
-        406,
-        407,
-        408,
-        409,
-        410
-      ]
-    },
-    {
-      "id": "express-diagonal",
-      "title": "express diagonal",
-      "width": 34,
-      "geometryIds": [
-        "road-express-diagonal-0"
-      ],
-      "navNodeIds": [
-        410,
-        411,
-        412,
-        413,
-        414,
         415,
         416,
         417,
@@ -1597,11 +1640,11 @@
       ]
     },
     {
-      "id": "express-fall",
-      "title": "express fall",
+      "id": "express-diagonal",
+      "title": "express diagonal",
       "width": 34,
       "geometryIds": [
-        "road-express-fall-0"
+        "road-express-diagonal-0"
       ],
       "navNodeIds": [
         421,
@@ -1611,7 +1654,29 @@
         425,
         426,
         427,
-        360
+        428,
+        429,
+        430,
+        431,
+        432
+      ]
+    },
+    {
+      "id": "express-fall",
+      "title": "express fall",
+      "width": 34,
+      "geometryIds": [
+        "road-express-fall-0"
+      ],
+      "navNodeIds": [
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        370
       ]
     },
     {
@@ -1623,7 +1688,7 @@
       ],
       "navNodeIds": [
         210,
-        374
+        384
       ]
     },
     {
@@ -1634,8 +1699,8 @@
         "road-city-barrier-east-0"
       ],
       "navNodeIds": [
-        379,
-        291
+        389,
+        298
       ]
     }
   ],
@@ -1649,7 +1714,262 @@
       "MINE_AMMO": 8
     },
     "totalAmmunition": 96,
-    "spawns": 11
+    "spawns": 11,
+    "startAccess": [
+      {
+        "spawnId": 0,
+        "pickups": [
+          {
+            "id": "start-cache-001",
+            "routeMeters": 92.082,
+            "initialDirection": {
+              "x": 0.99771,
+              "y": 0.0,
+              "z": -0.06764
+            }
+          },
+          {
+            "id": "start-cache-002",
+            "routeMeters": 92.331,
+            "initialDirection": {
+              "x": -0.0787,
+              "y": 0.0,
+              "z": 0.9969
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 1,
+        "pickups": [
+          {
+            "id": "start-cache-003",
+            "routeMeters": 64.846,
+            "initialDirection": {
+              "x": -0.89443,
+              "y": 0.0,
+              "z": -0.44721
+            }
+          },
+          {
+            "id": "start-cache-004",
+            "routeMeters": 78.601,
+            "initialDirection": {
+              "x": 0.05547,
+              "y": 0.0,
+              "z": 0.99846
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 2,
+        "pickups": [
+          {
+            "id": "start-cache-005",
+            "routeMeters": 61.732,
+            "initialDirection": {
+              "x": -0.05872,
+              "y": 0.0,
+              "z": -0.99827
+            }
+          },
+          {
+            "id": "start-cache-006",
+            "routeMeters": 87.2,
+            "initialDirection": {
+              "x": -1.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 3,
+        "pickups": [
+          {
+            "id": "start-cache-007",
+            "routeMeters": 84.206,
+            "initialDirection": {
+              "x": -0.932,
+              "y": 0.0,
+              "z": -0.36245
+            }
+          },
+          {
+            "id": "start-cache-008",
+            "routeMeters": 84.743,
+            "initialDirection": {
+              "x": -0.5145,
+              "y": 0.0,
+              "z": 0.85749
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 4,
+        "pickups": [
+          {
+            "id": "start-cache-009",
+            "routeMeters": 63.019,
+            "initialDirection": {
+              "x": -0.99705,
+              "y": 0.0,
+              "z": -0.0767
+            }
+          },
+          {
+            "id": "start-cache-010",
+            "routeMeters": 78.601,
+            "initialDirection": {
+              "x": 0.33282,
+              "y": 0.0,
+              "z": 0.94299
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 5,
+        "pickups": [
+          {
+            "id": "start-cache-011",
+            "routeMeters": 76.3,
+            "initialDirection": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 1.0
+            }
+          },
+          {
+            "id": "start-cache-012",
+            "routeMeters": 76.3,
+            "initialDirection": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -1.0
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 6,
+        "pickups": [
+          {
+            "id": "start-cache-013",
+            "routeMeters": 86.36,
+            "initialDirection": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 1.0
+            }
+          },
+          {
+            "id": "start-cache-014",
+            "routeMeters": 87.2,
+            "initialDirection": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -1.0
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 7,
+        "pickups": [
+          {
+            "id": "start-cache-015",
+            "routeMeters": 63.848,
+            "initialDirection": {
+              "x": 0.49206,
+              "y": 0.0,
+              "z": -0.87056
+            }
+          },
+          {
+            "id": "start-cache-016",
+            "routeMeters": 93.025,
+            "initialDirection": {
+              "x": 0.99988,
+              "y": 0.0,
+              "z": 0.01562
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 8,
+        "pickups": [
+          {
+            "id": "start-cache-017",
+            "routeMeters": 62.564,
+            "initialDirection": {
+              "x": -0.97855,
+              "y": 0.0,
+              "z": -0.20601
+            }
+          },
+          {
+            "id": "start-cache-018",
+            "routeMeters": 80.039,
+            "initialDirection": {
+              "x": -0.87158,
+              "y": 0.0,
+              "z": 0.49026
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 9,
+        "pickups": [
+          {
+            "id": "start-cache-019",
+            "routeMeters": 61.247,
+            "initialDirection": {
+              "x": -0.99771,
+              "y": 0.0,
+              "z": 0.06764
+            }
+          },
+          {
+            "id": "start-cache-020",
+            "routeMeters": 86.602,
+            "initialDirection": {
+              "x": -0.40906,
+              "y": 0.0,
+              "z": 0.91251
+            }
+          }
+        ]
+      },
+      {
+        "spawnId": 10,
+        "pickups": [
+          {
+            "id": "start-cache-021",
+            "routeMeters": 63.573,
+            "initialDirection": {
+              "x": -0.98837,
+              "y": 0.0,
+              "z": -0.15206
+            }
+          },
+          {
+            "id": "start-cache-022",
+            "routeMeters": 89.072,
+            "initialDirection": {
+              "x": 0.20395,
+              "y": 0.0,
+              "z": -0.97898
+            }
+          }
+        ]
+      }
+    ]
   },
   "trees": []
 }

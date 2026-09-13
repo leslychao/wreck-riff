@@ -2,14 +2,15 @@
   "schemaVersion": 1,
   "origin": "ORIGINAL_BLENDER_CONTENT",
   "generator": "src/tools/author_vehicle_models.py",
-  "generatorSha256": "6d8a1a74642e12e27b84ee3750f855f04940da5bcae529e24a5bf3b6408e81e8",
+  "generatorSha256": "0f1df936fca6b3e5089ca3c0f264fdbfdaaf4cb82b5ac523c09ecf6f34500297",
   "converter": "src/tools/java/game/wreckriff/tools/PrepareVehicleModels.java",
-  "converterSha256": "4f597eb4a9de56f6bfc1f106208e95d1e4cd20540aae11f3f76038f6b5685b86",
+  "converterSha256": "72d29eb93c2891491103707e7efb6d530648df66751935ab14ad1d57d6b94af7",
   "blenderVersion": "4.5.9 LTS",
   "licensePermission": "Original Wreck Riff models and procedural texture recipes; no external geometry or bitmap sources.",
   "coordinateSystem": "metres, +Y up, +Z forward, +X right; immutable profile sockets",
   "uv": "canonical six projection faces in 3x2 atlas; identical projection across LODs",
-  "textureContract": "2048 RGB(A)8; diffuse sRGB; OpenGL normal and scalar specular linear",
+  "textureContract": "Paint diffuse/normal 2048; specular and metal diffuse/normal/specular 1024, RGB(A)8; diffuse sRGB, normal/specular linear",
+  "sourceAuthority": "Saved Blender scene with three LODs, five HP poses, eight regional shape keys; --reexport PROFILE writes GLB and canonical topology companion from edited scene",
   "artisticStatus": "NEEDS_CREATIVE_REVIEW",
   "profiles": [
     {
@@ -17,24 +18,29 @@
       "stages": 5,
       "regions": 8,
       "lodTriangles": [
-        16788,
-        6116,
-        996
+        20616,
+        6784,
+        1632
       ],
       "model": "models/vehicles/rivet/vehicle.j3o",
-      "modelSha256": "22899a3cb7f53ddc8982a837a00ad9550d3e014610d36d3f41d1b55e665f9396",
+      "modelSha256": "680e3ad2e8ce5dbc957209860d821f50cb62e1da23b60b541e3d8eece9d64602",
       "regional": "models/vehicles/rivet/regions.json.gz",
-      "regionalSha256": "52525b93eb4fd45839c756a37138e8f09d9846f04aac06da1544bbd20333d5c9",
+      "regionalSha256": "c5ef26b4843f76e06adbe49d60db28825c0216d7aeef2cc66bc29549cd741ebc",
       "sourceBlend": "src/tools/assets/vehicles/rivet/source.blend",
-      "sourceBlendSha256": "ca12b01c43ecdae20f133b2f4882d021e523ef7f8aa7ac312c4b49aef5c6f09e",
+      "sourceBlendSha256": "c039963720c40ec892e45d7bd279bcef50bad4bf63aa8b801ce0ec9490d856f8",
       "sourceGlb": "src/tools/assets/vehicles/rivet/source.glb",
-      "sourceGlbSha256": "dab3e052d95ca2d464428afb0d6e84616b8c50693387af78e0d627399c6bc56f",
+      "sourceGlbSha256": "eddb465a5abb44afc970e59dc9bf7c39aa0cd715a67a967f0c5525dfb3e18879",
       "meshBundle": "src/tools/assets/vehicles/rivet/mesh.json.gz",
-      "meshBundleSha256": "d41fbd81677c579f2b870efd8b1baeb95459b7426242444dabb36c4cd3928ba7",
+      "meshBundleSha256": "a182cd087c356b0c133da6cd4242ecbe47e3936a3e366026d467d0ee6a640775",
+      "sourceManifest": "src/tools/assets/vehicles/rivet/source.json",
+      "sourceManifestSha256": "edee138eada0ee4d39b2f16bf1e328c4aa0e3fccdc579e59ca2cc244b0865b65",
       "textures": {
-        "textures/vehicles/rivet/diffuse.png": "050d9fedf322e85bfbd30a27223631f36bd7b4f33b1c0493dcdaf225cd441f40",
+        "textures/vehicles/rivet/diffuse.png": "d6c4cdaf6e563aefc37405c052626f6eeff5107c3ecc294f10fe7efd71feb52b",
         "textures/vehicles/rivet/normal.png": "df29d065af43f22f3025873c5c356f744d3dd9042a04d3aa4cce73f2c4c216a8",
-        "textures/vehicles/rivet/specular.png": "c3428c517c75691023585edc44b29fa0fd63064d88b7d70f2b5c404299493e51"
+        "textures/vehicles/rivet/specular.png": "9c9d8b9830187b089e7783d3f6799a84c886f38c3dd3c5bab2f7d6f193ee6556",
+        "textures/vehicles/rivet/metal-diffuse.png": "e8ab712307d5bdbee98761c57897b24c4fbc4d4694400bbe702518435f19315b",
+        "textures/vehicles/rivet/metal-normal.png": "246b61dcb95f1269fbf19819424dbb65e84c6d40bb3b7557d174f497bffb9a69",
+        "textures/vehicles/rivet/metal-specular.png": "e59a1d1ffeefe34be45cd88e6ea192c5068e8d11d9944a17e60c51cd1e6d05b5"
       }
     },
     {
@@ -42,24 +48,29 @@
       "stages": 5,
       "regions": 8,
       "lodTriangles": [
-        18108,
-        7436,
-        1020
+        21936,
+        7624,
+        1656
       ],
       "model": "models/vehicles/grinder/vehicle.j3o",
-      "modelSha256": "cc50013cd7df4377fd6c3094c0623a9710858345bff483d8bce8a86152596883",
+      "modelSha256": "22a8ec14fe884b73e77df96112f7c11d504c4715a16b678bf449d743e407fcbd",
       "regional": "models/vehicles/grinder/regions.json.gz",
-      "regionalSha256": "21d4019f1c9ad7da252716341bbef3b71df180bc00af7e359bd7000ecb6473f5",
+      "regionalSha256": "a9d6ed82dc3a2536c122b5b93e23d878aa4c0216937f2f7cee0bbb4eb1282cde",
       "sourceBlend": "src/tools/assets/vehicles/grinder/source.blend",
-      "sourceBlendSha256": "7f815986d68274b43f67e94b9a2afd8a281363aa6f914e51c89ec4dfabff3afe",
+      "sourceBlendSha256": "233ce745fde11a3178f2a22dabfa2b579cb34220c6788bee62483dcc9674bfdf",
       "sourceGlb": "src/tools/assets/vehicles/grinder/source.glb",
-      "sourceGlbSha256": "ca76715ab1931e11235f5d96334018fe8cebd343f5d667848a8d298bcccffc65",
+      "sourceGlbSha256": "cf4399b719c54f30e99feb64a9a9a373735961ad744a70dba410650a0200cf12",
       "meshBundle": "src/tools/assets/vehicles/grinder/mesh.json.gz",
-      "meshBundleSha256": "11b7f5639f32256ecbd7d2b7a39d1a92d26a5cf658696593aff4e8c19e64e241",
+      "meshBundleSha256": "136d3a938061bdae138e74b4ac3dc968463b63e244f643da82845aaaf78432ac",
+      "sourceManifest": "src/tools/assets/vehicles/grinder/source.json",
+      "sourceManifestSha256": "fad2e601c3b916e70a9079a6aad7865116125a60c527e2bc979da90ce825cf45",
       "textures": {
-        "textures/vehicles/grinder/diffuse.png": "3288dda8cb85ab90d34bc5f71695b3c551d52153e95904782e41f1389b0f1f51",
+        "textures/vehicles/grinder/diffuse.png": "842a9f45b99299057c1a3390e91cae85918828191bb0ce2518c33dfb70c84251",
         "textures/vehicles/grinder/normal.png": "706de2a9ddfa696e58ca365f8a3d61bcee0d3aec4763d7ee83e2dce949bcb57d",
-        "textures/vehicles/grinder/specular.png": "dffa6307d2d131e9c44d003fbf46415ecf027bf487c327ebd5fa480035c2629c"
+        "textures/vehicles/grinder/specular.png": "4bfc74bfbd51c51062746f412d366847785033ca34df788788e2bf40c7320863",
+        "textures/vehicles/grinder/metal-diffuse.png": "6e5b68bfcfbc1b2277de4f7582a7020c64e8dbc980317bda6f3314bf30cd12c4",
+        "textures/vehicles/grinder/metal-normal.png": "bc64a69b3249f31dcf44920ae864020b5b31dd383253d9e7dced236459329d0d",
+        "textures/vehicles/grinder/metal-specular.png": "4aa4ef62c1e3f67319de9e72f0658775d6f592768417386aa1904bc6d741fbab"
       }
     },
     {
@@ -67,24 +78,29 @@
       "stages": 5,
       "regions": 8,
       "lodTriangles": [
-        16716,
-        6140,
-        972
+        20544,
+        6808,
+        1608
       ],
       "model": "models/vehicles/spark/vehicle.j3o",
-      "modelSha256": "e4959bbf6ee6a57ece71462244c36870e8eebc2c954e37d5b03457a1bb30c428",
+      "modelSha256": "fb2bbd22d714bcc4743570c3d8e85d6f24a652cf7b89c45af9de4cd60d50a845",
       "regional": "models/vehicles/spark/regions.json.gz",
-      "regionalSha256": "f12d92059d88c712478b45a354ca9ba832c2a2fb534712dfb098af04a76cd383",
+      "regionalSha256": "7359d90cb39e229aed0d878a8b6a849286b5c6ed9dd2a7d12bb92e03f3efe875",
       "sourceBlend": "src/tools/assets/vehicles/spark/source.blend",
-      "sourceBlendSha256": "0484051c6df2104b18bc61f4ebbf0d9c160ec75ecd8bbcc1ef64d71574095e2a",
+      "sourceBlendSha256": "6e43caf12b0bfe922273cadb5d74aa68684d482e9a29dc2685f0266af1e8b9cf",
       "sourceGlb": "src/tools/assets/vehicles/spark/source.glb",
-      "sourceGlbSha256": "5b79c06f44103dc9eeb533c97e889ddd461d75b78cf798ccb3dea424d6c8da52",
+      "sourceGlbSha256": "c42293301e4bf63846e9ad627caeca8564ae08726dacd0d24d95360bde114cc4",
       "meshBundle": "src/tools/assets/vehicles/spark/mesh.json.gz",
-      "meshBundleSha256": "484de90fbe8185e14eed80e90715f46ef620f54fa4e5bca7fd936d17f7269bff",
+      "meshBundleSha256": "2961ae1a7c29d98158c2c4d9e42c3f32ebfc537e9e1888bffed30f4a5429840e",
+      "sourceManifest": "src/tools/assets/vehicles/spark/source.json",
+      "sourceManifestSha256": "0920f233441f2f3ade75da80d268dc998f66e3d1bf4d115d87835935127aa022",
       "textures": {
-        "textures/vehicles/spark/diffuse.png": "e7403d918cc327cd1bf2f226554a7c674197683ceaab43e61747bafd2c6114e4",
+        "textures/vehicles/spark/diffuse.png": "4b17f0cec79e860aba72ea50a44fea4c880e51f7c9cc32ae68a5d13327fc7cce",
         "textures/vehicles/spark/normal.png": "e36ca8a4ea356ad737185126f14cad04254c24a44e505283b6be1e9b041f1027",
-        "textures/vehicles/spark/specular.png": "aa006fa308e64529cc00ba205381f5d7892de85559241bf8709dc719259a30eb"
+        "textures/vehicles/spark/specular.png": "93db60634f7b4701839b997151394091666c5b6081133f68e63a4027ff891435",
+        "textures/vehicles/spark/metal-diffuse.png": "9a735b0257da9269292510a3be6b4b50db6bdd05b5963b603fdc767772098e3b",
+        "textures/vehicles/spark/metal-normal.png": "31888693a7a55220beda8e1ad4e26da953d7aa9a40f58ce505f33229ba70acb2",
+        "textures/vehicles/spark/metal-specular.png": "67a79e73e75455aab0f2bcdf3fc052e74aa721e55cf2af73be2c349254fe4232"
       }
     },
     {
@@ -92,24 +108,29 @@
       "stages": 5,
       "regions": 8,
       "lodTriangles": [
-        19584,
-        6848,
-        1032
+        23412,
+        7228,
+        1668
       ],
       "model": "models/vehicles/boss_foreman/vehicle.j3o",
-      "modelSha256": "20cb20b2747e79c5bdd97eb6a5e06c1e7f3ea0a91bb3f5816d219ada56a89277",
+      "modelSha256": "824a6baa1ed65b31ae86f5ee6c87cb7577f8c3e5aa3e36190116fa2e66ef63ca",
       "regional": "models/vehicles/boss_foreman/regions.json.gz",
-      "regionalSha256": "47b059c16df602016d0f5c2c6587ce87f0ee968f56ab4264852e4f75839c9fdd",
+      "regionalSha256": "5fcc9bfdf5269a389b45ba79e6ae7ae118a88d41745086faeb6f4a586f811633",
       "sourceBlend": "src/tools/assets/vehicles/boss_foreman/source.blend",
-      "sourceBlendSha256": "8ea5bbfe7d489924556345327633a8d03a848ff8c7ed2e37334cd88fb826bb99",
+      "sourceBlendSha256": "ea913ab9decf1219293c9506cee6639b6fd4fddc1a7b6ccb196d0dc16cce4dd3",
       "sourceGlb": "src/tools/assets/vehicles/boss_foreman/source.glb",
-      "sourceGlbSha256": "44ab95bf69ae13caf84c08c3643ceb3f28e012fc51357f2a4485f72358d411e9",
+      "sourceGlbSha256": "f0403b8437c655a18e17192197ab68316a4c51c8df9a25cc01532dc8ea2bf366",
       "meshBundle": "src/tools/assets/vehicles/boss_foreman/mesh.json.gz",
-      "meshBundleSha256": "9bbc12bb3b0ffff8dea3cc77ccb7b4e3758e49cbcc3871638af786dcb7b1efcd",
+      "meshBundleSha256": "3a73d2479d182085097a74ccffe2459c89734d5c76656aef7bcc353e29206023",
+      "sourceManifest": "src/tools/assets/vehicles/boss_foreman/source.json",
+      "sourceManifestSha256": "9b37d9234cf36da8103dc5be7035606871d055dec62f226ba6d4a3ab99839ddc",
       "textures": {
-        "textures/vehicles/boss_foreman/diffuse.png": "9488857a399a3e5cec4271606cdc350a11e52462b5d42cbd20823a4c370c86d8",
+        "textures/vehicles/boss_foreman/diffuse.png": "08b27edb81988a563da977c32b9eeb33e8ded757271ab8fb4f736dabdc9018fc",
         "textures/vehicles/boss_foreman/normal.png": "16f0cba0ae7ba341fb43721f9509120b785b1f7a86562575c3a321883865f275",
-        "textures/vehicles/boss_foreman/specular.png": "9d50ad0379e81e2c9ef6afa617f0f60f42e8e2449d329b60cf7f74e6967f274d"
+        "textures/vehicles/boss_foreman/specular.png": "0ad25979e0f4ebfc1e90c3e7e97a776deb27710b552820b76ef10dfe508ea30b",
+        "textures/vehicles/boss_foreman/metal-diffuse.png": "4eea924df7819cd717e44e4824d37f4015be34ddf19667f42ad5242344465af6",
+        "textures/vehicles/boss_foreman/metal-normal.png": "7df04da581a0baf8e0c4021041daf21961f3d225177186c7f2cae5b130c011e8",
+        "textures/vehicles/boss_foreman/metal-specular.png": "e5a764b6a703b8128beddc6a354ee3347eef80f4a3f2d8cfcd098669a20109cd"
       }
     },
     {
@@ -117,24 +138,29 @@
       "stages": 5,
       "regions": 8,
       "lodTriangles": [
-        18408,
-        6728,
-        1056
+        22236,
+        7252,
+        1692
       ],
       "model": "models/vehicles/boss_prefect/vehicle.j3o",
-      "modelSha256": "4b0f8948829490fb863833d59b6526a2d68444673a3735144f0c235b0e5d03d8",
+      "modelSha256": "00083b9d20c0f9b4a5c37025de3123197aa748781784ead7b37f5f5721c4c10c",
       "regional": "models/vehicles/boss_prefect/regions.json.gz",
-      "regionalSha256": "06e77f18ccde98ee2581adc86af0f8e46107512262e29c6f941bffc82ce8b3ab",
+      "regionalSha256": "df9a2a71e69783e5a94983bcf9dd5608cbfc394e4cea50c04f9ac8c250cb644e",
       "sourceBlend": "src/tools/assets/vehicles/boss_prefect/source.blend",
-      "sourceBlendSha256": "feb52501aae268c3f55ffdb63199120e08832236fb74c948f924b79018401e55",
+      "sourceBlendSha256": "4e09945707a56fc6099adb9e67bdc5d6cf156cf7404929da227bc788b3ab4e52",
       "sourceGlb": "src/tools/assets/vehicles/boss_prefect/source.glb",
-      "sourceGlbSha256": "77866315ee92cfaaa5dce1d0c61eaa9e3d078e5dd6795cb7cd1be4d12f3321a9",
+      "sourceGlbSha256": "37670b20ea2cf1b93b404af53c076b1a707d382d0b3aac6fc21af2888506a9d1",
       "meshBundle": "src/tools/assets/vehicles/boss_prefect/mesh.json.gz",
-      "meshBundleSha256": "18e7276a6e80e22bae23882c3c30d8ad5e408fa69bdeb4b9ba7080672da55198",
+      "meshBundleSha256": "b9a95ceb0e9cf07933d171f69bbcbbde9728d30bdcb59ce425d4e4b3679d4984",
+      "sourceManifest": "src/tools/assets/vehicles/boss_prefect/source.json",
+      "sourceManifestSha256": "2b2770b4e014d0ff6302e8090e2ed3d8e6eff3c220fddca29155b578443c2fcd",
       "textures": {
-        "textures/vehicles/boss_prefect/diffuse.png": "035b437bd58066cdb4801402c1a6dd877f28b8919a9278c4700cdef4c222db52",
+        "textures/vehicles/boss_prefect/diffuse.png": "ac517f832d5ea2ab927f59d30948ec5155fbb40dbbbaacefd17ea0e8acf62795",
         "textures/vehicles/boss_prefect/normal.png": "5bff9c2a7c311c24e17cba639e2d547cd04fa6156a50b958b0abfc47067186e7",
-        "textures/vehicles/boss_prefect/specular.png": "303af47cff7bc9eed1ec0422c9b369feb0e6b4ea287c9f1a659813bb5e53c705"
+        "textures/vehicles/boss_prefect/specular.png": "abf3c6a25fb223022fc07eb64ea10ade12e325d10d0a7a308c2f28112c8b5572",
+        "textures/vehicles/boss_prefect/metal-diffuse.png": "0eee38b501cd0adfe53440824b1e7720b1296b14ae2171b866b84481b4d04311",
+        "textures/vehicles/boss_prefect/metal-normal.png": "71fedf30309ee1424bd577b492a2c7e19f61bb9a977d097815c7b63b6a234d9d",
+        "textures/vehicles/boss_prefect/metal-specular.png": "913155fe97ebc8dae1a46880400976e7765b14679096cf6e4b048fbaeefe9454"
       }
     },
     {
@@ -142,24 +168,29 @@
       "stages": 5,
       "regions": 8,
       "lodTriangles": [
-        18996,
-        6932,
-        1212
+        22824,
+        7456,
+        1848
       ],
       "model": "models/vehicles/boss_emcee/vehicle.j3o",
-      "modelSha256": "e6e5f3513a710771073094470bcf53c53876f8dd098195db2b42579f26f1231d",
+      "modelSha256": "d8ee00108f86ab5c79ea8119ce7dc9cb28dae2d412be9874c5df1882bb76b5c5",
       "regional": "models/vehicles/boss_emcee/regions.json.gz",
-      "regionalSha256": "839a5f89d6bf460302163bb7b6609e0c840b04b2a63b3f83456778882c194e5d",
+      "regionalSha256": "cfb3f8af67f814f79d831fa29aa066ca3f954ad316eff1c1b09322ba13698ce9",
       "sourceBlend": "src/tools/assets/vehicles/boss_emcee/source.blend",
-      "sourceBlendSha256": "d08f899e262c223fa0af27e2ac2bd68fc7e2d786c22d499cc305bb5606e453d9",
+      "sourceBlendSha256": "4ab68b3ec3747385127f40d8e8a4d09a7a7658539f84eec5cee34c13e41c23f2",
       "sourceGlb": "src/tools/assets/vehicles/boss_emcee/source.glb",
-      "sourceGlbSha256": "2da290fdd767b771dd6d8f56f879ec190119da052fd00d8934398ca338369fcf",
+      "sourceGlbSha256": "ebe73f04a174f87531c8f64d77d6bbe4125b8854cb94e03b8267a9d1189207eb",
       "meshBundle": "src/tools/assets/vehicles/boss_emcee/mesh.json.gz",
-      "meshBundleSha256": "4004964c5da2ffca2ff11bdc395144118b68e065d910021127ab20a8b3f3c86b",
+      "meshBundleSha256": "ff96361d3101d8457047434723bec83eea817e2f06fe2870aae985deacb8594b",
+      "sourceManifest": "src/tools/assets/vehicles/boss_emcee/source.json",
+      "sourceManifestSha256": "5c3b54444069b0c1f8c0193df1ac6c2be52ccdc4b968758b34705d909346f645",
       "textures": {
-        "textures/vehicles/boss_emcee/diffuse.png": "ba93dfb76dfbf388759df117640f1eaf08248e45a2e8fa7354ba2f93effdb3ef",
+        "textures/vehicles/boss_emcee/diffuse.png": "62ea809d11f2c5920cde8d3f49e167a39a1a110335803ef37941ed4dc5599e4d",
         "textures/vehicles/boss_emcee/normal.png": "825d7b2e346adc341c90b230ad09cb09bda77fb87c5ec45ede17a8c652d59218",
-        "textures/vehicles/boss_emcee/specular.png": "0cee1c707de9feaee05a2b55c1a75ac9e43c856e9756d80f0a982694518d9d8c"
+        "textures/vehicles/boss_emcee/specular.png": "c8e3519a7a6b7fa6a38d1193537c2d5724e9f20c8de7d6e0837597d4ec214321",
+        "textures/vehicles/boss_emcee/metal-diffuse.png": "ec140a55bf6ad07845cdfafdb1e946e64b071996837dac9e52c2aae0d9962932",
+        "textures/vehicles/boss_emcee/metal-normal.png": "064eef3676feceee56c48dd4c931db85907bc1ce647e57082a0562a64b006230",
+        "textures/vehicles/boss_emcee/metal-specular.png": "df51d6bdeaa290f035eb96097e365c4a5ff30843d367614b7ff4217b2c402e36"
       }
     }
   ]

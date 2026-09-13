@@ -24,8 +24,39 @@ if (-not (Test-Path -LiteralPath $java -PathType Leaf)) { throw 'Microsoft JDK 2
 $classpath = (Join-Path $image 'lib/*') + ';' + $classes
 $reviewArgs=@($ReportDirectory,$ExpectedSourceSha256)
 if($PerformanceSeconds -gt 0){$reviewArgs+=([string]$PerformanceSeconds)}
-& $java '-Xms128m' '-Xmx768m' '-cp' $classpath 'game.wreckriff.diagnostics.NativeOrdnanceSaturationReview' @reviewArgs 2>&1 | Tee-Object -FilePath (Join-Path $ReportDirectory 'execution.log')
-if ($LASTEXITCODE -ne 0) { throw "Native ordnance saturation exited with code $LASTEXITCODE" }
+$mainJars=@(Get-ChildItem -LiteralPath (Join-Path $image 'lib') -Filter 'wreck-riff-*.jar')
+if($mainJars.Count -ne 1){throw 'Expected one immutable installDist application JAR.'}
+$mainJar=$mainJars[0].FullName
+$jarHash=(Get-FileHash -LiteralPath $mainJar -Algorithm SHA256).Hash
+$stdout=Join-Path $ReportDirectory 'execution.log'
+$stderr=Join-Path $ReportDirectory 'stderr.log'
+$samples=[Collections.Generic.List[object]]::new()
+$process=$null;$processStart=$null;$started=[DateTime]::UtcNow;$peak=0;$nextProgress=60
+try {
+    # Windows paths cannot contain a double quote; quote each path argument so spaces
+    # remain inside its argument. No shell or command-string evaluation is involved.
+    $arguments=@('-Xms128m','-Xmx768m','-cp',('"'+$classpath+'"'),'game.wreckriff.diagnostics.NativeOrdnanceSaturationReview')
+    $arguments+=@($reviewArgs | ForEach-Object {'"'+$_+'"'})
+    $process=Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $workspace -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $null=$process.Handle;$processStart=$process.StartTime.ToUniversalTime()
+    while(!$process.HasExited) {
+        $process.Refresh();if($process.HasExited){break}
+        $elapsed=([DateTime]::UtcNow-$started).TotalSeconds
+        if($elapsed -gt [Math]::Max(240,$PerformanceSeconds*2+180)){throw 'Native saturation window exceeded its bounded review duration.'}
+        $peak=[Math]::Max($peak,$process.PeakWorkingSet64)
+        $samples.Add([ordered]@{seconds=$elapsed;workingSetBytes=$process.WorkingSet64;peakWorkingSetBytes=$process.PeakWorkingSet64;privateBytes=$process.PrivateMemorySize64})
+        if($elapsed -ge $nextProgress){Write-Output ('SATURATION: {0:N0}s; RSS {1:N0} MiB; PID {2}' -f $elapsed,($process.WorkingSet64/1MB),$process.Id);$nextProgress+=60}
+        Start-Sleep -Seconds 1
+    }
+    $process.WaitForExit()
+    if($process.ExitCode -ne 0){throw "Native ordnance saturation exited with code $($process.ExitCode); inspect $stderr"}
+} finally {
+    if($process -and !$process.HasExited){$process.Kill();$process.WaitForExit()}
+    $memory=[ordered]@{pid=$(if($process){$process.Id}else{0});processStartTimeUtc=$(if($processStart){$processStart.ToString('o')}else{''});counter='Windows process WorkingSet64 and PeakWorkingSet64 sampled each second';peakWorkingSetBytes=$peak;limitBytes=1.5GB;status=$(if($peak -gt 0 -and $peak -le 1.5GB){'PASS'}else{'FAIL'});mainJar=$mainJar;mainJarSha256=$jarHash;applicationJarUnchanged=((Get-FileHash -LiteralPath $mainJar -Algorithm SHA256).Hash -eq $jarHash);samples=$samples.ToArray()}
+    [IO.File]::WriteAllText((Join-Path $ReportDirectory 'memory.json'),($memory|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
+}
+if(!$memory.applicationJarUnchanged){throw 'Application JAR changed during native saturation review.'}
+if($memory.status -ne 'PASS'){throw 'Native saturation process RSS is unavailable or exceeds 1.5 GiB.'}
 $report = Join-Path $ReportDirectory $(if($PerformanceSeconds -gt 0){'performance.json'}else{'review.json'})
 if (-not (Test-Path -LiteralPath $report -PathType Leaf)) { throw 'The real-window run did not produce current verification evidence.' }
 $evidence = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json

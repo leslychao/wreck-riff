@@ -63,7 +63,7 @@ public final class GenerateOrdnance {
         manifest.put("externalImages",false);manifest.put("fontSource",FONT_SOURCE);manifest.put("fontSourceSha256",hash(Files.readAllBytes(Path.of(FONT_SOURCE))));
         manifest.put("fontLicense","OFL-1.1");manifest.put("fontLicensePath","licenses/assets/Roboto-OFL.txt");
         manifest.put("artisticStatus","NEEDS_CREATIVE_REVIEW");manifest.put("atlasSize",SIZE);
-        manifest.put("transformation","Authored lathed shells, solid fins, panel bands, sensors and fasteners; deterministic UV atlases with metal/paint/rubber/optics, marking, edge wear and tangent-space normal/specular data; jME binary export.");
+        manifest.put("transformation","Authored lathed shells, solid fins, panel bands, sensors and fasteners; Freeze has an exposed faceted ice core, cooling cage and technical fins in both detail levels; deterministic UV atlases with metal/paint/rubber/optics, marking, edge wear and tangent-space normal/specular data; jME binary export.");
         manifest.put("assets",records);Files.writeString(output.resolve("models/ordnance/provenance.json"),new GsonBuilder().setPrettyPrinting().create().toJson(manifest)+"\n",StandardCharsets.UTF_8);
         System.out.println("Exported eight original ordnance models and six 2048x2048 texture maps.");
     }
@@ -114,11 +114,15 @@ public final class GenerateOrdnance {
                 if(detail){band(mesh,n,.251f,-.073f,.013f,8);band(mesh,n,.251f,.059f,.013f,8);}
             }
             case FREEZE -> {
-                mesh.lathe(0,0,n,tile,-.24f,.065f,-.19f,.095f,-.14f,.11f,.13f,.11f,.22f,.075f,.29f,.01f);
-                mesh.lathe(0,0,n,11,.17f,.096f,.24f,.077f,.285f,.02f);
-                fins(mesh,3,.10f,.16f,-.20f,.06f,.018f,8);nozzle(mesh,n,.06f,-.24f,.04f);
-                band(mesh,n,.12f,.12f,.035f,8);
-                if(detail)for(int i=0;i<5;i++)band(mesh,n,.12f,-.14f+i*.039f,.015f,8);
+                // A short cryogenic engine and open cage expose the luminous ice, instead of hiding it behind a dark sensor.
+                mesh.lathe(0,0,n,tile,-.24f,.07f,-.205f,.11f,-.15f,.13f,-.055f,.13f,-.025f,.10f);
+                nozzle(mesh,n,.065f,-.24f,.04f);fins(mesh,3,.12f,.30f,-.23f,.035f,.022f,8);
+                band(mesh,n,.145f,-.055f,.026f,8);band(mesh,n,.128f,.145f,.024f,8);
+                for(int i=0;i<3;i++) {
+                    float angle=i*FastMath.TWO_PI/3;
+                    mesh.box(FastMath.cos(angle)*.129f,FastMath.sin(angle)*.129f,.035f,.023f,.023f,.13f,10,angle);
+                }
+                if(detail){for(int i=0;i<4;i++)band(mesh,n,.138f,-.175f+i*.033f,.012f,8);fasteners(mesh,6,.147f,-.039f,.010f);}
             }
             case MINE -> {
                 // Author along +Z and rotate onto +Y once at export; origin is the actual road contact plane.
@@ -146,14 +150,26 @@ public final class GenerateOrdnance {
         if(style==OrdnanceStyle.MINE) {
             shape.lathe(-.22f,0,12,11,.259f,.034f,.273f,.034f,.28f,.001f);
             shape.rotate(new Quaternion().fromAngleAxis(-FastMath.HALF_PI,Vector3f.UNIT_X));
+        } else if(style==OrdnanceStyle.FREEZE) {
+            shape.crystal(8,6,-.09f,.075f,-.015f,.12f,.16f,.108f,.285f,.078f,.50f,.001f);
+            shape.lathe(0,0,12,11,-.245f,.001f,-.243f,.032f,-.237f,.032f);
         } else {
             float radius=switch(style){case BALLISTIC->.105f;case POWER->.068f;case NAPALM,BALLISTIC_FALL->.041f;default->.024f;};
             float tail=style.nozzleZ()-.001f;
             shape.lathe(0,0,12,11,tail,.001f,tail+.003f,radius,tail+.01f,radius);
-            if(style==OrdnanceStyle.FREEZE)shape.lathe(0,0,16,11,.165f,.098f,.18f,.098f);
         }
         Geometry geometry=new Geometry("signal",shape.mesh());Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");
-        material.setColor("Color",style.signal());material.setColor("GlowColor",style.signal().mult(.35f));geometry.setMaterial(material);return geometry;
+        if(style==OrdnanceStyle.FREEZE) {
+            // Authored facet values keep the core dimensional even in shadow and with bloom disabled.
+            var normals=geometry.getMesh().getFloatBuffer(VertexBuffer.Type.Normal);float[] colors=new float[normals.limit()/3*4];
+            for(int vertex=0;vertex<colors.length/4;vertex++) {
+                float facet=.62f+.38f*Math.max(0,normals.get(vertex*3)*.35f+normals.get(vertex*3+1)*.72f+normals.get(vertex*3+2)*.42f);
+                colors[vertex*4]=facet*.62f;colors[vertex*4+1]=facet*.93f;colors[vertex*4+2]=facet;colors[vertex*4+3]=1;
+            }
+            geometry.getMesh().setBuffer(VertexBuffer.Type.Color,4,colors);material.setBoolean("VertexColor",true);
+            material.setColor("Color",ColorRGBA.White);material.setColor("GlowColor",new ColorRGBA(.18f,.53f,.62f,1));
+        } else {material.setColor("Color",style.signal());material.setColor("GlowColor",style.signal().mult(.35f));}
+        geometry.setMaterial(material);return geometry;
     }
     private static void nozzle(Author mesh,int n,float radius,float tail,float length) {
         mesh.lathe(0,0,n,9,tail,radius,tail+.012f,radius*1.09f,tail+length,radius*.76f);
@@ -195,6 +211,14 @@ public final class GenerateOrdnance {
                     Vector3f normal=new Vector3f(FastMath.cos(a)*dz,FastMath.sin(a)*dz,-dr).normalizeLocal();
                     vertex(new Vector3f(cx+FastMath.cos(a)*radius,cy+FastMath.sin(a)*radius,z),normal,tile,s/(float)segments,(z-start)/span);
                 }
+            }
+        }
+        void crystal(int segments,int tile,float... profile) {
+            for(int ring=0;ring<profile.length/2-1;ring++)for(int segment=0;segment<segments;segment++) {
+                float a=segment*FastMath.TWO_PI/segments,b=(segment+1)*FastMath.TWO_PI/segments;
+                float rear=profile[ring*2],front=profile[(ring+1)*2],r0=profile[ring*2+1],r1=profile[(ring+1)*2+1];
+                quad(new Vector3f(FastMath.cos(a)*r0,FastMath.sin(a)*r0,rear),new Vector3f(FastMath.cos(b)*r0,FastMath.sin(b)*r0,rear),
+                        new Vector3f(FastMath.cos(b)*r1,FastMath.sin(b)*r1,front),new Vector3f(FastMath.cos(a)*r1,FastMath.sin(a)*r1,front),tile);
             }
         }
         void triangle(Vector3f a,Vector3f b,Vector3f c,int tile) {

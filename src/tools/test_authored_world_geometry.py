@@ -36,6 +36,16 @@ class AuthoredWorldGeometryTest(unittest.TestCase):
                             self.assertLessEqual(overlap,.01,f'{name}: {identity} / {mesh["id"]}: {overlap} m²')
                         for key in keys:grid[key].append(index)
 
+    def test_generated_scene_ids_and_large_details_do_not_duplicate(self):
+        for name in ('construction-17','neon-zero','euphoria-park'):
+            data=json.loads((OUT/f'arena-{name}.json').read_text(encoding='utf-8'))
+            for key in ('boxes','meshes','surfaces','roads','nodes','edges','pickups'):
+                ids=[item['id'] for item in data[key]]
+                self.assertEqual(len(ids),len(set(ids)),f'{name}: duplicate {key}')
+            art=json.loads((OUT/f'arena-art-{name}.json').read_text(encoding='utf-8'))
+            signatures=[json.dumps({k:v for k,v in part.items() if k not in ('id','anchor')},sort_keys=True) for part in art['parts']]
+            self.assertEqual(len(signatures),len(set(signatures)),f'{name}: coincident decorative primitives')
+
     def test_authored_roads_reference_actual_geometry_and_navigation(self):
         for name in ('construction-17','neon-zero','euphoria-park'):
             data=json.loads((OUT/f'arena-{name}.json').read_text(encoding='utf-8'))

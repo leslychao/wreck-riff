@@ -70,10 +70,10 @@ class ControlAndArsenalTest {
     }
     @Test void freezeDoesNotRefreshAndPostControlImmunityExpiresAtExactBoundary() {
         world.positions[1].set(0,1,8);world.nextSweep=new WorldQuery.Hit(1,world.positions[1],Vector3f.UNIT_Y,.5f);
-        tick(ability(AbilityId.FREEZE));assertEquals(180,session.vehicle(1).frozenTicks);assertTrue(world.frozen.contains(1));
+        tick(ability(AbilityId.FREEZE));assertEquals(480,session.vehicle(1).frozenTicks);assertTrue(world.frozen.contains(1));
         session.vehicle(0).abilityCooldown(AbilityId.FREEZE,0);world.nextSweep=new WorldQuery.Hit(1,world.positions[1],Vector3f.UNIT_Y,.5f);
-        tick(ability(AbilityId.FREEZE));assertEquals(179,session.vehicle(1).frozenTicks);
-        for(int i=0;i<179;i++)tick(VehicleCommand.NONE);
+        tick(ability(AbilityId.FREEZE));assertEquals(479,session.vehicle(1).frozenTicks);
+        for(int i=0;i<479;i++)tick(VehicleCommand.NONE);
         assertEquals(0,session.vehicle(1).frozenTicks);assertEquals(360,session.vehicle(1).controlImmunityTicks);assertFalse(world.frozen.contains(1));
         for(int i=0;i<360;i++)tick(VehicleCommand.NONE);
         assertEquals(0,session.vehicle(1).controlImmunityTicks);

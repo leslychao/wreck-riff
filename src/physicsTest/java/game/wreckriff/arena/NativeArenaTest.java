@@ -109,7 +109,12 @@ class NativeArenaTest {
             case POWER_AMMO -> session.vehicle(0).weapon(WeaponType.POWER).ammo=0;
             case MINE_AMMO -> session.vehicle(0).weapon(WeaponType.MINE).ammo=0;
             case NAPALM_AMMO -> session.vehicle(0).weapon(WeaponType.NAPALM).ammo=0;
-            case TURBO_CELL -> session.vehicle(0).turbo=0;
+            case TURBO_CELL -> {
+                // This fixture isolates a turbo route after arming. An empty production
+                // bot correctly seeks its first offensive pickup before seeking turbo.
+                for (var weapon : session.vehicle(0).weapons()) weapon.refill(weapon.maximumAmmo);
+                session.vehicle(0).turbo=0;
+            }
             default -> throw new IllegalArgumentException("Repair has separate full route fixtures");
         }
         int spawnId=switch(pickupId) {

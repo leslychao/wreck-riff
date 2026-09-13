@@ -20,6 +20,7 @@ import java.util.*;
 public final class OrdnanceAssetsVerifier {
     private static final String SOURCE="src/tools/java/game/wreckriff/tools/GenerateOrdnance.java";
     private static final String HISTORY="src/tools/assets/ordnance-history/CombatVisuals-before-textured-20260913.java.txt";
+    private static final String FREEZE_HISTORY="src/tools/assets/ordnance-history/GenerateOrdnance-before-freeze-20260913.java.txt";
     private OrdnanceAssetsVerifier() { }
     public static void verify(List<VerifyAssets.Asset> assets)throws Exception {
         String manifest="models/ordnance/provenance.json";byte[] json=resource(manifest);
@@ -53,6 +54,9 @@ public final class OrdnanceAssetsVerifier {
         byte[] historic=Files.readAllBytes(Path.of(HISTORY));
         if(!new String(historic,StandardCharsets.UTF_8).contains("rocketBatch"))throw new IOException("Original ordnance recipe missing from history");
         assets.add(asset(HISTORY,"historical-source",historic,"SOURCE_PRESENT"));
+        byte[] originalGenerator=Files.readAllBytes(Path.of(FREEZE_HISTORY));
+        if(!new String(originalGenerator,StandardCharsets.UTF_8).contains("case FREEZE ->"))throw new IOException("Original Freeze model recipe missing from history");
+        assets.add(asset(FREEZE_HISTORY,"historical-source",originalGenerator,"SOURCE_PRESENT"));
     }
     static void verifyTexture(String path,byte[] bytes)throws IOException {
         var image=ImageIO.read(new ByteArrayInputStream(bytes));

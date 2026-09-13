@@ -29,6 +29,8 @@ public interface WorldQuery {
         return VehicleContact.atPose(point,normal,position(id),rotation(id));
     }
     boolean grounded(int vehicleId);
+    /** Actual native contact beneath the hull; a rolled car can have no wheel contacts. */
+    default boolean chassisSupported(int vehicleId) { return false; }
     float mass(int vehicleId);
     default VehicleProfile profile(int vehicleId) { return VehicleProfile.rivet(); }
     default RoadContext roadContext(int vehicleId) { return RoadContext.UNKNOWN; }
@@ -39,6 +41,9 @@ public interface WorldQuery {
     /** Fractions of the native step covered by this projectile segment. */
     Hit sweep(Vector3f from,Vector3f to,float radius,int ignoredVehicle,float stepStart,float stepEnd);
     Hit staticSweep(Vector3f from,Vector3f to,float radius);
+    /** Read-only pose/incarnation stamp for a named environment collider, including kinematic bodies.
+     * Zero denotes an absent surface or a query provider without revision tracking. */
+    default long surfaceRevision(String objectId) { return 0; }
     boolean visible(Vector3f from, Vector3f to, int targetVehicle);
     float distanceToHull(int vehicleId, Vector3f point);
     /** Aggregated world-space linear and torque impulse; only the native owner applies angular limits. */

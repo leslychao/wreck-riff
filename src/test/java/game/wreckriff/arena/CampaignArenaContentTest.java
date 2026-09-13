@@ -55,9 +55,9 @@ class CampaignArenaContentTest {
     }
     @Test void parkingRampsHaveActualOpeningsThroughUpperDecks() {
         var neon=ArenaRegistry.load().definition("neon_zero");
-        for(float x=1435;x<1525;x+=10) {
-            assertTrue(neon.surfaceAt(new Vector3f(x,(x-1430)*.08f,240),0,.02f).isPresent(),"First ramp support at "+x);
-            assertTrue(neon.surfaceAt(new Vector3f(x,8+(x-1430)*.08f,440),0,.02f).isPresent(),"Second ramp support at "+x);
+        for(float x=1465;x<1565;x+=10) {
+            assertTrue(neon.surfaceAt(new Vector3f(x,(x-1460)*8f/110f,240),0,.02f).isPresent(),"First ramp support at "+x);
+            assertTrue(neon.surfaceAt(new Vector3f(x,8+(x-1460)*8f/110f,440),0,.02f).isPresent(),"Second ramp support at "+x);
             assertTrue(neon.surfaceAt(new Vector3f(x,8,240),0,.02f).isEmpty(),"Upper slab closes first ramp at "+x);
             assertTrue(neon.surfaceAt(new Vector3f(x,16,440),0,.02f).isEmpty(),"Upper slab closes second ramp at "+x);
         }

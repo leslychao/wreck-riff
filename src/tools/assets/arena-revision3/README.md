@@ -19,6 +19,10 @@ site passports, actual district polygons, road/surface/nav links and supply dist
    into `.j3o`. Use Microsoft JDK 21. The game never loads GLB or runs these generators.
 5. `python src/tools/author_arena_art.py` writes model placements, their collision
    replacement metadata, architectural detail, local light fixtures and mechanisms.
+   This command always recompiles fresh canonical geometry and supply from the
+   authoring source. It never reads a previously dressed runtime arena. Sidewalk
+   subtraction therefore cannot accumulate holes or duplicate IDs across runs.
+   JSON and design outputs are published through atomic sibling-file replacement.
 
 The model generator owns each hero roof's vertices; the same placed high-detail mesh
 is the rendered roof and its static collision shape. Named box proxies retain useful

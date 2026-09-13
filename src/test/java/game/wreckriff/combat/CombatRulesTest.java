@@ -33,12 +33,12 @@ class CombatRulesTest {
         assertEquals(new CombatRules.BlastLimits(16,10,6),rules.heavyBlastLimits());
         assertEquals(65,rules.cannon().directDamage());assertEquals(13200,rules.cannon().horizontalImpulse());
         assertEquals(2,rules.cannon().ricochets());assertEquals(4,rules.ballistic().charges());
-        assertEquals(28,rules.ballistic().damage());assertEquals(54,CombatRules.ticks(rules.ballistic().releaseIntervalSeconds()));
-        assertEquals(12,rules.ballistic().turnDegreesPerSecond());assertEquals(70,rules.ballistic().maximumRange());
-        assertEquals(30,rules.ballistic().acquisitionConeDegrees());assertEquals(3,rules.ballistic().maximumDeviation());
-        assertEquals(.35f,rules.ballistic().maximumLeadSeconds());assertEquals(6,rules.ballistic().maximumLead());
-        assertEquals(.6f,rules.ballistic().maximumGuidanceSeconds());assertEquals(.6f,rules.ballistic().guidanceCutoffSeconds());
-        assertEquals(25,rules.napalm().damagePerSecond());assertEquals(1.5f,rules.control().freezeSeconds());
+        assertEquals(28,rules.ballistic().damage());assertEquals(36,CombatRules.ticks(rules.ballistic().releaseIntervalSeconds()));
+        assertEquals(24,rules.ballistic().turnDegreesPerSecond());assertEquals(70,rules.ballistic().maximumRange());
+        assertEquals(30,rules.ballistic().acquisitionConeDegrees());assertEquals(5,rules.ballistic().maximumDeviation());
+        assertEquals(.8f,rules.ballistic().maximumLeadSeconds());assertEquals(12,rules.ballistic().maximumLead());
+        assertEquals(.75f,rules.ballistic().maximumGuidanceSeconds());assertEquals(.35f,rules.ballistic().guidanceCutoffSeconds());
+        assertEquals(25,rules.napalm().damagePerSecond());assertEquals(4,rules.control().freezeSeconds());
         assertEquals(12,rules.control().freezeCooldownSeconds());
         assertEquals(18,SpecialRules.cooldownSeconds("rivet"));assertEquals(26,SpecialRules.cooldownSeconds("grinder"));
         assertEquals(16,SpecialRules.cooldownSeconds("spark"));
@@ -83,7 +83,7 @@ class CombatRulesTest {
         cone.getAsJsonObject("targeting").addProperty("retentionConeDegrees", 17);
         assertThrows(RuntimeException.class, () -> Configs.gson().fromJson(cone, CombatRules.class));
     }
-    @Test void fasterRoundsRetainTheirFlightBudgetsAndMachineGunAndBallisticStayUnchanged() {
+    @Test void fasterRoundsRetainTheirFlightBudgetsAndMachineGunStaysUnchanged() {
         var rules=Configs.load("combat",CombatRules.class);
         assertEquals(100,rules.homing().speed());assertEquals(1.6f,rules.homing().ttlSeconds());
         assertEquals(140,rules.power().speed());assertEquals(1.3f,rules.power().ttlSeconds());
@@ -100,7 +100,9 @@ class CombatRulesTest {
         assertEquals(0,rules.ballistic().initialAmmo());assertEquals(0,rules.mine().initialAmmo());
         assertEquals(2.4f,rules.machineGun().damage());assertEquals(10,rules.machineGun().shotsPerSecond());
         assertEquals(75,rules.machineGun().range());assertEquals(1,rules.machineGun().spreadDegrees());
-        assertEquals(45,rules.ballistic().carrierSpeed());assertEquals(18,rules.ballistic().gravity());
+        assertEquals(60,rules.ballistic().carrierSpeed());assertEquals(36,rules.ballistic().gravity());
+        assertEquals(.45f,rules.ballistic().minimumCarrierSeconds());assertEquals(1.2f,rules.ballistic().maximumCarrierSeconds());
+        assertEquals(22,rules.ballistic().carrierHeight());assertEquals(.5f,rules.ballistic().minimumWarningSeconds());
         assertEquals(80,rules.targeting().turnDegreesPerSecond());
     }
     @Test void mineIsLastForDisplayCyclingAndStableWeaponIds() {

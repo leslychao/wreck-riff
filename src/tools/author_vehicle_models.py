@@ -24,7 +24,7 @@ def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
 class Author:
     def __init__(self, profile, lod):
         self.id=profile; self.lod=lod; self.length,self.width,self.height,self.style=PROFILES[profile]
-        self.parts={}; self.current='paint'; self.sub=(7,3,1)[lod]; self.round=(24,12,6)[lod]
+        self.parts={}; self.current='paint'; self.sub=(7,2,1)[lod]; self.round=(24,12,6)[lod]
     def part(self,name): self.current=name
     def tri(self,a,b,c):
         out=self.parts.setdefault(self.current,[]); out.extend((a,b,c))
@@ -37,7 +37,7 @@ class Author:
                 self.tri(p0,p1,p2);self.tri(p0,p2,p3)
     def box(self,x,y,z,hx,hy,hz,sub=1,bevel=.025):
         # Chamfered formed metal; subdivided broad faces support smooth damage folds.
-        if self.lod==2:
+        if self.lod==2 and not self.current.startswith('panel-'):
             a=(x-hx,y-hy,z-hz);b=(x+hx,y-hy,z-hz);c=(x+hx,y+hy,z-hz);d=(x-hx,y+hy,z-hz)
             e=(x-hx,y-hy,z+hz);f=(x+hx,y-hy,z+hz);g=(x+hx,y+hy,z+hz);h=(x-hx,y+hy,z+hz)
             for face in ((a,d,c,b),(e,f,g,h),(a,e,h,d),(b,c,g,f),(d,h,g,c),(a,b,f,e)):self.quad(*face)
@@ -75,6 +75,17 @@ class Author:
             self.quad(p(-length/2,a,radius),p(-length/2,b,radius),p(length/2,b,radius),p(length/2,a,radius))
             self.tri(p(-length/2,0,0),p(-length/2,b,radius),p(-length/2,a,radius))
             self.tri(p(length/2,0,0),p(length/2,a,radius),p(length/2,b,radius))
+    def tube(self,x,y,z,outer,inner,length,axis='z',count=None):
+        count=count or self.round
+        def p(t,a,r):
+            c,s=math.cos(a)*r,math.sin(a)*r
+            return (x+t,y+c,z+s) if axis=='x' else (x+c,y+s,z+t)
+        for i in range(count):
+            a,b=i*math.tau/count,(i+1)*math.tau/count
+            self.quad(p(-length/2,a,outer),p(-length/2,b,outer),p(length/2,b,outer),p(length/2,a,outer))
+            self.quad(p(-length/2,b,inner),p(-length/2,a,inner),p(length/2,a,inner),p(length/2,b,inner))
+            self.quad(p(length/2,a,inner),p(length/2,a,outer),p(length/2,b,outer),p(length/2,b,inner))
+            self.quad(p(-length/2,b,inner),p(-length/2,b,outer),p(-length/2,a,outer),p(-length/2,a,inner))
     def author(self):
         L,W,H=self.length,self.width,self.height; w=W/2;l=L/2
         sy=1 if self.id=='rivet' else H/1.07
@@ -125,14 +136,23 @@ class Author:
                     self.cylinder(side*w*.74,low*1.1+.025,l*z,.020*W,.012*H,'z',6)
             self.part('rubber-trim')
             for i in range(6):self.box(0,low*1.14,l*(.30+i*.058),w*.34,.010*H,.014*L,1,.001)
-        # Weapon assemblies are independently recoiling, but sockets stay fixed.
+        # Fixed receivers, moving bolt carriers and heat-darkened hollow barrels.
         for barrel in range(2):
             x=(-.75 if barrel==0 else .75) if self.id=='grinder' else (-.53 if barrel==0 else .53)*W/2.1
             y=2.48 if self.id=='grinder' else .47*sy; z=2.95 if self.id=='grinder' else 2.28*L/4.6
-            self.part('mount-machine-gun-'+str(barrel));self.cylinder(x,y,z-.21,.063*W/2.1,.42,'z')
-            self.box(x,y-.075,z-.39,.09,.075,.18,1);self.cylinder(x,y,z-.015,.080*W/2.1,.035,'z')
-        self.part('mount-weapon');y=2.58 if self.id=='grinder' else .55*sy;z=3.15 if self.id=='grinder' else 2.5*L/4.6
-        self.box(0,y,z-.30,.13*W/2.1,.11*W/2.1,.30,1);self.cylinder(0,y,z-.01,.12*W/2.1,.025,'z')
+            name='mount-machine-gun-'+str(barrel)
+            self.part(name);self.box(x,y-.075,z-.39,.085,.065,.16,1,.016)
+            self.part(name+'-barrel');self.tube(x,y,z-.21,.055*W/2.1,.032*W/2.1,.42,'z',self.round)
+            self.tube(x,y,z-.025,.075*W/2.1,.032*W/2.1,.05,'z',self.round)
+            self.part(name+'-bolt');self.box(x+.073,y+.008,z-.42,.02,.027,.068,1,.006)
+            if self.lod<2:
+                self.part(name+'-barrel')
+                for zz in range(3):self.tube(x,y,z-.17-zz*.06,.060*W/2.1,.048*W/2.1,.018,'z',12)
+        y=2.58 if self.id=='grinder' else .55*sy;z=3.15 if self.id=='grinder' else 2.5*L/4.6
+        self.part('mount-weapon');self.box(0,y-.075,z-.45,.13*W/2.1,.10*W/2.1,.12,1,.025)
+        self.part('mount-weapon-barrel');self.tube(0,y,z-.27,.105*W/2.1,.075*W/2.1,.52,'z')
+        self.tube(0,y,z-.025,.14*W/2.1,.075*W/2.1,.05,'z')
+        self.part('mount-weapon-bolt');self.box(.14*W/2.1,y,z-.43,.027,.045,.11,1,.012)
         self.part('headlights')
         for side in (-1,1):self.box(side*w*.64,low*.61,l*.985,.13*W,.035*H,.025,1,.006)
         self.part('taillights')
@@ -168,8 +188,8 @@ class Author:
                 self.part('grinder-roller-'+('left' if side<0 else 'right'))
                 self.cylinder(side*.62,.42,2.78,.31,1.15,'x',self.round)
                 if self.lod<2:
-                    for i in range(10):
-                        a=i*math.tau/10;self.box(side*.62,.42+math.cos(a)*.32,2.78+math.sin(a)*.32,.49,.045,.045,1,.01)
+                    for i in range(10 if self.lod==0 else 6):
+                        a=i*math.tau/(10 if self.lod==0 else 6);self.box(side*.62,.42+math.cos(a)*.32,2.78+math.sin(a)*.32,.49,.045,.045,1,.01)
         # Rounded carcass, sidewall and recessed hub exported in wheel-local metres.
         for wheel in range(4):
             self.part('wheel-'+str(wheel)+'-tyre')
@@ -180,7 +200,22 @@ class Author:
                     a=i*math.tau/count;b=(i+1)*math.tau/count
                     self.quad((ax,math.cos(a)*ar,math.sin(a)*ar),(ax,math.cos(b)*ar,math.sin(b)*ar),
                               (bx,math.cos(b)*br,math.sin(b)*br),(bx,math.cos(a)*br,math.sin(a)*br))
-            self.part('wheel-'+str(wheel)+'-hub');self.cylinder(0,0,0,.225,.31,'x',count)
+            if self.lod<2:
+                for i in range((24,12)[self.lod]):
+                    angle=(i+.5)*math.tau/(24,12)[self.lod]
+                    for side in (-1,1):
+                        a,b=angle-.028,angle+.028
+                        self.quad((side*.11,math.cos(a)*.388,math.sin(a)*.388),(0,math.cos(a+.03)*.388,math.sin(a+.03)*.388),(0,math.cos(b+.03)*.388,math.sin(b+.03)*.388),(side*.11,math.cos(b)*.388,math.sin(b)*.388))
+            self.part('wheel-'+str(wheel)+'-hub');self.tube(0,0,0,.225,.185,.30,'x',count)
+            self.cylinder(0,0,0,.075,.325,'x',count)
+            for side in (-1,1):
+                for i in range((6,5,3)[self.lod]):
+                    angle=i*math.tau/(6,5,3)[self.lod]
+                    c,d=math.cos(angle),math.sin(angle);v,u=-d*.027,c*.027
+                    a=(side*.152,c*.073+v,d*.073+u);b=(side*.152,c*.208+v,d*.208+u)
+                    cc=(side*.152,c*.208-v,d*.208-u);dd=(side*.152,c*.073-v,d*.073-u)
+                    self.quad(a,b,cc,dd) if side>0 else self.quad(dd,cc,b,a)
+                    if self.lod==0:self.cylinder(side*.17,c*.10,d*.10,.019,.026,'x',6)
         return self.parts
 
 def normals(p):
@@ -203,23 +238,151 @@ def displacement(p,profile,region):
 def make_textures(profile,out):
     # Authored six-face paint atlas, worn coating, seam rivets and stamped industrial graphics.
     size=2048;y,x=np.mgrid[:size,:size];rng=np.random.default_rng(173+list(PROFILES).index(profile))
-    grain=rng.normal(0,.015,(size,size));base=np.array(COLORS[profile]);noise=grain+np.sin(x*.043)*np.cos(y*.028)*.008
+    grain=rng.normal(0,.015,(size,size));base=np.array(COLORS[profile]);noise=grain+np.sin(x*.043)*np.cos(y*.028)*.025
     rgb=np.clip(base[None,None,:]*(.85+noise[:,:,None]),0,1)
-    seam=(np.mod(x,171)<3)|(np.mod(y,229)<3);stripe=(y%1024>740)&(y%1024<810)&((x+y)//37%2==0)
+    seam=(np.mod(x,171)<3)|(np.mod(y,229)<3);stripe=(y%1024>900)&(y%1024<918)&((x+y)//24%2==0)
     rgb[seam]*=.42;rgb[stripe]=(.83,.67,.18)
     bolts=((x%171-13)**2+(y%229-13)**2<16);rgb[bolts]=(.40,.43,.45)
     scratches=(rng.random((size,size))>.9990)&(np.sin(x*.015+y*.07)>.3);rgb[scratches]=(.47,.46,.41)
     h=grain*.08+seam*.025+bolts*.10;dy,dx=np.gradient(h);normal=np.stack((-dx*8,-dy*8,np.ones_like(h)),axis=2);normal/=np.linalg.norm(normal,axis=2,keepdims=True)
     spec=np.clip(.37+noise*.5-seam*.22-scratches*.10,0,1)
     def save(name,pixels):
-        image=bpy.data.images.new(name,width=size,height=size,alpha=True,float_buffer=False)
-        if name!='diffuse.png':image.colorspace_settings.name='Non-Color'
-        rgba=np.ones((size,size,4),np.float32);rgba[:,:,:3]=pixels
+        height,width=pixels.shape[:2]
+        image=bpy.data.images.new(name,width=width,height=height,alpha=True,float_buffer=False)
+        if 'diffuse' not in name:image.colorspace_settings.name='Non-Color'
+        rgba=np.ones((height,width,4),np.float32);rgba[:,:,:3]=pixels
         image.pixels.foreach_set(rgba.ravel());image.file_format='PNG';image.filepath_raw=str(out/name);image.save();bpy.data.images.remove(image)
-    save('diffuse.png',rgb);save('normal.png',normal*.5+.5);save('specular.png',np.repeat(spec[:,:,None],3,axis=2))
+    save('diffuse.png',rgb);save('normal.png',normal*.5+.5);save('specular.png',np.repeat(spec[::2,::2,None],3,axis=2))
+    metal=(.19+grain*1.8+np.sin(y*1.17)*.022+np.sin(x*.032+y*.004)*.03)
+    metal_rgb=np.repeat(np.clip(metal,.065,.34)[:,:,None],3,axis=2)*np.array((.88,.96,1.03))
+    metal_rgb[seam]*=.7;metal_rgb[scratches]=(.39,.38,.35)
+    save('metal-diffuse.png',metal_rgb[::2,::2]);save('metal-normal.png',(normal*.5+.5)[::2,::2])
+    save('metal-specular.png',np.repeat(np.clip(.32+grain*2,.10,.55)[::2,::2,None],3,axis=2))
+
+def export_glb(out):
+    bpy.ops.object.select_all(action='DESELECT')
+    for ob in bpy.context.scene.objects:
+        if ob.type=='MESH' and ob.get('lod')==0:ob.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=str(out/'source.glb'),export_format='GLB',use_selection=True,export_animations=False,export_morph=True,export_materials='NONE')
+
+def source_record(profile,out,lodcounts,mode):
+    record={'id':profile,'authoringMode':mode,'generatorSha256':sha(Path(__file__)),
+            'exports':{name:sha(out/name) for name in ('source.blend','source.glb','mesh.json.gz','diffuse.png','normal.png','specular.png','metal-diffuse.png','metal-normal.png','metal-specular.png','damage-ownership.png')},
+            'lodTriangles':lodcounts,'sourceBlendSha256':sha(out/'source.blend'),'sourceGlbSha256':sha(out/'source.glb'),'meshSha256':sha(out/'mesh.json.gz')}
+    (out/'source.json').write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
+
+def scene_bundle(profile):
+    bundle={'schemaVersion':1,'profile':profile,'regions':list(REGIONS),'lods':[]};counts=[]
+    for lod in range(3):
+        records=[];triangles=0
+        for ob in sorted(bpy.context.scene.objects,key=lambda ob:ob.get('runtimePart','')):
+            if ob.type!='MESH' or ob.get('lod')!=lod:continue
+            mesh=ob.data;keys=mesh.shape_keys.key_blocks;mesh.calc_loop_triangles();loops=[loop for t in mesh.loop_triangles for loop in t.loops];ids=[mesh.loops[i].vertex_index for i in loops]
+            def values(key):
+                result=[]
+                for i in ids:
+                    co=ob.matrix_world @ key.data[i].co;result.append((co.x,co.z,-co.y))
+                return np.asarray(result,dtype=np.float32)
+            p=values(keys['Basis']);stages=[p]+[values(keys['damage-'+str(i)]) if 'damage-'+str(i) in keys else p for i in range(1,5)]
+            uv=np.asarray([tuple(mesh.uv_layers['CanonicalUV'].data[i].uv) for i in loops]);regional=[]
+            for i in range(8):
+                delta=values(keys['region-'+str(i)])-p;indices=np.where(np.linalg.norm(delta,axis=1)>.00001)[0]
+                regional.append({'indices':indices.tolist(),'delta':np.round(delta[indices],6).ravel().tolist()})
+            records.append({'name':ob['runtimePart'],'islandId':int(ob.get('islandId',0)),'positions':np.round(p,6).ravel().tolist(),'normal':np.round(normals(p),6).ravel().tolist(),'uv':np.round(uv,6).ravel().tolist(),
+                            'stages':[np.round(stage,6).ravel().tolist() for stage in stages],'regional':regional});triangles+=len(p)//3
+        if not records:raise ValueError('Editable Blender source must retain all three authored LODs')
+        bundle['lods'].append(records);counts.append(triangles)
+    return bundle,counts
+
+def pack_canonical_uv():
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    from mathutils.geometry import barycentric_transform
+    bpy.ops.object.select_all(action='DESELECT')
+    high=[ob for ob in bpy.context.scene.objects if ob.type=='MESH' and ob.get('lod')==0]
+    for i,ob in enumerate(sorted(high,key=lambda ob:ob['runtimePart']),1):
+        ob['islandId']=i;ob.select_set(True)
+    bpy.context.view_layer.objects.active=high[0]
+    bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.remove_doubles(threshold=.000001)
+    bpy.ops.uv.smart_project(angle_limit=.9,island_margin=.006,area_weight=.5)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for source in high:
+        mesh=source.data;mesh.calc_loop_triangles();triangles=list(mesh.loop_triangles)
+        tree=BVHTree.FromPolygons([v.co for v in mesh.vertices],[t.vertices for t in triangles],all_triangles=True)
+        source_uv=mesh.uv_layers['CanonicalUV'].data
+        for target in bpy.context.scene.objects:
+            if target.type!='MESH' or target.get('lod')==0 or target.get('runtimePart')!=source['runtimePart']:continue
+            target['islandId']=source['islandId'];target.data.calc_loop_triangles();layer=target.data.uv_layers['CanonicalUV'].data
+            for triangle in target.data.loop_triangles:
+                center=sum((target.data.vertices[i].co for i in triangle.vertices),Vector())/3
+                nearest,normal,index,distance=tree.find_nearest(center)
+                canonical=triangles[index];points=[mesh.vertices[i].co for i in canonical.vertices]
+                uv=[Vector((*source_uv[i].uv,0)) for i in canonical.loops]
+                for loop in triangle.loops:
+                    point=target.data.vertices[target.data.loops[loop].vertex_index].co
+                    value=barycentric_transform(point,*points,*uv)
+                    layer[loop].uv=(min(1,max(0,value.x)),min(1,max(0,value.y)))
+
+def save_rgba(path,pixels,linear=True):
+    h,w=pixels.shape[:2];image=bpy.data.images.new(path.name,width=w,height=h,alpha=True,float_buffer=False)
+    if linear:image.colorspace_settings.name='Non-Color'
+    image.pixels.foreach_set(pixels.astype(np.float32).ravel());image.file_format='PNG';image.filepath_raw=str(path);image.save();bpy.data.images.remove(image)
+
+def ownership(bundle,out):
+    # Per-pixel island identity prevents a brush footprint from spilling onto another packed part.
+    pixels=np.zeros((512,512,4),np.float32);pixels[:,:,3]=1
+    for part in bundle['lods'][0]:
+        uv=np.asarray(part['uv']).reshape(-1,3,2)*511
+        for triangle in uv:
+            lo=np.maximum(0,np.floor(triangle.min(axis=0)).astype(int));hi=np.minimum(511,np.ceil(triangle.max(axis=0)).astype(int))
+            a,b,c=triangle;den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1])
+            if abs(den)<1e-8:continue
+            for y in range(lo[1],hi[1]+1):
+                for x in range(lo[0],hi[0]+1):
+                    wa=((b[1]-c[1])*(x-c[0])+(c[0]-b[0])*(y-c[1]))/den
+                    wb=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(y-c[1]))/den
+                    if min(wa,wb,1-wa-wb)>=-.015:pixels[y,x,:3]=part['islandId']/255
+    save_rgba(out/'damage-ownership.png',pixels)
+
+def make_damage_atlas():
+    tile=128;y,x=np.mgrid[:tile,:tile];dx=(x-63.5)/63.5;dy=(y-63.5)/63.5;r=np.sqrt(dx*dx+dy*dy);angle=np.arctan2(dy,dx)
+    atlas=np.zeros((tile*2,tile*4,4),np.float32)
+    for index in range(8):
+        rng=np.random.default_rng(519+index);noise=rng.random(r.shape);body=np.zeros_like(r);cavity=np.zeros_like(r)
+        if index<2:
+            rim=.31+np.sin(angle*9+index)*.035+np.sin(angle*17)*.018
+            body=np.clip(1-abs(r-rim)/.09,0,1);cavity=np.clip((rim-r)*12,0,1)
+            body+=np.clip(1-r/.8,0,1)*(abs(np.sin(angle*7+index))>.992)*.7
+        elif index<4:
+            edge=.43+.09*np.sin(angle*5+index)+.065*np.cos(angle*11)
+            body=np.clip((edge-r)*11,0,1)*(.65+.35*noise);cavity=body*np.clip((r-edge+.09)*10,0,1)
+        elif index<6:
+            for line in range(7):
+                slope=(line-3)*.08;offset=(line-3)*.08
+                body=np.maximum(body,np.clip(1-abs(dy-dx*slope-offset)/.018,0,1)*np.clip(1-abs(dx)/(1-.08*line),0,1))
+        else:
+            for ray in range(11):
+                direction=ray*math.tau/11+.13*math.sin(ray*5+index);a=np.arctan2(np.sin(angle-direction),np.cos(angle-direction))
+                branch=np.abs(a+.055*np.sin(r*23+ray))
+                body=np.maximum(body,np.clip(1-branch/(.008+.012/(r+.08)),0,1)*np.clip(1-r/(.6+.3*math.sin(ray*2)**2),0,1))
+            body=np.maximum(body,np.clip(1-abs(r-.22)/.012,0,1)*.4)
+        atlas[index//4*tile:(index//4+1)*tile,index%4*tile:(index%4+1)*tile,0]=np.clip(body,0,1)
+        atlas[index//4*tile:(index//4+1)*tile,index%4*tile:(index%4+1)*tile,1]=np.clip(cavity,0,1)
+        atlas[index//4*tile:(index//4+1)*tile,index%4*tile:(index%4+1)*tile,3]=1
+    shared=OUT/'shared';shared.mkdir(parents=True,exist_ok=True);save_rgba(shared/'damage-atlas.png',atlas)
+
+def reexport(profile):
+    # Read the actual saved scene; do not regenerate or silently replace artist edits.
+    out=OUT/profile;bpy.ops.wm.open_mainfile(filepath=str(out/'source.blend'))
+    bundle,counts=scene_bundle(profile);ownership(bundle,out)
+    with gzip.GzipFile(filename=str(out/'mesh.json.gz'),mode='wb',mtime=0) as f:f.write(json.dumps(bundle,separators=(',',':')).encode())
+    export_glb(out);source_record(profile,out,counts,'saved-blender-edit');print('REEXPORTED',profile,counts,flush=True)
 
 def export(profile):
-    out=OUT/profile;out.mkdir(parents=True,exist_ok=True);bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+    out=OUT/profile;out.mkdir(parents=True,exist_ok=True);bpy.context.preferences.filepaths.save_version=0;bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+    for mesh in list(bpy.data.meshes):
+        if mesh.users==0:bpy.data.meshes.remove(mesh)
     bundle={'schemaVersion':1,'profile':profile,'regions':list(REGIONS),'lods':[]};lodcounts=[]
     for lod in range(3):
         parts=Author(profile,lod).author();records=[];triangles=0
@@ -227,7 +390,15 @@ def export(profile):
             p=np.asarray(values,dtype=np.float32);n=normals(p);uv=uvmap(p,n,profile)
             deformable=name in ('paint','glass','steel','rubber-trim','boss-panels','service-cover') or name.startswith('panel-')
             regional=[displacement(p,profile,i) if deformable else np.zeros_like(p) for i in range(8)]
-            total=sum(regional)/3;length=np.linalg.norm(total,axis=1);total*=np.minimum(1,.32/np.maximum(length,1e-7))[:,None]
+            total=sum(regional)/1.15
+            if deformable:
+                L,W,H,_=PROFILES[profile];q=p/np.array((W/2,H,L/2))
+                folded=np.maximum(0,abs(q[:,2])-.48)*np.clip(q[:,1]+.1,0,1)
+                total[:,1]-=folded*(.21+.075*np.sin(q[:,0]*8+q[:,2]*13))
+                roof=np.maximum(0,q[:,1]-.58)*np.maximum(0,1-abs(q[:,2]+.1))
+                total[:,1]-=roof*.4
+                total[:,0]+=folded*np.sin(q[:,2]*21)*.11
+            length=np.linalg.norm(total,axis=1);total*=np.minimum(1,.32/np.maximum(length,1e-7))[:,None]
             stages=[p+total*s for s in (0,.28,.58,.85,1)]
             sparse=[]
             for d in regional:
@@ -235,10 +406,10 @@ def export(profile):
             records.append({'name':name,'positions':np.round(p,6).ravel().tolist(),'normal':np.round(n,6).ravel().tolist(),
                             'uv':np.round(uv,6).ravel().tolist(),'stages':[np.round(s,6).ravel().tolist() for s in stages], 'regional':sparse})
             triangles+=len(p)//3
-            if lod==0:
+            if True:
                 vertices=[(float(v[0]),float(-v[2]),float(v[1])) for v in p]
                 mesh=bpy.data.meshes.new(name);mesh.from_pydata(vertices,[],[(i,i+1,i+2) for i in range(0,len(p),3)]);mesh.update()
-                ob=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(ob)
+                ob=bpy.data.objects.new(name+'.lod'+str(lod),mesh);bpy.context.collection.objects.link(ob)
                 layer=mesh.uv_layers.new(name='CanonicalUV')
                 for loop in mesh.loops:layer.data[loop.index].uv=uv[loop.vertex_index]
                 ob.shape_key_add(name='Basis')
@@ -246,17 +417,23 @@ def export(profile):
                     for i,s in enumerate(stages[1:],1):
                         key=ob.shape_key_add(name='damage-'+str(i))
                         for v,co in zip(key.data,s):v.co=(float(co[0]),float(-co[2]),float(co[1]))
-                ob['profile']=profile;ob['runtimePart']=name
+                for i,delta in enumerate(regional):
+                    key=ob.shape_key_add(name='region-'+str(i))
+                    for v,co in zip(key.data,p+delta):v.co=(float(co[0]),float(-co[2]),float(co[1]))
+                ob['profile']=profile;ob['runtimePart']=name;ob['lod']=lod;ob.hide_render=lod>0
         bundle['lods'].append(records);lodcounts.append(triangles)
+    pack_canonical_uv();bundle,lodcounts=scene_bundle(profile);ownership(bundle,out)
     with gzip.GzipFile(filename=str(out/'mesh.json.gz'),mode='wb',mtime=0) as f:f.write(json.dumps(bundle,separators=(',',':')).encode())
     # The editable source retains topology, UVs and all five damage poses.
     bpy.ops.wm.save_as_mainfile(filepath=str(out/'source.blend'),compress=True)
-    bpy.ops.export_scene.gltf(filepath=str(out/'source.glb'),export_format='GLB',export_animations=False,export_morph=True,export_materials='NONE')
+    export_glb(out)
     make_textures(profile,out)
-    record={'id':profile,'lodTriangles':lodcounts,'sourceBlendSha256':sha(out/'source.blend'),'sourceGlbSha256':sha(out/'source.glb'),'meshSha256':sha(out/'mesh.json.gz')}
-    (out/'source.json').write_text(json.dumps(record,indent=2)+'\n',encoding='utf8');print('VEHICLE',profile,lodcounts,flush=True)
+    source_record(profile,out,lodcounts,'original-recipe');print('VEHICLE',profile,lodcounts,flush=True)
 
 if __name__=='__main__':
     args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
-    parser=argparse.ArgumentParser();parser.add_argument('--profile',choices=PROFILES);opt=parser.parse_args(args)
-    for profile in ([opt.profile] if opt.profile else PROFILES):export(profile)
+    parser=argparse.ArgumentParser();parser.add_argument('--profile',choices=PROFILES);parser.add_argument('--reexport',choices=PROFILES);opt=parser.parse_args(args)
+    make_damage_atlas()
+    if opt.reexport:reexport(opt.reexport)
+    else:
+        for profile in ([opt.profile] if opt.profile else PROFILES):export(profile)

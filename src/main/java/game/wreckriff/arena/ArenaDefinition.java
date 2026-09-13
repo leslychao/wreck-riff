@@ -57,13 +57,17 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
         }
     }
     /** Indexed, top-facing authored triangles; the same vertices drive rendering and collision. */
-    public record TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision,List<String> triangleMaterials) {
+    public record TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision,List<String> triangleMaterials,float thickness) {
         public TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision) {
-            this(id,vertices,indices,material,collision,List.of());
+            this(id,vertices,indices,material,collision,List.of(),0);
+        }
+        public TriangleSurface(String id,List<Vec3> vertices,List<Integer> indices,String material,boolean collision,List<String> triangleMaterials) {
+            this(id,vertices,indices,material,collision,triangleMaterials,0);
         }
         public TriangleSurface {
             text(id,"mesh");text(material,"material");vertices=List.copyOf(vertices);indices=List.copyOf(indices);
             triangleMaterials=List.copyOf(triangleMaterials);
+            require(Float.isFinite(thickness)&&thickness>=0,"Invalid surface thickness: "+id);
             require(vertices.size()>=3&&!indices.isEmpty()&&indices.size()%3==0,"Invalid triangle mesh: "+id);
             require(triangleMaterials.isEmpty()||triangleMaterials.size()==indices.size()/3,"Invalid triangle material count: "+id);
             for(String faceMaterial:triangleMaterials)text(faceMaterial,"triangle material");

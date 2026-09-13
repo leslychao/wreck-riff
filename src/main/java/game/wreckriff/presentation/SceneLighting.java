@@ -34,7 +34,7 @@ public final class SceneLighting {
         bloom.setDownSamplingFactor(4);bloom.setBlurScale(1.2f);bloom.setBloomIntensity(.65f);
         CombatVfxFilter combatVfx=new CombatVfxFilter();
         GlowPostProcessor post=new GlowPostProcessor(assets);post.addFilter(bloom);post.addFilter(combatVfx);viewport.addProcessor(post);
-        Handle handle=new Handle(ambient,sun,rim,shadows,bloom,combatVfx,post,viewport);
+        Handle handle=new Handle(assets,ambient,sun,rim,shadows,bloom,combatVfx,post,viewport);
         handle.apply(Theme.INDUSTRIAL_YARD,true);return handle;
     }
 
@@ -52,9 +52,10 @@ public final class SceneLighting {
 
     private static final class GlowPostProcessor extends FilterPostProcessor {
         private Camera camera;
+        private RenderManager manager;
         GlowPostProcessor(AssetManager assets) {super(assets);}
         @Override public void initialize(RenderManager renderManager,ViewPort viewport) {
-            camera=viewport.getCamera();super.initialize(renderManager,viewport);
+            manager=renderManager;camera=viewport.getCamera();super.initialize(renderManager,viewport);
         }
         @Override public void preFrame(float tpf) {
             float near=camera.getFrustumNear(),far=camera.getFrustumFar(),left=camera.getFrustumLeft(),right=camera.getFrustumRight();
@@ -76,20 +77,21 @@ public final class SceneLighting {
     }
 
     public static final class Handle {
+        private final AssetManager assets;
         private final AmbientLight ambient;
         private final DirectionalLight key,rim;
         private final DirectionalLightShadowRenderer shadows;
         private final BloomFilter bloom;
         private final CombatVfxFilter combatVfx;
         private CombatVisuals combatVisuals;
-        private final GlowPostProcessor post;
+        private GlowPostProcessor post;
         private final ViewPort viewport;
         private Theme theme;
         private boolean glowEnabled,menu;
         private int samples=-1;
-        private Handle(AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
+        private Handle(AssetManager assets,AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
                 DirectionalLightShadowRenderer shadows,BloomFilter bloom,CombatVfxFilter combatVfx,GlowPostProcessor post,ViewPort viewport) {
-            this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.combatVfx=combatVfx;this.post=post;this.viewport=viewport;
+            this.assets=assets;this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.combatVfx=combatVfx;this.post=post;this.viewport=viewport;
         }
         /** Complete jME's one-time camera reshape before the caller frames its first scene. */
         public void initialize(RenderManager renderManager) {
@@ -136,7 +138,17 @@ public final class SceneLighting {
             if(this.samples==samples)return;
             this.samples=samples;
             // UI/native-window 0 means MSAA off; post-processing represents that as one sample.
-            post.setNumSamples(Math.max(1,samples));
+            if(!post.isInitialized()){post.setNumSamples(Math.max(1,samples));return;}
+            // jME 3.8.1 setNumSamples only changes an int; reshape also retains the
+            // opposite single/MS framebuffer. Recreate this one processor only on
+            // a user render-setting change, keeping the same filters and lights.
+            Camera camera=viewport.getCamera();RenderManager manager=post.manager;
+            float near=camera.getFrustumNear(),far=camera.getFrustumFar(),left=camera.getFrustumLeft(),right=camera.getFrustumRight();
+            float top=camera.getFrustumTop(),bottom=camera.getFrustumBottom();
+            viewport.removeProcessor(post);
+            post=new GlowPostProcessor(assets);post.setNumSamples(Math.max(1,samples));
+            post.addFilter(bloom);post.addFilter(combatVfx);viewport.addProcessor(post);
+            post.initialize(manager,viewport);camera.setFrustum(near,far,left,right,top,bottom);
         }
     }
 }

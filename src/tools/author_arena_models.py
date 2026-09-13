@@ -39,8 +39,10 @@ class Model:
         for (x,y),(xx,yy) in zip(profile,profile[1:]):
             self.face([(x,y,-d/2),(x,y,d/2),(xx,yy,d/2),(xx,yy,-d/2)],material)
             self.face([(x,y-.8,d/2),(x,y-.8,-d/2),(xx,yy-.8,-d/2),(xx,yy-.8,d/2)],material)
-            for z in (-d/2,d/2):self.face([(x,y,z),(xx,yy,z),(xx,yy-.8,z),(x,y-.8,z)] if z>0 else [(x,y-.8,z),(xx,yy-.8,z),(xx,yy,z),(x,y,z)],'steel')
-        for x,y in (profile[0],profile[-1]):self.face([(x,y,-d/2),(x,y-.8,-d/2),(x,y-.8,d/2),(x,y,d/2)],material)
+            for z in (-d/2,d/2):self.face([(x,y,z),(xx,yy,z),(xx,yy-.8,z),(x,y-.8,z)] if z<0 else [(x,y-.8,z),(xx,yy-.8,z),(xx,yy,z),(x,y,z)],'steel')
+        for x,y in (profile[0],profile[-1]):
+            face=[(x,y,-d/2),(x,y-.8,-d/2),(x,y-.8,d/2),(x,y,d/2)]
+            self.face(face if x<0 else list(reversed(face)),material)
     def save(self,name):
         data=bytearray();views=[];accessors=[];meshes=[];nodes=[]
         def buffer(values,kind,components):
@@ -136,6 +138,7 @@ def architectural(name,low=False):
         for i in range(count):
             a=i*math.tau/count;b=(i+1)*math.tau/count;p=(30*math.cos(a),10,30*math.sin(a));q=(30*math.cos(b),10,30*math.sin(b))
             m.face([(0,18,0),q,p],'ivory' if i%2 else 'faded-red');m.face([(0,17.4,0),(p[0],9.4,p[2]),(q[0],9.4,q[2])],'wood')
+            m.face([p,q,(q[0],9.4,q[2]),(p[0],9.4,p[2])],'wood')
         for i in range(8):
             a=i*math.tau/8;x,z=26*math.cos(a),26*math.sin(a);m.cylinder((x,5,z),.7,10,'ivory',12 if detail else 6)
             b=(i+1)*math.tau/8;m.beam((x,9.5,z),(26*math.cos(b),9.5,26*math.sin(b)),.8,'wood')

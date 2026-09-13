@@ -10,7 +10,8 @@ import java.util.function.DoubleSupplier;
 
 /** Optional development recording of allocated voices, reconstructed offline without an audio device. */
 public final class AudioCapture implements AutoCloseable {
-    private static final int RATE=48_000, MAX_TRACKS=4096, MAX_SNAPSHOTS=153_600;
+    private static final int RATE=48_000, MAX_TRACKS=4096, MAX_DURATION_SECONDS=60;
+    private static final int MAX_SNAPSHOTS=32*120*MAX_DURATION_SECONDS;
     private static final long MAX_CACHED_PCM_BYTES=64L*1024*1024;
     private record State(double seconds,float volume,float pitch,Vector3f source,Vector3f listener,Vector3f right) {}
     private static final class Track {
@@ -50,8 +51,8 @@ public final class AudioCapture implements AutoCloseable {
     private boolean closed;
 
     public AudioCapture(Path outputDir,DoubleSupplier simulationSeconds,double durationSeconds) {
-        if(!Double.isFinite(durationSeconds)||durationSeconds<=0||durationSeconds>40)
-            throw new IllegalArgumentException("Audio capture must be 0 < duration <= 40 seconds");
+        if(!Double.isFinite(durationSeconds)||durationSeconds<=0||durationSeconds>MAX_DURATION_SECONDS)
+            throw new IllegalArgumentException("Audio capture must be 0 < duration <= "+MAX_DURATION_SECONDS+" seconds");
         output=Objects.requireNonNull(outputDir);clock=Objects.requireNonNull(simulationSeconds);duration=durationSeconds;
         startedAt=clock.getAsDouble();
         if(!Double.isFinite(startedAt))throw new IllegalArgumentException("Invalid simulation clock");
@@ -125,7 +126,8 @@ public final class AudioCapture implements AutoCloseable {
         Files.writeString(output.resolve("AUDIO_README.txt"),"Real game viewport; audio.wav reconstructs the actually allocated game voices from the same local samples.\n"
                 +"Music and engines are included. Positions, effective gain, pitch and initial playback offsets are in audio-events.json.\n"
                 +"The mix uses simulation time, inverse-distance attenuation and equal-power stereo pan. It is not an exact native OpenAL/HRTF or microphone capture; Doppler, device timing and resampler differences are not reproduced.\n"
-                +"Limits: 40 seconds, 32 simultaneous voices, 4096 voice starts, 153600 state snapshots, 64 MiB cached short PCM. Capture fails explicitly on overflow.\n",StandardCharsets.UTF_8);
+                +"Limits: "+MAX_DURATION_SECONDS+" seconds, 32 simultaneous voices, 4096 voice starts, "+MAX_SNAPSHOTS
+                +" state snapshots, 64 MiB cached short PCM. Capture fails explicitly on overflow.\n",StandardCharsets.UTF_8);
     }
 
     private Sample load(Track track) throws IOException {

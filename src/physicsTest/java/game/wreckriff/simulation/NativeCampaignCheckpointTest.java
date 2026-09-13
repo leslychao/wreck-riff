@@ -94,12 +94,42 @@ class NativeCampaignCheckpointTest {
             restored.runtime.tick(Map.of(),false);assertTrue(restored.session.bossParticipantId>=0);
         }
     }
+    @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park"})
+    void continueDuringTheOrdinaryBattleRestoresHealthAndCooldownsWithEveryParticipantAndAmmoPickupFresh(String arenaId) {
+        var arena=registryFor(arenaId).definition(arenaId);ProgressStore.Checkpoint checkpoint;
+        try(var original=new Rig(arena,null)) {
+            original.runtime.skipIntro();
+            for(int tick=0;tick<120;tick++)original.runtime.tick(Map.of(),false);
+            var player=original.session.vehicle(0);player.hp=player.maximumHp*.75f;player.turbo=37;
+            for(var slot:player.weapons()){slot.ammo=slot.maximumAmmo;slot.cooldownTicks=17;}
+            player.abilityCooldown(AbilityId.FREEZE,79);player.machineGunCooldown=5;
+            var saved=original.runtime.checkpoint(ProgressStore.CheckpointStage.ARENA);
+            var timers=new LinkedHashMap<String,ProgressStore.PickupState>();arena.pickups().forEach(p->timers.put(p.id(),new ProgressStore.PickupState(700)));
+            var arenaState=saved.arena();
+            checkpoint=new ProgressStore.Checkpoint(saved.arenaId(),saved.layoutRevision(),saved.profileId(),saved.liveryId(),saved.seed(),
+                    saved.difficulty(),saved.stage(),saved.player(),saved.safePose(),new ProgressStore.ArenaState(timers,arenaState.objects(),
+                    arenaState.hazards(),arenaState.eventCooldownTicks(),arenaState.randomState()),saved.activeTicksBeforeBoss());
+        }
+        try(var continued=new Rig(arena,checkpoint)) {
+            assertEquals(arena.metadata().normalEnemies(),continued.session.normalRivalsAlive());
+            assertTrue(continued.session.vehicles.stream().allMatch(v->v.weapons().stream().allMatch(w->w.ammo==0)),"Continue starts every participant empty");
+            assertEquals(checkpoint.player().withoutAmmunition(),MatchCheckpoint.player(continued.session.vehicle(0)));
+            assertEquals(4,continued.world.supportedWheelContacts(0));assertEquals(-1,continued.session.bossParticipantId);
+            var timers=continued.runtime.arenaSystems().snapshot().pickups();
+            for(var pickup:arena.pickups()) {
+                boolean ammo=pickup.type()!=ArenaDefinition.PickupType.REPAIR&&pickup.type()!=ArenaDefinition.PickupType.TURBO_CELL;
+                assertEquals(ammo?0:700,timers.get(pickup.id()).respawnTicks());
+            }
+            continued.runtime.skipIntro();assertEquals(MatchSession.Phase.ARENA_COMBAT,continued.session.phase);
+            assertTrue(continued.runtime.combat().projectiles().isEmpty());assertTrue(continued.runtime.combat().mines().isEmpty());
+        }
+    }
     private static final class Rig implements AutoCloseable {
         final MatchSession session;
         final PhysicsWorld world=new PhysicsWorld(RULES);
         final MatchRuntime runtime;
         Rig(ArenaDefinition arena,ProgressStore.Checkpoint checkpoint) {
-            session=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),checkpoint!=null,
+            session=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),checkpoint!=null&&checkpoint.stage()==ProgressStore.CheckpointStage.BOSS,
                     checkpoint==null?0:checkpoint.liveryId(),checkpoint==null?"rivet":checkpoint.profileId());
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
@@ -110,7 +140,7 @@ class NativeCampaignCheckpointTest {
                 var spawn=arena.spawns().get(state.id);
                 Vector3f position=spawn.position().vector().add(0,profile.roadOffset(),0);
                 float yaw=spawn.yawDegrees()*FastMath.DEG_TO_RAD;
-                if(checkpoint!=null) {
+                if(checkpoint!=null&&state.player) {
                     var pose=checkpoint.safePose();position.set((float)pose.x(),(float)pose.y(),(float)pose.z());yaw=(float)pose.yaw();
                 }
                 world.addVehicle(state.id,position,new Quaternion().fromAngleAxis(yaw,Vector3f.UNIT_Y),profile);

@@ -25,4 +25,12 @@ class CombatVfxAtlasTest {
         assertEquals(0,CombatVfxFilter.coverage(4,new float[]{3,3,3,3},1));
         assertEquals(.5f,CombatVfxFilter.coverage(4,new float[]{4.5f},1),.0001f);
     }
+    @Test void threeBlastVariantsKeepInterpolationInsideTheirOwnTwentyOneFrames() {
+        for(int variant=0;variant<3;variant++) {
+            float variation=(variant+.5f)/3;
+            assertEquals(variant*21,CombatVfxAtlas.blastFrame(0,1,variation));
+            assertEquals(variant*21+10,CombatVfxAtlas.blastFrame(.5f,1,variation));
+            assertEquals(variant*21+20,CombatVfxAtlas.blastFrame(2,1,variation));
+        }
+    }
 }

@@ -4,3 +4,7 @@ src/main/resources/licenses/*.json text eol=lf
 src/tools/assets/** -text whitespace=cr-at-eol
 src/tools/assets/**/*.json text eol=lf
 src/tools/prepare_recorded_sfx.py text eol=lf
+# These exact source bytes are recorded in the combat asset provenance manifests.
+src/tools/author_vehicle_models.py text eol=lf
+src/tools/author_combat_vfx.py text eol=lf
+src/tools/java/game/wreckriff/tools/PrepareVehicleModels.java text eol=lf

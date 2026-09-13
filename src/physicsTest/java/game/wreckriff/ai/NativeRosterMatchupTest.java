@@ -144,6 +144,9 @@ class NativeRosterMatchupTest {
         VehicleCommand lastBotCommand=VehicleCommand.NONE;
         Fight(String targetProfile) {
             session=MatchSession.balanced(42,List.of("grinder",targetProfile),Configs.load("combat",CombatRules.class));
+            // This matchup explicitly starts after collecting the full arsenal.
+            // Real match creation remains empty; the depleted scenario clears this fixture.
+            for(var weapon:session.vehicle(0).weapons())weapon.refill(weapon.maximumAmmo);
             world=new PhysicsWorld(vehicleRules);
             world.addStatic("floor",new BoxCollisionShape(new Vector3f(200,.5f,200)),new Vector3f(0,-.5f,0),new Quaternion());
             for(var state:session.vehicles) {

@@ -117,12 +117,23 @@ public final class BotController {
             brain.aliveTicks++;
             Vector3f position=world.position(vehicle.id);
             var road=world.roadContext(vehicle.id);
-            if(road.known()&&road.flying()) {
+            if(road.known()&&road.flying()&&(road.motion()==RoadContext.Motion.LAUNCH||!world.chassisSupported(vehicle.id))) {
                 brain.wasFlying=true;brain.transitionPhase=TransitionPhase.FLIGHT;
                 brain.requiredMovement=false;brain.lastPosition=position.clone();brain.progressWindowStart=session.tick;
                 brain.progress=0;brain.reverseUntil=0;brain.stuckSince=-1;
                 // The shared driver/launch owner controls airborne attitude. Never steer towards an apex node.
                 result.put(vehicle.id,VehicleCommand.NONE);continue;
+            }
+            if(road.motion()==RoadContext.Motion.AIRBORNE&&world.chassisSupported(vehicle.id)) {
+                // Zero wheel contacts also describes a rolled or high-centred chassis.
+                // Give the shared driver's ordinary self-righting an input, while true
+                // flight and authored launches retain their hands-off control owner.
+                brain.wasFlying=false;brain.transitionPhase=TransitionPhase.ROAD;brain.state=State.RECOVER;
+                brain.requiredMovement=true;brain.progressDirection=world.forward(vehicle.id).setY(0).normalizeLocal();
+                trackProgress(vehicle,brain,position,world);releasePickup(brain,vehicle.id);
+                // A hull that cannot right itself (for example, a high centre) must
+                // still reach the existing timed recovery instead of holding forever.
+                result.put(vehicle.id,new VehicleCommand(1,0,0,false,false,false,false,null,0,false,needsRecovery(brain),AbilityId.NONE));continue;
             }
             if(brain.wasFlying) {
                 brain.wasFlying=false;brain.landedAt=session.tick;brain.transitionPhase=TransitionPhase.LANDING;
@@ -628,7 +639,9 @@ public final class BotController {
         // The final connector belongs to the route too. A nearby visible goal must not cause
         // a replan back to its nearest graph node after the car has already left that node.
         float offset=roadOffset(world,vehicleId);
-        if (horizontalDistance(position,destination)<12 && Math.abs(position.y-offset-destination.y)<1.5f
+        int goal=graph.nearest(destination);
+        float connectorReach=Math.max(12,horizontalDistance(graph.position(goal),destination)+3);
+        if (horizontalDistance(position,destination)<connectorReach && Math.abs(position.y-offset-destination.y)<1.5f
                 && !(hazardActive && graph.crossesHazard(position,destination))
                 &&safeWarningSegment(position,destination.add(0,offset,0),brain.warnings)) {
             WorldQuery.Hit blocker=world.sweep(position.add(0,1.2f,0),destination.add(0,1.2f+offset,0),halfWidth(world,vehicleId),vehicleId);
@@ -637,7 +650,6 @@ public final class BotController {
                 brain.destination=destination.clone();brain.path=List.of();brain.goalNode=-1;return;
             }
         }
-        int goal=graph.nearest(destination);
         if (goal==brain.goalNode && !brain.path.isEmpty() && session.tick<brain.replanAt&&brain.routeRevision==graph.revision()
                 &&(brain.state!=State.SEEK_PICKUP||brain.routeSupplyGeneration==brain.supplyGeneration)) {
             brain.destination=destination.clone(); return;
@@ -1072,11 +1084,10 @@ public final class BotController {
         Vector3f direction=pad.direction(),source=pad.source().vector();
         Vector3f offset=position.subtract(source);offset.y=0;
         float along=offset.dot(direction),lateral=offset.subtract(direction.mult(along)).length();
-        Vector3f approach=arena.edges().stream().filter(e->e.type()==ArenaDefinition.Transition.ROAD
-                        &&(e.to()==transition.from()||e.bidirectional()&&e.from()==transition.from()))
-                .map(e->graph.position(e.to()==transition.from()?e.from():e.to()))
-                .filter(p->p.subtract(source).dot(direction)<-1)
-                .min(Comparator.comparingDouble(p->p.distanceSquared(source))).orElseGet(()->source.subtract(direction.mult(pad.length()/2+8)));
+        // A neighbouring road node may approach diagonally. Stage on the platform's
+        // actual entry axis with enough straight road to align the whole chassis.
+        // Returning to an off-axis node repeatedly made the driver circle the pad.
+        Vector3f approach=source.subtract(direction.mult(pad.length()/2+Math.max(12,world.profile(id).length()*2)));
         boolean aligned=along< -pad.length()/2&&lateral<Math.max(1,(pad.width()-mobility(id,world).width())*.4f)
                 &&angleDegrees(world.forward(id),direction)<pad.maximumEntryAngle()*.7f;
         if(along<pad.length()/2+world.profile(id).length()&&(aligned||horizontalDistance(position,approach)<3
@@ -1274,6 +1285,16 @@ public final class BotController {
         if(surface.get().level()==0)return true;
         float margin=hullEdgeSample?.2f:2.5f;
         if(arena.surfaceAt(point,margin,.15f).isPresent())return true;
+        // Authored intersections are tessellated into neighbouring meshes. Apply the
+        // footprint to their union: an internal pavement seam is not a road edge.
+        boolean joined=true;
+        for(int sample=0;sample<8&&joined;sample++) {
+            double angle=sample*Math.PI/4;
+            var probe=new Vector3f(point.x+(float)Math.cos(angle)*margin,point.y,point.z+(float)Math.sin(angle)*margin);
+            var neighbour=arena.surfaceAt(probe,0,.15f);
+            joined=neighbour.isPresent()&&neighbour.get().level()==surface.get().level();
+        }
+        if(joined)return true;
         // The ramp/plate seam is part of the same connected road; do not inset it twice.
         return arena.ramps().stream().anyMatch(r->r.containsXZ(point.x,point.z,-.3f)
                 &&Math.abs(r.heightAt(point.x,point.z)-point.y)<.2f)

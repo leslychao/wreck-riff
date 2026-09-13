@@ -96,7 +96,7 @@
     }
   },
   "control": {
-    "freezeSeconds": 1.5,
+    "freezeSeconds": 4,
     "freezeCooldownSeconds": 12,
     "freezeSpeed": 80,
     "freezeTtlSeconds": 0.75,
@@ -129,11 +129,11 @@
   },
   "ballistic": {
     "initialAmmo": 0, "maximumAmmo": 4, "cooldownSeconds": 4,
-    "charges": 4, "releaseIntervalSeconds": 0.45, "minimumWarningSeconds": 0.5,
+    "charges": 4, "releaseIntervalSeconds": 0.3, "minimumWarningSeconds": 0.5,
     "maximumRange": 70, "fallbackRange": 40, "acquisitionConeDegrees": 30,
-    "carrierHeight": 22, "carrierSpeed": 45, "minimumCarrierSeconds": 0.7, "maximumCarrierSeconds": 1.6,
-    "gravity": 18, "turnDegreesPerSecond": 12, "maximumLeadSeconds": 0.35, "maximumLead": 6,
-    "maximumDeviation": 3, "maximumGuidanceSeconds": 0.6, "guidanceCutoffSeconds": 0.6, "spread": 2,
+    "carrierHeight": 22, "carrierSpeed": 60, "minimumCarrierSeconds": 0.45, "maximumCarrierSeconds": 1.2,
+    "gravity": 36, "turnDegreesPerSecond": 24, "maximumLeadSeconds": 0.8, "maximumLead": 12,
+    "maximumDeviation": 5, "maximumGuidanceSeconds": 0.75, "guidanceCutoffSeconds": 0.35, "spread": 2,
     "damage": 28, "radius": 6, "blast": { "horizontalDeltaSpeed": 4, "upwardDeltaSpeed": 2.5 }
   }
 }

@@ -110,6 +110,45 @@ class BotSupplyRoutingTest {
         }
     }
 
+    @Test void anInternalRoadMeshSeamDoesNotTurnACommittedIslandRouteBackTowardAnotherStreet() {
+        var source=Configs.load("arena-euphoria-park",ArenaDefinition.class);var graph=new NavGraph(source);
+        int start=graph.nearest(new Vector3f(750,3,650));
+        var goal=new ArenaDefinition.Pickup("across-island-seam",ArenaDefinition.PickupType.HOMING_AMMO,new ArenaDefinition.Vec3(815,3,700),3000);
+        var rig=new Rig(source.withPickups(List.of(goal)),start);rig.bots.commands(rig.world);
+        assertEquals(start,rig.bots.navigation(0).transition().from());
+        rig.world.place(0,new Vector3f(763,3,661));rig.session.tick=132;rig.bots.commands(rig.world);
+        assertEquals(start,rig.bots.route(0).getFirst(),"The native-supported road crossing at z=663 belongs to the combined driving surface");
+        assertTrue(rig.graph.position(rig.bots.navigation(0).transition().to()).z>661,"Continue along the committed north-east road instead of turning back to the crossing");
+    }
+
+    @Test void aLongFinalPickupConnectorDoesNotPullTheCarBackToItsPassedGraphNode() {
+        var source=ArenaDefinition.load();var target=new Vector3f(-50,0,-15);
+        var arena=source.withPickups(List.of(new ArenaDefinition.Pickup("off-node-ammo",ArenaDefinition.PickupType.HOMING_AMMO,
+                new ArenaDefinition.Vec3(target.x,target.y,target.z),3000)));
+        var graph=new NavGraph(arena);int terminal=graph.nearest(target);var rig=new Rig(arena,terminal);
+        var forward=target.subtract(graph.position(terminal)).setY(0).normalizeLocal();
+        rig.world.rotations.put(0,new Quaternion().fromAngleAxis((float)Math.atan2(forward.x,forward.z),Vector3f.UNIT_Y));
+        rig.bots.commands(rig.world);rig.world.place(0,graph.position(terminal).add(forward.mult(7)));rig.session.tick=12;
+        var command=rig.bots.commands(rig.world).get(0);
+        assertTrue(command.throttle()>0,"Keep driving along the checked final connector");assertEquals(0,command.brakeReverse());
+        assertEquals(0,command.steer(),.01f,"The goal is straight ahead; the already passed navigation node is behind");
+    }
+
+    @Test void emceeStagesOnTheLaunchAxisInsteadOfReturningToADiagonalNeighbouringRoadNode() {
+        var source=Configs.load("arena-euphoria-park",ArenaDefinition.class);var pad=source.launchPads().getFirst();
+        var arena=source.withPickups(List.of(new ArenaDefinition.Pickup("launch-goal",ArenaDefinition.PickupType.REPAIR,pad.target(),3000)));
+        var session=new MatchSession(73,arena,MatchSession.Mode.BOSS_DUEL,COMBAT);var boss=session.registerBoss(arena.bosses().getFirst());
+        session.vehicle(0).hp=0;boss.hp=boss.maximumHp*.1f;session.phase=MatchSession.Phase.BOSS_COMBAT;
+        var graph=new NavGraph(arena);var world=new SupplyWorld(arena);var profile=VehicleProfile.boss(boss.profileId,VEHICLES);world.profiles.put(boss.id,profile);
+        world.place(boss.id,new Vector3f(720,0,345));var bots=new BotController(session,arena,graph,AiRules.load());bots.commands(world);
+        var position=new Vector3f(729,0,349);world.place(boss.id,position);
+        var staging=pad.source().vector().subtract(pad.direction().mult(pad.length()/2+Math.max(12,profile.length()*2)));
+        var forward=staging.subtract(position);world.rotations.put(boss.id,new Quaternion().fromAngleAxis((float)Math.atan2(forward.x,forward.z),Vector3f.UNIT_Y));session.tick++;
+        var command=bots.commands(world).get(boss.id);
+        assertEquals(ArenaDefinition.Transition.LAUNCH,bots.navigation(boss.id).transition().type());
+        assertTrue(command.throttle()>0);assertEquals(0,command.brakeReverse());assertEquals(0,command.steer(),.01f);
+    }
+
     private static ArenaDefinition.Pickup pickup(ArenaDefinition arena,String id,ArenaDefinition.PickupType type,int node) {
         var point=arena.nodes().stream().filter(n->n.id()==node).findFirst().orElseThrow().position();
         return new ArenaDefinition.Pickup(id,type,point,3000);
@@ -129,12 +168,13 @@ class BotSupplyRoutingTest {
     /** Deterministic road queries; native route drivability is covered by the physics suite. */
     private static final class SupplyWorld implements WorldQuery {
         final ArenaDefinition arena;final Map<Integer,Vector3f> positions=new HashMap<>();final Map<Integer,VehicleProfile> profiles=new HashMap<>();
+        final Map<Integer,Quaternion> rotations=new HashMap<>();
         SupplyWorld(ArenaDefinition arena){this.arena=arena;}
         float offset(int id){return arena.bosses().isEmpty()?.45f:profile(id).roadOffset();}
         void place(int id,Vector3f road){positions.put(id,road.add(0,offset(id),0));}
         public Vector3f position(int id){return positions.getOrDefault(id,new Vector3f(1000+id*100,1,1000)).clone();}
         public Vector3f velocity(int id){return new Vector3f();}
-        public Quaternion rotation(int id){return new Quaternion();}
+        public Quaternion rotation(int id){return rotations.getOrDefault(id,new Quaternion()).clone();}
         public VehicleProfile profile(int id){return profiles.getOrDefault(id,VehicleProfile.rivet());}
         public RoadContext roadContext(int id){
             var point=position(id).add(0,-offset(id),0);var surface=arena.surfaceAt(point,0,.2f).orElseThrow();

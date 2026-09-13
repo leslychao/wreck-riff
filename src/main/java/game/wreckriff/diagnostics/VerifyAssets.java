@@ -95,7 +95,7 @@ public final class VerifyAssets {
         attempt(errors, "pickup models", () -> verifyPickupModels(assets));
         attempt(errors, "ordnance models and atlases", () -> OrdnanceAssetsVerifier.verify(assets));
         attempt(errors, "baked combat VFX", () -> CombatVfxAssetsVerifier.verify(assets));
-        attempt(errors, "authored vehicle assets", () -> game.wreckriff.presentation.VehicleAssetsVerifier.verify());
+        attempt(errors, "authored vehicle assets", () -> game.wreckriff.presentation.VehicleAssetsVerifier.verify(assets));
         attempt(errors, "arena art", () -> verifyArenaArt(assets));
         attempt(errors, "font", () -> verifyFont(assets));
         attempt(errors, "licensed textures", () -> verifyTextures(assets));
@@ -125,7 +125,8 @@ public final class VerifyAssets {
             }
         });
         attempt(errors, "project materials", () -> {
-            for (String path : List.of("materials/CombatParticles.j3md", "materials/CombatParticles.vert", "materials/CombatParticles.frag")) {
+            for (String path : List.of("materials/CombatParticles.j3md", "materials/CombatParticles.vert", "materials/CombatParticles.frag",
+                    "materials/VehicleFrost.j3md", "materials/VehicleFrost.vert", "materials/VehicleFrost.frag")) {
                 byte[] bytes = resource(path);
                 if (bytes.length == 0) throw new IOException("Empty project material " + path);
                 assets.add(asset(path, "project-material", bytes, "src/main/resources/" + path + "; original project source", "SOURCE_PRESENT"));
@@ -143,7 +144,8 @@ public final class VerifyAssets {
             }
             for (String path : List.of("docs/asset-history/GenerateAudio-v0.1.java.txt", "docs/asset-history/GenerateAudio-v0.2.java.txt", "docs/asset-history/GenerateFont-v0.1.java.txt",
                     "docs/asset-history/audio-0.3/prepare_recorded_sfx.py.txt", "docs/asset-history/audio-0.3/sfx-provenance.json", "docs/asset-history/audio-0.3/audio-metrics.csv",
-                    "docs/asset-history/GenerateAudio-before-recorded-results.java")) {
+                    "docs/asset-history/GenerateAudio-before-recorded-results.java",
+                    "docs/asset-history/VehicleDamageVisual-before-freeze-20260913.java.txt")) {
                 assets.add(asset(path, "historical-source", Files.readAllBytes(Path.of(path)),
                         "Superseded original recipe retained for provenance only; excluded from compilation and runtime", "SOURCE_PRESENT"));
             }

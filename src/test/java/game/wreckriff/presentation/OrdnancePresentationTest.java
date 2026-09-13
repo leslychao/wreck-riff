@@ -10,6 +10,24 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OrdnancePresentationTest {
+    @Test void freezeKeepsItsLuminousIceNoseAndTechnicalSilhouetteAtBothDistances() {
+        Node scene=new Node();
+        try(var view=new OrdnancePresentation(PresentationTestAssets.shared(),scene)) {
+            var projectile=state(77,"freeze",Vector3f.ZERO,Vector3f.UNIT_Z);
+            for(Vector3f observer:List.of(Vector3f.ZERO,new Vector3f(100,0,0))) {
+                view.update(List.of(projectile),List.of(),observer);Node model=view.instance(77,false);
+                Geometry core=(Geometry)model.getChild("signal");var positions=core.getMesh().getFloatBuffer(VertexBuffer.Type.Position);
+                float nose=0,rear=1;
+                for(int vertex=0;vertex<positions.limit()/3;vertex++){nose=Math.max(nose,positions.get(vertex*3+2));rear=Math.min(rear,positions.get(vertex*3+2));}
+                assertTrue(nose>=.45f&&rear<0,"The ice core must occupy the projectile, not just one thin glowing ring");
+                assertNotEquals(Spatial.CullHint.Always,core.getLocalCullHint());
+                Geometry body=(Geometry)model.getChild(observer.lengthSquared()<1?"detail":"distance");
+                var bound=(com.jme3.bounding.BoundingBox)body.getMesh().getBound();
+                assertTrue(bound.getXExtent()>=.2f,"Technical fins keep a readable silhouette at both LODs");
+                assertEquals(-.24f,OrdnanceStyle.FREEZE.nozzleZ());
+            }
+        }
+    }
     @Test void stableIdsShareImmutableMeshesFollowAuthoritativePosesAndReuseRemovedSlots() {
         Node scene=new Node();
         try(var view=new OrdnancePresentation(PresentationTestAssets.shared(),scene)) {

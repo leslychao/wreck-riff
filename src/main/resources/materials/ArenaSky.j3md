@@ -1,0 +1,25 @@
+MaterialDef Authored Arena Atmosphere {
+    MaterialParameters {
+        Vector3 NormalScale
+        Vector3 SunDirection
+        Color HorizonColor
+        Color ZenithColor
+        Color CloudColor
+        Color SunColor
+        Float CloudAmount
+    }
+    Technique {
+        VertexShader GLSL150 : Common/MatDefs/Misc/Sky.vert
+        FragmentShader GLSL150 : materials/ArenaSky.frag
+        WorldParameters {
+            ViewMatrix
+            ProjectionMatrix
+            WorldMatrixInverse
+        }
+        RenderState {
+            FaceCull Off
+            DepthWrite Off
+            DepthFunc Equal
+        }
+    }
+}

@@ -6,8 +6,7 @@ another visible floor. All substantial street furniture has the same visual and
 collision geometry in ArenaDefinition.
 """
 import math
-from collections import defaultdict
-from author_campaign_arenas import ccw, cut, area, vec
+from author_campaign_arenas import ccw, cut, area, vec, inside
 
 
 def _rectangle(x, z, width, depth):
@@ -20,32 +19,6 @@ def _box_polygon(box):
     return ccw([(c['x']+math.cos(angle)*x+math.sin(angle)*z,
                  c['z']-math.sin(angle)*x+math.cos(angle)*z)
                 for x,z in _rectangle(0,0,s['x'],s['z'])])
-
-
-def _add_curbs(walks,height=.14):
-    """Close the exposed outside edge, never duplicate an internal polygon seam."""
-    edges=[];points=set()
-    for mesh,polygons in walks:
-        for polygon in polygons:
-            for a,b in zip(ccw(polygon),ccw(polygon)[1:]+ccw(polygon)[:1]):
-                edges.append((mesh,a,b));points.add(a);points.add(b)
-    segments=defaultdict(list)
-    for mesh,a,b in edges:
-        dx,dz=b[0]-a[0],b[1]-a[1];length2=dx*dx+dz*dz
-        if length2<1e-10:continue
-        splits=[0.,1.]
-        for p in points:
-            t=((p[0]-a[0])*dx+(p[1]-a[1])*dz)/length2
-            if 1e-6<t<1-1e-6 and abs((p[0]-a[0])*dz-(p[1]-a[1])*dx)<1e-5*math.sqrt(length2):splits.append(t)
-        splits=sorted(set(round(t,9) for t in splits))
-        for start,end in zip(splits,splits[1:]):
-            p=(round(a[0]+start*dx,5),round(a[1]+start*dz,5));q=(round(a[0]+end*dx,5),round(a[1]+end*dz,5))
-            if p!=q:segments[tuple(sorted((p,q)))].append((mesh,p,q))
-    for matching in segments.values():
-        if len(matching)!=1:continue
-        mesh,a,b=matching[0];base=len(mesh['vertices'])
-        mesh['vertices'].extend(vec(p) for p in [(a[0],0,a[1]),(b[0],0,b[1]),(b[0],height,b[1]),(a[0],height,a[1])])
-        mesh['indices'].extend((base,base+3,base+2,base,base+2,base+1))
 
 
 def _road_polygons(scene):
@@ -76,7 +49,7 @@ def _faces(polygons, height, material):
 
 
 def _sidewalks(scene):
-    roads=_road_polygons(scene);claimed=[];walks=[];walk_meshes=[]
+    roads=_road_polygons(scene);claimed=[];walks=[]
     buildings=[_box_polygon(b)
                for b in scene.data['boxes'] if b['collision'] and b['size']['y']>2]
     cuts=[road[0] for road in roads]+buildings+scene.location.holes
@@ -96,11 +69,10 @@ def _sidewalks(scene):
             vertices,indices,_=_faces(pieces,.14,'district-slate')
             if not indices:continue
             identity=f'dress-neon-sidewalk-{number}-{side}'
-            mesh=dict(id=identity,vertices=vertices,indices=indices,material='district-slate',collision=True,triangleMaterials=[])
-            scene.data['meshes'].append(mesh);walk_meshes.append((mesh,pieces))
+            mesh=dict(id=identity,vertices=vertices,indices=indices,material='district-slate',collision=True,triangleMaterials=[],thickness=.14)
+            scene.data['meshes'].append(mesh)
             scene.data['surfaces'].append(dict(id=identity,geometryId=identity,level=0,grip=1))
             walks.extend(pieces);claimed.extend(pieces)
-    _add_curbs(walk_meshes)
     # Remove terrain beneath the concrete, including normal/specular shading.
     # The 14 cm curb does not rely on a depth offset to hide a duplicate sheet.
     for mesh in scene.data['meshes']:
@@ -119,17 +91,27 @@ def _sidewalks(scene):
 
 
 class City:
-    def __init__(self,scene):self.scene=scene;self.count=0
-    def clear(self,x,z,radius,ignore=()):
-        if not self.scene.location.landscape_clear(x,z,radius+3,ignore):return False
+    def __init__(self,scene):self.scene=scene;self.count=0;self.installed=[]
+    def clear(self,x,z,radius,ignore=(),floor=0,height=6.5):
+        # A roof above an interior is not an occupied ground footprint. Check
+        # height as well as plan position, keeping every actual road corridor open.
+        for path in self.scene.location.paths:
+            for first,last in zip(path['names'],path['names'][1:]):
+                a,b=self.scene.location.points[first],self.scene.location.points[last]
+                if min(a[1],b[1])>floor+height or max(a[1],b[1])<floor-2:continue
+                dx,dz=b[0]-a[0],b[2]-a[2]
+                t=max(0,min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz)))
+                if math.hypot(x-a[0]-t*dx,z-a[2]-t*dz)<path['width']/2+radius+3:return False
+        if floor==0 and any(inside((x,z),hole) for hole in self.scene.location.holes):return False
         for pickup in self.scene.data['pickups']:
             p=pickup['position']
-            if abs(p['y'])<4 and math.hypot(p['x']-x,p['z']-z)<radius+8:return False
+            if abs(p['y']-floor)<4 and math.hypot(p['x']-x,p['z']-z)<radius+8:return False
         for box in self.scene.data['boxes']:
             if not box['collision'] or box['id'] in ignore:continue
             c,s=box['center'],box['size']
-            if c['y']-s['y']/2>5:continue
-            if abs(x-c['x'])<s['x']/2+radius and abs(z-c['z'])<s['z']/2+radius:return False
+            if c['y']-s['y']/2>floor+height or c['y']+s['y']/2<floor+.2:continue
+            angle=math.radians(box['yawDegrees']);dx,dz=x-c['x'],z-c['z']
+            if abs(math.cos(angle)*dx-math.sin(angle)*dz)<s['x']/2+radius and abs(math.sin(angle)*dx+math.cos(angle)*dz)<s['z']/2+radius:return False
         return True
     def solid(self,name,position,size,material='concrete'):
         identity=f'dress-neon-{name}-{self.count}';self.count+=1
@@ -168,9 +150,122 @@ class City:
             self.scene.part(name+'-vent',(xx,1.7,z-3.15),(3.8,1.6,.25),'black')
         for sign in (-1,1):self.solid(name+'-impact-barrier',(x+sign*14,.55,z),(1,1.1,14),'yellow')
 
+    def pocket(self,name,candidates,kind,floor=0):
+        dimensions={'news':(10,7),'cafe':(14,8),'directory':(5,4),'workbench':(10,7),
+                    'pump':(9,8),'charging':(7,5),'garden':(12,6)}
+        width,depth=dimensions[kind];radius=math.hypot(width,depth)/2
+        for x,z in candidates:
+            if not self.clear(x,z,radius,floor=floor):continue
+            self.installed.append(dict(id=name,kind=kind,position=[x,floor,z]))
+            if kind in ('news','cafe'):
+                self.solid(name+'-back',(x,floor+2.1,z+depth/2-.25),(width,4.2,.5),'brick' if kind=='cafe' else 'steel')
+                for side in (-1,1):self.solid(name+'-end',(x+side*(width/2-.25),floor+2.1,z),(.5,4.2,depth),'steel')
+                self.solid(name+'-counter',(x,floor+1.05,z-depth/2+.65),(width-.7,2.1,1.3),'wood')
+                self.solid(name+'-awning',(x,floor+4.5,z),(width+1,.5,depth+1),'blue' if kind=='news' else 'ivory')
+                self.scene.part(name+'-sign',(x,floor+3.45,z-depth/2-.2),(width*.75,.8,.25),'light-cyan' if kind=='news' else 'light-amber')
+                for offset in (-.3,0,.3):
+                    self.scene.part(name+'-menu',(x+width*offset,floor+2.4,z+depth/2-.6),(width*.22,1.1,.18),'ivory')
+                    self.scene.part(name+'-display',(x+width*offset,floor+1.4,z-depth/2+.65),(width*.2,.55,.6),'faded-red' if kind=='news' else 'steel')
+                self.scene.light(name+'-counter-light',(x,floor+3.9,z-2),(1,.72,.42) if kind=='cafe' else (.5,.8,1),14)
+            elif kind=='directory':
+                self.solid(name+'-base',(x,floor+.3,z),(4,.6,2),'dark-concrete')
+                self.solid(name+'-frame',(x,floor+2.7,z),(3.4,4.8,.65),'steel')
+                self.scene.part(name+'-screen',(x,floor+3,z-.4),(2.9,3.4,.18),'blue')
+                for index in range(4):self.scene.part(name+'-destinations',(x,floor+4.1-index*.65,z-.53),(2.3,.16,.08),'light-cyan' if index%2 else 'light-white')
+            elif kind=='workbench':
+                for side in (-1,1):self.solid(name+'-leg',(x+side*3,floor+1.05,z),(1.1,2.1,4),'steel')
+                self.solid(name+'-top',(x,floor+2.2,z),(9,.3,5),'wood')
+                self.solid(name+'-tool-board',(x,floor+3.2,z+2),(9,2,.35),'steel')
+                for offset in (-3,-1,1,3):self.scene.part(name+'-tools',(x+offset,floor+3.4,z+1.7),(.22,1.15,.15),'ivory')
+                self.scene.cylinder(name+'-motor',(x,floor+2.7,z),.65,1,'blue')
+            elif kind=='pump':
+                self.solid(name+'-skid',(x,floor+.3,z),(8,.6,6),'steel')
+                for offset in (-2,2):
+                    self.solid(name+'-motor-hull',(x+offset,floor+1.5,z),(2.8,2.4,3.5),'blue')
+                    self.scene.cylinder(name+'-riser',(x+offset,floor+3.7,z+1),.55,4,'steel')
+                    self.scene.beam(name+'-pipe',(x+offset,floor+5.6,z+1),(x+offset,floor+5.6,z-2),.7,'steel')
+                    self.scene.part(name+'-pressure-dial',(x+offset,floor+3,z-.7),(.7,.7,.3),'ivory')
+            elif kind=='charging':
+                for offset in (-2,2):
+                    self.solid(name+'-terminal',(x+offset,floor+1.6,z),(1.2,3.2,1.1),'steel')
+                    self.scene.part(name+'-indicator',(x+offset,floor+2.3,z-.65),(.8,.45,.16),'light-cyan')
+                    self.scene.beam(name+'-cable',(x+offset+.55,floor+2.4,z),(x+offset+1.25,floor+.4,z),.14,'black')
+                self.solid(name+'-wheel-stop',(x,floor+.22,z-2.2),(6,.44,.55),'yellow')
+            else:
+                self.solid(name+'-bed',(x,floor+.6,z),(width,1.2,depth),'dark-concrete')
+                self.scene.part(name+'-soil',(x,floor+1.24,z),(width-.5,.12,depth-.5),'earth')
+                for offset in (-3,3):self.scene.model(name+'-tree-'+str(offset),'park-tree',(x+offset,floor+1.3,z),(.4,.7,.4),lod=220)
+            self.scene.anchor='';return
+        raise ValueError('No safe authored city pocket: '+name)
+
+
+def _street_faces(scene):
+    # East/west faces used to be entirely blank even on occupied office blocks.
+    # Continuous floor bands and deeper ground-floor shopfronts identify the building.
+    for building in list(scene.data['boxes']):
+        c,s=building['center'],building['size'];w,h,d=s['x'],s['y'],s['z']
+        if min(w,d)<24 or h<8 or 'roof' in building['id'] or building['id'].startswith(('edge-','dress-')):continue
+        scene.anchor=building['id'];base=c['y']-h/2
+        for side in (-1,1):
+            x=c['x']+side*(w/2+.24)
+            for floor in range(max(1,min(32,int(h/4.5)))):
+                yy=base+3+floor*4.5
+                scene.part('city-side-glazing',(x,yy,c['z']),(.32,2.1,d-3),'glass')
+                for col in range(max(2,min(16,int(d/8)))):
+                    zz=c['z']-d/2+4+col*(d-8)/max(1,min(16,int(d/8))-1)
+                    scene.part('city-window-mullion',(x+side*.2,yy,zz),(.2,2.45,.22),'steel')
+                    if (floor*3+col)%9==0:scene.part('city-side-occupied',(x+side*.26,yy,zz+1.6),(.13,1.5,2.8),'light-amber')
+            scene.part('city-plinth',(x,base+.5,c['z']),(.55,1,d),'dark-concrete')
+            scene.part('city-eaves',(x,c['y']+h/2,c['z']),(.65,.5,d+.7),'steel')
+        # Retail windows and entrance pilasters face the public street, while
+        # existing loading shutters remain on the delivery side.
+        if h<40:
+            for side in (-1,1):
+                z=c['z']+side*(d/2+.45)
+                for col in range(max(2,min(12,int(w/12)))):
+                    xx=c['x']-w/2+6+col*(w-12)/max(1,min(12,int(w/12))-1)
+                    scene.part('city-shopfront',(xx,base+2.25,z),(7,3.5,.5),'glass')
+                    scene.part('city-shopfront-cap',(xx,base+4.25,z+side*.2),(7.4,.35,.5),'steel')
+        scene.anchor=''
+
+
+def _foreground(city):
+    # Every choice is tied to a particular frontage or interior, in camera range
+    # of its through route. Fallbacks move along that same place, never across town.
+    for name,choices,kind in [
+        ('meridian-wayfinding',[(525,990),(500,990),(555,995)],'directory'),
+        ('meridian-coffee',[(455,1000),(455,990),(480,980)],'cafe'),
+        ('exchange-court-planters',[(650,1010),(685,1035),(680,1000)],'garden'),
+        ('gallery-news',[(775,691),(755,691),(790,691)],'news'),
+        ('gallery-coffee',[(893,712),(902,700),(906,720)],'cafe'),
+        ('atrium-directory',[(875,825),(875,810),(825,830)],'directory'),
+        ('gallery-north-garden',[(805,835),(788,851),(900,850)],'garden'),
+        ('court-laundry-pickup',[(425,365),(440,368),(425,335)],'news'),
+        ('court-garden',[(480,430),(510,450),(470,445)],'garden'),
+        ('court-mail-directory',[(595,430),(610,425),(630,415)],'directory'),
+        ('tunnel-maintenance-bench',[(1067,1047),(1065,1025),(1070,1060)],'workbench'),
+        ('tunnel-pump-bank',[(1120,1018),(1125,1013),(1115,1018)],'pump'),
+        ('technical-route-board',[(1055,976),(1065,955),(1140,1033)],'directory'),
+        ('parking-payment-west',[(1435,317),(1440,315),(1460,316)],'directory'),
+        ('parking-charge-west',[(1450,308),(1450,395),(1445,390)],'charging'),
+        ('parking-charge-east',[(1590,395),(1580,310),(1575,405)],'charging'),
+        ('transport-transfer-guide',[(1350,910),(1345,915),(1340,920)],'directory'),
+    ]:city.pocket(name,choices,kind)
+    for floor in (8,16):
+        city.pocket('parking-upper-charge-'+str(floor),[(1525,375),(1535,365),(1550,310)],'charging',floor)
+    scene=city.scene
+    for z in (580,650,735,800):
+        for x,side in ((1164,1),(1216,-1)):
+            # Mounted above the vehicle envelope; their complete casing is solid.
+            identity=city.solid('tunnel-vent-case',(x,-3,z),(1.4,4,5),'steel')
+            scene.anchor=identity
+            for offset in (-1.5,-.5,.5,1.5):scene.part('tunnel-vent-grille',(x+side*.8,-3+offset,z),(.25,.16,4.2),'black')
+    scene.anchor=''
+
 
 def dress(scene):
     _sidewalks(scene);city=City(scene)
+    _street_faces(scene);_foreground(city)
     for row in [('meridian-square',505,1165,15,6),('exchange-square',740,1115,12,6),
                 ('archive-garden',285,1240,18,7),('clinic-forecourt',115,620,13,6),
                 ('court-a',363,353,13,5),('court-b',510,380,13,5),('court-c',310,492,12,6),
@@ -198,4 +293,4 @@ def dress(scene):
         back=c['z']+s['z']/2
         scene.part('service-shutter',(x,2.6,back+.18),(min(8,s['x']*.45),5.2,.28),'steel')
         for sign in (-1,1):scene.part('service-corner-guard',(x+sign*4,1.4,back+.4),(.4,2.8,.5),'yellow')
-    scene.anchor='';print('neon dressing:',city.count,'solids; sidewalks replace underlying terrain')
+    scene.anchor='';print('neon dressing:',city.count,'solids;',len(city.installed),'foreground places; sidewalks replace underlying terrain')

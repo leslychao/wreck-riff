@@ -1,0 +1,18 @@
+MaterialDef VehicleFrost {
+    MaterialParameters {
+        Texture2D DamageMap -LINEAR
+        Float MaxOpacity : 0.62
+        FloatArray MorphWeights
+        Int NumberOfMorphTargets
+        Int NumberOfTargetsBuffers
+    }
+    Technique {
+        VertexShader GLSL150 GLSL100 : materials/VehicleFrost.vert
+        FragmentShader GLSL150 GLSL100 : materials/VehicleFrost.frag
+        WorldParameters { WorldViewProjectionMatrix }
+        Defines {
+            NUM_MORPH_TARGETS : NumberOfMorphTargets
+            NUM_TARGETS_BUFFERS : NumberOfTargetsBuffers
+        }
+    }
+}

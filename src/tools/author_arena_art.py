@@ -63,24 +63,15 @@ class Scene:
                 identity='dress-fixture-'+name;self.data['boxes'].append(dict(id=identity,center=vec((x,height/2,z)),size=vec((.45,height,.45)),material='steel',collision=True,yawDegrees=0));self.anchor=identity
                 self.part('road-fixture-head',(x,height,z),(1.8,.6,1.2),'steel');self.part('road-fixture-lens',(x,height-.4,z),(1.2,.15,.8),'light-amber' if self.data['metadata']['theme']!='NEON' else 'light-white')
                 if len(self.lights)<24:self.light('road-fixture-'+name,(x,height-.8,z),(1,.8,.5) if self.data['metadata']['theme']!='NEON' else (.6,.8,1),24)
-        # Each raised span has fascia, underside and grounded supports. These are
-        # structural faces offset below the canonical road, never a second top sheet.
-        for path in self.location.paths:
-            if not any(self.location.points[n][1]>2 for n in path['names']):continue
-            if not any(word in path['id'] for word in ('bridge','express','interchange')):continue
-            for first,last in zip(path['names'],path['names'][1:]):
-                p,q=self.location.points[first],self.location.points[last];dx,dz=q[0]-p[0],q[2]-p[2];length=math.hypot(dx,dz);sx,sz=dz/length*path['width']/2,-dx/length*path['width']/2
-                self.anchor=''
-                for sign in (-1,1):self.beam('bridge-edge-girder',(p[0]+sx*sign,p[1]-1,p[2]+sz*sign),(q[0]+sx*sign,q[1]-1,q[2]+sz*sign),1.3,'steel')
-                angle=-math.degrees(math.atan2(dz,dx));slope=math.degrees(math.atan2(q[1]-p[1],length))
-                self.part('bridge-underside',((p[0]+q[0])/2,(p[1]+q[1])/2-1,(p[2]+q[2])/2),(math.hypot(length,q[1]-p[1]),.35,path['width']),'concrete',rotation=(0,angle,slope))
+        # Structural side/bottom faces come from canonical TriangleSurface.thickness.
     def construction(self):
         for proxy,asset in [('unfinished-apartments','unfinished-frame'),('concrete-plant','plant-sawtooth'),('warehouse','warehouse-trusses')]:self.hero(proxy,asset)
         for i,(x,z) in enumerate([(1020,370),(1130,375),(1350,440)]):self.anchor='silo-base-'+str(i);self.model('cement-silo-'+str(i),'cement-silo',(x,3,z))
         self.anchor='pit-crane-foundation';x,z=316,691
         for y in range(0,80,10):
             for sign in (-1,1):
-                self.beam('crane-leg',(x+sign*4,y,z-4),(x+sign*4,y+10,z-4),.65,'yellow');self.beam('crane-brace',(x-4,y,z-4),(x+4,y+10,z-4),.3,'steel')
+                self.beam('crane-leg',(x+sign*4,y,z-4),(x+sign*4,y+10,z-4),.65,'yellow')
+            self.beam('crane-brace',(x-4,y,z-4),(x+4,y+10,z-4),.3,'steel')
         self.beam('crane-jib',(x-28,80,z),(x+145,80,z),1.8,'yellow');self.beam('crane-cable',(x+125,80,z),(x+125,5,z),.16,'steel');self.part('crane-counterweight',(x-28,78,z),(12,8,12),'concrete')
         for i,(p,q) in enumerate([((1020,45,370),(1110,27,540)),((1130,45,375),(1110,27,540)),((1350,45,440),(1110,27,540))]):self.anchor='plant-mixer-core';self.beam('cement-feed',p,q,1.8,'steel')
         for x,z in [(1040,540),(1150,680),(1180,270),(390,880)]:self.light(f'industrial-work-{x}',(x,11,z),(1,.82,.57),38)

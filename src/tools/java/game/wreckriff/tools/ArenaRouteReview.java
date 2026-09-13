@@ -5,6 +5,7 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ScreenshotAppState;
 import com.jme3.app.state.VideoRecorderAppState;
 import com.jme3.math.Vector3f;
+import com.jme3.texture.FrameBuffer;
 import com.jme3.system.AppSettings;
 import com.jme3.system.NativeLibraryLoader;
 import game.wreckriff.arena.*;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
+import org.lwjgl.glfw.GLFW;
 
 /** Moving views through authored districts and interiors; visual evidence, not a gameplay benchmark. */
 public final class ArenaRouteReview extends SimpleApplication {
@@ -32,6 +34,8 @@ public final class ArenaRouteReview extends SimpleApplication {
     private String loadedArena="";
     private int routeIndex,shot;
     private float seconds;
+    private float unavailableSeconds;
+    private final int[] framebufferWidth=new int[1],framebufferHeight=new int[1];
     private boolean waiting;
     private volatile Throwable failure;
 
@@ -46,7 +50,7 @@ public final class ArenaRouteReview extends SimpleApplication {
         Path output=Path.of(args[1]).toAbsolutePath();Files.createDirectories(output);NativeSetup.prepare(output);
         var app=new ArenaRouteReview(routes,output,args.length>3&&args[3].equals("video"));
         var settings=new AppSettings(true);settings.setTitle("Wreck Riff — moving map inspection");
-        settings.setResolution(1920,1080);settings.setFullscreen(true);settings.setSamples(4);settings.setVSync(false);
+        settings.setResolution(1920,1080);settings.setFullscreen(false);settings.setResizable(false);settings.setSamples(4);settings.setVSync(false);
         settings.setGammaCorrection(true);settings.setAudioRenderer(null);settings.setFrameRate(30);settings.setRenderer(AppSettings.LWJGL_OPENGL33);
         app.setSettings(settings);app.setShowSettings(false);app.setPauseOnLostFocus(false);app.start();
         if(!app.complete.await(120+routes.size()*30L,TimeUnit.SECONDS)) {
@@ -60,9 +64,19 @@ public final class ArenaRouteReview extends SimpleApplication {
     @Override public void simpleInitApp() {
         try {
             flyCam.setEnabled(false);setDisplayFps(false);setDisplayStatView(false);
+            long window=GLFW.glfwGetCurrentContext();
+            // An undecorated 1080p client avoids both Windows' title-bar clamping
+            // and exclusive fullscreen mode switches from another desktop app.
+            GLFW.glfwSetWindowAttrib(window,GLFW.GLFW_DECORATED,GLFW.GLFW_FALSE);
+            GLFW.glfwSetWindowSize(window,1920,1080);
             NativeLibraryLoader.loadNativeLibrary("bulletjme",true);registry=ArenaRegistry.load();
             lighting=SceneLighting.install(assetManager,rootNode,viewPort);lighting.setSamples(4);
             screenshots=new ScreenshotAppState(output+File.separator) {
+                @Override public void postFrame(FrameBuffer frame) {
+                    // A desktop focus/resize event can temporarily produce a zero
+                    // framebuffer. Preserve the pending shot until a real view returns.
+                    if(drawable())super.postFrame(frame);
+                }
                 @Override protected void writeImageFile(File file) throws IOException {
                     super.writeImageFile(file);var route=routes.get(routeIndex);
                     captures.add(Map.of("arenaId",route.arenaId(),"route",route.id(),"kind",route.kind(),"shot",shot,
@@ -88,6 +102,13 @@ public final class ArenaRouteReview extends SimpleApplication {
     }
     @Override public void simpleUpdate(float dt) {
         if(registry==null||failure!=null||routeIndex>=routes.size())return;
+        if(!drawable()) {
+            unavailableSeconds+=Math.min(dt,1);
+            if(unavailableSeconds>30)fail(new IllegalStateException("Review window unavailable: camera="
+                    +cam.getWidth()+"x"+cam.getHeight()+", framebuffer="+framebufferWidth[0]+"x"+framebufferHeight[0]));
+            return;
+        }
+        unavailableSeconds=0;
         try {
             seconds+=dt;var route=routes.get(routeIndex);float progress=Math.clamp((seconds-1)/8,0,1);
             Vector3f point=sample(route.points(),progress),ahead=sample(route.points(),Math.min(1,progress+.035f));
@@ -107,6 +128,14 @@ public final class ArenaRouteReview extends SimpleApplication {
                 } else nextRoute();
             }
         } catch(Throwable error){fail(error);}
+    }
+    private boolean drawable() {
+        long window=GLFW.glfwGetCurrentContext();
+        if(window==0)return false;
+        GLFW.glfwGetFramebufferSize(window,framebufferWidth,framebufferHeight);
+        return cam.getWidth()==1920&&cam.getHeight()==1080&&framebufferWidth[0]==1920&&framebufferHeight[0]==1080
+                &&GLFW.glfwGetWindowAttrib(window,GLFW.GLFW_VISIBLE)!=0
+                &&GLFW.glfwGetWindowAttrib(window,GLFW.GLFW_ICONIFIED)==0;
     }
     private static Vector3f sample(List<ArenaDefinition.Vec3> points,float progress) {
         float length=0;for(int i=1;i<points.size();i++)length+=points.get(i).vector().distance(points.get(i-1).vector());

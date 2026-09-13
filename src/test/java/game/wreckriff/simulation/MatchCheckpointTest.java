@@ -60,6 +60,40 @@ class MatchCheckpointTest {
             }
         }
     }
+    @Test void freshRetryOfEveryShippedMapDropsAllSixPreviouslyCollectedStocksForEveryChassis() {
+        var registry=ArenaRegistry.load();
+        for(String id:List.of("dead-air-yard","construction_17","neon_zero","euphoria_park"))for(var chassis:VehicleDefinition.values()) {
+            var arena=registry.definition(id);var mode=arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA;
+            var previous=new MatchSession(42,arena,mode,rules,UUID.randomUUID(),false,0,chassis.id());
+            previous.vehicles.forEach(vehicle->vehicle.weapons().forEach(slot->slot.ammo=slot.maximumAmmo));
+            var retry=new MatchSession(42,arena,mode,rules,UUID.randomUUID(),false,0,chassis.id());
+            assertEmpty(retry);assertNotEquals(previous.sessionId,retry.sessionId);
+            assertTrue(previous.vehicles.stream().allMatch(vehicle->vehicle.weapons().stream().allMatch(slot->slot.ammo==slot.maximumAmmo)));
+        }
+    }
+    @Test void pauseAndBothTacticalMapEntryPointsKeepAllSixStocksAndPickupTimersOnEveryMap() {
+        var registry=ArenaRegistry.load();
+        for(String id:List.of("dead-air-yard","construction_17","neon_zero","euphoria_park")) {
+            var arena=registry.definition(id);var mode=arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA;
+            var match=new MatchSession(42,arena,mode,rules);var player=match.vehicle(0);
+            var systems=new game.wreckriff.arena.ArenaSystems(match,arena);var world=new game.wreckriff.arena.TestWorld();
+            match.vehicles.stream().filter(v->v.id!=0).forEach(v->v.hp=0);
+            var first=arena.pickups().stream().filter(p->p.type()==game.wreckriff.arena.ArenaDefinition.PickupType.HOMING_AMMO&&p.position().y()==0).findFirst().orElseThrow();
+            world.positions[0]=first.position().vector().add(0,.8f,0);systems.collectPickups(world);
+            assertFalse(systems.active(first.id()));assertTrue(systems.snapshot().pickups().get(first.id()).respawnTicks()>0);
+            player.weapons().forEach(slot->slot.ammo=slot.maximumAmmo);player.turbo=47;
+            var resources=MatchCheckpoint.player(player);var pickups=systems.snapshot();
+            var loop=new SimulationLoop(MatchRules.load());var flow=new game.wreckriff.app.ScreenFlow();flow.onChanged(loop::resetAccumulator);flow.running();
+            Runnable tick=()->fail("Paused or tactical-map frames cannot advance combat or resource restoration");
+            for(boolean fromPause:new boolean[]{false,true}) {
+                if(fromPause)flow.pause();flow.tacticalMap();
+                for(int frame=0;frame<180;frame++)assertEquals(0,loop.advance(1.0/60,flow.screen()==game.wreckriff.app.ScreenFlow.Screen.RUNNING,tick));
+                assertEquals(resources,MatchCheckpoint.player(player));assertEquals(pickups,systems.snapshot());
+                flow.back();if(fromPause)flow.resume();assertEquals(game.wreckriff.app.ScreenFlow.Screen.RUNNING,flow.screen());
+            }
+            assertEquals(0,match.tick);assertEquals(0,loop.steps());assertEquals(0,loop.droppedSimulationTime());
+        }
+    }
     private static void assertEmpty(MatchSession match) {
         assertTrue(match.vehicles.stream().allMatch(vehicle->vehicle.weapons().stream().allMatch(slot->slot.ammo==0)));
     }

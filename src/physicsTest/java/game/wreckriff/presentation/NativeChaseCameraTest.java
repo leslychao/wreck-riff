@@ -107,9 +107,10 @@ class NativeChaseCameraTest {
         try(var rig=new Rig(new Quaternion())) {
             rig.render(120,false,1);
             rig.addWall();
-            Vector3f previous=rig.world.position(PLAYER);
-            rig.world.vehicle(PLAYER).setPhysicsLocation(previous.add(0,0,2));
-            assertEquals(previous.z+2*alpha,rig.world.interpolatedPose(PLAYER,alpha).position().z,.0001f);
+            Vector3f previous=rig.world.interpolatedPose(PLAYER,0).position();
+            Vector3f current=rig.world.position(PLAYER).add(0,0,2);
+            rig.world.vehicle(PLAYER).setPhysicsLocation(current);
+            assertEquals(previous.z+(current.z-previous.z)*alpha,rig.world.interpolatedPose(PLAYER,alpha).position().z,.0001f);
             rig.render(120,false,alpha);
             rig.assertWallClear(alpha);
         }

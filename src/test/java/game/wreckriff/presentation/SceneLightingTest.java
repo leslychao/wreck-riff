@@ -17,6 +17,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Exercises the real jME post-processing lifecycle without claiming an OpenGL frame. */
 class SceneLightingTest {
+    @Test void liveMsaaChangesRecreateTheActualDepthSamplesWithOneProcessor() {
+        var root=new Node();var viewport=new ViewPort("msaa",new Camera(64,64));
+        var manager=new RenderManager(new NullRenderer(){@Override public java.util.EnumSet<com.jme3.renderer.Caps> getCaps(){return java.util.EnumSet.of(com.jme3.renderer.Caps.OpenGL32,com.jme3.renderer.Caps.FrameBufferMultisample);}});
+        var lighting=SceneLighting.install(PresentationTestAssets.shared(),root,viewport);
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),root,new SoftWorld())) {
+            lighting.bindCombatVisuals(visuals);lighting.setSamples(4);lighting.initialize(manager);
+            for(int samples:new int[]{4,0,2,8,4}) {
+                lighting.setSamples(samples);
+                assertEquals(Math.max(1,samples),visuals.statistics().get("sceneDepthSamples"));
+                assertEquals(1,viewport.getProcessors().stream().filter(FilterPostProcessor.class::isInstance).count());
+            }
+        } finally {for(var processor:viewport.getProcessors())if(processor.isInitialized())processor.cleanup();}
+    }
     @Test void everyRetainedLocationHasItsOwnFiniteLightingProfile() {
         var profiles=java.util.Arrays.stream(Theme.values()).map(SceneLighting::profile).toList();
         assertEquals(4,profiles.size());assertEquals(4,profiles.stream().map(SceneLighting.Profile::sky).distinct().count());

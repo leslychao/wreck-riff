@@ -12,7 +12,7 @@ class OrdnanceAssetsVerifierTest {
         List<VerifyAssets.Asset> assets=new ArrayList<>();OrdnanceAssetsVerifier.verify(assets);
         assertEquals(8,assets.stream().filter(asset->asset.category().equals("ordnance-model")).count());
         assertEquals(6,assets.stream().filter(asset->asset.category().equals("ordnance-texture")).count());
-        assertEquals(1,assets.stream().filter(asset->asset.category().equals("historical-source")).count());
+        assertEquals(2,assets.stream().filter(asset->asset.category().equals("historical-source")).count());
     }
     @Test void flatAndWrongSizePlaceholderTexturesAreRejected()throws Exception {
         for(int size:List.of(512,2048)) {

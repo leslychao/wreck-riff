@@ -91,6 +91,9 @@ public final class GameApplication extends SimpleApplication {
     private CombatSystem combat;
     private CombatVisuals combatVisuals;
     private ContactPresentationTimeline contactTimeline;
+    private double renderPresentationTime;
+    private final Map<String,Long> visualHighWater=new TreeMap<>();
+    private final List<Map<String,Object>> capturedCameraEvidence=new ArrayList<>();
     private SpecialPresentation specialPresentation;
     private BossActionPresentation bossActionPresentation;
     private PickupPresentation pickupPresentation;
@@ -346,6 +349,7 @@ public final class GameApplication extends SimpleApplication {
             combatVisuals=new CombatVisuals(assetManager,matchNode,world);
             combatVisuals.bindVehicleModels(vehicleModels);
             contactTimeline=new ContactPresentationTimeline(session.sessionId);
+            renderPresentationTime=0;
             sceneLighting.bindCombatVisuals(combatVisuals);createNavigationLines();
             specialPresentation=new SpecialPresentation(assetManager,matchNode,world);
             specialPresentation.bindModels(vehicleModels);
@@ -418,7 +422,7 @@ public final class GameApplication extends SimpleApplication {
             MatchSession recordedSession=session;
             audioCapture=new AudioCapture(store.directory(),recordedSession::seconds,CombatShowcase.SECONDS);
             audio.setCapture(audioCapture);
-            videoRecorder=new VideoRecorderAppState(store.directory().resolve("showcase.avi").toFile(),.85f,30);
+            videoRecorder=new VideoRecorderAppState(store.directory().resolve("showcase.avi").toFile(),.85f,captureFrameRate());
             stateManager.attach(videoRecorder);
             showcaseText=ui.text("",90,1020,28,GameUi.PAPER);
         }
@@ -426,7 +430,7 @@ public final class GameApplication extends SimpleApplication {
             artShowcase=new ArtShowcase(session,world,runtime,arena);
             audioCapture=new AudioCapture(store.directory(),artShowcase::seconds,ArtShowcase.SECONDS);
             audio.setCapture(audioCapture);
-            videoRecorder=new VideoRecorderAppState(store.directory().resolve("art-showcase.avi").toFile(),.85f,30);
+            videoRecorder=new VideoRecorderAppState(store.directory().resolve("art-showcase.avi").toFile(),.85f,captureFrameRate());
             stateManager.attach(videoRecorder);
             showcaseText=ui.text("",24,cam.getHeight()-52,16,GameUi.PAPER);
         }
@@ -434,11 +438,16 @@ public final class GameApplication extends SimpleApplication {
             vehicleShowcase=new VehicleShowcase(session,world,runtime,arena);
             audioCapture=new AudioCapture(store.directory(),vehicleShowcase::seconds,VehicleShowcase.SECONDS);
             audio.setCapture(audioCapture);
-            videoRecorder=new VideoRecorderAppState(store.directory().resolve("vehicle-showcase.avi").toFile(),.85f,30);
+            videoRecorder=new VideoRecorderAppState(store.directory().resolve("vehicle-showcase.avi").toFile(),.85f,captureFrameRate());
             stateManager.attach(videoRecorder);
             showcaseText=ui.text("",24,cam.getHeight()-52,16,GameUi.PAPER);
         }
 
+    }
+    private int captureFrameRate() {
+        int fps=options.renderFps()>0?options.renderFps():30;
+        if(diagnostic!=null)diagnostic.put("recordingFrameRate",fps);
+        return fps;
     }
     @Override public void simpleUpdate(float dt) {
         elapsed+=dt;
@@ -673,7 +682,11 @@ public final class GameApplication extends SimpleApplication {
             }
         }
         double presentationSeconds=Math.max(0,(session.tick-1+alpha)/(double)MatchSession.TICKS_PER_SECOND);
-        combatVisuals.setPresentationTime(presentationSeconds);
+        // Results keep the existing physical wreck tail, while the authoritative match tick stops.
+        // Free tracers and flashes must finish on that tail; a pause keeps their clock unchanged.
+        if(results)renderPresentationTime=Math.max(renderPresentationTime,presentationSeconds)+Math.clamp(dt,0,.1f);
+        else if(advancing)renderPresentationTime=presentationSeconds;
+        combatVisuals.setPresentationTime(renderPresentationTime);
         if(advancing) {
             List<GameEvent> delivered=contactTimeline.advanceTo(presentationSeconds).stream().map(event->{
                 Node model=vehicleModels.get(event.subjectId());var contact=event.vehicleContact();
@@ -695,7 +708,7 @@ public final class GameApplication extends SimpleApplication {
                 Vector3f position=model.getLocalTranslation().add(rotation.mult(panel.localPosition()));
                 Vector3f velocity=world.containsVehicle(state.id)?world.velocity(state.id):new Vector3f();
                 combatVisuals.detachPanel(position,rotation.mult(panel.localRotation()),
-                        velocity.add(rotation.mult(panel.localImpulse())),panel.halfExtents(),ContactSurface.METAL,state.id);
+                        velocity.add(rotation.mult(panel.localImpulse())),panel.halfExtents(),panel.mesh(),ContactSurface.METAL,state.id);
             }
         }
         bossActionPresentation.setGlow(store.settings().glow);
@@ -1189,7 +1202,17 @@ public final class GameApplication extends SimpleApplication {
         if(screenshots!=null) {
             String prefix="WreckRiff-"+BuildInfo.current().version()+"-"+label+"-"+System.currentTimeMillis()+"-";
             screenshots.setFileName(prefix);screenshots.takeScreenshot();
-            if(diagnostic!=null) {diagnosticCaptures.add(prefix);diagnostic.put("capturePrefixes",List.copyOf(diagnosticCaptures));}
+            if(diagnostic!=null) {
+                diagnosticCaptures.add(prefix);diagnostic.put("capturePrefixes",List.copyOf(diagnosticCaptures));
+                if(capturedCameraEvidence.size()<1024) {
+                    Vector3f position=cam.getLocation();Quaternion rotation=cam.getRotation();
+                    capturedCameraEvidence.add(Map.of("prefix",prefix,"label",label,"simulationTick",session==null?-1:session.tick,
+                            "position",List.of(position.x,position.y,position.z),"rotation",List.of(rotation.getX(),rotation.getY(),rotation.getZ(),rotation.getW()),
+                            "frustum",List.of(cam.getFrustumNear(),cam.getFrustumFar(),cam.getFrustumLeft(),cam.getFrustumRight(),cam.getFrustumTop(),cam.getFrustumBottom()),
+                            "parallelProjection",cam.isParallelProjection(),"width",cam.getWidth(),"height",cam.getHeight()));
+                    diagnostic.put("cameraAtCaptureRequest",List.copyOf(capturedCameraEvidence));
+                }
+            }
             return prefix;
         }
         return null;
@@ -1218,6 +1241,7 @@ public final class GameApplication extends SimpleApplication {
         enemyHealthMarkers.clear();
         if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
         if(audio!=null)audio.stopMatch();
+        captureVisualStatistics();
         if(contactTimeline!=null){contactTimeline.close();contactTimeline=null;}
         if(sceneLighting!=null)sceneLighting.bindCombatVisuals(null);
         if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
@@ -1475,11 +1499,24 @@ public final class GameApplication extends SimpleApplication {
     }
     private void writeDiagnostic(String status) {
         if(diagnostic!=null) {
+            captureVisualStatistics();
             if(stageProfiler!=null)diagnostic.put("profiling",stageProfiler.snapshot());
             diagnostic.put("completedMatches",diagnosticResults);diagnostic.put("restarts",diagnosticRetries);
             diagnostic.put("elapsedSeconds",elapsed);diagnostic.put("undrawableSeconds",undrawableSeconds);
             try {diagnostic.write(store.directory(),status);}
             catch(IOException e) {diagnosticCompletion.shutdownFailed();System.err.println("Cannot write diagnostic evidence: "+e.getMessage());}
+        }
+    }
+    private void captureVisualStatistics() {
+        if(diagnostic==null||combatVisuals==null)return;
+        var statistics=combatVisuals.statistics();
+        for(var entry:statistics.entrySet())if(entry.getKey().startsWith("peak")&&entry.getValue() instanceof Number value)
+            visualHighWater.merge(entry.getKey(),value.longValue(),Math::max);
+        diagnostic.put("combatVfx",statistics);
+        diagnostic.put("combatVfxPeakAcrossSessions",Map.copyOf(visualHighWater));
+        if(contactTimeline!=null) {
+            diagnostic.put("pendingVisualContacts",contactTimeline.pendingCount());
+            diagnostic.put("suppressedVisualContactDetails",contactTimeline.suppressedDetails());
         }
     }
     private static String percent(float value) {return Math.round(value*100)+"%";}

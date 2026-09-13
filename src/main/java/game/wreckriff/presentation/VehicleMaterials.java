@@ -14,15 +14,16 @@ public final class VehicleMaterials {
         }
         Material material=new Material(assets,"materials/VehicleLighting.j3md");
         boolean glass=part.equals("glass"),rubber=part.equals("rubber-trim"),paint=part.equals("paint")||part.startsWith("panel-");
-        ColorRGBA color=glass?new ColorRGBA(.07f,.16f,.21f,1):rubber?new ColorRGBA(.075f,.08f,.085f,1):paint?ColorRGBA.White:new ColorRGBA(.49f,.52f,.55f,1);
+        ColorRGBA color=glass?new ColorRGBA(.07f,.16f,.21f,1):rubber?new ColorRGBA(.16f,.16f,.17f,1):paint?ColorRGBA.White:new ColorRGBA(.60f,.64f,.68f,1);
         material.setBoolean("UseMaterialColors",true);material.setColor("Diffuse",color);material.setColor("Ambient",color);
         material.setColor("Specular",new ColorRGBA(glass?.9f:rubber?.07f:.55f,glass?.9f:rubber?.07f:.55f,glass?.9f:rubber?.07f:.55f,1));
         material.setFloat("Shininess",glass?100:rubber?5:40);material.setFloat("NormalType",1);
         for(String type:new String[]{"diffuse","normal","specular"}) {
             String parameter=switch(type){case "diffuse"->"DiffuseMap";case "normal"->"NormalMap";default->"SpecularMap";};
-            if(type.equals("diffuse")&&!paint)continue;
-            material.setTexture(parameter,new SurfaceMaterials.TextureUse(parameter,"textures/vehicles/"+profile+"/"+type+".png",type.equals("diffuse")).load(assets));
+            if(glass)continue;
+            String prefix=paint?"":"metal-";
+            material.setTexture(parameter,new SurfaceMaterials.TextureUse(parameter,"textures/vehicles/"+profile+"/"+prefix+type+".png",type.equals("diffuse")).load(assets));
         }
-        material.setFloat("Damage",0);material.setFloat("Glass",glass?1:0);return material;
+        material.setFloat("Heat",0);material.setFloat("Damage",0);material.setFloat("Glass",glass?1:0);return material;
     }
 }

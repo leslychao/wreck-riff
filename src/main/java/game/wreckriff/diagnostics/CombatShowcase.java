@@ -9,7 +9,7 @@ import java.util.*;
 
 /** Bounded dev-only evidence script. Staged HP gallery is labelled; combat uses the normal tick pipeline. */
 public final class CombatShowcase {
-    public static final int SECONDS=40;
+    public static final int SECONDS=49;
     private final MatchSession session;
     private final PhysicsWorld world;
     private final CombatSystem combat;
@@ -20,6 +20,7 @@ public final class CombatShowcase {
     private double firstBallisticImpact=-1;
     private Vector3f firstBallisticImpactPoint;
     private Map<String,Object> warningCapture=Map.of();
+    private FreezeBallisticShowcase freezeBallisticCombo;
     public CombatShowcase(MatchSession session,PhysicsWorld world,CombatSystem combat) {
         this.session=session;this.world=world;this.combat=combat;
         // This labelled diagnostic stages resources, while firing still uses the normal combat owner.
@@ -38,6 +39,8 @@ public final class CombatShowcase {
     }
     public Map<Integer,VehicleCommand> commands() {
         long tick=session.tick;
+        if(tick==FreezeBallisticShowcase.START_TICK)freezeBallisticCombo=new FreezeBallisticShowcase(session,world,combat);
+        if(freezeBallisticCombo!=null)return freezeBallisticCombo.commands();
         if(tick<1440&&tick%240==0) {
             // The zero stage is a visual preview; retain a live native target for the following repair/combat.
             float fraction=displayHpFraction(session.vehicle(1));
@@ -86,6 +89,7 @@ public final class CombatShowcase {
         return state.hp/state.maximumHp;
     }
     public void accept(List<GameEvent> batch) {
+        if(freezeBallisticCombo!=null)freezeBallisticCombo.accept(batch);
         for(GameEvent event:batch) {
             events.merge(event.type()+":"+event.kind(),1,Integer::sum);
             if(event.type()==GameEvent.Type.EXPLOSION||event.type()==GameEvent.Type.DESTROYED) {
@@ -102,6 +106,7 @@ public final class CombatShowcase {
         }
     }
     public String label() {
+        if(freezeBallisticCombo!=null)return freezeBallisticCombo.label();
         double seconds=session.seconds();
         if(seconds<12) return new String[]{"HP 100% / INTACT","HP 75% / LIGHT DAMAGE","HP 50% / DAMAGED PANELS",
                 "HP 25% / CRITICAL","HP 0% / CHARRED BODY","REPAIRED / HP 100%"}[(int)(seconds/2)]+"  [STAGED HP GALLERY]";
@@ -118,6 +123,7 @@ public final class CombatShowcase {
         return "MINE / ARMED TRIGGER AND SURFACE BLAST [STAGED TARGET ENTRY]";
     }
     public String frame(Camera camera) {
+        if(freezeBallisticCombo!=null)return freezeBallisticCombo.frame(camera);
         Vector3f target=world.position(1);
         var warning=combat.ballisticWarnings().stream().min(Comparator.comparingLong(CombatSystem.BallisticWarningView::id)).orElse(null);
         boolean warningCloseup=session.seconds()>=23&&session.seconds()<29&&warning!=null;
@@ -147,13 +153,15 @@ public final class CombatShowcase {
         return null;
     }
     public Map<String,Object> evidence() { return Map.of("seconds",session.seconds(),"events",events,"observations",observations,"combatTimeline",combatTimeline,"warningCapture",warningCapture,
+            "freezeBallisticCombo",freezeBallisticCombo==null?Map.of():freezeBallisticCombo.evidence(),
             "gallery","HP gallery and positions/health between scenarios are staged; all attacks and the final lethal hit use normal commands and physics."); }
     public boolean complete() { return session.seconds()>=SECONDS; }
     public boolean demonstrated() {
         return !warningCapture.isEmpty()&&events.getOrDefault("FREEZE:freeze",0)>0&&events.getOrDefault("SHIELD:shield",0)>0
                 &&events.keySet().stream().anyMatch(key->key.startsWith("SHIELD_HIT:"))&&events.getOrDefault("EXPLOSION:power",0)>0
-                &&events.getOrDefault("EXPLOSION:ballistic",0)==4&&events.getOrDefault("EXPLOSION:cannon-ricochet",0)>=2
+                &&events.getOrDefault("EXPLOSION:ballistic",0)==8&&events.getOrDefault("EXPLOSION:cannon-ricochet",0)>=2
                 &&events.getOrDefault("EXPLOSION:homing",0)>0&&events.getOrDefault("EXPLOSION:mine",0)>0
-                &&events.getOrDefault("DESTROYED:destroyed",0)>0&&!world.containsVehicle(1);
+                &&events.getOrDefault("DESTROYED:destroyed",0)>0&&!world.containsVehicle(1)
+                &&freezeBallisticCombo!=null&&freezeBallisticCombo.demonstrated();
     }
 }

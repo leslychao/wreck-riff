@@ -10,6 +10,26 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeArsenalTest {
+    @Test void resultCleanupReleasesNativeFreezePendingFireAndAllExposedCombatState() {
+        try(var world=world()) {
+            world.teleport(1,new Vector3f(0,.5f,8),new Quaternion());
+            tick(world,Map.of(0,ability(AbilityId.FREEZE)));
+            for(int step=0;step<30&&session.vehicle(1).frozenTicks==0;step++)tick(world,Map.of());
+            assertTrue(session.vehicle(1).frozenTicks>0);assertEquals(1,world.immobilizerCount());
+            session.vehicle(0).selectedWeapon=WeaponType.NAPALM;
+            tick(world,Map.of(0,fire(),2,ability(AbilityId.SHIELD)));
+            assertEquals(1,combat.reservedFireZones());assertFalse(combat.projectiles().isEmpty());
+            assertTrue(session.vehicle(2).shieldTicks>0);
+            combat.queueDamage(1,0,7,"queued-before-result",-1234);assertEquals(1,combat.pendingDamageCount());
+            float hp=session.vehicle(1).hp;session.outcome=MatchSession.Outcome.VICTORY;
+            combat.clear();combat.clear();
+            assertEquals(0,world.immobilizerCount());assertEquals(0,session.vehicle(1).frozenTicks);
+            assertEquals(0,session.vehicle(2).shieldTicks);assertEquals(hp,session.vehicle(1).hp);
+            assertTrue(combat.projectiles().isEmpty());assertTrue(combat.mines().isEmpty());assertTrue(combat.specialBombs().isEmpty());
+            assertTrue(combat.fireZones().isEmpty());assertTrue(combat.fireExposures().isEmpty());assertTrue(combat.ballisticWarnings().isEmpty());
+            assertEquals(0,combat.reservedFireZones());assertEquals(0,combat.pendingDamageCount());assertTrue(combat.drainEvents().isEmpty());
+        } finally {combat.clear();}
+    }
     @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { NativeCombatSupplies.halfLoad(session); }
     private final MatchSession session=new MatchSession(31,360);
     private final CombatSystem combat=new CombatSystem(session,session.combatRules);
@@ -25,14 +45,14 @@ class NativeArsenalTest {
     }
     private static VehicleCommand ability(AbilityId ability) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,ability);}
     private static VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,null,0,false,false,AbilityId.NONE);}
-    @Test void realFreezeBoltHitsCompoundHullAndMaintainsExactly180ConstrainedSteps() {
+    @Test void realFreezeMissileHitsCompoundHullAndMaintainsExactly480ConstrainedSteps() {
         try(var world=world()) {
             world.teleport(1,new Vector3f(0,.5f,8),new Quaternion());
             tick(world,Map.of(0,ability(AbilityId.FREEZE)));
             for(int tick=0;tick<30&&session.vehicle(1).frozenTicks==0;tick++)tick(world,Map.of());
-            assertEquals(180,session.vehicle(1).frozenTicks);assertEquals(1,world.immobilizerCount());assertEquals(400,session.vehicle(1).hp);
+            assertEquals(480,session.vehicle(1).frozenTicks);assertEquals(1,world.immobilizerCount());assertEquals(400,session.vehicle(1).hp);
             Vector3f start=world.position(1);
-            for(int tick=0;tick<179;tick++) {
+            for(int tick=0;tick<479;tick++) {
                 world.impulse(1,new Vector3f(1000,0,0),Vector3f.ZERO,2);tick(world,Map.of());
                 assertEquals(1,world.immobilizerCount());assertTrue(Math.abs(world.position(1).x-start.x)<.15f);
             }

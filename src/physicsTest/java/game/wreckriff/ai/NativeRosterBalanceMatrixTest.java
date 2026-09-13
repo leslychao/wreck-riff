@@ -6,6 +6,7 @@ import com.jme3.math.Vector3f;
 import game.wreckriff.arena.ArenaDefinition;
 import game.wreckriff.arena.NavGraph;
 import game.wreckriff.combat.CombatRules;
+import game.wreckriff.combat.SpecialRules;
 import game.wreckriff.config.Configs;
 import game.wreckriff.config.VehicleDefinition;
 import game.wreckriff.config.VehicleRules;
@@ -29,7 +30,7 @@ class NativeRosterBalanceMatrixTest {
     @AfterAll static void writeOutput() throws IOException {
         RESULTS.sort(Comparator.comparing(row->row.get("scenario").toString()));
         Files.writeString(OUTPUT.resolve("matrix.json"),new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(RESULTS));
-        StringBuilder csv=new StringBuilder("scenario,seed,profiles,layout,seconds,outcome,timeout,damage10,damage30,damage,shots,specials,captures,pickups,maxControlSeconds,ammoRemaining,hp\n");
+        StringBuilder csv=new StringBuilder("scenario,seed,profiles,layout,seconds,outcome,timeout,damage10,damage30,damage,shots,specials,captures,pickups,maxControlSeconds,controlGaps,minControlGapSeconds,ammoRemaining,hp\n");
         for(var row:RESULTS)csv.append(String.join(",",row.values().stream().map(value->"\""+value.toString().replace("\"","\"\"")+"\"").toList())).append('\n');
         Files.writeString(OUTPUT.resolve("matrix.csv"),csv);
     }
@@ -60,6 +61,12 @@ class NativeRosterBalanceMatrixTest {
             try(var runtime=new MatchRuntime(session,world,arena,new NavGraph(arena),rules)) {
                 int shots=0,activations=0,captures=0,pickups=0,maxControl=0;
                 float damage=0,damage10=0,damage30=0;var controlRun=new int[profiles.size()];
+                int freezeLimit=CombatRules.ticks(session.combatRules.control().freezeSeconds());
+                int grabLimit=CombatRules.ticks(SpecialRules.GRINDER_CONTACT);
+                int immunityTicks=CombatRules.ticks(session.combatRules.control().immunitySeconds());
+                var controlEndedAt=new int[profiles.size()];Arrays.fill(controlEndedAt,-1);
+                var freezeEpisode=new boolean[profiles.size()];
+                int controlGaps=0,minimumControlGap=Integer.MAX_VALUE;
                 var grindDamage=new HashMap<Integer,Float>();
                 for(int tick=0;tick<180*120&&session.outcome==MatchSession.Outcome.NONE;tick++) {
                     var events=runtime.tick(runtime.bots().commands(world),false);
@@ -79,9 +86,26 @@ class NativeRosterBalanceMatrixTest {
                     for(var state:session.vehicles) {
                         assertTrue(Float.isFinite(state.hp)&&state.hp>=0&&state.hp<=state.maximumHp);
                         assertFalse(state.frozenTicks>0&&state.grabbedBy>=0,"Freeze and hold never overlap");
-                        controlRun[state.id]=state.controlled()?controlRun[state.id]+1:0;
+                        if(state.controlled()) {
+                            if(controlRun[state.id]==0) {
+                                if(controlEndedAt[state.id]>=0) {
+                                    int gap=tick-controlEndedAt[state.id];
+                                    assertTrue(gap>=immunityTicks,"Control episodes for vehicle "+state.id
+                                            +" must be separated by at least "+immunityTicks+" ticks; actual gap="+gap);
+                                    controlGaps++;minimumControlGap=Math.min(minimumControlGap,gap);
+                                }
+                                freezeEpisode[state.id]=state.frozenTicks>0;
+                            } else assertEquals(freezeEpisode[state.id],state.frozenTicks>0,
+                                    "Freeze and hold cannot replace each other without an immunity gap");
+                            controlRun[state.id]++;
+                            int limit=freezeEpisode[state.id]?freezeLimit:grabLimit;
+                            assertTrue(controlRun[state.id]<=limit,"The "+(freezeEpisode[state.id]?"Freeze":"Grinder hold")
+                                    +" episode exceeded its configured duration of "+limit+" ticks");
+                        } else {
+                            if(controlRun[state.id]>0)controlEndedAt[state.id]=tick;
+                            controlRun[state.id]=0;
+                        }
                         maxControl=Math.max(maxControl,controlRun[state.id]);
-                        assertTrue(controlRun[state.id]<=241,"Immunity must separate control episodes");
                         if(world.containsVehicle(state.id))assertTrue(Vector3f.isValidVector(world.position(state.id))&&Vector3f.isValidVector(world.velocity(state.id)));
                     }
                 }
@@ -90,6 +114,7 @@ class NativeRosterBalanceMatrixTest {
                 row.put("seconds",session.seconds());row.put("outcome",session.outcome.name());row.put("timeout",session.outcome==MatchSession.Outcome.NONE);
                 row.put("damage10",damage10);row.put("damage30",damage30);row.put("damage",damage);row.put("shots",shots);row.put("specials",activations);
                 row.put("captures",captures);row.put("pickups",pickups);row.put("maxControlSeconds",maxControl/120f);
+                row.put("controlGaps",controlGaps);row.put("minControlGapSeconds",controlGaps==0?"unobserved":minimumControlGap*MatchSession.DT);
                 row.put("ammoRemaining",session.vehicles.stream().map(v->v.weapons().stream().map(w->w.ammo).toList()).toList());
                 row.put("hp",session.vehicles.stream().map(v->v.hp).toList());RESULTS.add(row);
                 System.out.printf(Locale.ROOT,"ROSTER_PROBE profiles=%s layout=%s seconds=%.2f shots=%d specials=%d captures=%d damage=%.2f maxControlSeconds=%.3f pickups=%d hp=%s%n",

@@ -34,6 +34,7 @@ public final class ArenaFactory {
         definition.boxes().forEach(part->names.add(surfaceMaterial(part,definition.metadata().theme())));
         definition.ramps().forEach(ramp->names.add(ramp.material()));
         definition.meshes().forEach(mesh->{names.add(mesh.material());names.addAll(mesh.triangleMaterials());});
+        if(definition.meshes().stream().anyMatch(mesh->mesh.thickness()>0))names.add("concrete");
         names.addAll(ArenaArt.surfaceMaterials(art));
         return SurfaceMaterials.texturesFor(names);
     }
@@ -72,10 +73,17 @@ public final class ArenaFactory {
             bodies.add(new ArenaContent.StaticBody(ramp.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
         }
         addModelCollisions(art,bodies);
+        var roadStructures=RoadStructure.shells(definition.meshes());
         for(var surface:definition.meshes()) {
             List<Vector3f> vertices=new ArrayList<>();for(int index:surface.indices())vertices.add(surface.vertices().get(index).vector());
             Mesh mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
             for(Geometry visual:surfaceVisuals(surface,mesh))root.attachChild(visual);
+            var shell=roadStructures.get(surface.id());
+            if(shell!=null&&!shell.isEmpty()) {
+                Geometry structure=new Geometry(surface.id()+"-structure",SurfaceMesh.triangles(shell,tileSize("concrete")));
+                structure.setMaterial(material("concrete"));root.attachChild(structure);
+                vertices.addAll(shell);mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
+            }
             if(surface.collision())bodies.add(new ArenaContent.StaticBody(surface.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
         }
         // Independent cells keep distant districts cullable; movable object visuals retain their identity.
@@ -94,6 +102,8 @@ public final class ArenaFactory {
         }
         for(Node cell:cells.values()){cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);root.attachChild(cell);}
         addDecoration(root,definition,art);
+        if(definition.metadata().theme()!=ArenaDefinition.Theme.INDUSTRIAL_YARD)
+            root.attachChild(game.wreckriff.presentation.ArenaSky.create(assets,definition.metadata().theme()));
         root.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry &&
                 geometry.getMaterial().getParam("NormalMap")!=null && geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(geometry.getMesh());});

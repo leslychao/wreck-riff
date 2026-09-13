@@ -20,7 +20,7 @@ class NativeArenaTexturePreparationTest {
         var registry=ArenaRegistry.load();
         // Avoid repeated decoding across this audit; each arena's held list models the application's loading lifetime.
         var retained=new HashMap<TextureKey,Texture>();
-        try(var assets=new TrackingAssets();var world=new PhysicsWorld(VehicleRules.load())) {
+        try(var assets=new TrackingAssets(true);var world=new PhysicsWorld(VehicleRules.load())) {
             for(var entry:registry.entries()) {
                 var arena=registry.definition(entry.id());var art=ArenaArt.load(arena);var factory=new ArenaFactory(assets);
                 assets.requested.clear();var requirements=factory.textureRequirements(arena,art);
@@ -59,9 +59,14 @@ class NativeArenaTexturePreparationTest {
     }
     private static final class TrackingAssets extends DesktopAssetManager implements AutoCloseable {
         final Map<TextureKey,Image> requested=new LinkedHashMap<>();
-        TrackingAssets(){super(true);}
+        private final boolean sharedTextures;
+        TrackingAssets(){this(false);}
+        TrackingAssets(boolean sharedTextures){super(true);this.sharedTextures=sharedTextures;}
         @Override public Texture loadTexture(TextureKey key) {
-            Texture result=super.loadTexture(key);
+            // The complete native suite already owns the application's decoded
+            // arena images. Trace real requests without allocating a second copy
+            // of every 2K map beside that still-live shared cache.
+            Texture result=sharedTextures?NativeArenaAssets.MANAGER.loadTexture(key):super.loadTexture(key);
             if(key.getName().startsWith("textures/"))requested.put(key,result.getImage());
             return result;
         }

@@ -4,7 +4,7 @@
   "converter": "src/tools/java/game/wreckriff/tools/PrepareArenaModels.java",
   "converterSha256": "c9cfb1cf4ab5ffbd279185b278381bc10f2f6084bc009ba795440b23ad58204a",
   "generator": "src/tools/author_arena_models.py",
-  "generatorSha256": "5252cb27e69bdaa8f3da998aef9b45962ffaf975e6546617173acd8446a1b06f",
+  "generatorSha256": "426669fee64cfaeeb292d48e1ea2eca50171744f5fa4dc166cfbbbe918639c50",
   "transformation": "Local GLB geometry, authored UVs and normals; named surface materials replaced by shared lit Phong materials; tangent generation; jME binary export",
   "artisticStatus": "NEEDS_CREATIVE_REVIEW",
   "assets": [
@@ -67,10 +67,10 @@
     {
       "path": "models/arenas/depot-gantry-lod.j3o",
       "source": "src/tools/assets/architecture/depot-gantry-lod.glb",
-      "sourceSha256": "b577117351d57502a271ab66288c8cb56a45ea50523b1cdaa957c97e64eb92ab",
+      "sourceSha256": "44d52654abbe299039a8dc4e4c6bac53b1d32a2606689e8deceb32109feedc23",
       "sourceBlend": "src/tools/assets/architecture/depot-gantry-lod.blend",
-      "sourceBlendSha256": "f74e35d0b370d742bb8dfcd91bf7c8e602b10d6a64632ee7250badc66f90b127",
-      "sha256": "4e784107ff29870f386432a239e1a9ec19732b9fafc1909642ca6f33b2889d86",
+      "sourceBlendSha256": "4daf6b6a1a3aaa93ee626483c0352303c46b4b4171ad891ca74e514565120ea1",
+      "sha256": "517cd708a4c7f6c8229f3fb32bd1dcc8655906aa3e5dc83ca30f4e1b608e228c",
       "triangles": 68,
       "materials": [
         "steel",
@@ -80,10 +80,10 @@
     {
       "path": "models/arenas/depot-gantry.j3o",
       "source": "src/tools/assets/architecture/depot-gantry.glb",
-      "sourceSha256": "9bf492c2b085089430edd01a80530cc0b01f98837350b965636ae0f86de93093",
+      "sourceSha256": "ee07ae35847251562ccdfb305b046f2d117c0b77ec8dcc65d6c9e3ad3dad458f",
       "sourceBlend": "src/tools/assets/architecture/depot-gantry.blend",
-      "sourceBlendSha256": "eeb9dc3512c06ee02a6ca16c8280f791f0df163c2b34b0849238cc5a5dcaccb1",
-      "sha256": "dc551cdf7bcdd4ee8486e3fc23fa66962094608235a48921d29dcbb309d12976",
+      "sourceBlendSha256": "ddfafc6736edd681eac2869223ae0a952357fd604dafa3756be0d2a0c14295e3",
+      "sha256": "613a7e8e232c6c67213df3b82f8ff079ddfa8dde5ea88be6a1a37cfd59035cc2",
       "triangles": 232,
       "materials": [
         "steel",
@@ -93,11 +93,11 @@
     {
       "path": "models/arenas/island-bandstand-lod.j3o",
       "source": "src/tools/assets/architecture/island-bandstand-lod.glb",
-      "sourceSha256": "44dc5114b79fd273c0d43b69719e72f955a58b7e7fce6dd275aa99c53d1eb884",
+      "sourceSha256": "5a85cae70ec6588ae46be8ce6fcad8055f6e6315e14edff5cc7fde29c34850d7",
       "sourceBlend": "src/tools/assets/architecture/island-bandstand-lod.blend",
-      "sourceBlendSha256": "7c99bb642c46f9887d39efc3df97df64dccb7aa785a22ac30091ab52f95daa2d",
-      "sha256": "bd77c4d65184c32b9951425c49b2713f786b4cdb107425c01f5cd426b336b20e",
-      "triangles": 304,
+      "sourceBlendSha256": "7a19554165be1409645a17a59e232f3d61f803fb238ae3f7ed002bb1d2636b0a",
+      "sha256": "df701f17b1d090a8ec9839d4fe739ecb67dfa06c71d80a21b2ad27936e8c1d34",
+      "triangles": 320,
       "materials": [
         "faded-red",
         "ivory",
@@ -107,11 +107,11 @@
     {
       "path": "models/arenas/island-bandstand.j3o",
       "source": "src/tools/assets/architecture/island-bandstand.glb",
-      "sourceSha256": "ad820eba3c14f4081734bd19c5dcb6a2846c1d9c1f6b583c8aae476e984df489",
+      "sourceSha256": "851422f1c14277616c2f9331d8f99f9bba33f47ed15be3a3944322d7623c575f",
       "sourceBlend": "src/tools/assets/architecture/island-bandstand.blend",
-      "sourceBlendSha256": "2f30181d9497e1febffeaae8475bf6962a823c80351ae619e6ea07b3ab4571c0",
-      "sha256": "a58f4b2d87e96cc9501d616eebec5e877ddbae127d202f14dabbe3825761b354",
-      "triangles": 608,
+      "sourceBlendSha256": "68f666f60b565a06e2010d07427f3079a3ebdfd9bc30970d4738e119bd408d4a",
+      "sha256": "4938a1c6a66064ec9984024be583cd810d80b56e8b2dd7e68a3f36b65aa9459f",
+      "triangles": 640,
       "materials": [
         "faded-red",
         "ivory",
@@ -122,10 +122,10 @@
     {
       "path": "models/arenas/orbit-shell-lod.j3o",
       "source": "src/tools/assets/architecture/orbit-shell-lod.glb",
-      "sourceSha256": "117256b2fc073c4922cf0def6707053a06fcf70affb3bd81d07648824e36ae99",
+      "sourceSha256": "0391c2fea911024d80a792f0154960c1ff220ed5eb46bc7f3d34d571f5f17036",
       "sourceBlend": "src/tools/assets/architecture/orbit-shell-lod.blend",
-      "sourceBlendSha256": "7a1ed772818fc3b89447d93efaeee3ecd714e71690b5eaecd43414782756ff45",
-      "sha256": "da144da89c947e9a9a8104c7f4c91f82f73e95b6a26ed3fdfcbe1b473b552865",
+      "sourceBlendSha256": "b8adac3d871edf81034d4871b78bb8d0e7e7e1429b985d0f8a5ab489183df328",
+      "sha256": "efc4aa07ace6d495eb49c4c5517ef33434929e6ade00d145b8b9e606c01c9ee8",
       "triangles": 52,
       "materials": [
         "purple",
@@ -135,10 +135,10 @@
     {
       "path": "models/arenas/orbit-shell.j3o",
       "source": "src/tools/assets/architecture/orbit-shell.glb",
-      "sourceSha256": "fe86e18e604e0f58c9333eefa43f5f19197197fcb14541a6e5a22be807e07b4b",
+      "sourceSha256": "1ee2c0caabbae1becd2500eaa076911a9506d4c98f53703a12769ed90a592ea9",
       "sourceBlend": "src/tools/assets/architecture/orbit-shell.blend",
-      "sourceBlendSha256": "832872df33f5125f89f6a92ab0b03d58311322cdbee471b2e1845e4bd044b6cb",
-      "sha256": "69584fb36bb05b268db00c6f89465a322b037c53b9773b65c58b1dd62adc5308",
+      "sourceBlendSha256": "64bbf53786b54289ff6cba30b63671715fdb3b39688d4927d92f001ae2f9764c",
+      "sha256": "96cc7b3f2203dc8edffc3848e295acb7a64498142aff8672eb128aab29398e39",
       "triangles": 2340,
       "materials": [
         "ivory",
@@ -200,10 +200,10 @@
     {
       "path": "models/arenas/passage-glass-lod.j3o",
       "source": "src/tools/assets/architecture/passage-glass-lod.glb",
-      "sourceSha256": "708cfd2e674a663ce1b60208b90b172cf625041a9d4ffb4f08e6aed7137883a0",
+      "sourceSha256": "a0a322a842cc6ba15cc3aa3497312c1b7ab97c9b41809b7c9e33e0e8e6839888",
       "sourceBlend": "src/tools/assets/architecture/passage-glass-lod.blend",
-      "sourceBlendSha256": "b2a019b2770589184a64f73cf6cca91f598bc4a72a923155c021e80b4943f8e8",
-      "sha256": "3509babfce68cf1713a7797705fd7e29ef1589c54a340d2dc65c692304007881",
+      "sourceBlendSha256": "3047c2ab3c35066df949bb6303873375ef5a2b4ffdafd800ee616ead264a225f",
+      "sha256": "4e53da702a12a72195c47231c06d5ae5395b59ef843ed91d47a1ad7a51b426b8",
       "triangles": 268,
       "materials": [
         "glass",
@@ -214,10 +214,10 @@
     {
       "path": "models/arenas/passage-glass.j3o",
       "source": "src/tools/assets/architecture/passage-glass.glb",
-      "sourceSha256": "d45d4da377d7295640d9c6ac2082f048f255573af0c29a14edff482f8ee297f1",
+      "sourceSha256": "6ba551c41d0e88176c8cfa5ebb21f3bcfd6e5437df3ec3b06e9bbbdae2b42dbd",
       "sourceBlend": "src/tools/assets/architecture/passage-glass.blend",
-      "sourceBlendSha256": "5e986779ca4792e257552cf230b5ce964c05070782fe291fd1f6d8ba19fda117",
-      "sha256": "31d3b1e6a914fcf58763bf7d98874431598186f3fccedb6990e0a17049359067",
+      "sourceBlendSha256": "c6620953c86ad814b7cfe1b6edbae664df3cf896d889b05dad55c58f7999cec4",
+      "sha256": "12941afbe82c1fee00b0574d0d2a1f32d7954c82df00e6822409da5ba2536f44",
       "triangles": 3364,
       "materials": [
         "glass",
@@ -309,10 +309,10 @@
     {
       "path": "models/arenas/warehouse-trusses-lod.j3o",
       "source": "src/tools/assets/architecture/warehouse-trusses-lod.glb",
-      "sourceSha256": "02dec28bcfcf9d0ea911285dcc7d0bc4139febc8d6193a4665935f806d8a0133",
+      "sourceSha256": "fa294a71fac2106b38be8e24a45e02bce23d10069ff885ede0c0ee62cc20501f",
       "sourceBlend": "src/tools/assets/architecture/warehouse-trusses-lod.blend",
-      "sourceBlendSha256": "cad2402264aca058cc643e919f28d5afde80ffbcfae35018090daba52eee5f30",
-      "sha256": "486692097581b068809bdb0dec57e596527c136673f22f1f6a5e34e8db42a66a",
+      "sourceBlendSha256": "d9ce301e737685f9eab5d1cc37176e7aacf6d2fa26456fed607823c0777e73d8",
+      "sha256": "9b70fe061810753cad8a4407f9a555ce869325a9746b8bd4186bd03cb0641c23",
       "triangles": 44,
       "materials": [
         "blue",
@@ -322,10 +322,10 @@
     {
       "path": "models/arenas/warehouse-trusses.j3o",
       "source": "src/tools/assets/architecture/warehouse-trusses.glb",
-      "sourceSha256": "aa65796c3bb5a87062e2cff7168861dcd0cbc143baef68536f60e8701c2d5ae2",
+      "sourceSha256": "6e63f0d43e18e4ae3bd907f883cb6d0daea33ac20a7d797e28d09af4f3aec115",
       "sourceBlend": "src/tools/assets/architecture/warehouse-trusses.blend",
-      "sourceBlendSha256": "27b7d051f63ff34205e7752bea0e11f9285954e4b660c7e0dff52dab2dbb1bbc",
-      "sha256": "dbffef4d09274591dd81a6f248f5bfaefbff4b8d7da4014f1a7017f478201605",
+      "sourceBlendSha256": "6d4410b27389a0e6453c7b1366c4ed898c23af073e703c1ca6e13738da7a09b1",
+      "sha256": "40dc0f79179511e523e7dae6dffc7ab1b06f7a1ccd6a12078930451a902cd7ab",
       "triangles": 748,
       "materials": [
         "blue",

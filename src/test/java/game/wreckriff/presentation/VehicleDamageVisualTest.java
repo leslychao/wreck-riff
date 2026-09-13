@@ -1,9 +1,12 @@
 package game.wreckriff.presentation;
 
 import com.jme3.math.*;
+import com.jme3.material.RenderState;
 import com.jme3.renderer.Camera;
+import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.*;
 import game.wreckriff.config.VehicleProfile;
+import game.wreckriff.config.VehicleRules;
 import game.wreckriff.simulation.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
@@ -19,7 +22,7 @@ class VehicleDamageVisualTest {
             assertEquals(VehicleDamageVisual.stage(hp),(Integer)car.getUserData("damageStage"));assertSame(mesh,paint.getMesh());assertEquals(2,mesh.getMorphTargets().length);
             assertArrayEquals(original,points(mesh));assertEquals(wheel,car.getChild("wheel-0").getLocalTransform());
             if(hp<1)assertEquals(.5f,paint.getMorphState()[1],.001f);
-            VehicleVisual.updatePresentation(car,.06f,null);assertEquals(1,paint.getMorphState()[1],.001f);
+            VehicleVisual.updatePresentation(car,.06f,null);if(hp<1)assertEquals(1,paint.getMorphState()[1],.001f);
         }
         assertEquals(Spatial.CullHint.Always,car.getChild("frost-overlay").getLocalCullHint());VehicleVisual.close(car);
     }
@@ -43,24 +46,88 @@ class VehicleDamageVisualTest {
     @Test void preparedMountRecoilNeverMovesSimulationSocketAndPauseFreezesIt() {
         Node car=car();var socket=car.getChild("machine-gun-muzzle-0").getLocalTransform().clone();
         GameEvent shot=new GameEvent(GameEvent.Type.SHOT,9,0,0,Vector3f.ZERO,"machine-gun",0).withEmission(new ShotEmission("machine-gun-muzzle-0",Vector3f.UNIT_Z,Vector3f.ZERO));
-        VehicleVisual.acceptPresented(car,shot);VehicleVisual.updatePresentation(car,.01f,null);var mount=car.getChild("mount-machine-gun-0");float recoil=mount.getLocalTranslation().z;assertTrue(recoil<0);
+        VehicleVisual.acceptPresented(car,shot);VehicleVisual.updatePresentation(car,.01f,null);var mount=car.getChild("mount-machine-gun-0-bolt");assertEquals(Vector3f.ZERO,car.getChild("mount-machine-gun-0").getLocalTranslation());float recoil=mount.getLocalTranslation().z;assertTrue(recoil<0);
         VehicleVisual.updatePresentation(car,0,null);assertEquals(recoil,mount.getLocalTranslation().z);assertEquals(socket,car.getChild("machine-gun-muzzle-0").getLocalTransform());
         VehicleVisual.updatePresentation(car,.15f,null);assertEquals(0,mount.getLocalTranslation().z,.00001f);VehicleVisual.close(car);
     }
     @Test void lodUsesScreenCoverageWithHysteresisAndStatusSharesActiveDamageMesh() {
         Node car=car();Camera camera=new Camera(1920,1080);camera.setFrustumPerspective(60,1920f/1080,.1f,1000);camera.setLocation(new Vector3f(0,0,-100));camera.lookAt(Vector3f.ZERO,Vector3f.UNIT_Y);
         car.updateGeometricState();VehicleVisual.updatePresentation(car,0,camera);assertEquals(2,(Integer)car.getUserData("vehicleLod"));
-        camera.setLocation(new Vector3f(0,0,-30));VehicleVisual.updatePresentation(car,0,camera);assertEquals(1,(Integer)car.getUserData("vehicleLod"));
-        camera.setLocation(new Vector3f(0,0,-10));VehicleVisual.updatePresentation(car,0,camera);assertEquals(0,(Integer)car.getUserData("vehicleLod"));
+        camera.setLocation(new Vector3f(0,0,-12));VehicleVisual.updatePresentation(car,0,camera);assertEquals(1,(Integer)car.getUserData("vehicleLod"));
+        camera.setLocation(new Vector3f(0,0,-3));VehicleVisual.updatePresentation(car,0,camera);assertEquals(0,(Integer)car.getUserData("vehicleLod"));
         VehicleVisual.updateDamage(car,.5f);VehicleVisual.updateEffects(car,true,true);VehicleVisual.updatePresentation(car,.06f,null);
         Geometry paint=(Geometry)car.getChild("paint"),frost=(Geometry)car.getChild("frost-paint");assertSame(paint.getMesh(),frost.getMesh());assertArrayEquals(paint.getMorphState(),frost.getMorphState());VehicleVisual.close(car);
     }
+    @Test void frostUsesBoundedTransparentCrystalsAndExistingDamageMaskOnEveryVehicleAndLod() {
+        VehicleRules rules=VehicleRules.load();
+        for(String id:List.of("rivet","spark","grinder")) {
+            VehicleProfile profile=VehicleProfile.player(id,rules);
+            Node car=VehicleVisual.create(PresentationTestAssets.shared(),profile,2);
+            try {
+                VehicleVisual.updateEffects(car,true,false);VehicleVisual.updateDamage(car,.5f);VehicleVisual.updatePresentation(car,.06f,null);
+                for(int level=0;level<3;level++) {
+                    Node body=(Node)car.getChild("lod"+level),frost=(Node)car.getChild("frost-lod"+level);
+                    for(Spatial spatial:frost.getChildren()) {
+                        Geometry ice=(Geometry)spatial,source=(Geometry)body.getChild(ice.getName().substring("frost-".length()));
+                        var material=ice.getMaterial();assertEquals("VehicleFrost",material.getMaterialDef().getName());
+                        assertSame(source.getMesh(),ice.getMesh());assertArrayEquals(source.getMorphState(),ice.getMorphState());
+                        assertSame(source.getMaterial().getParam("DamageMap").getValue(),material.getParam("DamageMap").getValue());
+                        assertTrue((Float)material.getParam("MaxOpacity").getValue()<=.65f,"Base paint and damage must remain visible through ice");
+                        assertEquals(RenderState.BlendMode.Alpha,material.getAdditionalRenderState().getBlendMode());assertFalse(material.getAdditionalRenderState().isDepthWrite());
+                        assertEquals(RenderQueue.Bucket.Transparent,ice.getQueueBucket());assertEquals(RenderQueue.ShadowMode.Off,ice.getShadowMode());
+                    }
+                }
+            } finally {VehicleVisual.close(car);}
+        }
+    }
+    @Test void frostFollowsAuthoritativeStatusThroughPauseCleanseExpiryAndDeath() {
+        Node car=car();Node frost=(Node)car.getChild("frost-overlay");
+        try {
+            VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.FREEZE,20,0,1,Vector3f.ZERO,"freeze",4));
+            assertEquals(Spatial.CullHint.Always,frost.getLocalCullHint(),"Feedback events must not create a separate status timer");
+            VehicleVisual.updateEffects(car,true,false);VehicleVisual.updatePresentation(car,0,null);
+            assertEquals(Spatial.CullHint.Inherit,frost.getLocalCullHint());
+            VehicleVisual.updatePresentation(car,5,null);assertEquals(Spatial.CullHint.Inherit,frost.getLocalCullHint(),"Only the simulation ends Freeze");
+            VehicleVisual.updateEffects(car,true,true);assertEquals(Spatial.CullHint.Always,frost.getLocalCullHint(),"Shield cleanse cannot retain a frost shell");
+            VehicleVisual.updateEffects(car,true,false);VehicleVisual.updateEffects(car,false,false);assertEquals(Spatial.CullHint.Always,frost.getLocalCullHint());
+            VehicleVisual.updateEffects(car,true,false);VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.DESTROYED,21,0,1,Vector3f.ZERO,"power",0));
+            VehicleVisual.updateEffects(car,true,false);assertEquals(Spatial.CullHint.Always,frost.getLocalCullHint(),"Dead cars cannot regain frost from a stale status");
+        } finally {VehicleVisual.close(car);}
+    }
     @Test void boundedMarkHistoryBakesOldMarksInsteadOfErasingThemAndFullRepairClearsMask() {
-        var marks=new VehicleDamageMarks(VehicleProfile.rivet());Vector2f first=new Vector2f(.05f,.05f);
-        marks.hit(Vector3f.ZERO,Vector3f.UNIT_Y,first,1,false,false,1);
-        for(int i=0;i<80;i++)marks.hit(Vector3f.ZERO,Vector3f.UNIT_Y,new Vector2f(.15f+(i%9)*.08f,.15f+(i/9)*.08f),.7f,false,false,i+2);
+        var marks=new VehicleDamageMarks(PresentationTestAssets.shared(),"rivet");Vector2f first=new Vector2f(.05f,.05f);
+        marks.hit(Vector3f.ZERO,Vector3f.UNIT_Y,first,1,false,false,1,0,2);
+        for(int i=0;i<80;i++)marks.hit(Vector3f.ZERO,Vector3f.UNIT_Y,new Vector2f(.15f+(i%9)*.08f,.15f+(i/9)*.08f),.7f,false,false,i+2,0,2);
         assertEquals(32,marks.count());byte[] data=marks.snapshot();int at=(Math.round(first.y*511)*512+Math.round(first.x*511))*4;assertTrue((data[at]&255)>0);
         marks.repair(1);assertEquals(0,marks.count());for(byte value:marks.snapshot())assertEquals(0,value);marks.close();
+    }
+    @Test void sustainedFireAddsSootWithoutImpactDentOrDetachedPanels() {
+        Node car=car();VehicleVisual.updateDamage(car,.25f);
+        for(int i=0;i<180;i++)VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.DAMAGE,1000+i,0,1,Vector3f.ZERO,"napalm-fire",1)
+                .withContact(ContactSurface.METAL,new VehicleContact(new Vector3f(1,.2f,0),Vector3f.UNIT_X)));
+        VehicleVisual.updatePresentation(car,.12f,null);
+        for(int i=0;i<8;i++)assertEquals(0,car.getControl(VehicleDamageVisual.class).regionDamage(i),"Thermal exposure must not become an impact");
+        assertTrue(car.getControl(VehicleDamageVisual.class).markCount()>0);assertTrue(VehicleVisual.drainDetached(car).isEmpty());VehicleVisual.close(car);
+    }
+    @Test void contactRefinementPreservesAuthoritativeWorldTraceAndUsesCanonicalUv() {
+        Node car=car();car.setLocalTranslation(100,20,-60);car.updateGeometricState();GameEvent original=hit(80,20);
+        GameEvent refined=VehicleVisual.refineContact(car,original);
+        assertEquals(original.position(),refined.position());assertEquals(original.normal(),refined.normal());assertEquals(original.origin(),refined.origin());
+        VehicleVisual.acceptPresented(car,refined);assertEquals(1,car.getControl(VehicleDamageVisual.class).markCount());VehicleVisual.close(car);
+    }
+    @Test void batchedLocalHitDoesNotRewindAnUnaffectedPanelTransition() {
+        Node car=car();Geometry left=(Geometry)car.getChild("panel-door-left");
+        VehicleVisual.updateDamage(car,.5f);VehicleVisual.updatePresentation(car,.06f,null);assertEquals(.5f,left.getMorphState()[1],.001f);
+        VehicleVisual.acceptPresented(car,hit(2000,20));VehicleVisual.updatePresentation(car,.03f,null);
+        assertEquals(.75f,left.getMorphState()[1],.001f,"An unrelated dirty region cannot reset another panel's transition clock");VehicleVisual.close(car);
+    }
+    @Test void reusedGpuMorphBufferIsMarkedDirtyAfterAnotherDamageComposite() {
+        Node car=car();Geometry paint=(Geometry)car.getChild("paint");
+        VehicleVisual.updateDamage(car,.5f);VehicleVisual.updatePresentation(car,.12f,null);
+        var data=paint.getMesh().getMorphTargets()[1].getBuffer(VertexBuffer.Type.Position);
+        paint.getMesh().setBuffer(VertexBuffer.Type.MorphTarget3,3,data);var gpu=paint.getMesh().getBuffer(VertexBuffer.Type.MorphTarget3);gpu.clearUpdateNeeded();
+        VehicleVisual.acceptPresented(car,hit(2100,20));VehicleVisual.updatePresentation(car,.12f,null);
+        assertSame(data,paint.getMesh().getMorphTargets()[1].getBuffer(VertexBuffer.Type.Position));assertTrue(gpu.isUpdateNeeded(),"In-place composites must be uploaded even when jME reuses the same FloatBuffer");VehicleVisual.close(car);
     }
     private static float[] points(Mesh mesh){var b=mesh.getFloatBuffer(VertexBuffer.Type.Position);float[] result=new float[b.limit()];for(int i=0;i<result.length;i++)result[i]=b.get(i);return result;}
 }

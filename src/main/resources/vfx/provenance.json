@@ -2,33 +2,33 @@
   "schemaVersion": 1,
   "origin": "ORIGINAL_PROJECT_CONTENT",
   "generator": "src/tools/author_combat_vfx.py",
-  "generatorSha256": "7e4fe516395deb173737621bbe2326bb0252931ae9240fe606c6bf09adaef2bd",
+  "generatorSha256": "e2efd315346f02af6e1d208a4505c0757d42a02545384fb24e19850c04f132d3",
   "tool": "4.5.9 LTS",
   "sourceScene": "src/tools/assets/combat-vfx/combat-volumes.blend",
-  "sourceSceneSha256": "299bbecf21d7f61fde87eae8cb8a04dd6cb235a190906a7f2b48d43713ddb8d2",
+  "sourceSceneSha256": "a7eab8705cbbd76a30ce143474de8d53fc14c43d6464bf5d9c22e0164166ef21",
   "licensePermission": "Original Wreck Riff project content; redistribution with the game permitted",
   "externalImages": false,
   "artisticStatus": "NEEDS_CREATIVE_REVIEW",
   "assets": [
     {
       "path": "textures/vfx/smoke.png",
-      "sha256": "db0d9f79c720b38a653aa3209cb3b9dd320ebc5f6108dfb0ca3d3f885e972927",
-      "bytes": 4571135
+      "sha256": "4e6ed00ac844a8caca20c5936bd296ff1f5b8b9d4e7f31c0073611dd367d0462",
+      "bytes": 4684623
     },
     {
       "path": "textures/vfx/flame.png",
-      "sha256": "85e239962c5807842c1d7e277adde76f8f85593af9e29e4ee12e2635482cbd56",
-      "bytes": 4706206
+      "sha256": "f5243b0ca721c6c847db4e3b7337b7279f7abb7dff02e18d244d6ce8f07191cc",
+      "bytes": 4920285
     },
     {
       "path": "textures/vfx/blast.png",
-      "sha256": "a1c05cd3be2598bd079d5b09acf6d6a87cf224980479b2cbfb2a0f26f7d1d3b5",
-      "bytes": 4383039
+      "sha256": "0462de4841273aaee71527e552af16af7828e57da9b62978f1ecb6b14b7fa8ec",
+      "bytes": 4683795
     },
     {
       "path": "textures/vfx/dust.png",
-      "sha256": "4c84fe5b5e25fd09f06249aa920a06f7cd378baeeb2e498294314c309d6ba500",
-      "bytes": 3336916
+      "sha256": "28bad8459239f528a8f829e142608829eec83c52ce0c34762cc6830aecd89e17",
+      "bytes": 3430193
     },
     {
       "path": "textures/vfx/auxiliary.png",
@@ -37,8 +37,8 @@
     },
     {
       "path": "vfx/recipes.json",
-      "sha256": "96c1931b189fb36f950f2e3d3b93bb091bf5a018e8dbe187d4c17d4bc6e194a8",
-      "bytes": 1570
+      "sha256": "e9b6e93fa8f696bf7ee6f223600df87000d49046bd0dbd95612288d6ad5c57da",
+      "bytes": 1625
     }
   ]
 }

@@ -93,6 +93,7 @@ uniform float m_Shininess;
 #endif
 
 
+uniform float m_Heat;
 uniform float m_Damage;
 uniform float m_Glass;
 #ifdef DAMAGEMAP
@@ -152,6 +153,7 @@ void main(){
       wear = texture2D(m_DamageMap, newTexCoord);
     #endif
     diffuseColor.rgb *= mix(1.0, 0.22, m_Damage * 0.7 + wear.g * 0.3);
+    diffuseColor.rgb *= 1.0-wear.a*.92;
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.38,0.36,0.32), wear.r * (1.0-m_Glass));
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.48,0.68,0.75), wear.b * m_Glass);
 float alpha = DiffuseSum.a * diffuseColor.a;
@@ -277,4 +279,5 @@ float alpha = DiffuseSum.a * diffuseColor.a;
     #endif // end fog
 
     gl_FragColor.a = alpha;
+    gl_FragColor.rgb += vec3(0.45,0.045,0.006) * pow(clamp(m_Heat,0.0,1.0),3.0);
 }

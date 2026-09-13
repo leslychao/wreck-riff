@@ -54,7 +54,7 @@ class BallisticGuidanceTest {
         assertEquals(0,combat.occupiedProjectileSlots());
     }
 
-    @Test void releasedDropsOnlyTurnHorizontallyAndStayWithinThreeMetresOfTheirFreeTrajectory() {
+    @Test void releasedDropsOnlyTurnHorizontallyAndStayWithinFiveMetresOfTheirFreeTrajectory() {
         world.floor=true;world.positions[1].set(0,1,40);world.velocities[1].set(18,0,0);fire();
         for(int wait=0;wait<400&&combat.ballisticWarnings().isEmpty();wait++) {world.positions[1].addLocal(world.velocities[1].mult(MatchSession.DT));tick();}
         assertFalse(combat.ballisticWarnings().isEmpty(),"The launched carrier must publish its warning");
@@ -64,32 +64,59 @@ class BallisticGuidanceTest {
         Vector3f initialVelocity=drop.originalVelocity.clone();
         for(int i=0;i<600&&!drop.exploded;i++) {
             Vector3f before=drop.velocity();tick();
-            assertEquals(before.y-18*MatchSession.DT,drop.velocity().y,.0001,"Guidance must not change falling speed");
+            assertEquals(before.y-36*MatchSession.DT,drop.velocity().y,.0001,"Guidance must not change falling speed");
             Vector3f oldHorizontal=before.setY(0).normalizeLocal(),newHorizontal=drop.velocity().setY(0).normalizeLocal();
             double angle=Math.acos(Math.clamp(oldHorizontal.dot(newHorizontal),-1,1));
-            assertTrue(angle<=Math.toRadians(12)*MatchSession.DT+.0003,"Instant turn: "+angle);
+            assertTrue(angle<=Math.toRadians(24)*MatchSession.DT+.0003,"Instant turn: "+angle);
             if(!drop.exploded) {
                 Vector3f free=drop.launchPosition.add(initialVelocity.mult(drop.ageTicks*MatchSession.DT));
-                assertTrue(drop.position().subtract(free).setY(0).length()<=3.001,"Correction exceeded the free-flight envelope");
+                assertTrue(drop.position().subtract(free).setY(0).length()<=5.001,"Correction exceeded the free-flight envelope");
                 var marker=combat.ballisticWarnings().stream().filter(w->w.id()==drop.id()).findFirst();
-                if(marker.isPresent())assertTrue(marker.get().point().distance(initialWarning)<=3.1,"The warning chased a moving target");
+                if(marker.isPresent())assertTrue(marker.get().point().distance(initialWarning)<=5.1,"Warning movement exceeded the trajectory envelope");
             }
         }
     }
 
-    @Test void laterChargesUseTheFirstWarningCentreInsteadOfReaimingAtTheMovingTarget() {
+    @Test void eachChargeReaimsAtTheOriginalTargetWhenItsWarningIsPlanned() {
         world.floor=true;world.positions[1].set(0,1,40);fire();
-        for(int wait=0;wait<400&&combat.ballisticWarnings().isEmpty();wait++)tick();
-        assertFalse(combat.ballisticWarnings().isEmpty(),"The launched carrier must publish its warning");
-        world.positions[1].x=22;world.velocities[1].set(18,0,0);
         Set<Long> seen=new HashSet<>();
+        float[] expectedX={-2,6,14,18};List<Long> planTicks=new ArrayList<>();
         for(int i=0;i<750;i++) {
-            for(var marker:combat.ballisticWarnings())if(seen.add(marker.id()))
-                assertTrue(Math.abs(marker.point().x)<=2.01,"A later charge recomputed the published salvo centre: "+marker.point());
+            for(var marker:combat.ballisticWarnings())if(seen.add(marker.id())) {
+                int index=seen.size()-1;
+                assertEquals(expectedX[index],marker.point().x,.05f,"Each warning must use the latest position of the original target");
+                planTicks.add(session.tick);world.positions[1].x=(index+1)*6;
+                world.positions[2].set(0,1,10);
+            }
             tick();
         }
         assertEquals(4,seen.size());
+        for(int i=1;i<4;i++)assertEquals(36,planTicks.get(i)-planTicks.get(i-1));
         assertTrue(combat.fireZones().isEmpty());
+    }
+
+    @Test void eachWarningUsesPointEightSecondsOfLeadCappedAtTwelveMetres() {
+        for(float speed:new float[]{5,100}) {
+            var f=new NewArsenalTest();f.world.floor=true;f.world.positions[1].set(0,1,40);f.world.velocities[1].x=speed;
+            f.tick(NewArsenalTest.fire(WeaponType.BALLISTIC));
+            for(int i=0;i<400&&f.combat.ballisticWarnings().isEmpty();i++)f.tick(VehicleCommand.NONE);
+            assertFalse(f.combat.ballisticWarnings().isEmpty());
+            assertEquals(Math.min(speed*.8f,12)-2,f.combat.ballisticWarnings().getFirst().point().x,.05f);
+        }
+    }
+
+    @Test void visibilityLostBetweenPlanningTicksStopsTheSalvoPermanently() {
+        world.floor=true;world.positions[1].set(0,1,40);fire();
+        for(int wait=0;wait<400&&combat.ballisticWarnings().isEmpty();wait++)tick();
+        assertFalse(combat.ballisticWarnings().isEmpty());
+        world.hidden.add(1);tick();world.hidden.clear();world.positions[1].x=20;
+        Set<Long> released=new HashSet<>();
+        for(int i=0;i<600;i++) {
+            tick();
+            for(var drop:combat.projectiles())if(drop.kind().equals("ballistic-fall")&&released.add(drop.id()))
+                assertEquals(-1,drop.targetId(),"The carrier must remember even a brief loss between charge plans");
+        }
+        assertEquals(4,released.size());assertEquals(0,combat.occupiedProjectileSlots());
     }
 
     @Test void lostVisibilityOrDeathPermanentlyStopsGuidanceWithoutChoosingAnotherTarget() {
@@ -113,9 +140,9 @@ class BallisticGuidanceTest {
         }
     }
 
-    @Test void guidanceEndsPermanentlyAfterTheFirstPointSixSecondsOfFalling() {
+    @Test void guidanceEndsPermanentlyAfterTheFirstPointSevenFiveSecondsOfFalling() {
         world.floor=true;world.positions[1].set(0,1,40);fire();ProjectileState drop=firstDrop();
-        while(drop.ageTicks<=72&&!drop.exploded)tick();
+        while(drop.ageTicks<=90&&!drop.exploded)tick();
         assertFalse(drop.exploded);assertEquals(-1,drop.targetId());Vector3f velocity=drop.velocity();
         world.positions[1].x=4;
         for(int i=0;i<30&&!drop.exploded;i++) {
@@ -128,9 +155,9 @@ class BallisticGuidanceTest {
         world.floor=true;world.positions[1].set(0,1,40);fire();ProjectileState drop=firstDrop();
         // A fresh roof prediction reaches its terminal window while the charge is still young.
         world.roof=true;world.roofHeight=18;world.positions[1].y=19;
-        for(int i=0;i<72&&!drop.exploded&&drop.targetId()>=0;i++)tick();
+        for(int i=0;i<90&&!drop.exploded&&drop.targetId()>=0;i++)tick();
         assertEquals(-1,drop.targetId());
-        assertTrue(drop.ageTicks<72,"The roof must end guidance earlier than the maximum guided lifetime");
+        assertTrue(drop.ageTicks<90,"The roof must end guidance earlier than the maximum guided lifetime");
     }
 
     private Vector3f warning(long id) {

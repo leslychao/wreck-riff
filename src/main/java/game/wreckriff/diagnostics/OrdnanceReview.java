@@ -12,6 +12,8 @@ import com.jme3.scene.shape.Box;
 import com.jme3.system.*;
 import game.wreckriff.presentation.*;
 import game.wreckriff.combat.OrdnanceInspectionScene;
+import game.wreckriff.config.VehicleProfile;
+import game.wreckriff.config.VehicleRules;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -32,8 +34,9 @@ public final class OrdnanceReview extends SimpleApplication {
     private boolean captured,finished;
     private OrdnanceInspectionScene saturation;
     private final List<Map<String,Object>> saturationRuns=new ArrayList<>();
+    private final List<Node> frostVehicles=new ArrayList<>();
     private boolean retryCleanup;
-    private static final List<String> STAGES=List.of("01-day-overview","02-neon-overview","03-homing","04-power","05-napalm", "06-ballistic","07-ballistic-fall","08-cannon","09-freeze","10-mine","11-mine-slope","12-saturated-flight","13-retry-saturation");
+    private static final List<String> STAGES=List.of("01-day-overview","02-neon-overview","03-homing","04-power","05-napalm", "06-ballistic","07-ballistic-fall","08-cannon","09-freeze","10-mine","11-mine-slope","12-saturated-flight","13-retry-saturation","14-frost-day","15-frost-neon");
     public OrdnanceReview(Path directory){this.directory=directory;}
     public static void main(String[] args)throws Exception {
         if(args.length!=1)throw new IllegalArgumentException("Review output directory required");
@@ -61,8 +64,9 @@ public final class OrdnanceReview extends SimpleApplication {
             retryCleanup=display.getChild("ordnance-models")==null;
             if(!retryCleanup)throw new IllegalStateException("Retry retained the closed presentation root");
         }
+        frostVehicles.forEach(VehicleVisual::close);frostVehicles.clear();
         stage=next;captured=false;elapsed=0;display.detachAllChildren();
-        boolean night=stage==1;
+        boolean night=stage==1||stage==14;
         viewPort.setBackgroundColor(night?new ColorRGBA(.007f,.014f,.034f,1):new ColorRGBA(.035f,.045f,.052f,1));
         key.setColor(night?new ColorRGBA(.15f,.54f,1,1).mult(1.5f):new ColorRGBA(1,.91f,.78f,1).mult(1.35f));
         rim.setColor(night?new ColorRGBA(1,.11f,.45f,1).mult(1.5f):new ColorRGBA(.54f,.7f,1,1).mult(.65f));
@@ -91,6 +95,19 @@ public final class OrdnanceReview extends SimpleApplication {
             if(style==OrdnanceStyle.BALLISTIC){cam.setLocation(new Vector3f(1.70f,1.52f,2.6f));cam.lookAt(new Vector3f(0,.4f,0),Vector3f.UNIT_Y);}
             title.setText("WRECK RIFF / "+style.kind().toUpperCase(Locale.ROOT)+(stage==10?" / SLOPED CONTACT":" / MATERIAL DETAIL"));
             caption.setText("Original authored shell, seams, edge wear, fasteners, technical stencil and restrained active signal.\nExact game geometry and material. NEEDS_CREATIVE_REVIEW: capture does not grant owner acceptance.");
+        } else if(stage>=13) {
+            var rules=VehicleRules.load();String[] ids={"rivet","grinder","spark"};
+            for(int i=0;i<ids.length;i++) {
+                Node vehicle=VehicleVisual.create(assetManager,VehicleProfile.player(ids[i],rules),i);
+                vehicle.setLocalTranslation((i-1)*5.7f,.7f,0);vehicle.rotate(0,.35f,0);
+                display.attachChild(vehicle);frostVehicles.add(vehicle);
+                VehicleVisual.updateDamage(vehicle,.5f);VehicleVisual.updatePresentation(vehicle,.2f,null);
+                VehicleVisual.updateEffects(vehicle,true,false);
+                platform((i-1)*5.7f,.1f,0,2.5f,.12f,3.9f,new Quaternion());
+            }
+            cam.setLocation(new Vector3f(13,14,24));cam.lookAt(new Vector3f(0,1,0),Vector3f.UNIT_Y);
+            title.setText("WRECK RIFF / CRYSTALLINE FROST / "+(night?"NEON":"DAYLIGHT"));
+            caption.setText("Rivet / Grinder / Spark: exact game meshes at staged 50% HP and Freeze status. No bloom.\nCrystals and cracks share the damaged geometry; real Freeze -> Ballistic commands are recorded in combat showcase.");
         } else {
             saturation=new OrdnanceInspectionScene(assetManager,display);
             platform(0,-.24f,0,10,.12f,9.7f,new Quaternion());
@@ -120,6 +137,7 @@ public final class OrdnanceReview extends SimpleApplication {
             if(stage+1<STAGES.size())switchStage(stage+1);
             else {
                 if(saturation!=null){saturation.close();saturationRuns.add(saturation.evidence());saturation=null;}
+                frostVehicles.forEach(VehicleVisual::close);frostVehicles.clear();
                 finished=true;finish();stop();
             }
         }
@@ -132,6 +150,7 @@ public final class OrdnanceReview extends SimpleApplication {
             var evidence=new LinkedHashMap<String,Object>();evidence.put("status","CAPTURED");evidence.put("artisticStatus","NEEDS_CREATIVE_REVIEW");
             evidence.put("context",context.getType().name());evidence.put("framebuffer",List.of(cam.getWidth(),cam.getHeight()));evidence.put("renderer",context.getSettings().getRenderer());evidence.put("captures",files);
             evidence.put("saturation",saturationRuns);evidence.put("retryCleanup",retryCleanup);
+            evidence.put("bloom",false);evidence.put("frostVehicles",List.of("rivet","grinder","spark"));
             Files.writeString(directory.resolve("review.json"),new GsonBuilder().setPrettyPrinting().create().toJson(evidence)+"\n",StandardCharsets.UTF_8);
         } catch(Exception error){throw new IllegalStateException("Ordnance real-window capture failed",error);}
     }

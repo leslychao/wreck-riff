@@ -6,6 +6,8 @@
   "atlasSize": 2048,
   "auxiliarySize": 1024,
   "residentLimitBytes": 134217728,
+  "blastVariants": 3,
+  "blastFramesPerVariant": 21,
   "explosions": {
     "homing": [
       1.0,

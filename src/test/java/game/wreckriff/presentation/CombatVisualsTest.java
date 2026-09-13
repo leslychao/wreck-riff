@@ -10,6 +10,106 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CombatVisualsTest {
+    @Test void externalPresentationClockKeepsTraceAlignedAndResultsTailExpires() {
+        Node scene=new Node();
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.setPresentationTime(10);
+            for(int i=1;i<=3;i++)visuals.accept(List.of(shot(i,0,new Vector3f(0,1,0),new Vector3f(0,1,36)).atTick(1200,i)));
+            visuals.setPresentationTime(10.1);visuals.update(List.of(),List.of(),List.of(),List.of(),null,1f/120);
+            assertEquals(18,visuals.tracerSegments().getFirst().to().z,.0001);
+            visuals.setPresentationTime(10.3);visuals.update(List.of(),List.of(),List.of(),List.of(),null,1f/120);
+            assertTrue(visuals.tracerSegments().isEmpty(),"The monotonic Results presentation clock must retire the final launched trace");
+            for(int frame=0;frame<100;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.02f);
+            assertEquals(0,visuals.effectCount());assertEquals(3,visuals.statistics().get("peakShots"));
+        }
+    }
+    @Test void preparedDetachedPanelPreservesAuthoredGeometryWithinOneLitBatch() {
+        Node scene=new Node();var triangle=new Mesh();
+        triangle.setBuffer(VertexBuffer.Type.Position,3,new float[]{0,0,0,.4f,0,0,0,.2f,.6f});triangle.updateBound();
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.detachPanel(new Vector3f(2,1,4),Quaternion.IDENTITY,Vector3f.ZERO,new Vector3f(.4f,.2f,.6f),triangle,ContactSurface.METAL,0);
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            var mesh=batch(scene,"impact-fragments").getMesh();assertEquals(3,mesh.getVertexCount());
+            assertEquals(new Vector3f(2.4f,1,4),point(mesh.getFloatBuffer(VertexBuffer.Type.Position),1));
+            assertEquals(3,triangle.getVertexCount());assertEquals(0,triangle.getFloatBuffer(VertexBuffer.Type.Position).get(0));
+            assertNotNull(mesh.getBuffer(VertexBuffer.Type.Normal));
+        }
+    }
+    @Test void freezeContactUsesColdVapourAndOutwardIceInsteadOfHotMaterialSparks() {
+        Node scene=new Node();Vector3f hit=new Vector3f(0,2,8),normal=Vector3f.UNIT_X;
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            var impact=new GameEvent(GameEvent.Type.IMPACT,17,1,0,hit,"freeze",0,Vector3f.ZERO,normal).withContact(ContactSurface.METAL,null);
+            visuals.acceptPresented(List.of(impact));visuals.update(List.of(),List.of(),List.of(),List.of(),null,.04f);
+            Mesh vapour=batch(scene,"particles-and-tracers").getMesh(),sparks=batch(scene,"sparks-and-tracers").getMesh();
+            assertTrue(vapour.getVertexCount()>0,"Cryogenic contact needs a soft cold vapour layer");
+            for(Mesh mesh:List.of(vapour,sparks)) {
+                var colors=mesh.getFloatBuffer(VertexBuffer.Type.Color);var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);
+                for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
+                    assertTrue(colors.get(vertex*4+2)>=colors.get(vertex*4),"Freeze must not inherit orange metal sparks");
+                    assertTrue(point(positions,vertex).subtract(hit).dot(normal)>=0,"Cold contact remains outside the struck surface");
+                }
+            }
+            Mesh fragments=batch(scene,"impact-fragments").getMesh();assertTrue(fragments.getVertexCount()>0);
+            float[] before=floats(fragments,VertexBuffer.Type.Position);int effects=visuals.effectCount();
+            visuals.acceptPresented(List.of(impact));visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            assertEquals(effects,visuals.effectCount());assertArrayEquals(before,floats(fragments,VertexBuffer.Type.Position));
+            visuals.accept(List.of(new GameEvent(GameEvent.Type.FREEZE,17,1,0,hit,"freeze",3)));
+            assertEquals(effects,visuals.effectCount(),"The applied control event must not repeat its already presented projectile contact");
+        }
+    }
+    @Test void freezeExpiryReleasesIceAcrossTheHullAndNotOnlyAtTheOldContact() {
+        Node scene=new Node();Vector3f centre=new Vector3f(0,2,8);
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.accept(List.of(new GameEvent(GameEvent.Type.CONTROL_ENDED,21,1,1,centre,"freeze",0)));
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            Mesh fragments=batch(scene,"impact-fragments").getMesh();var positions=fragments.getFloatBuffer(VertexBuffer.Type.Position);
+            float left=0,right=0,rear=0,front=0;
+            for(int vertex=0;vertex<fragments.getVertexCount();vertex++) {
+                Vector3f point=point(positions,vertex).subtractLocal(centre);
+                left=Math.min(left,point.x);right=Math.max(right,point.x);rear=Math.min(rear,point.z);front=Math.max(front,point.z);
+            }
+            assertTrue(left<-.6f&&right>.6f&&rear<-1&&front>1,"Breaking frost must read over the whole car");
+            assertTrue(batch(scene,"particles-and-tracers").getMesh().getVertexCount()>0,"Thaw releases soft powder as well as solid chips");
+        }
+    }
+    @Test void freezeFlightHasVisibleCoreSoftWakeAndIceThatStopOnPauseAndExpire() {
+        Node scene=new Node();
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            var start=game.wreckriff.combat.ProjectilePresentationFixtures.state(4,"freeze",new Vector3f(0,2,3),Vector3f.UNIT_Z);
+            var moved=game.wreckriff.combat.ProjectilePresentationFixtures.state(4,"freeze",new Vector3f(0,2,4.3f),Vector3f.UNIT_Z);
+            visuals.update(List.of(start),List.of(),List.of(),List.of(),null,1f/60);
+            visuals.update(List.of(moved),List.of(),List.of(),List.of(),null,1f/60);
+            Mesh wake=batch(scene,"particles-and-tracers").getMesh(),core=batch(scene,"sparks-and-tracers").getMesh();
+            assertTrue(wake.getVertexCount()>0,"A cold soft wake must accompany the tiny fast projectile");
+            assertTrue(core.getVertexCount()>0);assertTrue(batch(scene,"impact-fragments").getMesh().getVertexCount()>0);
+            var shapes=core.getFloatBuffer(VertexBuffer.Type.TexCoord2);float radius=0;
+            for(int vertex=0;vertex<core.getVertexCount();vertex++) {
+                radius=Math.max(radius,shapes.get(vertex*2));
+                assertEquals(9,shapes.get(vertex*2+1),"Cold cores must use the auxiliary silhouette without the atlas's baked orange RGB");
+                var colors=core.getFloatBuffer(VertexBuffer.Type.Color);
+                assertTrue(colors.get(vertex*4+2)>colors.get(vertex*4));
+            }
+            assertTrue(radius>=.08f,"The former 4.5 cm points were not a readable projectile trail");
+            int effects=visuals.effectCount();float[] before=floats(wake,VertexBuffer.Type.Position);
+            for(int frame=0;frame<60;frame++)visuals.update(List.of(moved),List.of(),List.of(),List.of(),null,0);
+            assertEquals(effects,visuals.effectCount());assertArrayEquals(before,floats(wake,VertexBuffer.Type.Position));
+            for(int frame=0;frame<80;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.02f);
+            assertEquals(0,visuals.effectCount());assertEquals(0,visuals.projectileCount());
+        }
+    }
+    @Test void freezeFlightReleasesIceAtThirtySixtyAndOneHundredTwentyRenderFrames() {
+        for(int fps:List.of(30,60,120)) {
+            Node scene=new Node();
+            try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+                for(int frame=0;frame<=fps/10;frame++) {
+                    var projectile=game.wreckriff.combat.ProjectilePresentationFixtures.state(4,"freeze",new Vector3f(0,2,3+frame*80f/fps),Vector3f.UNIT_Z);
+                    visuals.update(List.of(projectile),List.of(),List.of(),List.of(),null,1f/fps);
+                }
+                assertTrue(batch(scene,"impact-fragments").getMesh().getVertexCount()>0,"Ice emission must not reset its cadence at every render frame: "+fps);
+                assertTrue(batch(scene,"particles-and-tracers").getMesh().getVertexCount()>0);
+            }
+        }
+    }
     @Test void effectsAreBoundedFiniteAndRemovedAfterExpiryAndClose() {
         Node scene=new Node();
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
@@ -68,7 +168,7 @@ class CombatVisualsTest {
             for(int vertex=0;vertex<mesh.getVertexCount();vertex++) {
                 assertTrue(shapes.get(vertex*2)<=.55f,"Smoke radius must never grow into metre-scale walls");
                 assertEquals(3,shapes.get(vertex*2+1));
-                assertTrue(colors.get(vertex*4+3)<=.78f,"Critical smoke remains translucent even at its dense centre");
+                assertTrue(colors.get(vertex*4+3)<=.38f,"Overlapping smoke billows remain translucent");
                 int first=(vertex/6)*6;
                 for(int axis=0;axis<3;axis++)assertEquals(positions.get(first*3+axis),positions.get(vertex*3+axis),
                         "All six vertices use one world centre; billboard offsets are camera-facing in the shader");
@@ -82,17 +182,17 @@ class CombatVisualsTest {
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
             for(int frame=0;frame<150;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),session,1f/60);
             Geometry geometry=batch(scene,"particles-and-tracers");Mesh mesh=geometry.getMesh();
-            assertTrue(mesh.getVertexCount()/6>=34,"The former six tiny sprites were invisible against the arena floor");
-            assertTrue(mesh.getVertexCount()/6<=38,"Critical smoke remains a narrow bounded plume");
+            assertTrue(mesh.getVertexCount()/6>=14,"Ten emissions per second maintain a readable rising plume");
+            assertTrue(mesh.getVertexCount()/6<=16,"Separate billows avoid a dense opaque pipe");
             var positions=mesh.getFloatBuffer(VertexBuffer.Type.Position);var colors=mesh.getFloatBuffer(VertexBuffer.Type.Color);
             float highest=0,peakOpacity=0;
             for(int vertex=0;vertex<mesh.getVertexCount();vertex+=6) {
                 Vector3f centre=point(positions,vertex);highest=Math.max(highest,centre.y);
-                assertTrue(Math.abs(centre.x)<.3f&&Math.abs(centre.z-1.05f)<.3f,"Smoke stays over the bonnet rather than becoming arena fog");
+                assertTrue(Math.abs(centre.x)<.9f&&Math.abs(centre.z-1.05f)<.5f,"A small lateral drift separates rising billows without becoming arena fog");
                 peakOpacity=Math.max(peakOpacity,colors.get(vertex*4+3));
             }
             assertTrue(highest>3.3f,"Rising smoke remains visible above the roof, not hidden inside the model");
-            assertTrue(peakOpacity>.7f,"Fresh billows need enough alpha to contrast with gray concrete");
+            assertTrue(peakOpacity>.3f&&peakOpacity<=.38f,"Fresh billows retain detail while transmitting the scene behind them");
             assertEquals(com.jme3.material.RenderState.BlendMode.Alpha,geometry.getMaterial().getAdditionalRenderState().getBlendMode(),
                     "Dark smoke must alpha-blend; additive particles cannot darken a background");
         }
@@ -107,6 +207,7 @@ class CombatVisualsTest {
             Camera camera=new Camera(1280,720);camera.setLocation(new Vector3f(0,2,0));
             for(Vector3f look:List.of(new Vector3f(0,2,20),new Vector3f(0,2,-20))) {
                 camera.lookAt(look,Vector3f.UNIT_Y);
+                scene.updateGeometricState();
                 geometry.getControl(AbstractControl.class).render(null,new ViewPort("test-camera",camera));
                 var positions=(java.nio.FloatBuffer)geometry.getMesh().getBuffer(VertexBuffer.Type.Position).getData();
                 float previous=Float.POSITIVE_INFINITY;
@@ -414,14 +515,16 @@ class CombatVisualsTest {
         for(String kind:List.of("power","mine","cannon","ballistic")) {
             Node one=new Node();
             try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),one,world())) {
-                visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,1,kind,34)));profiles.add(visuals.effectCount());
+                visuals.accept(List.of(event(GameEvent.Type.EXPLOSION,1,kind,34)));
+                visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
+                profiles.add(Arrays.hashCode(floats(batch(one,"particles-and-tracers").getMesh(),VertexBuffer.Type.Position)));
                 for(int i=0;i<7;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
                 Mesh smoke=batch(one,"particles-and-tracers").getMesh();assertTrue(smoke.getVertexCount()>0,"Smoke outlasts the 0.6s flash");
                 for(int i=0;i<24;i++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
                 assertEquals(0,visuals.effectCount());
             }
         }
-        assertEquals(4,profiles.size(),"Weapons have authored flame/debris profiles rather than one scaled burst");
+        assertEquals(4,profiles.size(),"Weapon-specific expansion directions produce distinct visible geometry, even when two recipes share a particle count");
     }
     private static GameEvent shot(long id,int source,Vector3f origin,Vector3f end) {
         return new GameEvent(GameEvent.Type.SHOT,id,source,source,end,"machine-gun",8,origin,Vector3f.ZERO);

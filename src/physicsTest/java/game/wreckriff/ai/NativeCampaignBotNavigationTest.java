@@ -70,8 +70,10 @@ class NativeCampaignBotNavigationTest {
             // This scenario isolates the bridge. Its nearby catapult is a valid faster route from the shore.
             start=lower.add(direction.mult(20));start.y=arena.surfaceHeight(rampId,start.x,start.z);
         }
-        arena.surfaceAt(start,3,.1f).orElseThrow();
-        var targetSurface=arena.surfaceAt(goal,3,.1f).orElseThrow();
+        // Junction triangles have several surface owners. Actual wheel contacts below
+        // establish hull support; one mesh need not contain the entire start footprint.
+        arena.surfaceAt(start,0,.1f).orElseThrow();
+        var targetSurface=arena.surfaceAt(goal,0,.1f).orElseThrow();
         var pickup=new ArenaDefinition.Pickup("ai-route-repair",ArenaDefinition.PickupType.REPAIR,
                 new ArenaDefinition.Vec3(goal.x,goal.y,goal.z),3600);
         try(var rig=new Rig(repairFixture(arena,pickup),participant,participant<0,start,direction)) {
@@ -123,9 +125,15 @@ class NativeCampaignBotNavigationTest {
         try(var rig=new Rig(arena.withPickups(targets),participant,participant<0,start,
                 route.points().get(1).vector().subtract(start).setY(0).normalizeLocal(),targets)) {
             var camera=new Camera(1920,1080);var cameraRules=CameraRules.load();var chase=new ChaseCamera(camera,cameraRules);
-            boolean arrived=false;int reached=0;
+            boolean arrived=false;int reached=0;var trace=new ArrayDeque<String>();
             for(int tick=0;tick<7200&&!arrived;tick++) {
                 rig.tick();var position=rig.world.position(rig.id);
+                if(tick%300==0) {
+                    if(trace.size()==12)trace.removeFirst();
+                    trace.add("tick="+tick+" waypoint="+rig.waypointIndex+" position="+position
+                            +" velocity="+rig.world.velocity(rig.id)+" road="+rig.world.roadContext(rig.id)
+                            +" command="+rig.command+" navigation="+rig.bots.navigation(rig.id));
+                }
                 var target=targets.get(rig.waypointIndex).position().vector();
                 if(position.subtract(target).setY(0).length()<8&&Math.abs(position.y-target.y)<4
                         &&rig.world.supportedWheelContacts(rig.id)==4) {
@@ -138,7 +146,7 @@ class NativeCampaignBotNavigationTest {
                         "The camera must remain clear of the authored interior walls and roof");
             }
             assertEquals(targets.size(),reached,"The vehicle must visit every authored turn before the exit: "+arenaId+" / "+roofId
-                    +" / "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id));
+                    +" / "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id)+"\n"+String.join("\n",trace));
             assertTrue(arrived,"AI did not leave the opposite opening: "+arenaId+" / "+roofId+" / "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id));
             assertEquals(0,rig.world.teleportGeneration(rig.id));
         }
@@ -161,7 +169,16 @@ class NativeCampaignBotNavigationTest {
             assertEquals(1,launches.size(),"AI never entered its intended platform: "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id));
             assertEquals(pad.id(),launches.getFirst().kind());
             assertEquals(1,rig.events.stream().filter(e->e.type()==GameEvent.Type.LANDED&&e.subjectId()==rig.id).count());
-            assertEquals(pad.landingSurfaceId(),rig.world.roadContext(rig.id).surfaceId());
+            // A landing can straddle two tessellated road meshes at a junction.
+            // Assert the physical destination and level, not which adjacent mesh
+            // supplied the first wheel contact.
+            var contact=rig.world.position(rig.id);
+            assertTrue(contact.subtract(pad.target().vector()).setY(0).length()<4,
+                    "Landing must reach the authored centre: "+contact);
+            assertEquals(pad.target().y()+rig.world.profile(rig.id).roadOffset(),contact.y,.3f);
+            var landing=arena.surfaces().stream().filter(s->s.id().equals(pad.landingSurfaceId())).findFirst().orElseThrow();
+            assertEquals(landing.level(),rig.world.roadContext(rig.id).level());
+            assertTrue(rig.world.supportedWheelContacts(rig.id)>0);
             assertEquals(0,rig.world.teleportGeneration(rig.id));
         }
     }
@@ -180,7 +197,8 @@ class NativeCampaignBotNavigationTest {
         }
         Rig(ArenaDefinition arena,int participant,boolean boss,Vector3f start,Vector3f direction,List<ArenaDefinition.Pickup> targets) {
             routeTargets=targets;
-            session=new MatchSession(73,arena,boss?MatchSession.Mode.BOSS_DUEL:MatchSession.Mode.ARENA,COMBAT);
+            session=new MatchSession(73,arena,boss?MatchSession.Mode.BOSS_DUEL:
+                    arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA,COMBAT);
             id=boss?session.registerBoss(arena.bosses().getFirst()).id:participant;
             for(var state:session.vehicles)state.hp=state.id==id?state.maximumHp*.1f:0;
             session.phase=boss?MatchSession.Phase.BOSS_COMBAT:MatchSession.Phase.ARENA_COMBAT;

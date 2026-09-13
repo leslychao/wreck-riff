@@ -68,6 +68,8 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     private final Map<Float,SphereCollisionShape> sweepShapes=new HashMap<>();
     private final Map<Integer,PhysicsRigidBody> statics=new LinkedHashMap<>();
     private final Map<String,Integer> staticIds=new LinkedHashMap<>();
+    private final Map<String,Long> surfaceRevisions=new HashMap<>();
+    private long nextSurfaceRevision;
     private final Map<Integer,String> staticNames=new HashMap<>();
     private final Map<PhysicsCollisionObject,Integer> staticIdentities=new IdentityHashMap<>();
     private final Map<Integer,MovingBody> movingArenaBodies=new LinkedHashMap<>();
@@ -143,6 +145,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         body.setFriction(0.8f); body.setRestitution(0); space.addCollisionObject(body);
         int surfaceId=nextStaticId++;
         statics.put(surfaceId,body);staticIds.put(objectId,surfaceId);staticNames.put(surfaceId,objectId);staticIdentities.put(body,surfaceId);
+        surfaceRevisions.put(objectId,++nextSurfaceRevision);
         return body;
     }
     /** Authored kinematic mechanism in the same native space and identity registry as fixed geometry. */
@@ -165,8 +168,16 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         if(moving==null)throw new IllegalArgumentException("Unknown moving arena body "+objectId);
         if(!Vector3f.isValidVector(position)||rotation==null||!Float.isFinite(rotation.norm())||rotation.norm()<=0)
             throw new IllegalArgumentException("Finite moving-body pose required");
+        Vector3f beforePosition=moving.body.getPhysicsLocation();Quaternion beforeRotation=moving.body.getPhysicsRotation();
         moving.body.setPhysicsLocation(position);moving.body.setPhysicsRotation(rotation);moving.body.activate();
+        if(!beforePosition.equals(moving.body.getPhysicsLocation())||!sameRotation(beforeRotation,moving.body.getPhysicsRotation()))
+            surfaceRevisions.put(objectId,++nextSurfaceRevision);
     }
+    private static boolean sameRotation(Quaternion first,Quaternion second) {
+        return first.equals(second)||(first.getX()==-second.getX()&&first.getY()==-second.getY()
+                &&first.getZ()==-second.getZ()&&first.getW()==-second.getW());
+    }
+    @Override public long surfaceRevision(String objectId) {return surfaceRevisions.getOrDefault(objectId,0L);}
     public boolean removeArenaBody(String objectId) {return removeStatic(objectId);}
     public List<ArenaContact> arenaContacts() {return List.copyOf(arenaContacts.values());}
     public String staticObjectId(int surfaceId) { return staticNames.get(surfaceId); }
@@ -181,6 +192,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
     }
     public boolean removeStatic(String objectId) {
         Integer surfaceId=staticIds.remove(objectId);if(surfaceId==null)return false;
+        surfaceRevisions.remove(objectId);
         PhysicsRigidBody body=statics.remove(surfaceId);
         space.removeCollisionObject(body);staticIdentities.remove(body);staticNames.remove(surfaceId);
         movingArenaBodies.remove(surfaceId);
@@ -829,7 +841,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
         for (PhysicsVehicle body:new ArrayList<>(vehicles.values())) space.removeCollisionObject(body);
         for (PhysicsRigidBody body:statics.values()) space.removeCollisionObject(body);
         vehicles.clear(); profiles.clear(); roadContexts.clear();surfacesByGeometry.clear();contactSurfaces.clear();arenaDefinition=null;recoveryProbes.clear();wheelContactCounts.clear();wheelSupports.clear(); identities.clear(); previous.clear(); teleportGenerations.clear(); previousWheels.clear();
-        statics.clear();staticIds.clear();staticNames.clear();staticIdentities.clear();preStepVelocity.clear();preStepWheelAngles.clear();rams.clear();sweepShapes.clear();
+        statics.clear();staticIds.clear();surfaceRevisions.clear();staticNames.clear();staticIdentities.clear();preStepVelocity.clear();preStepWheelAngles.clear();rams.clear();sweepShapes.clear();
         movingArenaBodies.clear();arenaContacts.clear();movingContactImpulses.clear();
         chassisSupports.clear();vehicleContacts.clear();dashShapes.clear();
         space.destroy();
