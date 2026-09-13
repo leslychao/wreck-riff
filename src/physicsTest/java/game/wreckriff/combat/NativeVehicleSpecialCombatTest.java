@@ -102,7 +102,7 @@ class NativeVehicleSpecialCombatTest {
                 final int driver=id;
                 assertTrue(fight.events.stream().anyMatch(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==driver&&e.kind().equals("machine-gun")));
                 assertTrue(fight.events.stream().anyMatch(e->e.type()==GameEvent.Type.SHOT&&e.sourceId()==driver&&e.kind().equals("power")));
-                assertEquals(COMBAT.power().initialAmmo()-1,fight.session.vehicle(id).weapon(WeaponType.POWER).ammo);
+                assertEquals(COMBAT.power().maximumAmmo()/2-1,fight.session.vehicle(id).weapon(WeaponType.POWER).ammo);
             }
             assertTrue(fight.damage("grinder",1)<=120.02f);
         }
@@ -137,7 +137,7 @@ class NativeVehicleSpecialCombatTest {
                     targetProfile,roofHeight,targetTop,mgShots,powerShots,fight.damage("machine-gun",1),fight.damage("power",1),
                     fight.target().maximumHp-fight.target().hp);
             assertEquals(5,mgShots);assertEquals(1,powerShots);
-            assertEquals(COMBAT.power().initialAmmo()-1,fight.player().weapon(WeaponType.POWER).ammo);
+            assertEquals(COMBAT.power().maximumAmmo()/2-1,fight.player().weapon(WeaponType.POWER).ammo);
             assertFalse(fight.player().specialActive());assertEquals(0,fight.player().abilityCooldown(AbilityId.SPECIAL));
             assertEquals(0,fight.world.grabCount());assertEquals(-1,fight.target().grabbedBy);
             assertTrue(fight.damage("machine-gun",1)>0,targetProfile+" aligned roof MG must hit during normal driving");
@@ -199,7 +199,7 @@ class NativeVehicleSpecialCombatTest {
             int expectedMachineGun=1+(fireTicks-1)/COMBAT.machineGun().cooldownTicks();
             assertEquals(2,expectedPower,"Shared 0.9s Power cooldown permits two shots during the hold");
             assertEquals(expectedPower,powerShots);assertEquals(expectedMachineGun,machineGunShots);
-            assertEquals(COMBAT.power().initialAmmo()-expectedPower,fight.player().weapon(WeaponType.POWER).ammo);
+            assertEquals(COMBAT.power().maximumAmmo()/2-expectedPower,fight.player().weapon(WeaponType.POWER).ammo);
             assertTrue(fight.combat.projectiles().isEmpty(),"Every projectile from the measured volley must resolve");
             float grinder=fight.damage("grinder",1),machineGun=fight.damage("machine-gun",1),power=fight.damage("power",1);
             float ram=fight.damage("ram",1),selfPower=fight.damage("power",0),selfRam=fight.damage("ram",0);
@@ -299,7 +299,7 @@ class NativeVehicleSpecialCombatTest {
         final Map<Integer,Vector3f> velocityBeforeDamage=new HashMap<>();final Map<Integer,Float> distanceBeforeDamage=new HashMap<>();
         Vector3f blastCenter;
         Fight(String... profiles) {
-            session=MatchSession.balanced(991,List.of(profiles),COMBAT);combat=new CombatSystem(session,COMBAT);world=new PhysicsWorld(VEHICLES);
+            session=MatchSession.balanced(991,List.of(profiles),COMBAT);NativeCombatSupplies.halfLoad(session);combat=new CombatSystem(session,COMBAT);world=new PhysicsWorld(VEHICLES);
             box("road",new Vector3f(200,.5f,200),new Vector3f(0,-.5f,0));
             for(var state:session.vehicles) {
                 var profile=VehicleDefinition.forId(state.profileId).profile(VEHICLES);

@@ -74,7 +74,15 @@ public final class NavGraph {
         return route(start,goal,Mobility.car(),active,turnPenalty,hazardPenalty).nodes();
     }
     public Route route(int start,int goal,Mobility mobility,Set<String> activeHazards,float turnPenalty,float hazardPenalty) {
-        if(!nodes.containsKey(start)||!nodes.containsKey(goal))throw new IllegalArgumentException("Unknown route endpoint");
+        return routes(start,Set.of(goal),mobility,activeHazards,turnPenalty,hazardPenalty)
+                .getOrDefault(goal,new Route(List.of(),List.of(),Float.POSITIVE_INFINITY,revision));
+    }
+    /** One graph search serves a supply decision, regardless of the number of ammo sockets. */
+    public Map<Integer,Route> routes(int start,Set<Integer> goals,Mobility mobility,Set<String> activeHazards,float turnPenalty,float hazardPenalty) {
+        if(!nodes.containsKey(start)||!nodes.keySet().containsAll(goals))throw new IllegalArgumentException("Unknown route endpoint");
+        if(goals.isEmpty())return Map.of();
+        int goal=goals.size()==1?goals.iterator().next():-1;
+        Set<Integer> remaining=new HashSet<>(goals);Map<Integer,Route> result=new LinkedHashMap<>();
         Step first=new Step(-1,start);Map<Step,Float> costs=new HashMap<>();
         Map<Step,Step> previous=new HashMap<>();Map<Step,Link> arrival=new HashMap<>();
         // Account for the fastest possible air edge, so the time heuristic remains admissible.
@@ -85,17 +93,18 @@ public final class NavGraph {
         }
         PriorityQueue<QueueEntry> queue=new PriorityQueue<>(Comparator.comparingDouble(QueueEntry::priority)
                 .thenComparingInt(e->e.step.current).thenComparingInt(e->e.step.previous));
-        costs.put(first,0f);queue.add(new QueueEntry(first,0,position(start).distance(position(goal))*secondsPerMeter));
+        costs.put(first,0f);queue.add(new QueueEntry(first,0,goal<0?0:position(start).distance(position(goal))*secondsPerMeter));
         while(!queue.isEmpty()) {
             var queued=queue.remove();Step current=queued.step;
             if(queued.cost>costs.get(current))continue;
-            if(current.current==goal) {
+            if(remaining.remove(current.current)) {
                 LinkedList<Integer> path=new LinkedList<>();LinkedList<Traversal> steps=new LinkedList<>();
                 for(Step item=current;item!=null;item=previous.get(item)) {
                     path.addFirst(item.current);Link edge=arrival.get(item);
                     if(edge!=null)steps.addFirst(new Traversal(item.previous,item.current,edge.id,edge.type,edge.objectId));
                 }
-                return new Route(path,steps,costs.get(current),revision);
+                result.put(current.current,new Route(path,steps,costs.get(current),revision));
+                if(remaining.isEmpty())break;
             }
             for(Link edge:links.get(current.current)) {
                 if(edge.to==current.previous||!available(edge,mobility))continue;
@@ -112,11 +121,11 @@ public final class NavGraph {
                 Step next=new Step(current.current,edge.to);float proposed=costs.get(current)+cost;
                 if(proposed<costs.getOrDefault(next,Float.POSITIVE_INFINITY)) {
                     costs.put(next,proposed);previous.put(next,current);arrival.put(next,edge);
-                    queue.add(new QueueEntry(next,proposed,proposed+b.distance(position(goal))*secondsPerMeter));
+                    queue.add(new QueueEntry(next,proposed,proposed+(goal<0?0:b.distance(position(goal))*secondsPerMeter)));
                 }
             }
         }
-        return new Route(List.of(),List.of(),Float.POSITIVE_INFINITY,revision);
+        return Map.copyOf(result);
     }
     private boolean available(Link edge,Mobility mobility) {
         if(edge.width<mobility.width||edge.clearance<mobility.height)return false;

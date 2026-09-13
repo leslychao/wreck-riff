@@ -10,6 +10,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NewArsenalTest {
+    NewArsenalTest() { CombatTestSupplies.halfLoad(session); }
     final MatchSession session=new MatchSession(19,360);
     final CombatSystem combat=new CombatSystem(session,session.combatRules);
     final TestWorld world=new TestWorld();
@@ -23,7 +24,7 @@ class NewArsenalTest {
         world.positions[1].set(world.muzzle(0).add(0,0,distance));
         tick(fire(WeaponType.NAPALM));assertEquals(1,combat.napalmAssistTarget(0));
         ProjectileState projectile=combat.projectiles().getFirst();
-        float time=Math.clamp(distance/28,.25f,2.2f);
+        float time=Math.clamp(distance/session.combatRules.napalm().speed(),.25f,2.2f);
         assertEquals(distance/time,projectile.originalVelocity.z,.0001f);
         assertEquals(9*time,projectile.originalVelocity.y,.0001f);
         assertEquals(world.positions[1].y,projectile.launchPosition.y+projectile.originalVelocity.y*time-9*time*time,.0001f);
@@ -34,12 +35,12 @@ class NewArsenalTest {
         world.velocities[2].set(100,0,0);
         tick(fire(WeaponType.NAPALM));assertEquals(2,combat.napalmAssistTarget(0));
         ProjectileState projectile=combat.projectiles().getFirst();
-        float time=(float)Math.sqrt(5.4f*5.4f+40*40)/28;
+        float time=(float)Math.sqrt(5.4f*5.4f+40*40)/session.combatRules.napalm().speed();
         assertEquals(5.4f,projectile.originalVelocity.x*time,.001f);
         combat.clear();world.hidden.addAll(Set.of(1,2));session.vehicle(0).weapon(WeaponType.NAPALM).cooldownTicks=0;
         tick(fire(WeaponType.NAPALM));assertEquals(-1,combat.napalmAssistTarget(0));
-        projectile=combat.projectiles().getFirst();assertEquals(28,projectile.originalVelocity.z,.0001f);
-        time=30f/28;assertEquals(0,projectile.launchPosition.y+projectile.originalVelocity.y*time-9*time*time,.0001f);
+        projectile=combat.projectiles().getFirst();assertEquals(session.combatRules.napalm().speed(),projectile.originalVelocity.z,.0001f);
+        time=30f/session.combatRules.napalm().speed();assertEquals(0,projectile.launchPosition.y+projectile.originalVelocity.y*time-9*time*time,.0001f);
     }
     @Test void napalmGuidanceRespectsTurnAndPathBoundsAndNeverReacquiresAfterOcclusion() {
         world.positions[1].set(world.muzzle(0).add(0,0,55));tick(fire(WeaponType.NAPALM));

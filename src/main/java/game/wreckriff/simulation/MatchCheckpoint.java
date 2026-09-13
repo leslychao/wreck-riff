@@ -22,6 +22,10 @@ public final class MatchCheckpoint {
                 new ProgressStore.ResourceTimers(state.machineGunCooldown,state.turboQuietTicks,state.recoveryCooldown,
                         state.protectionTicks,state.frozenTicks,state.shieldTicks,state.controlImmunityTicks,state.impactStabilizerTicks));
     }
+    /** The sole resource change when a checkpoint becomes the beginning of a new attempt. */
+    public static ProgressStore.PlayerResources withoutAmmunition(ProgressStore.PlayerResources data) {
+        return data.withoutAmmunition();
+    }
     public static void restorePlayer(VehicleState state,ProgressStore.PlayerResources data) {
         // Validate everything before mutating live resources.
         if(data.hp()>state.maximumHp)throw new IllegalArgumentException("Checkpoint HP exceeds this profile");
@@ -30,7 +34,8 @@ public final class MatchCheckpoint {
         state.hp=data.hp();state.turbo=data.turbo();state.selectedWeapon=WeaponType.valueOf(data.selectedWeapon().toUpperCase(Locale.ROOT));
         for(var type:WeaponType.values()) {
             var resource=data.weapons().get(type.id());var slot=state.weapon(type);
-            slot.ammo=resource.ammunition();slot.cooldownTicks=Math.toIntExact(resource.cooldownTicks());
+            // A continuation starts a new supply race; only the saved reload timer survives.
+            slot.ammo=0;slot.cooldownTicks=Math.toIntExact(resource.cooldownTicks());
         }
         for(var ability:List.of(AbilityId.FREEZE,AbilityId.SHIELD,AbilityId.SPECIAL))state.abilityCooldown(ability,Math.toIntExact(data.abilityCooldownTicks().get(ability.name().toLowerCase(Locale.ROOT))));
         var timer=data.timers();
@@ -50,7 +55,12 @@ public final class MatchCheckpoint {
     }
     public static ProgressStore.Checkpoint rebase(ArenaRegistry registry,ProgressStore.Checkpoint checkpoint) {
         var arena=registry.definition(checkpoint.arenaId());
-        if(checkpoint.layoutRevision()==arena.layoutRevision()) {validateReferences(registry,checkpoint);return checkpoint;}
+        if(checkpoint.layoutRevision()==arena.layoutRevision()) {
+            validateReferences(registry,checkpoint);
+            return new ProgressStore.Checkpoint(checkpoint.arenaId(),checkpoint.layoutRevision(),checkpoint.profileId(),checkpoint.liveryId(),
+                    checkpoint.seed(),checkpoint.difficulty(),checkpoint.stage(),withoutAmmunition(checkpoint.player()),
+                    checkpoint.safePose(),checkpoint.arena(),checkpoint.activeTicksBeforeBoss());
+        }
         if(checkpoint.layoutRevision()>arena.layoutRevision())throw new IllegalArgumentException("Checkpoint is from a newer layout");
         var spawn=arena.spawns().getFirst();var roadPoint=spawn.position().vector();
         var road=arena.surfaceAt(roadPoint,0,.2f).orElseThrow(()->new IllegalArgumentException("New player spawn lacks road support"));
@@ -64,7 +74,7 @@ public final class MatchCheckpoint {
                 UUID.randomUUID(),checkpoint.stage()==ProgressStore.CheckpointStage.BOSS,checkpoint.liveryId(),checkpoint.profileId());
         var initial=new ArenaSystems(session,arena).snapshot();
         var migrated=new ProgressStore.Checkpoint(checkpoint.arenaId(),arena.layoutRevision(),checkpoint.profileId(),checkpoint.liveryId(),
-                checkpoint.seed(),checkpoint.difficulty(),checkpoint.stage(),checkpoint.player(),pose,initial,checkpoint.activeTicksBeforeBoss());
+                checkpoint.seed(),checkpoint.difficulty(),checkpoint.stage(),withoutAmmunition(checkpoint.player()),pose,initial,checkpoint.activeTicksBeforeBoss());
         validateReferences(registry,migrated);return migrated;
     }
     public static void validateReferences(ArenaRegistry registry,ProgressStore.Checkpoint checkpoint) {

@@ -56,7 +56,8 @@ class BallisticGuidanceTest {
 
     @Test void releasedDropsOnlyTurnHorizontallyAndStayWithinThreeMetresOfTheirFreeTrajectory() {
         world.floor=true;world.positions[1].set(0,1,40);world.velocities[1].set(18,0,0);fire();
-        while(combat.ballisticWarnings().isEmpty()) {world.positions[1].addLocal(world.velocities[1].mult(MatchSession.DT));tick();}
+        for(int wait=0;wait<400&&combat.ballisticWarnings().isEmpty();wait++) {world.positions[1].addLocal(world.velocities[1].mult(MatchSession.DT));tick();}
+        assertFalse(combat.ballisticWarnings().isEmpty(),"The launched carrier must publish its warning");
         ProjectileState drop=firstDrop();
         assertEquals(1,drop.targetId());Vector3f initialWarning=warning(drop.id());
         world.positions[1].x=-22;world.velocities[1].set(-18,0,0);
@@ -78,7 +79,8 @@ class BallisticGuidanceTest {
 
     @Test void laterChargesUseTheFirstWarningCentreInsteadOfReaimingAtTheMovingTarget() {
         world.floor=true;world.positions[1].set(0,1,40);fire();
-        while(combat.ballisticWarnings().isEmpty())tick();
+        for(int wait=0;wait<400&&combat.ballisticWarnings().isEmpty();wait++)tick();
+        assertFalse(combat.ballisticWarnings().isEmpty(),"The launched carrier must publish its warning");
         world.positions[1].x=22;world.velocities[1].set(18,0,0);
         Set<Long> seen=new HashSet<>();
         for(int i=0;i<750;i++) {

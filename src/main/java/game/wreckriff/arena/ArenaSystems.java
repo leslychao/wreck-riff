@@ -42,6 +42,7 @@ public final class ArenaSystems {
     private final Map<String,Map<Integer,Integer>> hazardExposure=new HashMap<>();
     private final List<GameEvent> events=new ArrayList<>();
     private long lastHazardTick=Long.MIN_VALUE,lastPickupTick=Long.MIN_VALUE;
+    private long nextPickupEventId=-(1L<<60);
 
     public ArenaSystems(MatchSession session,ArenaDefinition definition) {
         this.session=session; this.definition=definition;
@@ -378,12 +379,19 @@ public final class ArenaSystems {
         for(var barrier:definition.barriers())world.removeArenaBody(barrier.geometryId());raisedBarriers.clear();
         schedule.cancelAll();hazardExposure.clear();mechanicalReadyAt.clear();
     }
+    /** Only a fresh-match checkpoint restore calls this; entering a boss fight keeps live timers. */
+    public void resetAmmoPickups() {
+        for(var pickup:definition.pickups()) {
+            switch(pickup.type()) {
+                case HOMING_AMMO,POWER_AMMO,NAPALM_AMMO,BALLISTIC_AMMO,CANNON_AMMO,MINE_AMMO -> returnsAt.remove(pickup.id());
+                case REPAIR,TURBO_CELL -> { }
+            }
+        }
+    }
     public void collectPickups(WorldQuery world) {
         if (lastPickupTick==session.tick || session.outcome!=MatchSession.Outcome.NONE) return;
         lastPickupTick=session.tick;
-        int index=0;
         for (var pickup:definition.pickups()) {
-            int pickupIndex=index++;
             if (!active(pickup.id())) continue;
             VehicleState winner=null; float nearest=Float.POSITIVE_INFINITY;
             Vector3f surface=pickup.position().vector();
@@ -400,7 +408,7 @@ public final class ArenaSystems {
             if (winner!=null) {
                 float amount=apply(winner,pickup.type());
                 returnsAt.put(pickup.id(),session.tick+pickup.respawnTicks());
-                events.add(new GameEvent(GameEvent.Type.PICKUP,-(1L<<60)-session.tick*16-pickupIndex,
+                events.add(new GameEvent(GameEvent.Type.PICKUP,nextPickupEventId--,
                         winner.id,winner.id,surface,pickupKind(pickup.type()),amount).forObject(pickup.id()));
             }
         }

@@ -71,7 +71,7 @@ public final class TacticalMapView implements AutoCloseable {
         ui.text(summary,margin,height-(compact?37:52),ui.fitTextSize(summary,available,compact?14:16),GameUi.MUTED);
         UiBounds area=new UiBounds(margin,compact?113:151,available,Math.max(60,height-(compact?170:230)));model.resize(area);
         ui.rect("map-terrain",area.x(),area.y(),area.width(),area.height(),new ColorRGBA(.065f,.085f,.093f,1),1);
-        drawTerrain();drawRoads();
+        drawTerrain();drawRoads();drawDistrictBoundaries();
         List<UiBounds> labels=new ArrayList<>();
         for(var district:arena.districts()) {
             var p=model.project(district.center().x(),district.center().z());
@@ -130,7 +130,17 @@ public final class TacticalMapView implements AutoCloseable {
     private void drawRoads() {
         Map<Integer,ArenaDefinition.NavNode> nodes=new HashMap<>();arena.nodes().forEach(n->nodes.put(n.id(),n));
         List<Float> positions=new ArrayList<>(),colors=new ArrayList<>();
+        Set<String> roadGeometry=new HashSet<>();arena.roads().forEach(r->roadGeometry.addAll(r.geometryIds()));
+        for(var mesh:arena.meshes())if(roadGeometry.contains(mesh.id())&&arena.surfaces().stream().anyMatch(s->s.geometryId().equals(mesh.id())&&levelShown(s.id()))) {
+            ColorRGBA color=mesh.vertices().stream().anyMatch(v->v.y()>2)?UPPER:ROAD;
+            for(int i=0;i<mesh.indices().size();i+=3) {
+                List<TacticalMapModel.Point> triangle=new ArrayList<>();
+                for(int j=0;j<3;j++){var v=mesh.vertices().get(mesh.indices().get(i+j));triangle.add(model.project(v.x(),v.z()));}
+                footprint(triangle,color,positions,colors);
+            }
+        }
         for(var edge:arena.edges()) {
+            if(!arena.roads().isEmpty()&&edge.type()==ArenaDefinition.Transition.ROAD)continue;
             var from=nodes.get(edge.from());var to=nodes.get(edge.to());
             if(!levelShown(from.surfaceId())&&!levelShown(to.surfaceId()))continue;
             var a=from.position();var b=to.position();
@@ -152,6 +162,20 @@ public final class TacticalMapView implements AutoCloseable {
         Mesh mesh=new Mesh();mesh.setBuffer(VertexBuffer.Type.Position,3,array(positions));mesh.setBuffer(VertexBuffer.Type.Color,4,array(colors));mesh.updateBound();
         Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");material.setBoolean("VertexColor",true);
         Geometry geometry=new Geometry("map-roads",mesh);geometry.setLocalTranslation(0,0,2);geometry.setMaterial(material);ui.root().attachChild(geometry);
+    }
+    private void drawDistrictBoundaries() {
+        List<Float> positions=new ArrayList<>();
+        for(var district:arena.districts())for(int i=0;i<district.boundary().size();i++) {
+            var a=district.boundary().get(i);var b=district.boundary().get((i+1)%district.boundary().size());
+            model.clip(a.x(),a.z(),b.x(),b.z()).ifPresent(s->{
+                positions.add(s.from().x());positions.add(s.from().y());positions.add(0f);
+                positions.add(s.to().x());positions.add(s.to().y());positions.add(0f);
+            });
+        }
+        if(positions.isEmpty())return;
+        Mesh mesh=new Mesh();mesh.setMode(Mesh.Mode.Lines);mesh.setBuffer(VertexBuffer.Type.Position,3,array(positions));mesh.updateBound();
+        Material material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");material.setColor("Color",new ColorRGBA(.35f,.4f,.4f,1));
+        Geometry geometry=new Geometry("map-district-boundaries",mesh);geometry.setMaterial(material);geometry.setLocalTranslation(0,0,2.2f);ui.root().attachChild(geometry);
     }
     private void drawTerrain() {
         List<Float> positions=new ArrayList<>(),colors=new ArrayList<>();

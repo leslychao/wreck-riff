@@ -183,6 +183,7 @@ public final class GameApplication extends SimpleApplication {
         viewPort.setBackgroundColor(new ColorRGBA(0.033f,0.045f,0.065f,1));
         sceneLighting=SceneLighting.install(assetManager,rootNode,viewPort);
         sceneLighting.setSamples(store.settings().samples);
+        sceneLighting.initialize(renderManager);
         rootNode.attachChild(matchNode);
         try {
             matchRules=MatchRules.load(); vehicleRules=VehicleRules.load(); loop=new SimulationLoop(matchRules);
@@ -309,11 +310,14 @@ public final class GameApplication extends SimpleApplication {
         }
         for(var style:OrdnanceStyle.values())
             stages.add(new MatchLoading.Stage("Боеприпасы: "+style.name(),()->style.load(assetManager)));
+        var decodedModels=new ArrayList<com.jme3.scene.Spatial>();
+        for(String model:ArenaArt.modelAssets(arenaArt))
+            stages.add(new MatchLoading.Stage("Архитектура",()->decodedModels.add(assetManager.loadModel(model))));
         stages.add(new MatchLoading.Stage("Окружение",()->{
             try {
                 content=arenaFactory.build(arena,arenaArt);matchNode.attachChild(content.visual());
                 if(options.cameraTour())visualTour=new DiagnosticCameraTour(arena);
-            } finally {decodedTextures.clear();}
+            } finally {decodedTextures.clear();decodedModels.clear();}
         }));
         stages.add(new MatchLoading.Stage("Дорожные опоры",()->{
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());

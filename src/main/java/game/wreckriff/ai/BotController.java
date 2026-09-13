@@ -38,6 +38,11 @@ public final class BotController {
         final Map<Integer,BotObservation.Opponent> memory=new HashMap<>();
         final Map<String,Long> pickupUnavailableUntil=new HashMap<>();
         final DistrictPatrol.Cursor patrol=new DistrictPatrol.Cursor();
+        int supplyStart=-1;
+        long supplyRevision=-1,supplyRefreshAt;
+        Set<String> supplyHazards=Set.of();
+        NavGraph.Mobility supplyMobility;
+        Map<Integer,NavGraph.Route> supplyRoutes=Map.of();
         BotObservation observation=new BotObservation(0,List.of(),List.of());
         State state=State.SEEK_TARGET;
         int target=-1,goalNode=-1,pathIndex,reverseAttempts,recoveriesSeen,lockTicks;
@@ -68,6 +73,7 @@ public final class BotController {
     private Supplier<List<CombatSystem.BallisticWarningView>> observedBallisticWarnings=List::of;
     private final Map<Integer,Brain> brains=new HashMap<>();
     private final Map<String,PickupReservation> reservations=new LinkedHashMap<>();
+    private final Map<String,Integer> pickupNodes=new HashMap<>();
     private final ArrayDeque<BossCommand> bossCommands=new ArrayDeque<>();
     private Supplier<List<ArenaDefinition.Hazard>> activeHazards;
     private long lastCommandTick=Long.MIN_VALUE;
@@ -86,6 +92,7 @@ public final class BotController {
     public BotController(MatchSession session,ArenaDefinition arena,NavGraph graph,AiRules rules,
             Supplier<List<ArenaDefinition.Pickup>> activePickups) {
         this.session=session; this.arena=arena; this.graph=graph; this.rules=rules; this.activePickups=activePickups;
+        for(var pickup:arena.pickups())pickupNodes.put(pickup.id(),graph.nearest(pickup.position().vector()));
         activeHazards=()->arena.hazards().stream().filter(h->ArenaSystems.phaseAt(session.tick,arena.hazards(),h.id())==ArenaSystems.HazardPhase.ACTIVE).toList();
         for(var vehicle:session.vehicles)registerParticipant(vehicle.id);
     }
@@ -229,17 +236,8 @@ public final class BotController {
         }
         if (self.hp<self.maximumHp*rules.repairThreshold()) brain.healing=true;
         else if (self.hp>=self.maximumHp*rules.repairReleaseThreshold()) brain.healing=false;
-        ArenaDefinition.PickupType wanted=brain.healing ? ArenaDefinition.PickupType.REPAIR
-                : self.boss ? bossSupply(self)
-                : self.weapon(WeaponType.HOMING).ammo<Math.min(2,self.weapon(WeaponType.HOMING).maximumAmmo) ? ArenaDefinition.PickupType.HOMING_AMMO
-                : self.weapon(WeaponType.POWER).ammo<Math.min(1,self.weapon(WeaponType.POWER).maximumAmmo) ? ArenaDefinition.PickupType.POWER_AMMO
-                : self.weapon(WeaponType.MINE).ammo==0 ? ArenaDefinition.PickupType.MINE_AMMO
-                : self.weapon(WeaponType.NAPALM).ammo==0 ? ArenaDefinition.PickupType.NAPALM_AMMO
-                : self.weapon(WeaponType.BALLISTIC).ammo==0 ? ArenaDefinition.PickupType.BALLISTIC_AMMO
-                : self.weapon(WeaponType.CANNON).ammo==0 ? ArenaDefinition.PickupType.CANNON_AMMO
-                : self.turbo<rules.turboSeekThreshold() || continuingTurboRun(brain,self)
-                    ? ArenaDefinition.PickupType.TURBO_CELL : null;
-        if (wanted!=null) {
+        Set<ArenaDefinition.PickupType> wanted=wantedSupplies(self,brain);
+        if (!wanted.isEmpty()) {
             ArenaDefinition.Pickup selected=choosePickup(brain,position,wanted,hazardActive,world,self.id);
             if (selected!=null) {
                 brain.state=State.SEEK_PICKUP; brain.pickup=selected.id();
@@ -296,11 +294,23 @@ public final class BotController {
     private ArenaDefinition.Boss bossDefinition(VehicleState self) {
         return arena.bosses().stream().filter(b->b.profileId().equals(self.profileId)).findFirst().orElseThrow();
     }
-    private ArenaDefinition.PickupType bossSupply(VehicleState self) {
-        var definition=bossDefinition(self);
-        for(var weapon:List.of(definition.primary(),definition.secondary()))if(self.weapon(weapon).ammo<1)
-            return ArenaDefinition.PickupType.valueOf(weapon.name()+"_AMMO");
-        return self.turbo<rules.turboSeekThreshold()?ArenaDefinition.PickupType.TURBO_CELL:null;
+    private Set<ArenaDefinition.PickupType> wantedSupplies(VehicleState self,Brain brain) {
+        if(brain.healing)return Set.of(ArenaDefinition.PickupType.REPAIR);
+        List<WeaponType> offensive=self.boss?List.of(bossDefinition(self).primary(),bossDefinition(self).secondary())
+                :List.of(WeaponType.HOMING,WeaponType.POWER,WeaponType.NAPALM,WeaponType.BALLISTIC,WeaponType.CANNON);
+        boolean armed=offensive.stream().anyMatch(type->self.weapon(type).ammo>0);
+        if(!armed) {
+            var wanted=EnumSet.noneOf(ArenaDefinition.PickupType.class);
+            for(var type:offensive)wanted.add(ArenaDefinition.PickupType.valueOf(type.name()+"_AMMO"));
+            return wanted;
+        }
+        // A nearby opponent is worth engaging with the weapon already collected.
+        if(brain.observation.visible().isEmpty()&&offensive.stream().allMatch(type->self.weapon(type).ammo<=1)) {
+            var wanted=EnumSet.noneOf(ArenaDefinition.PickupType.class);
+            for(var type:offensive)if(self.weapon(type).ammo<2)wanted.add(ArenaDefinition.PickupType.valueOf(type.name()+"_AMMO"));
+            if(!wanted.isEmpty())return wanted;
+        }
+        return self.turbo<rules.turboSeekThreshold()||continuingTurboRun(brain,self)?Set.of(ArenaDefinition.PickupType.TURBO_CELL):Set.of();
     }
     private boolean decideBoss(VehicleState self,Brain brain,WorldQuery world,boolean avoidHazards) {
         var policy=brain.boss;var target=brain.observation.visible(brain.target);policy.observed(target);
@@ -557,21 +567,32 @@ public final class BotController {
                 && session.tick>=brain.pickupUnavailableUntil.getOrDefault(brain.pickup,0L)
                 && arena.pickups().stream().anyMatch(p->p.id().equals(brain.pickup) && p.type()==ArenaDefinition.PickupType.TURBO_CELL);
     }
-    private ArenaDefinition.Pickup choosePickup(Brain brain,Vector3f position,ArenaDefinition.PickupType type,boolean activeHazard,
+    private ArenaDefinition.Pickup choosePickup(Brain brain,Vector3f position,Set<ArenaDefinition.PickupType> types,boolean activeHazard,
             WorldQuery world,int vehicleId) {
         ArenaDefinition.Pickup result=null; float best=Float.POSITIVE_INFINITY;
         int start=navigationStart(position,world,vehicleId);
+        Set<String> hazards=activeHazard?activeHazards.get().stream().filter(h->hazardVisible(vehicleId,h,world)).map(ArenaDefinition.Hazard::id)
+                .collect(java.util.stream.Collectors.toSet()):Set.of();
+        var mobility=mobility(vehicleId,world);
+        if(brain.supplyStart!=start||brain.supplyRevision!=graph.revision()||!brain.supplyHazards.equals(hazards)
+                ||!mobility.equals(brain.supplyMobility)||session.tick>=brain.supplyRefreshAt) {
+            brain.supplyRoutes=graph.routes(start,Set.copyOf(pickupNodes.values()),mobility,hazards,rules.turnPenalty(),rules.activeHazardPenalty());
+            brain.supplyStart=start;brain.supplyRevision=graph.revision();brain.supplyHazards=Set.copyOf(hazards);
+            brain.supplyMobility=mobility;brain.supplyRefreshAt=session.tick+120;
+        }
         for (var pickup:arena.pickups()) {
             var reservation=reservations.get(pickup.id());
-            if (pickup.type()!=type || session.tick<brain.pickupUnavailableUntil.getOrDefault(pickup.id(),0L)
+            if (!types.contains(pickup.type()) || session.tick<brain.pickupUnavailableUntil.getOrDefault(pickup.id(),0L)
                     || (reservation!=null&&reservation.vehicleId()!=vehicleId&&reservation.untilTick()>session.tick)
                     || (activeHazard && insideActiveHazard(pickup.position().vector()))) continue;
-            List<Integer> path=plannedRoute(start,graph.nearest(pickup.position().vector()),vehicleId,world,activeHazard).nodes();
-            if (path.isEmpty()) continue;
-            float distance=graph.pathLength(path)+position.distance(graph.position(start));
-            float maximumPath=arena.districts().isEmpty()?rules.maximumPickupPath():Math.max(rules.maximumPickupPath(),650);
+            var route=brain.supplyRoutes.get(pickupNodes.get(pickup.id()));
+            if (route==null||!route.found()) continue;
+            float connector=graph.position(pickupNodes.get(pickup.id())).distance(pickup.position().vector());
+            float distance=graph.pathLength(route.nodes())+position.distance(graph.position(start))+connector;
+            var bounds=arena.bounds();
+            float maximumPath=arena.districts().isEmpty()?rules.maximumPickupPath():(float)Math.hypot(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ());
             if (distance>maximumPath) continue;
-            float score=distance-(pickup.id().equals(brain.pickup)?15:0);
+            float score=route.cost()+(connector+position.distance(graph.position(start))-(pickup.id().equals(brain.pickup)?15:0))/mobility.speed();
             if (score<best) { best=score; result=pickup; }
         }
         return result;

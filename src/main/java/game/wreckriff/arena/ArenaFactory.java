@@ -16,6 +16,7 @@ import game.wreckriff.presentation.SurfaceMaterials;
 import game.wreckriff.presentation.SurfaceMesh;
 import game.wreckriff.presentation.ArenaArt;
 import game.wreckriff.presentation.ArenaPresentation;
+import game.wreckriff.presentation.SpatialChunks;
 import java.util.*;
 
 /** Original, parameter-driven industrial yard. Every solid uses the rendered geometry. */
@@ -69,10 +70,14 @@ public final class ArenaFactory {
         Map<String,Node> cells=new LinkedHashMap<>();
         root.updateGeometricState();
         for(Spatial child:new ArrayList<>(root.getChildren()))if(!dynamic.contains(child.getName())) {
-            Vector3f center=child.getLocalTranslation();
-            if(child instanceof Geometry geometry&&center.lengthSquared()==0)center=geometry.getWorldBound().getCenter();
-            String key=(int)Math.floor(center.x/160)+":"+(int)Math.floor(center.z/160);
-            cells.computeIfAbsent(key,k->new Node("arena-cell-"+k)).attachChild(child);
+            List<? extends Spatial> pieces=child instanceof Geometry geometry?SpatialChunks.split(geometry,160):List.of(child);
+            if(pieces.size()!=1||pieces.getFirst()!=child)child.removeFromParent();
+            for(Spatial piece:pieces) {
+                piece.updateGeometricState();Vector3f center=piece.getWorldBound().getCenter();
+                String key=piece.getUserData("spatialCell");
+                if(key==null)key=(int)Math.floor(center.x/160)+":"+(int)Math.floor(center.z/160);
+                cells.computeIfAbsent(key,k->new Node("arena-cell-"+k)).attachChild(piece);
+            }
         }
         for(Node cell:cells.values()){cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);root.attachChild(cell);}
         addDecoration(root,definition,art);
@@ -89,7 +94,7 @@ public final class ArenaFactory {
         return part.material();
     }
     private static float tileSize(String name) {
-        return switch(name){case "asphalt","concrete" -> 4;case "rust","blue" -> 3;default -> 2;};
+        return SurfaceMaterials.metresPerTile(name);
     }
     private static Mesh rampMesh(ArenaDefinition.Ramp ramp) {
         Vector3f[] v={new Vector3f(ramp.minX(),ramp.heightAt(ramp.minX(),ramp.minZ()),ramp.minZ()),

@@ -2,6 +2,8 @@ package game.wreckriff.presentation;
 
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.post.filters.BloomFilter;
+import com.jme3.bounding.BoundingBox;
+import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
@@ -9,6 +11,7 @@ import com.jme3.scene.Node;
 import com.jme3.system.NullRenderer;
 import com.jme3.texture.FrameBuffer;
 import game.wreckriff.arena.ArenaDefinition.Theme;
+import game.wreckriff.config.VehicleRules;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -103,6 +106,42 @@ class SceneLightingTest {
         }
     }
 
+    @Test void firstGarageFrameAndGlowChangesKeepTheirAuthoredProjectionThroughTheRealProcessorLifecycle() {
+        for(boolean initialGlow:new boolean[]{true,false})try(var fixture=new Fixture(1280,720);
+                var garage=new GaragePresentation(PresentationTestAssets.shared(),VehicleRules.load())) {
+            fixture.root.attachChild(garage.node());fixture.lighting.applyMenu(initialGlow);fixture.initialize();
+            Camera camera=fixture.viewport.getCamera();
+            for(int[] size:new int[][]{{1280,720},{640,480},{3840,2160}}) {
+                camera.resize(size[0],size[1],true);fixture.post.reshape(fixture.viewport,size[0],size[1]);
+                for(boolean glow:new boolean[]{initialGlow,false,true,false}) {
+                    fixture.lighting.applyMenu(glow);
+                    for(String profile:java.util.List.of("rivet","grinder","spark")) {
+                        garage.show(profile);garage.update(1.289506f,camera,.36125f,.17f);
+                        var projection=camera.getProjectionMatrix().clone();
+                        // RenderManager initializes processors lazily after simpleUpdate. An
+                        // uninitialized FPP would reshape and center the already-framed car here.
+                        for(var processor:fixture.viewport.getProcessors()) {
+                            if(!processor.isInitialized())processor.initialize(fixture.renderManager,fixture.viewport);
+                            processor.preFrame(1f/60);
+                        }
+                        assertEquals(projection,camera.getProjectionMatrix(),"First render/glow toggle changed garage framing");
+                        fixture.lighting.initialize(fixture.renderManager);
+                        assertEquals(projection,camera.getProjectionMatrix(),"Repeated initialization changed the camera");
+                        fixture.root.updateGeometricState();
+                        BoundingBox bounds=(BoundingBox)garage.node().getChild("garage-vehicle").getWorldBound();
+                        for(int x:new int[]{-1,1})for(int y:new int[]{-1,1})for(int z:new int[]{-1,1}) {
+                            Vector3f pixel=camera.getScreenCoordinates(bounds.getCenter().add(x*bounds.getXExtent(),y*bounds.getYExtent(),z*bounds.getZExtent()));
+                            assertTrue(pixel.x>=size[0]*.36125f&&pixel.x<=size[0]&&pixel.y>=size[1]*.17f&&pixel.y<=size[1],
+                                    profile+" clipped after actual processor callbacks: "+pixel);
+                        }
+                        assertEquals(glow,fixture.viewport.getOutputFrameBuffer()!=fixture.output);
+                        assertSinglePipeline(fixture);
+                    }
+                }
+            }
+        }
+    }
+
     private static void assertSinglePipeline(Fixture fixture) {
         assertEquals(2,fixture.viewport.getProcessors().size(),"One shared shadow renderer and one post processor");
         assertEquals(1,fixture.viewport.getProcessors().stream().filter(FilterPostProcessor.class::isInstance).count());
@@ -111,18 +150,22 @@ class SceneLightingTest {
     }
 
     private static final class Fixture implements AutoCloseable {
-        final FrameBuffer output=new FrameBuffer(64,64,1);
-        final ViewPort viewport=new ViewPort("lighting-test",new Camera(64,64));
+        final FrameBuffer output;
+        final ViewPort viewport;
+        final Node root=new Node("scene");
+        final RenderManager renderManager=new RenderManager(new NullRenderer());
         final SceneLighting.Handle lighting;
         final FilterPostProcessor post;
         final BloomFilter bloom;
-        Fixture() {
+        Fixture() {this(64,64);}
+        Fixture(int width,int height) {
+            output=new FrameBuffer(width,height,1);viewport=new ViewPort("lighting-test",new Camera(width,height));
             viewport.setOutputFrameBuffer(output);
-            lighting=SceneLighting.install(PresentationTestAssets.shared(),new Node("scene"),viewport);
+            lighting=SceneLighting.install(PresentationTestAssets.shared(),root,viewport);
             post=(FilterPostProcessor)viewport.getProcessors().stream().filter(FilterPostProcessor.class::isInstance).findFirst().orElseThrow();
             bloom=post.getFilter(BloomFilter.class);
         }
-        void initialize() {post.initialize(new RenderManager(new NullRenderer()),viewport);}
-        @Override public void close() {if(post.isInitialized())post.cleanup();output.dispose();}
+        void initialize() {lighting.initialize(renderManager);}
+        @Override public void close() {for(var processor:viewport.getProcessors())if(processor.isInitialized())processor.cleanup();output.dispose();}
     }
 }

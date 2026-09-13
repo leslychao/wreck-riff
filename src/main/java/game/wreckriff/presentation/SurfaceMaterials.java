@@ -30,6 +30,17 @@ public final class SurfaceMaterials {
     private final AssetManager assets;
     private final Map<String,Material> cache=new HashMap<>();
     public SurfaceMaterials(AssetManager assets){this.assets=assets;}
+    /** Physical capture scale for the local material, shared by architecture and road meshes. */
+    public static float metresPerTile(String name) {
+        return switch(name) {
+            case "brick" -> 1;
+            case "earth", "district-earth" -> 1.3f;
+            case "wood" -> 1.5f;
+            case "asphalt", "concrete", "road-surface", "road-wet", "road-patch" -> 4;
+            case "rust", "blue", "steel", "black" -> 3;
+            default -> 2;
+        };
+    }
     public Material material(String name) {
         return cache.computeIfAbsent(name,key->create(recipe(key)));
     }
@@ -45,6 +56,15 @@ public final class SurfaceMaterials {
             case "rust" -> texturedRecipe("rusty_metal_03",new ColorRGBA(.76f,.65f,.53f,1),18,.32f);
             case "steel" -> texturedRecipe("metal_plate_02",new ColorRGBA(.68f,.73f,.78f,1),38,.5f);
             case "blue" -> texturedRecipe("blue_metal_plate",new ColorRGBA(.54f,.65f,.76f,1),24,.35f);
+            case "earth", "district-earth" -> texturedRecipe("brown_mud",new ColorRGBA(.82f,.77f,.69f,1),3,.035f);
+            case "gravel", "road-shoulder" -> texturedRecipe("gravelly_sand",new ColorRGBA(.76f,.73f,.67f,1),3,.04f);
+            case "grass", "park-ground", "district-garden" -> texturedRecipe("leafy_grass",new ColorRGBA(.80f,.87f,.74f,1),3,.025f);
+            case "park-leaf" -> texturedRecipe("leafy_grass",new ColorRGBA(.44f,.61f,.31f,1),3,.025f);
+            case "brick" -> texturedRecipe("red_brick_03",new ColorRGBA(.82f,.79f,.75f,1),5,.05f);
+            case "wood" -> texturedRecipe("wood_planks_grey",new ColorRGBA(.79f,.70f,.58f,1),8,.08f);
+            case "glass" -> new Recipe(new ColorRGBA(.12f,.23f,.29f,1),70,.55f,false,List.of());
+            case "rubber" -> new Recipe(new ColorRGBA(.30f,.31f,.33f,1),8,.06f,false,
+                    List.of(new TextureUse("DiffuseMap","textures/vehicle/rubber.png",true)));
             case "yellow" -> paintRecipe(new ColorRGBA(.95f,.64f,.14f,1));
             case "red" -> paintRecipe(new ColorRGBA(.75f,.10f,.065f,1));
             case "cyan" -> paintRecipe(new ColorRGBA(.035f,.58f,.69f,1));
@@ -56,19 +76,14 @@ public final class SurfaceMaterials {
             case "road-patch" -> texturedRecipe("asphalt_02",new ColorRGBA(.19f,.20f,.21f,1),3,.018f);
             case "road-wet" -> texturedRecipe("asphalt_02",new ColorRGBA(.13f,.18f,.22f,1),88,.44f);
             case "road-surface" -> texturedRecipe("asphalt_02",new ColorRGBA(.105f,.115f,.13f,1),5,.07f);
-            case "road-shoulder" -> texturedRecipe("cracked_concrete",new ColorRGBA(.60f,.56f,.46f,1),4,.035f);
             case "road-marking" -> new Recipe(new ColorRGBA(.70f,.65f,.46f,1),3,.025f,false,List.of());
-            case "district-earth" -> texturedRecipe("asphalt_02",new ColorRGBA(.48f,.35f,.20f,1),2,.02f);
             case "district-slate" -> texturedRecipe("cracked_concrete",new ColorRGBA(.32f,.39f,.47f,1),7,.08f);
             case "district-warm" -> texturedRecipe("cracked_concrete",new ColorRGBA(.58f,.44f,.29f,1),6,.055f);
-            case "district-garden" -> texturedRecipe("cracked_concrete",new ColorRGBA(.29f,.40f,.25f,1),3,.035f);
             case "district-service" -> texturedRecipe("cracked_concrete",new ColorRGBA(.42f,.43f,.40f,1),5,.04f);
             case "district-fair" -> texturedRecipe("cracked_concrete",new ColorRGBA(.46f,.25f,.20f,1),5,.05f);
             case "roof-seam" -> new Recipe(new ColorRGBA(.022f,.026f,.031f,1),3,.01f,false,List.of());
             case "lane-paint" -> new Recipe(new ColorRGBA(.46f,.34f,.16f,1),4,.03f,false,List.of());
             case "stone" -> texturedRecipe("cracked_concrete",new ColorRGBA(.53f,.58f,.60f,1),9,.09f);
-            case "park-ground" -> texturedRecipe("asphalt_02",new ColorRGBA(.24f,.34f,.13f,1),2,.025f);
-            case "park-leaf" -> texturedRecipe("cracked_concrete",new ColorRGBA(.16f,.30f,.10f,1),2,.018f);
             case "dark-concrete" -> texturedRecipe("cracked_concrete",new ColorRGBA(.34f,.39f,.44f,1),6,.08f);
             case "purple" -> paintRecipe(new ColorRGBA(.44f,.12f,.38f,1));
             case "faded-red" -> paintRecipe(new ColorRGBA(.42f,.19f,.17f,1));

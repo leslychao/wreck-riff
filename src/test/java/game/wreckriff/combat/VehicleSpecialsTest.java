@@ -139,7 +139,7 @@ class VehicleSpecialsTest {
         var shots=fight.combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.SHOT).toList();
         for(int id:new int[]{0,1}) {
             final int owner=id;assertEquals(2,shots.stream().filter(e->e.sourceId()==owner).count());
-            assertEquals(RULES.power().initialAmmo()-1,fight.session.vehicle(id).weapon(WeaponType.POWER).ammo);
+            assertEquals(RULES.power().maximumAmmo()/2-1,fight.session.vehicle(id).weapon(WeaponType.POWER).ammo);
         }
         assertEquals(0,fight.target().grabbedBy);
     }
@@ -201,7 +201,7 @@ class VehicleSpecialsTest {
     private static VehicleCommand fireBoth() {return new VehicleCommand(0,0,0,false,false,true,true,WeaponType.POWER,0,false,false,AbilityId.NONE);}
     private static final class Fight {
         final MatchSession session;final CombatSystem combat;final ObservedWorld world;
-        Fight(String... profiles) {session=MatchSession.balanced(19,List.of(profiles),RULES);combat=new CombatSystem(session,RULES);world=new ObservedWorld(session);}
+        Fight(String... profiles) {session=MatchSession.balanced(19,List.of(profiles),RULES);CombatTestSupplies.halfLoad(session);combat=new CombatSystem(session,RULES);world=new ObservedWorld(session);}
         VehicleState player(){return session.vehicle(0);}VehicleState target(){return session.vehicle(1);}
         void tick(){tick(Map.of());}
         void tick(Map<Integer,VehicleCommand> commands) {

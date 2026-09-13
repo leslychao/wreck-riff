@@ -20,7 +20,7 @@ class NativeV04CombatTest {
         public void close(){runtime.close();}
     }
     private Scene scene(Vector3f shooter,Quaternion facing,Vector3f target,int seconds) {
-        var session=new MatchSession(42,seconds);var tuning=VehicleRules.load();var world=new PhysicsWorld(tuning);
+        var session=new MatchSession(42,seconds);NativeCombatSupplies.halfLoad(session);var tuning=VehicleRules.load();var world=new PhysicsWorld(tuning);
         world.addStatic(new BoxCollisionShape(new Vector3f(100,.5f,100)),new Vector3f(0,-.5f,0),new Quaternion());
         world.addVehicle(0,shooter,facing);world.addVehicle(1,target,new Quaternion());
         world.addVehicle(2,new Vector3f(-40,1,-40),new Quaternion());world.addVehicle(3,new Vector3f(40,1,-40),new Quaternion());
@@ -115,7 +115,7 @@ class NativeV04CombatTest {
             // unambiguous: the car crosses before the bounce and is clear afterwards.
             world.addStatic(new BoxCollisionShape(new Vector3f(.05f,.025f,.025f)),new Vector3f(0,10.57f,.6875f),new Quaternion());
             world.vehicle(1).setLinearVelocity(new Vector3f(840,0,0));
-            MatchSession session=new MatchSession(1,360);CombatSystem combat=new CombatSystem(session,session.combatRules);
+            MatchSession session=new MatchSession(1,360);NativeCombatSupplies.halfLoad(session);CombatSystem combat=new CombatSystem(session,session.combatRules);
             combat.beginTick(Map.of(0,fire(WeaponType.CANNON)),world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);
             var events=combat.drainEvents();
             assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.EXPLOSION&&e.kind().equals("cannon-ricochet")).count(),

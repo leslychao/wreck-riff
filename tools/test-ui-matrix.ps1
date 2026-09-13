@@ -1,7 +1,8 @@
 param(
     [string]$JdkHome='C:\Users\vitalii\.jdks\ms-21.0.11',
+    [string]$OutputDirectory,
     [string]$ImageRoot='build/install/wreck-riff',
-    [string]$OutputDirectory
+    [string[]]$Cases=@()
 )
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -16,6 +17,12 @@ $results=[Collections.Generic.List[object]]::new()
 $matrix=@('640x480@1.5','3840x2160@1.5')
 foreach($resolution in @('640x480','1280x720','1920x1080','2560x1440','3840x1080','3840x2160')) {
     foreach($scale in @('0.8','1','1.5')) { $key="$resolution@$scale"; if($matrix -notcontains $key){$matrix+=$key} }
+}
+if($Cases.Count -gt 0) {
+    if(@($Cases | Where-Object {$matrix -cnotcontains $_}).Count -gt 0 -or @($Cases | Select-Object -Unique).Count -ne $Cases.Count) {
+        throw 'Cases must contain distinct supported resolution@scale pairs from the standard matrix.'
+    }
+    $matrix=$Cases
 }
 $jar=Join-Path $image 'lib/wreck-riff-0.4.0.jar'
 $jarHash=(Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash.ToLowerInvariant()

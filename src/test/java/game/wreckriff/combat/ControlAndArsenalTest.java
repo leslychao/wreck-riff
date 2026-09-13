@@ -9,6 +9,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ControlAndArsenalTest {
+    @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { CombatTestSupplies.halfLoad(session); }
     private final MatchSession session=new MatchSession(19,360);
     private CombatRules rules=Configs.load("combat",CombatRules.class);
     private CombatSystem combat=new CombatSystem(session,rules);
@@ -20,11 +21,12 @@ class ControlAndArsenalTest {
     private VehicleCommand ability(AbilityId id) {return new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,id);}
     private VehicleCommand fire() {return new VehicleCommand(0,0,0,false,false,false,true,null,0,false,false,AbilityId.NONE);}
     @Test void fullHealthAndIndependentArsenalStartAtApprovedValues() {
+        var session=new MatchSession(19,360);
         assertEquals(800,session.vehicle(0).maximumHp);assertEquals(800,session.vehicle(0).hp);
         float[] botHealth={400,520,320,400};
         for(int i=1;i<5;i++)assertEquals(botHealth[i-1],session.vehicle(i).hp);
         for(AbilityId ability:AbilityId.values())assertEquals(0,session.vehicle(0).abilityCooldown(ability));
-        assertEquals(3,session.vehicle(0).weapon(WeaponType.MINE).ammo);
+        assertEquals(0,session.vehicle(0).weapon(WeaponType.MINE).ammo);
         assertEquals(6,session.vehicle(0).weapon(WeaponType.NAPALM).maximumAmmo);
         WeaponType type=WeaponType.HOMING;for(int i=0;i<6;i++)type=type.cycle(1);assertEquals(WeaponType.HOMING,type);
     }

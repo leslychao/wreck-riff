@@ -503,11 +503,12 @@ function Get-ReleaseUiReviewCaseIds {
     foreach($arena in $arenas){"unlocked-maps-$arena"}
     @('unlocked-statistics','unlocked-statistics-bottom','loading','error','error-return','results-defeat','results-draw','results-victory')
     foreach($profile in @('rivet','grinder','spark')){foreach($variant in 0..5){"hud-$profile-$variant"}}
-    @('pause','pause-settings','pause-return','actual-launch-menu')
+    @('pause','pause-settings','pause-return','pause-quit-confirm','pause-quit-cancel','actual-launch-menu')
     foreach($profile in @('rivet','grinder','spark')) {
         foreach($action in @('start','repeat-accept','retry','leave')){"actual-$action-$profile"}
     }
-    @('actual-campaign-start','actual-campaign-pause','actual-map-open','actual-map-zoom-pan','actual-map-height',
+    @('actual-campaign-start','actual-campaign-pause','actual-campaign-quit-confirm','actual-campaign-quit-cancel',
+      'actual-map-open','actual-map-zoom-pan','actual-map-height',
       'actual-map-fit','actual-map-return','actual-campaign-resume','actual-campaign-menu','actual-campaign-continue','actual-campaign-finished-review','hardware-controller')
 }
 function Assert-ReleaseUiPng([string]$Path,[int]$Width,[int]$Height) {

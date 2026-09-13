@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Exercises actual Bullet colliders through the same geometry boundary used by the game. */
 class NativeCombatTest {
+    @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { NativeCombatSupplies.halfLoad(session); }
     private final MatchSession session = new MatchSession(42, 360);
     private final CombatRules rules = Configs.load("combat", CombatRules.class);
     private final CombatSystem combat = new CombatSystem(session, rules);
@@ -32,6 +33,23 @@ class NativeCombatTest {
         world.addVehicle(1, new Vector3f(0, 1, 7), new Quaternion());
         for (int i = 2; i < 5; i++) world.addVehicle(i, new Vector3f(i * 15, 1, 50), new Quaternion());
         return world;
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"HOMING,100","POWER,140","NAPALM,42","CANNON,80","FREEZE,80"})
+    void acceleratedProjectileSweepsTheEntireFirstStepThroughATwoCentimetreWall(String kind,float speed) {
+        try(var world=world()) {
+            float wallZ=world.muzzle(0).z+speed*MatchSession.DT*.8f;
+            world.addStatic("fast-round-wall",new BoxCollisionShape(new Vector3f(5,4,.01f)),new Vector3f(0,4,wallZ),new Quaternion());
+            VehicleCommand command;
+            if(kind.equals("FREEZE"))command=new VehicleCommand(0,0,0,false,false,false,false,null,0,false,false,AbilityId.FREEZE);
+            else {session.vehicle(0).selectedWeapon=WeaponType.valueOf(kind);command=rocket();}
+            step(world,command);
+            var impacts=combat.drainEvents().stream().filter(event->event.type()==GameEvent.Type.IMPACT&&event.kind().equals(kind.toLowerCase(java.util.Locale.ROOT))).toList();
+            assertFalse(impacts.isEmpty(),"The sweep must catch geometry crossed within the first fixed step");
+            assertTrue(impacts.stream().allMatch(event->event.position().z<=wallZ+.015f));
+            assertEquals(200,session.vehicle(1).hp,"A thin closed wall still blocks direct and splash damage");
+        }
     }
 
     @Test void P06_wallBetweenWeaponBaseAndMuzzleStopsRocketBeforeSpawn() {

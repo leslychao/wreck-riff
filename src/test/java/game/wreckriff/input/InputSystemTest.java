@@ -185,7 +185,7 @@ class InputSystemTest {
     }
     @Test void directSelectionSurvivesFramesAndIsClearedTogetherWithOtherEdges() {
         try(InputSystem input=input()) {
-            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_4,true));input.onKeyEvent(key(KeyInput.KEY_E,true));
+            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_3,true));input.onKeyEvent(key(KeyInput.KEY_E,true));
             input.onMouseButtonEvent(mouse(1,true));
             input.beginInput();input.endInput();
             var command=input.consume();assertEquals(WeaponType.NAPALM,command.directWeapon());
@@ -209,7 +209,7 @@ class InputSystemTest {
     @Test void newWeaponEdgesShareTheShotTickAndCannotLeakAcrossRetry() {
         try(InputSystem input=input()) {
             input.setGameplay(true);
-            for(var entry:java.util.Map.of(KeyInput.KEY_5,WeaponType.BALLISTIC,KeyInput.KEY_6,WeaponType.CANNON).entrySet()) {
+            for(var entry:java.util.Map.of(KeyInput.KEY_3,WeaponType.NAPALM,KeyInput.KEY_4,WeaponType.BALLISTIC,KeyInput.KEY_5,WeaponType.CANNON,KeyInput.KEY_6,WeaponType.MINE).entrySet()) {
                 input.onKeyEvent(key(entry.getKey(),true));input.onMouseButtonEvent(mouse(1,true));
                 var command=input.consume();assertEquals(entry.getValue(),command.directWeapon());assertTrue(command.selectedWeapon());
                 assertNull(input.consume().directWeapon(),"Holding a number does not select again");
@@ -224,7 +224,7 @@ class InputSystemTest {
     @Test void cannonRemappingUsesOnlyTheAssignedKey() {
         var settings=new SettingsStore.Settings();settings.keys.put("Select Cannon",KeyInput.KEY_T);
         try(InputSystem input=input(settings)) {
-            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_6,true));assertNull(input.consume().directWeapon());
+            input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_5,true));assertNull(input.consume().directWeapon());
             input.onKeyEvent(key(KeyInput.KEY_T,true));assertEquals(WeaponType.CANNON,input.consume().directWeapon());
         }
     }

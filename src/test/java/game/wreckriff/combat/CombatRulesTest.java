@@ -83,6 +83,32 @@ class CombatRulesTest {
         cone.getAsJsonObject("targeting").addProperty("retentionConeDegrees", 17);
         assertThrows(RuntimeException.class, () -> Configs.gson().fromJson(cone, CombatRules.class));
     }
+    @Test void fasterRoundsRetainTheirFlightBudgetsAndMachineGunAndBallisticStayUnchanged() {
+        var rules=Configs.load("combat",CombatRules.class);
+        assertEquals(100,rules.homing().speed());assertEquals(1.6f,rules.homing().ttlSeconds());
+        assertEquals(140,rules.power().speed());assertEquals(1.3f,rules.power().ttlSeconds());
+        assertEquals(42,rules.napalm().speed());assertEquals(2,rules.napalm().ttlSeconds());
+        assertEquals(80,rules.cannon().speed());assertEquals(2.75f,rules.cannon().ttlSeconds());
+        assertEquals(80,rules.control().freezeSpeed());assertEquals(.75f,rules.control().freezeTtlSeconds());
+        assertEquals(160,rules.homing().speed()*rules.homing().ttlSeconds(),.001f);
+        assertEquals(182,rules.power().speed()*rules.power().ttlSeconds(),.001f);
+        assertEquals(84,rules.napalm().speed()*rules.napalm().ttlSeconds(),.001f);
+        assertEquals(220,rules.cannon().speed()*rules.cannon().ttlSeconds(),.001f);
+        assertEquals(60,rules.control().freezeSpeed()*rules.control().freezeTtlSeconds(),.001f);
+        assertEquals(0,rules.homing().initialAmmo());assertEquals(0,rules.power().initialAmmo());
+        assertEquals(0,rules.napalm().initialAmmo());assertEquals(0,rules.cannon().initialAmmo());
+        assertEquals(0,rules.ballistic().initialAmmo());assertEquals(0,rules.mine().initialAmmo());
+        assertEquals(2.4f,rules.machineGun().damage());assertEquals(10,rules.machineGun().shotsPerSecond());
+        assertEquals(75,rules.machineGun().range());assertEquals(1,rules.machineGun().spreadDegrees());
+        assertEquals(45,rules.ballistic().carrierSpeed());assertEquals(18,rules.ballistic().gravity());
+        assertEquals(80,rules.targeting().turnDegreesPerSecond());
+    }
+    @Test void mineIsLastForDisplayCyclingAndStableWeaponIds() {
+        assertArrayEquals(new String[]{"homing","power","napalm","ballistic","cannon","mine"},
+                java.util.Arrays.stream(WeaponType.values()).map(WeaponType::id).toArray(String[]::new));
+        assertEquals(WeaponType.MINE,WeaponType.HOMING.cycle(-1));
+        assertEquals(WeaponType.HOMING,WeaponType.MINE.cycle(1));
+    }
 
     @Test void ballisticGuidanceLimitsMustBePresentAndPositive() {
         for(String field:new String[]{"acquisitionConeDegrees","maximumDeviation","maximumGuidanceSeconds","guidanceCutoffSeconds"}) {

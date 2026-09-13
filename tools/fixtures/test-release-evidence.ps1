@@ -339,9 +339,11 @@ Reject {Get-ReleaseUiReviewRequest '640x480' ([double]::NaN) $false} 'non-finite
 $uiRequiredCases=@(Get-ReleaseUiReviewCaseIds)
 $uiActualCases=@('actual-launch-menu';foreach($profile in @('rivet','grinder','spark')) {
     foreach($action in @('start','repeat-accept','retry','leave')){"actual-$action-$profile"}
-};'actual-campaign-start';'actual-campaign-pause';'actual-map-open';'actual-map-zoom-pan';'actual-map-height';
+};'actual-campaign-start';'actual-campaign-pause';'actual-campaign-quit-confirm';'actual-campaign-quit-cancel';
+    'actual-map-open';'actual-map-zoom-pan';'actual-map-height';
     'actual-map-fit';'actual-map-return';'actual-campaign-resume';'actual-campaign-menu';'actual-campaign-continue';'actual-campaign-finished-review')
 Check (@($uiActualCases | Where-Object {$uiRequiredCases -cnotcontains $_}).Count -eq 0) 'UI evidence requires the real launch, repeated accept, retry, leave, map interaction and checkpoint continuation cases'
+Check ($uiRequiredCases -ccontains 'pause-quit-confirm' -and $uiRequiredCases -ccontains 'pause-quit-cancel') 'UI evidence requires confirmation and cancellation of the new pause exit action'
 $uiCaptureCount=@($uiRequiredCases | Where-Object {$_ -cne 'hardware-controller'}).Count
 $uiCases=@(foreach($id in $uiRequiredCases) {
     $hardware=$id -eq 'hardware-controller';$relative=if($hardware){''}else{"captures/$id.png"}

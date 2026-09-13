@@ -163,6 +163,7 @@ public final class MatchRuntime implements AutoCloseable {
         if(checkpoint.stage()==ProgressStore.CheckpointStage.BOSS&&session.normalRivalsAlive()!=0)
             throw new IllegalStateException("Boss checkpoint must not restore ordinary rivals");
         arenaSystems.restore(checkpoint.arena(),world,graph);
+        arenaSystems.resetAmmoPickups();
         MatchCheckpoint.restorePlayer(session.vehicle(0),checkpoint.player());
     }
     /** Whole-tick outcome priority is shared by native execution and pure transition tests. */

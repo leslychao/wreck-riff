@@ -34,6 +34,35 @@ class MatchCheckpointTest {
         assertThrows(IllegalArgumentException.class,()->MatchCheckpoint.restorePlayer(source,corrupt));
         assertEquals(data,MatchCheckpoint.player(source));
     }
+    @Test void continuationDiscardsSavedAmmunitionButPreservesOtherResourcesAndDoesNotMutateTheSnapshot() {
+        var player=new VehicleState(0,"Rivet",true,rules);player.hp=340;player.turbo=41;
+        for(var type:WeaponType.values()) {player.weapon(type).ammo=player.weapon(type).maximumAmmo;player.weapon(type).cooldownTicks=37;}
+        player.machineGunCooldown=9;player.abilityCooldown(AbilityId.FREEZE,81);
+        var saved=MatchCheckpoint.player(player);var expected=MatchCheckpoint.withoutAmmunition(saved);
+        var restored=new VehicleState(0,"Rivet",true,rules);MatchCheckpoint.restorePlayer(restored,saved);
+        assertEquals(expected,MatchCheckpoint.player(restored));
+        assertTrue(saved.weapons().values().stream().allMatch(slot->slot.ammunition()>0));
+        assertTrue(expected.weapons().values().stream().allMatch(slot->slot.ammunition()==0&&slot.cooldownTicks()==37));
+        assertEquals(340,restored.hp);assertEquals(41,restored.turbo);assertEquals(9,restored.machineGunCooldown);
+        assertEquals(81,restored.abilityCooldown(AbilityId.FREEZE));
+    }
+    @Test void allFreshParticipantsStartEmptyAndLiveBossEntryKeepsThePlayersCollectedResources() {
+        var legacy=new MatchSession(12,360);assertEmpty(legacy);
+        var registry=ArenaRegistry.load();
+        for(var id:registry.campaignIds()) {
+            var arena=registry.definition(id);
+            for(var mode:List.of(MatchSession.Mode.ARENA,MatchSession.Mode.CAMPAIGN,MatchSession.Mode.BOSS_DUEL)) {
+                var match=new MatchSession(4,arena,mode,rules);assertEmpty(match);
+                var player=match.vehicle(0);player.weapon(WeaponType.POWER).ammo=2;
+                match.registerBoss(arena.bosses().getFirst());
+                assertTrue(match.vehicle(match.bossParticipantId).weapons().stream().allMatch(slot->slot.ammo==0));
+                assertEquals(2,player.weapon(WeaponType.POWER).ammo);
+            }
+        }
+    }
+    private static void assertEmpty(MatchSession match) {
+        assertTrue(match.vehicles.stream().allMatch(vehicle->vehicle.weapons().stream().allMatch(slot->slot.ammo==0)));
+    }
     @Test void bossCheckpointConstructsOnlyPlayerAndRetainsCampaignIdentity() {
         var arena=ArenaRegistry.load().definition("construction_17");UUID attempt=UUID.randomUUID();
         var restored=new MatchSession(4,arena,MatchSession.Mode.CAMPAIGN,rules,attempt,true,3);

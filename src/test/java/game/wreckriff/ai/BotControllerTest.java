@@ -98,6 +98,7 @@ class BotControllerTest {
     }
     @Test void lowTurboSeeksCellsAfterRepairAndAmmoAndKeepsAnUsefulRouteDuringRegen() {
         MatchSession session=new MatchSession(2,360);TestWorld world=new TestWorld();
+        session.vehicle(0).weapon(game.wreckriff.combat.WeaponType.POWER).ammo=2;
         world.positions[0]=new Vector3f(0,.8f,-36);session.vehicle(0).turbo=19;
         BotController bots=new BotController(session,arena,rules);
         bots.commands(world);

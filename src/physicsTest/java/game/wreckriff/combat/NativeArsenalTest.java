@@ -10,6 +10,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeArsenalTest {
+    @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { NativeCombatSupplies.halfLoad(session); }
     private final MatchSession session=new MatchSession(31,360);
     private final CombatSystem combat=new CombatSystem(session,session.combatRules);
     private PhysicsWorld world() {

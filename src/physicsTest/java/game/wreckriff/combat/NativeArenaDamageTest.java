@@ -10,6 +10,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeArenaDamageTest {
+    @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { NativeCombatSupplies.halfLoad(session); }
     record Hit(String geometry,float amount,long event) {}
     final MatchSession session=new MatchSession(32,360);
     final CombatSystem combat=new CombatSystem(session,session.combatRules);

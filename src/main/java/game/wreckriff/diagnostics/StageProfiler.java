@@ -30,13 +30,19 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     private Path recordingPath;
     private String[] renderLabels;
     private int[] renderValues,maximumRenderValues;
+    private com.jme3.renderer.Statistics rendererStatistics;
+    private long renderSamples,renderSamplesWithGeometry,disabledRenderSamples;
     private GpuFrameProfiler gpu;
     private String gpuUnavailable="No graphical context attached";
     public StageProfiler() {this(System::nanoTime);}
     StageProfiler(LongSupplier clock) {this.clock=clock;}
     public void attachGpu(com.jme3.renderer.Renderer renderer) {
         if(gpu!=null)throw new IllegalStateException("GPU profiler already attached");
+        attachRendererStatistics(renderer.getStatistics());
         gpu=GpuFrameProfiler.create(renderer);gpuUnavailable="GL_ARB_timer_query / OpenGL 3.3 unavailable";
+    }
+    void attachRendererStatistics(com.jme3.renderer.Statistics statistics) {
+        rendererStatistics=statistics;statistics.setEnabled(true);
     }
     public void detachGpuForVideoRestart() {
         if(gpu!=null){gpu.close();gpu=null;}
@@ -55,6 +61,9 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         stages.computeIfAbsent(stage,ignored->new FrameMetrics()).add(nanos/1_000_000_000.0);
     }
     @Override public void appStep(AppStep step) {
+        // StatsAppState initialises after simpleInitApp and disables counters when its overlay
+        // is hidden. A diagnostic owns collection independently of that UI preference.
+        if(step==AppStep.RenderFrame&&rendererStatistics!=null)rendererStatistics.setEnabled(true);
         if(gpu!=null) {if(step==AppStep.RenderFrame)gpu.begin();else if(step==AppStep.EndFrame)gpu.end();}
         long now=clock.getAsLong();
         if(previousStep!=null&&previousStep!=AppStep.EndFrame&&now>=previousTime)
@@ -65,8 +74,11 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     @Override public void vpStep(VpStep step,ViewPort viewport,RenderQueue.Bucket bucket) { }
     @Override public void spStep(SpStep step,String... information) { }
     public void renderStatistics(com.jme3.renderer.Statistics statistics) {
+        renderSamples++;
+        if(!statistics.isEnabled()){disabledRenderSamples++;return;}
         if(renderLabels==null){renderLabels=statistics.getLabels();renderValues=new int[renderLabels.length];maximumRenderValues=new int[renderLabels.length];}
         statistics.getData(renderValues);for(int i=0;i<renderValues.length;i++)maximumRenderValues[i]=Math.max(maximumRenderValues[i],renderValues[i]);
+        if(renderValues.length>1&&renderValues[0]>0&&renderValues[1]>0)renderSamplesWithGeometry++;
     }
     public Map<String,Object> snapshot() {
         var result=new LinkedHashMap<String,Object>();var application=new LinkedHashMap<String,Object>();var jme=new LinkedHashMap<String,Object>();
@@ -78,6 +90,8 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         result.put("jfrPath",recordingPath==null?"":recordingPath.toAbsolutePath().toString());result.put("jfrMaximumBytes",128L*1024*1024);
         var render=new LinkedHashMap<String,Integer>();if(renderLabels!=null)for(int i=0;i<renderLabels.length;i++)render.put(renderLabels[i],maximumRenderValues[i]);
         result.put("maximumRendererStatistics",render);
+        result.put("rendererStatisticsCollection",Map.of("status",renderSamplesWithGeometry>0?"VALID":"NO_RENDERED_GEOMETRY",
+                "sampledFrames",renderSamples,"framesWithGeometry",renderSamplesWithGeometry,"disabledFrames",disabledRenderSamples));
         return result;
     }
     @Override public void close() {

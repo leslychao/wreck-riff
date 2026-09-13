@@ -8,6 +8,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BlastAndContactTest {
+    @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { CombatTestSupplies.halfLoad(session); }
     private final MatchSession session=new MatchSession(42,360);
     private final CombatSystem combat=new CombatSystem(session,session.combatRules);
     private final ContactWorld world=new ContactWorld();

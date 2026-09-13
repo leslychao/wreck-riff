@@ -5,6 +5,8 @@ import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.jme3.renderer.Camera;
+import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 import com.jme3.shadow.DirectionalLightShadowRenderer;
@@ -48,7 +50,22 @@ public final class SceneLighting {
     private static ColorRGBA c(float red,float green,float blue) {return new ColorRGBA(red,green,blue,1);}
 
     private static final class GlowPostProcessor extends FilterPostProcessor {
+        private Camera camera;
         GlowPostProcessor(AssetManager assets) {super(assets);}
+        @Override public void initialize(RenderManager renderManager,ViewPort viewport) {
+            camera=viewport.getCamera();super.initialize(renderManager,viewport);
+        }
+        @Override public void preFrame(float tpf) {
+            float near=camera.getFrustumNear(),far=camera.getFrustumFar(),left=camera.getFrustumLeft(),right=camera.getFrustumRight();
+            float top=camera.getFrustumTop(),bottom=camera.getFrustumBottom();int width=camera.getWidth(),height=camera.getHeight();
+            super.preFrame(tpf);
+            // Disabling the final filter makes jME resize the camera with fixAspect=true,
+            // even when its dimensions did not change. Preserve the garage's off-axis frame.
+            // A genuine reshape or multiview resize retains jME's normal dimension handling.
+            if(camera.getWidth()==width&&camera.getHeight()==height
+                    &&(camera.getFrustumLeft()!=left||camera.getFrustumRight()!=right))
+                camera.setFrustum(near,far,left,right,top,bottom);
+        }
         void setGlowEnabled(BloomFilter bloom,boolean enabled) {
             // Before initialize(), Filter.setEnabled only changes its own flag: jME has not
             // linked it to this processor yet. Keep the active-filter index in sync as well.
@@ -69,6 +86,12 @@ public final class SceneLighting {
         private Handle(AmbientLight ambient,DirectionalLight key,DirectionalLight rim,
                 DirectionalLightShadowRenderer shadows,BloomFilter bloom,GlowPostProcessor post,ViewPort viewport) {
             this.ambient=ambient;this.key=key;this.rim=rim;this.shadows=shadows;this.bloom=bloom;this.post=post;this.viewport=viewport;
+        }
+        /** Complete jME's one-time camera reshape before the caller frames its first scene. */
+        public void initialize(RenderManager renderManager) {
+            Objects.requireNonNull(renderManager,"Render manager required");
+            if(!shadows.isInitialized())shadows.initialize(renderManager,viewport);
+            if(!post.isInitialized())post.initialize(renderManager,viewport);
         }
         public void apply(Theme theme,boolean glowEnabled) {
             if(!menu&&this.theme==theme&&this.glowEnabled==glowEnabled)return;

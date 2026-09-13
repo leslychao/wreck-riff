@@ -109,6 +109,40 @@ class PickupCollectionPresentationTest {
         restored.tick++;assertTrue(systems.active(pickup.id()));assertTrue(systems.drainEvents().isEmpty());
         assertEquals("",feedback.text(restored.tick));
     }
+    @Test void freshAttemptRefillsOnlyAmmoLocationsWithoutChangingHealthTurboOrLiveResources() {
+        var arena=ArenaDefinition.load();var session=new MatchSession(42,360);var systems=new ArenaSystems(session,arena);
+        var snapshot=systems.snapshot();var unavailable=new LinkedHashMap<String,game.wreckriff.config.ProgressStore.PickupState>();
+        arena.pickups().forEach(p->unavailable.put(p.id(),new game.wreckriff.config.ProgressStore.PickupState(700)));
+        var saved=new game.wreckriff.config.ProgressStore.ArenaState(unavailable,snapshot.objects(),snapshot.hazards(),snapshot.eventCooldownTicks(),snapshot.randomState());
+        systems.restore(saved,null,new NavGraph(arena));
+        assertTrue(arena.pickups().stream().noneMatch(p->systems.active(p.id())));
+        session.vehicle(0).weapon(WeaponType.HOMING).ammo=3;
+        systems.resetAmmoPickups();
+        for(var pickup:arena.pickups()) {
+            boolean ammunition=pickup.type()!=ArenaDefinition.PickupType.REPAIR&&pickup.type()!=ArenaDefinition.PickupType.TURBO_CELL;
+            assertEquals(ammunition,systems.active(pickup.id()));
+            assertEquals(ammunition?0:700,systems.snapshot().pickups().get(pickup.id()).respawnTicks());
+        }
+        assertEquals(3,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+        assertTrue(systems.drainEvents().isEmpty());
+    }
+    @Test void moreThanSixteenPickupLocationsNeverReuseEventIdsAcrossTicksOrRespawns() {
+        var base=ArenaDefinition.load();var first=pickup(base,ArenaDefinition.PickupType.HOMING_AMMO).position();
+        var second=pickup(base,ArenaDefinition.PickupType.POWER_AMMO).position();
+        var together=new ArenaDefinition.Vec3(100,0,100);var locations=new ArrayList<ArenaDefinition.Pickup>();
+        for(int i=0;i<33;i++)locations.add(new ArenaDefinition.Pickup("event-fixture-"+i,ArenaDefinition.PickupType.HOMING_AMMO,
+                i==0?first:i==16?second:together,3000));
+        var arena=base.withPickups(locations);var session=new MatchSession(42,360);session.vehicle(0).initializeWeapon(WeaponType.HOMING,0,200);
+        var systems=new ArenaSystems(session,arena);var world=new TestWorld();var received=new ArrayList<GameEvent>();
+        // These two grants collided under tick * 16 + pickupIndex: index 16 at tick 0, index 0 at tick 1.
+        world.positions[0]=second.vector().add(0,.8f,0);systems.collectPickups(world);received.addAll(systems.drainEvents());
+        session.tick++;world.positions[0]=first.vector().add(0,.8f,0);systems.collectPickups(world);received.addAll(systems.drainEvents());
+        assertEquals(2,received.size());assertNotEquals(received.get(0).eventId(),received.get(1).eventId());
+        session.tick++;world.positions[0]=together.vector().add(0,.8f,0);systems.collectPickups(world);received.addAll(systems.drainEvents());
+        session.tick+=3000;session.vehicle(0).weapon(WeaponType.HOMING).ammo=0;
+        systems.collectPickups(world);received.addAll(systems.drainEvents());
+        assertEquals(64,received.size());assertEquals(received.size(),received.stream().map(GameEvent::eventId).distinct().count());
+    }
 
     private static ArenaDefinition.Pickup pickup(ArenaDefinition arena,ArenaDefinition.PickupType type) {
         return arena.pickups().stream().filter(p->p.type()==type).findFirst().orElseThrow();

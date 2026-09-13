@@ -57,9 +57,19 @@ configurations {
     physicsTestImplementation.extendsFrom testImplementation, implementation
     physicsTestRuntimeOnly.extendsFrom testRuntimeOnly, runtimeOnly
 }
+dependencies { toolsImplementation "org.jmonkeyengine:jme3-plugins:$jmeVersion" }
 sourceSets.tools.compileClasspath += sourceSets.main.output.classesDirs
 sourceSets.tools.runtimeClasspath += sourceSets.main.output.classesDirs
 tasks.named('compileToolsJava') { dependsOn tasks.named('compileJava') }
+
+tasks.register('prepareArenaModels', JavaExec) {
+    description = 'Convert locally authored GLB architecture into runtime j3o models'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareArenaModels'
+    args file('src/tools/assets/architecture').absolutePath
+    args file('src/main/resources').absolutePath
+}
 
 application {
     mainClass = 'game.wreckriff.Main'
@@ -180,6 +190,20 @@ tasks.register('captureArenaPreviews', JavaExec) {
     classpath = sourceSets.tools.runtimeClasspath + sourceSets.main.runtimeClasspath
     mainClass = 'game.wreckriff.tools.GenerateArenaPreviews'
     args layout.buildDirectory.dir('reports/arena-previews').get().asFile.absolutePath
+}
+
+tasks.register('reviewArenaRoutes', JavaExec) {
+    description = 'Real-window moving inspection of every authored district and through interior'
+    dependsOn tasks.named('classes'),tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath + sourceSets.main.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.ArenaRouteReview'
+    args file('src/tools/assets/architecture/review-routes.json').absolutePath
+    args layout.buildDirectory.dir('reports/arena-route-review').get().asFile.absolutePath
+    if(project.hasProperty('reviewArena'))args project.property('reviewArena')
+    if(project.hasProperty('reviewVideo')) {
+        if(!project.hasProperty('reviewArena'))args ''
+        args 'video'
+    }
 }
 
 tasks.register('physicsTest', Test) {

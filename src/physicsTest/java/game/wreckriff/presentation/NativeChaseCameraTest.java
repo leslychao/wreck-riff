@@ -1,6 +1,7 @@
 package game.wreckriff.presentation;
 
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.MeshCollisionShape;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
@@ -26,6 +27,27 @@ class NativeChaseCameraTest {
     private static final int PLAYER=0;
     // Native suspension continues to settle by fractions of a millimetre while the camera is tracking it.
     private static final float CONTACT_HEIGHT_TOLERANCE=.001f;
+
+    @Test void nearPlaneCornersAndFinalShakeRemainInsideCeilingAndWall() {
+        try(var rig=new Rig(new Quaternion())) {
+            rig.addWall();
+            float ceiling=rig.world.position(PLAYER).y+3.8f;
+            rig.world.addStatic("camera-ceiling",new BoxCollisionShape(new Vector3f(12,.3f,12)),
+                    new Vector3f(ROAD_POINT.x,ceiling+.3f,ROAD_POINT.z),new Quaternion());
+            for(int frame=0;frame<180;frame++) {
+                rig.chase.impact(.12f);
+                rig.chase.update(rig.world,PLAYER,1,1f/60,false,true,1);
+                assertEquals(.3f,rig.camera.getFrustumNear(),.00001f);
+                for(int x:new int[]{0,1920})for(int y:new int[]{0,1080}) {
+                    Vector3f corner=rig.camera.getWorldCoordinates(new com.jme3.math.Vector2f(x,y),0);
+                    assertTrue(corner.y<ceiling,"Shaken near plane must remain below the ceiling");
+                    assertTrue(corner.z>ROAD_POINT.z-4.7f,"Shaken near plane must remain in front of the wall");
+                }
+                assertNull(rig.world.staticSweep(rig.pivot(1),rig.camera.getLocation(),ChaseCamera.nearPlaneRadius(72,1920f/1080)),
+                        "Final camera volume, including shake, remains unobstructed");
+            }
+        }
+    }
 
     @ParameterizedTest @ValueSource(ints={30,60,120})
     void nativeLaunchContextExpandsAndReturnsSmoothlyAtEachRenderRate(int fps) {
@@ -198,9 +220,15 @@ class NativeChaseCameraTest {
 
         Rig(Quaternion rotation) {
             world.configureArena(ARENA);
-            var floor=ARENA.boxes().stream().filter(box->box.id().equals(ROAD_SURFACE.geometryId())).findFirst().orElseThrow();
-            assertTrue(floor.collision());
-            world.addStatic(floor.id(),new BoxCollisionShape(floor.size().vector().mult(.5f)),floor.center().vector(),new Quaternion());
+            var floor=ARENA.boxes().stream().filter(box->box.id().equals(ROAD_SURFACE.geometryId())).findFirst();
+            if(floor.isPresent()) {
+                var box=floor.orElseThrow();assertTrue(box.collision());
+                world.addStatic(box.id(),new BoxCollisionShape(box.size().vector().mult(.5f)),box.center().vector(),box.rotation());
+            } else {
+                var mesh=ARENA.meshes().stream().filter(surface->surface.id().equals(ROAD_SURFACE.geometryId())).findFirst().orElseThrow();
+                var triangles=mesh.indices().stream().map(index->mesh.vertices().get(index).vector()).toList();
+                world.addStatic(mesh.id(),new MeshCollisionShape(SurfaceMesh.triangles(triangles,4)),Vector3f.ZERO,new Quaternion());
+            }
             world.addVehicle(PLAYER,ROAD_POINT.add(0,2,0),rotation);
             for(int i=0;i<360;i++)world.step();
             assertEquals(4,world.supportedWheelContacts(PLAYER),"Fixture requires all four native wheels on the shipped floor");

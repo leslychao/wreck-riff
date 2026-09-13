@@ -1,0 +1,7364 @@
+{
+  "schemaVersion": 3,
+  "id": "euphoria_park",
+  "metadata": {
+    "title": "ЛУНАПАРК ЭЙФОРИЯ",
+    "theme": "CARNIVAL",
+    "normalEnemies": 12,
+    "durationSeconds": 0,
+    "recoveryCost": 0,
+    "introduction": "Озеро с островом, аттракционы и цирк. Береговые дороги и служебные проезды встречаются у мостов.",
+    "music": "audio/music/euphoria_park-normal.wav",
+    "bossMusic": "audio/music/euphoria_park-boss.wav"
+  },
+  "bounds": {
+    "minX": 0,
+    "maxX": 1500,
+    "minZ": 0,
+    "maxZ": 1300,
+    "recoveryY": -8
+  },
+  "boxes": [
+    {
+      "id": "ground-0-0",
+      "center": {
+        "x": 250.0,
+        "y": -0.5,
+        "z": 220.0
+      },
+      "size": {
+        "x": 500.0,
+        "y": 1.0,
+        "z": 440.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-0-1",
+      "center": {
+        "x": 250.0,
+        "y": -0.5,
+        "z": 660.0
+      },
+      "size": {
+        "x": 500.0,
+        "y": 1.0,
+        "z": 440.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-0-2",
+      "center": {
+        "x": 250.0,
+        "y": -0.5,
+        "z": 1090.0
+      },
+      "size": {
+        "x": 500.0,
+        "y": 1.0,
+        "z": 420.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-1-0",
+      "center": {
+        "x": 725.0,
+        "y": -0.5,
+        "z": 220.0
+      },
+      "size": {
+        "x": 450.0,
+        "y": 1.0,
+        "z": 440.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-1-2",
+      "center": {
+        "x": 725.0,
+        "y": -0.5,
+        "z": 1090.0
+      },
+      "size": {
+        "x": 450.0,
+        "y": 1.0,
+        "z": 420.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-2-0",
+      "center": {
+        "x": 1225.0,
+        "y": -0.5,
+        "z": 220.0
+      },
+      "size": {
+        "x": 550.0,
+        "y": 1.0,
+        "z": 440.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-2-1",
+      "center": {
+        "x": 1225.0,
+        "y": -0.5,
+        "z": 660.0
+      },
+      "size": {
+        "x": 550.0,
+        "y": 1.0,
+        "z": 440.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ground-2-2",
+      "center": {
+        "x": 1225.0,
+        "y": -0.5,
+        "z": 1090.0
+      },
+      "size": {
+        "x": 550.0,
+        "y": 1.0,
+        "z": 420.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "lake-bottom",
+      "center": {
+        "x": 725.0,
+        "y": -18.5,
+        "z": 660.0
+      },
+      "size": {
+        "x": 450.0,
+        "y": 1.0,
+        "z": 440.0
+      },
+      "material": "dark-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "island",
+      "center": {
+        "x": 725.0,
+        "y": 2.5,
+        "z": 665.0
+      },
+      "size": {
+        "x": 190.0,
+        "y": 1.0,
+        "z": 190.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "lake-water",
+      "center": {
+        "x": 725.0,
+        "y": -1.1,
+        "z": 660.0
+      },
+      "size": {
+        "x": 450.0,
+        "y": 0.12,
+        "z": 440.0
+      },
+      "material": "cyan",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "service-shortcut-panel",
+      "center": {
+        "x": 340.0,
+        "y": 2.0,
+        "z": 730.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 4.0,
+        "z": 24.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": -0.0
+    },
+    {
+      "id": "circus-north-west-wall",
+      "center": {
+        "x": 231.5,
+        "y": 15.0,
+        "z": 1058.0
+      },
+      "size": {
+        "x": 173.0,
+        "y": 30.0,
+        "z": 2.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-north-east-wall",
+      "center": {
+        "x": 468.5,
+        "y": 15.0,
+        "z": 1058.0
+      },
+      "size": {
+        "x": 173.0,
+        "y": 30.0,
+        "z": 2.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-south-wall",
+      "center": {
+        "x": 350.0,
+        "y": 15.0,
+        "z": 1122.0
+      },
+      "size": {
+        "x": 410.0,
+        "y": 30.0,
+        "z": 2.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-roof",
+      "center": {
+        "x": 350.0,
+        "y": 31.0,
+        "z": 1090.0
+      },
+      "size": {
+        "x": 413.0,
+        "y": 2.0,
+        "z": 67.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-column-148-1061",
+      "center": {
+        "x": 148.0,
+        "y": 15.0,
+        "z": 1061.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 30.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-column-148-1119",
+      "center": {
+        "x": 148.0,
+        "y": 15.0,
+        "z": 1119.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 30.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-column-552-1061",
+      "center": {
+        "x": 552.0,
+        "y": 15.0,
+        "z": 1061.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 30.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-column-552-1119",
+      "center": {
+        "x": 552.0,
+        "y": 15.0,
+        "z": 1119.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 30.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-north-wall",
+      "center": {
+        "x": 1175.0,
+        "y": 12.0,
+        "z": 358.0
+      },
+      "size": {
+        "x": 400.0,
+        "y": 24.0,
+        "z": 2.0
+      },
+      "material": "purple",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-south-wall",
+      "center": {
+        "x": 1175.0,
+        "y": 12.0,
+        "z": 422.0
+      },
+      "size": {
+        "x": 400.0,
+        "y": 24.0,
+        "z": 2.0
+      },
+      "material": "purple",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-roof",
+      "center": {
+        "x": 1175.0,
+        "y": 25.0,
+        "z": 390.0
+      },
+      "size": {
+        "x": 403.0,
+        "y": 2.0,
+        "z": 67.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-column-978-361",
+      "center": {
+        "x": 978.0,
+        "y": 12.0,
+        "z": 361.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 24.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-column-978-419",
+      "center": {
+        "x": 978.0,
+        "y": 12.0,
+        "z": 419.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 24.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-column-1372-361",
+      "center": {
+        "x": 1372.0,
+        "y": 12.0,
+        "z": 361.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 24.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-pavilion-column-1372-419",
+      "center": {
+        "x": 1372.0,
+        "y": 12.0,
+        "z": 419.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 24.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-north-west-wall",
+      "center": {
+        "x": 1121.5,
+        "y": 9.0,
+        "z": 929.0
+      },
+      "size": {
+        "x": 133.0,
+        "y": 18.0,
+        "z": 2.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-north-east-wall",
+      "center": {
+        "x": 1318.5,
+        "y": 9.0,
+        "z": 929.0
+      },
+      "size": {
+        "x": 133.0,
+        "y": 18.0,
+        "z": 2.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-south-wall",
+      "center": {
+        "x": 1220.0,
+        "y": 9.0,
+        "z": 991.0
+      },
+      "size": {
+        "x": 330.0,
+        "y": 18.0,
+        "z": 2.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-roof",
+      "center": {
+        "x": 1220.0,
+        "y": 19.0,
+        "z": 960.0
+      },
+      "size": {
+        "x": 333.0,
+        "y": 2.0,
+        "z": 65.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-column-1058-932",
+      "center": {
+        "x": 1058.0,
+        "y": 9.0,
+        "z": 932.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 18.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-column-1058-988",
+      "center": {
+        "x": 1058.0,
+        "y": 9.0,
+        "z": 988.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 18.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-column-1382-932",
+      "center": {
+        "x": 1382.0,
+        "y": 9.0,
+        "z": 932.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 18.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "repair-depot-column-1382-988",
+      "center": {
+        "x": 1382.0,
+        "y": 9.0,
+        "z": 988.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 18.0,
+        "z": 3.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ferris-foundation",
+      "center": {
+        "x": 1125.0,
+        "y": 2.0,
+        "z": 650.0
+      },
+      "size": {
+        "x": 50.0,
+        "y": 4.0,
+        "z": 60.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carousel-base",
+      "center": {
+        "x": 310.0,
+        "y": 0.5,
+        "z": 265.0
+      },
+      "size": {
+        "x": 50.0,
+        "y": 1.0,
+        "z": 50.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-0",
+      "center": {
+        "x": 80.0,
+        "y": 3.5,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 7.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-1",
+      "center": {
+        "x": 80.0,
+        "y": 6.0,
+        "z": 190.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 12.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-2",
+      "center": {
+        "x": 80.0,
+        "y": 8.5,
+        "z": 310.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 17.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-3",
+      "center": {
+        "x": 80.0,
+        "y": 5.0,
+        "z": 430.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 10.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-4",
+      "center": {
+        "x": 80.0,
+        "y": 7.5,
+        "z": 550.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 15.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-5",
+      "center": {
+        "x": 80.0,
+        "y": 4.0,
+        "z": 670.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 8.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-6",
+      "center": {
+        "x": 80.0,
+        "y": 6.5,
+        "z": 790.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 13.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-7",
+      "center": {
+        "x": 80.0,
+        "y": 9.0,
+        "z": 910.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 18.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-0-9",
+      "center": {
+        "x": 80.0,
+        "y": 8.0,
+        "z": 1150.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 16.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-1-0",
+      "center": {
+        "x": 195.0,
+        "y": 5.0,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 10.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-1-3",
+      "center": {
+        "x": 195.0,
+        "y": 6.5,
+        "z": 430.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 13.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-1-4",
+      "center": {
+        "x": 195.0,
+        "y": 9.0,
+        "z": 550.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 18.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-1-5",
+      "center": {
+        "x": 195.0,
+        "y": 5.5,
+        "z": 670.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 11.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-1-6",
+      "center": {
+        "x": 195.0,
+        "y": 8.0,
+        "z": 790.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 16.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-1-7",
+      "center": {
+        "x": 195.0,
+        "y": 4.5,
+        "z": 910.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 9.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-2-0",
+      "center": {
+        "x": 310.0,
+        "y": 6.5,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 13.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-2-2",
+      "center": {
+        "x": 310.0,
+        "y": 5.5,
+        "z": 310.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 11.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-3-0",
+      "center": {
+        "x": 425.0,
+        "y": 8.0,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 16.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-4-0",
+      "center": {
+        "x": 540.0,
+        "y": 3.5,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 7.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-4-2",
+      "center": {
+        "x": 540.0,
+        "y": 8.5,
+        "z": 310.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 17.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-5-0",
+      "center": {
+        "x": 655.0,
+        "y": 5.0,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 10.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-5-8",
+      "center": {
+        "x": 655.0,
+        "y": 7.0,
+        "z": 1030.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 14.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-6-0",
+      "center": {
+        "x": 770.0,
+        "y": 6.5,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 13.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-7-0",
+      "center": {
+        "x": 885.0,
+        "y": 8.0,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 16.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-8-0",
+      "center": {
+        "x": 1000.0,
+        "y": 3.5,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 7.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-8-2",
+      "center": {
+        "x": 1000.0,
+        "y": 8.5,
+        "z": 310.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 17.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-8-4",
+      "center": {
+        "x": 1000.0,
+        "y": 7.5,
+        "z": 550.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 15.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-8-5",
+      "center": {
+        "x": 1000.0,
+        "y": 4.0,
+        "z": 670.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 8.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-9-0",
+      "center": {
+        "x": 1115.0,
+        "y": 5.0,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 10.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-9-2",
+      "center": {
+        "x": 1115.0,
+        "y": 4.0,
+        "z": 310.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 8.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-9-4",
+      "center": {
+        "x": 1115.0,
+        "y": 9.0,
+        "z": 550.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 18.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-9-5",
+      "center": {
+        "x": 1115.0,
+        "y": 5.5,
+        "z": 670.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 11.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-10-0",
+      "center": {
+        "x": 1230.0,
+        "y": 6.5,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 13.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-10-2",
+      "center": {
+        "x": 1230.0,
+        "y": 5.5,
+        "z": 310.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 11.0,
+        "z": 58.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-10-9",
+      "center": {
+        "x": 1230.0,
+        "y": 5.0,
+        "z": 1150.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 10.0,
+        "z": 58.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "carnival-block-11-0",
+      "center": {
+        "x": 1345.0,
+        "y": 8.0,
+        "z": 70.0
+      },
+      "size": {
+        "x": 58.0,
+        "y": 16.0,
+        "z": 58.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "boundary-west",
+      "center": {
+        "x": 0.0,
+        "y": 6.0,
+        "z": 650.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 12.0,
+        "z": 1300.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "boundary-east",
+      "center": {
+        "x": 1500.0,
+        "y": 6.0,
+        "z": 650.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 12.0,
+        "z": 1300.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "boundary-south",
+      "center": {
+        "x": 750.0,
+        "y": 6.0,
+        "z": 0.0
+      },
+      "size": {
+        "x": 1500.0,
+        "y": 12.0,
+        "z": 4.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "boundary-north",
+      "center": {
+        "x": 750.0,
+        "y": 6.0,
+        "z": 1300.0
+      },
+      "size": {
+        "x": 1500.0,
+        "y": 12.0,
+        "z": 4.0
+      },
+      "material": "park-ground",
+      "collision": true,
+      "yawDegrees": 0
+    }
+  ],
+  "ramps": [],
+  "spawns": [
+    {
+      "id": 0,
+      "position": {
+        "x": 160.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "yawDegrees": 90
+    },
+    {
+      "id": 1,
+      "position": {
+        "x": 530.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "yawDegrees": -90
+    },
+    {
+      "id": 2,
+      "position": {
+        "x": 1410.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "yawDegrees": 90
+    },
+    {
+      "id": 3,
+      "position": {
+        "x": 1435.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "yawDegrees": -90
+    },
+    {
+      "id": 4,
+      "position": {
+        "x": 600.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "yawDegrees": 90
+    },
+    {
+      "id": 5,
+      "position": {
+        "x": 370.0,
+        "y": 0.0,
+        "z": 880.0
+      },
+      "yawDegrees": -90
+    },
+    {
+      "id": 6,
+      "position": {
+        "x": 800.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "yawDegrees": 90
+    },
+    {
+      "id": 7,
+      "position": {
+        "x": 1200.0,
+        "y": 0.0,
+        "z": 750.0
+      },
+      "yawDegrees": -90
+    },
+    {
+      "id": 8,
+      "position": {
+        "x": 1270.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "yawDegrees": 90
+    },
+    {
+      "id": 9,
+      "position": {
+        "x": 1320.0,
+        "y": 0.0,
+        "z": 180.0
+      },
+      "yawDegrees": -90
+    },
+    {
+      "id": 10,
+      "position": {
+        "x": 70.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "yawDegrees": 90
+    },
+    {
+      "id": 11,
+      "position": {
+        "x": 950.0,
+        "y": 0.0,
+        "z": 190.0
+      },
+      "yawDegrees": -90
+    },
+    {
+      "id": 12,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 580.0
+      },
+      "yawDegrees": 90
+    }
+  ],
+  "pickups": [
+    {
+      "id": "supply-01",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 496.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-02",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 944.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-03",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 410.3873,
+        "y": 0.0,
+        "z": 559.8218
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-04",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 709.3704,
+        "y": 3.0,
+        "z": 599.1111
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-05",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 586.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-06",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 1029.1111,
+        "y": 0.0,
+        "z": 949.3704
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-07",
+      "type": "REPAIR",
+      "position": {
+        "x": 174.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "supply-08",
+      "type": "TURBO_CELL",
+      "position": {
+        "x": 786.0695,
+        "y": 0.0,
+        "z": 1108.6069
+      },
+      "respawnTicks": 3600
+    },
+    {
+      "id": "supply-09",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 1216.0,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-10",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 244.6991,
+        "y": 0.0,
+        "z": 377.0423
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-11",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 81.4692,
+        "y": 0.0,
+        "z": 1081.9715
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-12",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 788.8,
+        "y": 3.0,
+        "z": 641.6
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-13",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 936.0144,
+        "y": 0.0,
+        "z": 189.3643
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-14",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 1404.4851,
+        "y": 0.0,
+        "z": 377.132
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-15",
+      "type": "REPAIR",
+      "position": {
+        "x": 358.5308,
+        "y": 0.0,
+        "z": 888.0285
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "supply-16",
+      "type": "TURBO_CELL",
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 1126.0
+      },
+      "respawnTicks": 3600
+    },
+    {
+      "id": "supply-17",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 720.0,
+        "y": 0.0,
+        "z": 406.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-18",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 1421.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-19",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 1256.0127,
+        "y": 0.0,
+        "z": 1090.5952
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-20",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 738.5952,
+        "y": 3.0,
+        "z": 728.9491
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-21",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 278.7695,
+        "y": 0.0,
+        "z": 716.0542
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-22",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 1013.9825,
+        "y": 0.0,
+        "z": 740.6991
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-23",
+      "type": "REPAIR",
+      "position": {
+        "x": 1201.546,
+        "y": 0.0,
+        "z": 736.0856
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "supply-24",
+      "type": "TURBO_CELL",
+      "position": {
+        "x": 1306.0051,
+        "y": 0.0,
+        "z": 180.3782
+      },
+      "respawnTicks": 3600
+    },
+    {
+      "id": "supply-25",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 781.4656,
+        "y": 0.0,
+        "z": 933.9231
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-26",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 1400.7358,
+        "y": 0.0,
+        "z": 566.0194
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-27",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 447.478,
+        "y": 0.0,
+        "z": 583.739
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-28",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 519.49,
+        "y": 0.0,
+        "z": 380.7512
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-29",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 730.0,
+        "y": 0.0,
+        "z": 914.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-30",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 613.9305,
+        "y": 0.0,
+        "z": 1091.3931
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-31",
+      "type": "REPAIR",
+      "position": {
+        "x": 1034.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "supply-32",
+      "type": "TURBO_CELL",
+      "position": {
+        "x": 813.9873,
+        "y": 0.0,
+        "z": 1109.4048
+      },
+      "respawnTicks": 3600
+    },
+    {
+      "id": "supply-33",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": 931.3931,
+        "y": 0.0,
+        "z": 376.0695
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-34",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": 660.6296,
+        "y": 3.0,
+        "z": 640.8889
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-35",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 165.3009,
+        "y": 0.0,
+        "z": 182.9577
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-36",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 1027.9651,
+        "y": 0.0,
+        "z": 741.3983
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-37",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 523.9856,
+        "y": 0.0,
+        "z": 170.6357
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-38",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 92.9385,
+        "y": 0.0,
+        "z": 1073.9431
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "supply-39",
+      "type": "REPAIR",
+      "position": {
+        "x": 1386.9332,
+        "y": 0.0,
+        "z": 1134.9743
+      },
+      "respawnTicks": 4800
+    },
+    {
+      "id": "supply-40",
+      "type": "TURBO_CELL",
+      "position": {
+        "x": 1228.454,
+        "y": 0.0,
+        "z": 493.9144
+      },
+      "respawnTicks": 3600
+    }
+  ],
+  "hazards": [
+    {
+      "id": "carousel",
+      "type": "CAROUSEL",
+      "sector": "carousel",
+      "minX": 417.0,
+      "maxX": 453.0,
+      "minZ": 272.0,
+      "maxZ": 308.0,
+      "minY": -0.1,
+      "maxY": 6,
+      "offTicks": 1680,
+      "warningTicks": 360,
+      "activeTicks": 360,
+      "damageIntervalTicks": 120,
+      "damage": 90
+    },
+    {
+      "id": "stage-fire",
+      "type": "FIRE",
+      "sector": "stage-fire",
+      "minX": 1117.0,
+      "maxX": 1143.0,
+      "minZ": 386.5,
+      "maxZ": 393.5,
+      "minY": -0.1,
+      "maxY": 6,
+      "offTicks": 1680,
+      "warningTicks": 360,
+      "activeTicks": 360,
+      "damageIntervalTicks": 120,
+      "damage": 90
+    }
+  ],
+  "nodes": [
+    {
+      "id": 0,
+      "position": {
+        "x": 160.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 1,
+      "position": {
+        "x": 220.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 2,
+      "position": {
+        "x": 280.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 3,
+      "position": {
+        "x": 337.5,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 4,
+      "position": {
+        "x": 395.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 5,
+      "position": {
+        "x": 452.5,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 6,
+      "position": {
+        "x": 510.0,
+        "y": 0.0,
+        "z": 170.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 7,
+      "position": {
+        "x": 572.8571,
+        "y": 0.0,
+        "z": 172.8571
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 8,
+      "position": {
+        "x": 635.7143,
+        "y": 0.0,
+        "z": 175.7143
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 9,
+      "position": {
+        "x": 698.5714,
+        "y": 0.0,
+        "z": 178.5714
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 10,
+      "position": {
+        "x": 761.4286,
+        "y": 0.0,
+        "z": 181.4286
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 11,
+      "position": {
+        "x": 824.2857,
+        "y": 0.0,
+        "z": 184.2857
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 12,
+      "position": {
+        "x": 887.1429,
+        "y": 0.0,
+        "z": 187.1429
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 13,
+      "position": {
+        "x": 950.0,
+        "y": 0.0,
+        "z": 190.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 14,
+      "position": {
+        "x": 1011.6667,
+        "y": 0.0,
+        "z": 188.3333
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 15,
+      "position": {
+        "x": 1073.3333,
+        "y": 0.0,
+        "z": 186.6667
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 16,
+      "position": {
+        "x": 1135.0,
+        "y": 0.0,
+        "z": 185.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 17,
+      "position": {
+        "x": 1196.6667,
+        "y": 0.0,
+        "z": 183.3333
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 18,
+      "position": {
+        "x": 1258.3333,
+        "y": 0.0,
+        "z": 181.6667
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 19,
+      "position": {
+        "x": 1320.0,
+        "y": 0.0,
+        "z": 180.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 20,
+      "position": {
+        "x": 321.6667,
+        "y": 0.0,
+        "z": 206.6667
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 21,
+      "position": {
+        "x": 363.3333,
+        "y": 0.0,
+        "z": 243.3333
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 22,
+      "position": {
+        "x": 405.0,
+        "y": 0.0,
+        "z": 280.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 23,
+      "position": {
+        "x": 446.6667,
+        "y": 0.0,
+        "z": 316.6667
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 24,
+      "position": {
+        "x": 488.3333,
+        "y": 0.0,
+        "z": 353.3333
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 25,
+      "position": {
+        "x": 530.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 26,
+      "position": {
+        "x": 182.5,
+        "y": 0.0,
+        "z": 225.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 27,
+      "position": {
+        "x": 205.0,
+        "y": 0.0,
+        "z": 280.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 28,
+      "position": {
+        "x": 227.5,
+        "y": 0.0,
+        "z": 335.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 29,
+      "position": {
+        "x": 250.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 30,
+      "position": {
+        "x": 306.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 31,
+      "position": {
+        "x": 362.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 32,
+      "position": {
+        "x": 418.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 33,
+      "position": {
+        "x": 474.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 34,
+      "position": {
+        "x": 582.5,
+        "y": 0.0,
+        "z": 365.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 35,
+      "position": {
+        "x": 635.0,
+        "y": 0.0,
+        "z": 340.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 36,
+      "position": {
+        "x": 687.5,
+        "y": 0.0,
+        "z": 315.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 37,
+      "position": {
+        "x": 740.0,
+        "y": 0.0,
+        "z": 290.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 38,
+      "position": {
+        "x": 792.5,
+        "y": 0.0,
+        "z": 265.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 39,
+      "position": {
+        "x": 845.0,
+        "y": 0.0,
+        "z": 240.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 40,
+      "position": {
+        "x": 897.5,
+        "y": 0.0,
+        "z": 215.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 41,
+      "position": {
+        "x": 292.5,
+        "y": 0.0,
+        "z": 435.0
+      },
+      "surfaceId": "ground-0-0"
+    },
+    {
+      "id": 42,
+      "position": {
+        "x": 335.0,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 43,
+      "position": {
+        "x": 377.5,
+        "y": 0.0,
+        "z": 525.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 44,
+      "position": {
+        "x": 420.0,
+        "y": 0.0,
+        "z": 570.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 45,
+      "position": {
+        "x": 410.0,
+        "y": 0.0,
+        "z": 632.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 46,
+      "position": {
+        "x": 400.0,
+        "y": 0.0,
+        "z": 694.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 47,
+      "position": {
+        "x": 390.0,
+        "y": 0.0,
+        "z": 756.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 48,
+      "position": {
+        "x": 380.0,
+        "y": 0.0,
+        "z": 818.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 49,
+      "position": {
+        "x": 370.0,
+        "y": 0.0,
+        "z": 880.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 50,
+      "position": {
+        "x": 320.0,
+        "y": 0.0,
+        "z": 915.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 51,
+      "position": {
+        "x": 270.0,
+        "y": 0.0,
+        "z": 950.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 52,
+      "position": {
+        "x": 220.0,
+        "y": 0.0,
+        "z": 985.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 53,
+      "position": {
+        "x": 170.0,
+        "y": 0.0,
+        "z": 1020.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 54,
+      "position": {
+        "x": 120.0,
+        "y": 0.0,
+        "z": 1055.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 55,
+      "position": {
+        "x": 70.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 56,
+      "position": {
+        "x": 126.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 57,
+      "position": {
+        "x": 182.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 58,
+      "position": {
+        "x": 238.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 59,
+      "position": {
+        "x": 294.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 60,
+      "position": {
+        "x": 350.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 61,
+      "position": {
+        "x": 412.5,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 62,
+      "position": {
+        "x": 475.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 63,
+      "position": {
+        "x": 537.5,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 64,
+      "position": {
+        "x": 600.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 65,
+      "position": {
+        "x": 650.0,
+        "y": 0.0,
+        "z": 1095.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 66,
+      "position": {
+        "x": 700.0,
+        "y": 0.0,
+        "z": 1100.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 67,
+      "position": {
+        "x": 750.0,
+        "y": 0.0,
+        "z": 1105.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 68,
+      "position": {
+        "x": 800.0,
+        "y": 0.0,
+        "z": 1110.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 69,
+      "position": {
+        "x": 858.75,
+        "y": 0.0,
+        "z": 1107.5
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 70,
+      "position": {
+        "x": 917.5,
+        "y": 0.0,
+        "z": 1105.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 71,
+      "position": {
+        "x": 976.25,
+        "y": 0.0,
+        "z": 1102.5
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 72,
+      "position": {
+        "x": 1035.0,
+        "y": 0.0,
+        "z": 1100.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 73,
+      "position": {
+        "x": 1093.75,
+        "y": 0.0,
+        "z": 1097.5
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 74,
+      "position": {
+        "x": 1152.5,
+        "y": 0.0,
+        "z": 1095.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 75,
+      "position": {
+        "x": 1211.25,
+        "y": 0.0,
+        "z": 1092.5
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 76,
+      "position": {
+        "x": 1270.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 77,
+      "position": {
+        "x": 502.5,
+        "y": 0.0,
+        "z": 435.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 78,
+      "position": {
+        "x": 475.0,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 79,
+      "position": {
+        "x": 447.5,
+        "y": 0.0,
+        "z": 525.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 80,
+      "position": {
+        "x": 460.0,
+        "y": 0.0,
+        "z": 590.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 81,
+      "position": {
+        "x": 428.5714,
+        "y": 0.0,
+        "z": 885.7143
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 82,
+      "position": {
+        "x": 487.1429,
+        "y": 0.0,
+        "z": 891.4286
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 83,
+      "position": {
+        "x": 545.7143,
+        "y": 0.0,
+        "z": 897.1429
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 84,
+      "position": {
+        "x": 604.2857,
+        "y": 0.0,
+        "z": 902.8571
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 85,
+      "position": {
+        "x": 662.8571,
+        "y": 0.0,
+        "z": 908.5714
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 86,
+      "position": {
+        "x": 721.4286,
+        "y": 0.0,
+        "z": 914.2857
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 87,
+      "position": {
+        "x": 780.0,
+        "y": 0.0,
+        "z": 920.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 88,
+      "position": {
+        "x": 786.6667,
+        "y": 0.0,
+        "z": 983.3333
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 89,
+      "position": {
+        "x": 793.3333,
+        "y": 0.0,
+        "z": 1046.6667
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 90,
+      "position": {
+        "x": 1342.5,
+        "y": 0.0,
+        "z": 232.5
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 91,
+      "position": {
+        "x": 1365.0,
+        "y": 0.0,
+        "z": 285.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 92,
+      "position": {
+        "x": 1387.5,
+        "y": 0.0,
+        "z": 337.5
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 93,
+      "position": {
+        "x": 1410.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 94,
+      "position": {
+        "x": 1406.6667,
+        "y": 0.0,
+        "z": 453.3333
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 95,
+      "position": {
+        "x": 1403.3333,
+        "y": 0.0,
+        "z": 516.6667
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 96,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 580.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 97,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 642.2222
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 98,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 704.4444
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 99,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 766.6667
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 100,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 828.8889
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 101,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 891.1111
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 102,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 953.3333
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 103,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 1015.5556
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 104,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 1077.7778
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 105,
+      "position": {
+        "x": 1400.0,
+        "y": 0.0,
+        "z": 1140.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 106,
+      "position": {
+        "x": 1356.6667,
+        "y": 0.0,
+        "z": 1123.3333
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 107,
+      "position": {
+        "x": 1313.3333,
+        "y": 0.0,
+        "z": 1106.6667
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 108,
+      "position": {
+        "x": 930.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 109,
+      "position": {
+        "x": 990.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 110,
+      "position": {
+        "x": 1050.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 111,
+      "position": {
+        "x": 1110.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 112,
+      "position": {
+        "x": 1170.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 113,
+      "position": {
+        "x": 1230.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 114,
+      "position": {
+        "x": 1290.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 115,
+      "position": {
+        "x": 1350.0,
+        "y": 0.0,
+        "z": 390.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 116,
+      "position": {
+        "x": 945.0,
+        "y": 0.0,
+        "z": 240.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 117,
+      "position": {
+        "x": 940.0,
+        "y": 0.0,
+        "z": 290.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 118,
+      "position": {
+        "x": 935.0,
+        "y": 0.0,
+        "z": 340.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 119,
+      "position": {
+        "x": 952.5,
+        "y": 0.0,
+        "z": 435.0
+      },
+      "surfaceId": "ground-2-0"
+    },
+    {
+      "id": 120,
+      "position": {
+        "x": 975.0,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 121,
+      "position": {
+        "x": 1038.75,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 122,
+      "position": {
+        "x": 1102.5,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 123,
+      "position": {
+        "x": 1166.25,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 124,
+      "position": {
+        "x": 1230.0,
+        "y": 0.0,
+        "z": 480.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 125,
+      "position": {
+        "x": 1224.0,
+        "y": 0.0,
+        "z": 534.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 126,
+      "position": {
+        "x": 1218.0,
+        "y": 0.0,
+        "z": 588.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 127,
+      "position": {
+        "x": 1212.0,
+        "y": 0.0,
+        "z": 642.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 128,
+      "position": {
+        "x": 1206.0,
+        "y": 0.0,
+        "z": 696.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 129,
+      "position": {
+        "x": 1200.0,
+        "y": 0.0,
+        "z": 750.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 130,
+      "position": {
+        "x": 1164.0,
+        "y": 0.0,
+        "z": 792.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 131,
+      "position": {
+        "x": 1128.0,
+        "y": 0.0,
+        "z": 834.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 132,
+      "position": {
+        "x": 1092.0,
+        "y": 0.0,
+        "z": 876.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 133,
+      "position": {
+        "x": 1056.0,
+        "y": 0.0,
+        "z": 918.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 134,
+      "position": {
+        "x": 1020.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 135,
+      "position": {
+        "x": 1070.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 136,
+      "position": {
+        "x": 1120.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 137,
+      "position": {
+        "x": 1170.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 138,
+      "position": {
+        "x": 1220.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 139,
+      "position": {
+        "x": 1273.75,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 140,
+      "position": {
+        "x": 1327.5,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 141,
+      "position": {
+        "x": 1381.25,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 142,
+      "position": {
+        "x": 1435.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 143,
+      "position": {
+        "x": 1423.3333,
+        "y": 0.0,
+        "z": 1020.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 144,
+      "position": {
+        "x": 1411.6667,
+        "y": 0.0,
+        "z": 1080.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 145,
+      "position": {
+        "x": 1150.0,
+        "y": 0.0,
+        "z": 747.5
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 146,
+      "position": {
+        "x": 1100.0,
+        "y": 0.0,
+        "z": 745.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 147,
+      "position": {
+        "x": 1050.0,
+        "y": 0.0,
+        "z": 742.5
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 148,
+      "position": {
+        "x": 1000.0,
+        "y": 0.0,
+        "z": 740.0
+      },
+      "surfaceId": "east-lake-bridge"
+    },
+    {
+      "id": 149,
+      "position": {
+        "x": 841.25,
+        "y": 0.0,
+        "z": 941.25
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 150,
+      "position": {
+        "x": 902.5,
+        "y": 0.0,
+        "z": 962.5
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 151,
+      "position": {
+        "x": 963.75,
+        "y": 0.0,
+        "z": 983.75
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 152,
+      "position": {
+        "x": 1025.0,
+        "y": 0.0,
+        "z": 1005.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 153,
+      "position": {
+        "x": 1086.25,
+        "y": 0.0,
+        "z": 1026.25
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 154,
+      "position": {
+        "x": 1147.5,
+        "y": 0.0,
+        "z": 1047.5
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 155,
+      "position": {
+        "x": 1208.75,
+        "y": 0.0,
+        "z": 1068.75
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 156,
+      "position": {
+        "x": 1272.5,
+        "y": 0.0,
+        "z": 505.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 157,
+      "position": {
+        "x": 1315.0,
+        "y": 0.0,
+        "z": 530.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 158,
+      "position": {
+        "x": 1357.5,
+        "y": 0.0,
+        "z": 555.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 159,
+      "position": {
+        "x": 1020.0,
+        "y": 0.0,
+        "z": 1005.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 160,
+      "position": {
+        "x": 1020.0,
+        "y": 0.0,
+        "z": 1050.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 161,
+      "position": {
+        "x": 1082.5,
+        "y": 0.0,
+        "z": 1060.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 162,
+      "position": {
+        "x": 1145.0,
+        "y": 0.0,
+        "z": 1070.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 163,
+      "position": {
+        "x": 1207.5,
+        "y": 0.0,
+        "z": 1080.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 164,
+      "position": {
+        "x": 976.0,
+        "y": 0.0,
+        "z": 990.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 165,
+      "position": {
+        "x": 932.0,
+        "y": 0.0,
+        "z": 1020.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 166,
+      "position": {
+        "x": 888.0,
+        "y": 0.0,
+        "z": 1050.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 167,
+      "position": {
+        "x": 844.0,
+        "y": 0.0,
+        "z": 1080.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 168,
+      "position": {
+        "x": 650.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 169,
+      "position": {
+        "x": 685.0,
+        "y": 3.0,
+        "z": 620.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 170,
+      "position": {
+        "x": 720.0,
+        "y": 3.0,
+        "z": 590.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 171,
+      "position": {
+        "x": 760.0,
+        "y": 3.0,
+        "z": 620.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 172,
+      "position": {
+        "x": 800.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 173,
+      "position": {
+        "x": 765.0,
+        "y": 3.0,
+        "z": 695.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 174,
+      "position": {
+        "x": 730.0,
+        "y": 3.0,
+        "z": 740.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 175,
+      "position": {
+        "x": 690.0,
+        "y": 3.0,
+        "z": 695.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 176,
+      "position": {
+        "x": 690.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 177,
+      "position": {
+        "x": 730.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 178,
+      "position": {
+        "x": 765.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 179,
+      "position": {
+        "x": 730.0,
+        "y": 3.0,
+        "z": 695.0
+      },
+      "surfaceId": "island"
+    },
+    {
+      "id": 180,
+      "position": {
+        "x": 1044.0,
+        "y": 0.0,
+        "z": 770.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 181,
+      "position": {
+        "x": 1088.0,
+        "y": 0.0,
+        "z": 800.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 182,
+      "position": {
+        "x": 1132.0,
+        "y": 0.0,
+        "z": 830.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 183,
+      "position": {
+        "x": 1176.0,
+        "y": 0.0,
+        "z": 860.0
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 184,
+      "position": {
+        "x": 1220.0,
+        "y": 0.0,
+        "z": 890.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 185,
+      "position": {
+        "x": 1220.0,
+        "y": 0.0,
+        "z": 925.0
+      },
+      "surfaceId": "ground-2-2"
+    },
+    {
+      "id": 186,
+      "position": {
+        "x": 1206.6667,
+        "y": 0.0,
+        "z": 796.6667
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 187,
+      "position": {
+        "x": 1213.3333,
+        "y": 0.0,
+        "z": 843.3333
+      },
+      "surfaceId": "ground-2-1"
+    },
+    {
+      "id": 188,
+      "position": {
+        "x": 904.0,
+        "y": 0.0,
+        "z": 224.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 189,
+      "position": {
+        "x": 858.0,
+        "y": 0.0,
+        "z": 258.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 190,
+      "position": {
+        "x": 812.0,
+        "y": 0.0,
+        "z": 292.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 191,
+      "position": {
+        "x": 766.0,
+        "y": 0.0,
+        "z": 326.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 192,
+      "position": {
+        "x": 720.0,
+        "y": 0.0,
+        "z": 360.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 193,
+      "position": {
+        "x": 720.0,
+        "y": 0.0,
+        "z": 420.0
+      },
+      "surfaceId": "ground-1-0"
+    },
+    {
+      "id": 194,
+      "position": {
+        "x": 730.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 195,
+      "position": {
+        "x": 730.0,
+        "y": 0.0,
+        "z": 900.0
+      },
+      "surfaceId": "ground-1-2"
+    },
+    {
+      "id": 196,
+      "position": {
+        "x": 255.0,
+        "y": 0.0,
+        "z": 446.6667
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 197,
+      "position": {
+        "x": 260.0,
+        "y": 0.0,
+        "z": 503.3333
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 198,
+      "position": {
+        "x": 265.0,
+        "y": 0.0,
+        "z": 560.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 199,
+      "position": {
+        "x": 270.0,
+        "y": 0.0,
+        "z": 616.6667
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 200,
+      "position": {
+        "x": 275.0,
+        "y": 0.0,
+        "z": 673.3333
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 201,
+      "position": {
+        "x": 280.0,
+        "y": 0.0,
+        "z": 730.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 202,
+      "position": {
+        "x": 310.0,
+        "y": 0.0,
+        "z": 780.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 203,
+      "position": {
+        "x": 340.0,
+        "y": 0.0,
+        "z": 830.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 204,
+      "position": {
+        "x": 400.0,
+        "y": 0.0,
+        "z": 730.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 205,
+      "position": {
+        "x": 406.6667,
+        "y": 0.0,
+        "z": 676.6667
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 206,
+      "position": {
+        "x": 413.3333,
+        "y": 0.0,
+        "z": 623.3333
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 207,
+      "position": {
+        "x": 390.0,
+        "y": 0.0,
+        "z": 780.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 208,
+      "position": {
+        "x": 380.0,
+        "y": 0.0,
+        "z": 830.0
+      },
+      "surfaceId": "ground-0-1"
+    },
+    {
+      "id": 209,
+      "position": {
+        "x": 590.0,
+        "y": 3.0,
+        "z": 631.0526
+      },
+      "surfaceId": "west-lake-bridge"
+    },
+    {
+      "id": 210,
+      "position": {
+        "x": 830.0,
+        "y": 3.0,
+        "z": 663.5
+      },
+      "surfaceId": "east-island-landing"
+    },
+    {
+      "id": 211,
+      "position": {
+        "x": 860.0,
+        "y": 3.0,
+        "z": 677.0
+      },
+      "surfaceId": "east-island-landing"
+    },
+    {
+      "id": 212,
+      "position": {
+        "x": 746.6667,
+        "y": 3.0,
+        "z": 800.0
+      },
+      "surfaceId": "north-island-landing"
+    },
+    {
+      "id": 213,
+      "position": {
+        "x": 680.0,
+        "y": 3.0,
+        "z": 548.0
+      },
+      "surfaceId": "southwest-lake-bridge"
+    },
+    {
+      "id": 214,
+      "position": {
+        "x": 620.0,
+        "y": 3.0,
+        "z": 674.6428
+      },
+      "surfaceId": "northwest-island-landing"
+    },
+    {
+      "id": 215,
+      "position": {
+        "x": 590.0,
+        "y": 3.0,
+        "z": 699.2857
+      },
+      "surfaceId": "northwest-island-landing"
+    },
+    {
+      "id": 216,
+      "position": {
+        "x": 363.3333,
+        "y": 0.0,
+        "z": 926.6667
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 217,
+      "position": {
+        "x": 356.6667,
+        "y": 0.0,
+        "z": 973.3333
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 218,
+      "position": {
+        "x": 350.0,
+        "y": 0.0,
+        "z": 1020.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 219,
+      "position": {
+        "x": 350.0,
+        "y": 0.0,
+        "z": 1055.0
+      },
+      "surfaceId": "ground-0-2"
+    },
+    {
+      "id": 220,
+      "position": {
+        "x": 503.3333,
+        "y": 1.0,
+        "z": 603.6842
+      },
+      "surfaceId": "west-lake-bridge"
+    },
+    {
+      "id": 221,
+      "position": {
+        "x": 546.6667,
+        "y": 2.0,
+        "z": 617.3684
+      },
+      "surfaceId": "west-lake-bridge"
+    },
+    {
+      "id": 222,
+      "position": {
+        "x": 906.6667,
+        "y": 2.0,
+        "z": 698.0
+      },
+      "surfaceId": "east-lake-bridge"
+    },
+    {
+      "id": 223,
+      "position": {
+        "x": 953.3333,
+        "y": 1.0,
+        "z": 719.0
+      },
+      "surfaceId": "east-lake-bridge"
+    },
+    {
+      "id": 224,
+      "position": {
+        "x": 763.3333,
+        "y": 1.5,
+        "z": 860.0
+      },
+      "surfaceId": "north-lake-bridge"
+    },
+    {
+      "id": 225,
+      "position": {
+        "x": 567.5,
+        "y": 0.75,
+        "z": 429.5
+      },
+      "surfaceId": "southwest-lake-bridge"
+    },
+    {
+      "id": 226,
+      "position": {
+        "x": 605.0,
+        "y": 1.5,
+        "z": 469.0
+      },
+      "surfaceId": "southwest-lake-bridge"
+    },
+    {
+      "id": 227,
+      "position": {
+        "x": 642.5,
+        "y": 2.25,
+        "z": 508.5
+      },
+      "surfaceId": "southwest-lake-bridge"
+    },
+    {
+      "id": 228,
+      "position": {
+        "x": 546.0,
+        "y": 2.4,
+        "z": 735.4286
+      },
+      "surfaceId": "northwest-lake-bridge"
+    },
+    {
+      "id": 229,
+      "position": {
+        "x": 502.0,
+        "y": 1.8,
+        "z": 771.5714
+      },
+      "surfaceId": "northwest-lake-bridge"
+    },
+    {
+      "id": 230,
+      "position": {
+        "x": 458.0,
+        "y": 1.2,
+        "z": 807.7143
+      },
+      "surfaceId": "northwest-lake-bridge"
+    },
+    {
+      "id": 231,
+      "position": {
+        "x": 414.0,
+        "y": 0.6,
+        "z": 843.8571
+      },
+      "surfaceId": "northwest-lake-bridge"
+    }
+  ],
+  "edges": [
+    {
+      "id": "entry-entrance-mid-1",
+      "from": 0,
+      "to": 1,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entry-entrance-mid-2",
+      "from": 1,
+      "to": 2,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-s-1",
+      "from": 2,
+      "to": 3,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-s-2",
+      "from": 3,
+      "to": 4,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-s-3",
+      "from": 4,
+      "to": 5,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-s-4",
+      "from": 5,
+      "to": 6,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-1",
+      "from": 6,
+      "to": 7,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-2",
+      "from": 7,
+      "to": 8,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-3",
+      "from": 8,
+      "to": 9,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-4",
+      "from": 9,
+      "to": 10,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-5",
+      "from": 10,
+      "to": 11,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-6",
+      "from": 11,
+      "to": 12,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-s-show-s-7",
+      "from": 12,
+      "to": 13,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-se-1",
+      "from": 13,
+      "to": 14,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-se-2",
+      "from": 14,
+      "to": 15,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-se-3",
+      "from": 15,
+      "to": 16,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-se-4",
+      "from": 16,
+      "to": 17,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-se-5",
+      "from": 17,
+      "to": 18,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-se-6",
+      "from": 18,
+      "to": 19,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-e-1",
+      "from": 2,
+      "to": 20,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-e-2",
+      "from": 20,
+      "to": 21,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-e-3",
+      "from": 21,
+      "to": 22,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-e-4",
+      "from": 22,
+      "to": 23,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-e-5",
+      "from": 23,
+      "to": 24,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entrance-mid-fair-e-6",
+      "from": 24,
+      "to": 25,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entry-fair-w-1",
+      "from": 0,
+      "to": 26,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entry-fair-w-2",
+      "from": 26,
+      "to": 27,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entry-fair-w-3",
+      "from": 27,
+      "to": 28,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "entry-fair-w-4",
+      "from": 28,
+      "to": 29,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-fair-e-1",
+      "from": 29,
+      "to": 30,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-fair-e-2",
+      "from": 30,
+      "to": 31,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-fair-e-3",
+      "from": 31,
+      "to": 32,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-fair-e-4",
+      "from": 32,
+      "to": 33,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-fair-e-5",
+      "from": 33,
+      "to": 25,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-1",
+      "from": 25,
+      "to": 34,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-2",
+      "from": 34,
+      "to": 35,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-3",
+      "from": 35,
+      "to": 36,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-4",
+      "from": 36,
+      "to": 37,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-5",
+      "from": 37,
+      "to": 38,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-6",
+      "from": 38,
+      "to": 39,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-7",
+      "from": 39,
+      "to": 40,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-show-s-8",
+      "from": 40,
+      "to": 13,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-shore-w-1",
+      "from": 29,
+      "to": 41,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-shore-w-2",
+      "from": 41,
+      "to": 42,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-shore-w-3",
+      "from": 42,
+      "to": 43,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-shore-w-4",
+      "from": 43,
+      "to": 44,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-w-shore-nw-1",
+      "from": 44,
+      "to": 45,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-w-shore-nw-2",
+      "from": 45,
+      "to": 46,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-w-shore-nw-3",
+      "from": 46,
+      "to": 47,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-w-shore-nw-4",
+      "from": 47,
+      "to": 48,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-w-shore-nw-5",
+      "from": 48,
+      "to": 49,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-w-1",
+      "from": 49,
+      "to": 50,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-w-2",
+      "from": 50,
+      "to": 51,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-w-3",
+      "from": 51,
+      "to": 52,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-w-4",
+      "from": 52,
+      "to": 53,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-w-5",
+      "from": 53,
+      "to": 54,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-w-6",
+      "from": 54,
+      "to": 55,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-w-circus-center-1",
+      "from": 55,
+      "to": 56,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-w-circus-center-2",
+      "from": 56,
+      "to": 57,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-w-circus-center-3",
+      "from": 57,
+      "to": 58,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-w-circus-center-4",
+      "from": 58,
+      "to": 59,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-w-circus-center-5",
+      "from": 59,
+      "to": 60,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-center-circus-e-1",
+      "from": 60,
+      "to": 61,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-center-circus-e-2",
+      "from": 61,
+      "to": 62,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-center-circus-e-3",
+      "from": 62,
+      "to": 63,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-center-circus-e-4",
+      "from": 63,
+      "to": 64,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-e-north-1",
+      "from": 64,
+      "to": 65,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-e-north-2",
+      "from": 65,
+      "to": 66,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-e-north-3",
+      "from": 66,
+      "to": 67,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-e-north-4",
+      "from": 67,
+      "to": 68,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-1",
+      "from": 68,
+      "to": 69,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-2",
+      "from": 69,
+      "to": 70,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-3",
+      "from": 70,
+      "to": 71,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-4",
+      "from": 71,
+      "to": 72,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-5",
+      "from": 72,
+      "to": 73,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-6",
+      "from": 73,
+      "to": 74,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-7",
+      "from": 74,
+      "to": 75,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "north-ne-8",
+      "from": 75,
+      "to": 76,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-shore-w-1",
+      "from": 25,
+      "to": 77,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-shore-w-2",
+      "from": 77,
+      "to": 78,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-shore-w-3",
+      "from": 78,
+      "to": 79,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-shore-w-4",
+      "from": 79,
+      "to": 44,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-w-bridge-w-1",
+      "from": 44,
+      "to": 80,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-1",
+      "from": 49,
+      "to": 81,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-2",
+      "from": 81,
+      "to": 82,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-3",
+      "from": 82,
+      "to": 83,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-4",
+      "from": 83,
+      "to": 84,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-5",
+      "from": 84,
+      "to": 85,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-6",
+      "from": 85,
+      "to": 86,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-shore-n-7",
+      "from": 86,
+      "to": 87,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-north-1",
+      "from": 87,
+      "to": 88,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-north-2",
+      "from": 88,
+      "to": 89,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-north-3",
+      "from": 89,
+      "to": 68,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "se-ridehall-e-1",
+      "from": 19,
+      "to": 90,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "se-ridehall-e-2",
+      "from": 90,
+      "to": 91,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "se-ridehall-e-3",
+      "from": 91,
+      "to": 92,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "se-ridehall-e-4",
+      "from": 92,
+      "to": 93,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-e-service-s-1",
+      "from": 93,
+      "to": 94,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-e-service-s-2",
+      "from": 94,
+      "to": 95,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-e-service-s-3",
+      "from": 95,
+      "to": 96,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-1",
+      "from": 96,
+      "to": 97,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-2",
+      "from": 97,
+      "to": 98,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-3",
+      "from": 98,
+      "to": 99,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-4",
+      "from": 99,
+      "to": 100,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-5",
+      "from": 100,
+      "to": 101,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-6",
+      "from": 101,
+      "to": 102,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-7",
+      "from": 102,
+      "to": 103,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-8",
+      "from": 103,
+      "to": 104,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-s-service-n-9",
+      "from": 104,
+      "to": 105,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-n-ne-1",
+      "from": 105,
+      "to": 106,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-n-ne-2",
+      "from": 106,
+      "to": 107,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "service-n-ne-3",
+      "from": 107,
+      "to": 76,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-1",
+      "from": 108,
+      "to": 109,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-2",
+      "from": 109,
+      "to": 110,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-3",
+      "from": 110,
+      "to": 111,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-4",
+      "from": 111,
+      "to": 112,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-5",
+      "from": 112,
+      "to": 113,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-6",
+      "from": 113,
+      "to": 114,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-7",
+      "from": 114,
+      "to": 115,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-e-8",
+      "from": 115,
+      "to": 93,
+      "width": 28,
+      "clearance": 24.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-ridehall-w-1",
+      "from": 13,
+      "to": 116,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-ridehall-w-2",
+      "from": 116,
+      "to": 117,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-ridehall-w-3",
+      "from": 117,
+      "to": 118,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-ridehall-w-4",
+      "from": 118,
+      "to": 108,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-back-1",
+      "from": 108,
+      "to": 119,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-w-ridehall-back-2",
+      "from": 119,
+      "to": 120,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-back-rides-s-1",
+      "from": 120,
+      "to": 121,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-back-rides-s-2",
+      "from": 121,
+      "to": 122,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-back-rides-s-3",
+      "from": 122,
+      "to": 123,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "ridehall-back-rides-s-4",
+      "from": 123,
+      "to": 124,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-rides-n-1",
+      "from": 124,
+      "to": 125,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-rides-n-2",
+      "from": 125,
+      "to": 126,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-rides-n-3",
+      "from": 126,
+      "to": 127,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-rides-n-4",
+      "from": 127,
+      "to": 128,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-rides-n-5",
+      "from": 128,
+      "to": 129,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-w-1",
+      "from": 129,
+      "to": 130,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-w-2",
+      "from": 130,
+      "to": 131,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-w-3",
+      "from": 131,
+      "to": 132,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-w-4",
+      "from": 132,
+      "to": 133,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-w-5",
+      "from": 133,
+      "to": 134,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-depot-core-1",
+      "from": 134,
+      "to": 135,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-depot-core-2",
+      "from": 135,
+      "to": 136,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-depot-core-3",
+      "from": 136,
+      "to": 137,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-depot-core-4",
+      "from": 137,
+      "to": 138,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-core-depot-e-1",
+      "from": 138,
+      "to": 139,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-core-depot-e-2",
+      "from": 139,
+      "to": 140,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-core-depot-e-3",
+      "from": 140,
+      "to": 141,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-core-depot-e-4",
+      "from": 141,
+      "to": 142,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-e-service-n-1",
+      "from": 142,
+      "to": 143,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-e-service-n-2",
+      "from": 143,
+      "to": 144,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-e-service-n-3",
+      "from": 144,
+      "to": 105,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-shore-e-1",
+      "from": 129,
+      "to": 145,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-shore-e-2",
+      "from": 145,
+      "to": 146,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-shore-e-3",
+      "from": 146,
+      "to": 147,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-shore-e-4",
+      "from": 147,
+      "to": 148,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-1",
+      "from": 87,
+      "to": 149,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-2",
+      "from": 149,
+      "to": 150,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-3",
+      "from": 150,
+      "to": 151,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-4",
+      "from": 151,
+      "to": 152,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-5",
+      "from": 152,
+      "to": 153,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-6",
+      "from": 153,
+      "to": 154,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-7",
+      "from": 154,
+      "to": 155,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-ne-8",
+      "from": 155,
+      "to": 76,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-service-s-1",
+      "from": 124,
+      "to": 156,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-service-s-2",
+      "from": 156,
+      "to": 157,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-service-s-3",
+      "from": 157,
+      "to": 158,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-s-service-s-4",
+      "from": 158,
+      "to": 96,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-depot-nw-1",
+      "from": 134,
+      "to": 159,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-depot-nw-2",
+      "from": 159,
+      "to": 160,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-nw-ne-1",
+      "from": 160,
+      "to": 161,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-nw-ne-2",
+      "from": 161,
+      "to": 162,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-nw-ne-3",
+      "from": 162,
+      "to": 163,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-nw-ne-4",
+      "from": 163,
+      "to": 76,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-north-1",
+      "from": 134,
+      "to": 164,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-north-2",
+      "from": 164,
+      "to": 165,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-north-3",
+      "from": 165,
+      "to": 166,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-north-4",
+      "from": 166,
+      "to": 167,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-w-north-5",
+      "from": 167,
+      "to": 68,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-w-island-s-1",
+      "from": 168,
+      "to": 169,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-w-island-s-2",
+      "from": 169,
+      "to": 170,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-s-island-e-1",
+      "from": 170,
+      "to": 171,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-s-island-e-2",
+      "from": 171,
+      "to": 172,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-e-island-n-1",
+      "from": 172,
+      "to": 173,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-e-island-n-2",
+      "from": 173,
+      "to": 174,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-n-island-w-1",
+      "from": 174,
+      "to": 175,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-n-island-w-2",
+      "from": 175,
+      "to": 168,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-w-island-center-1",
+      "from": 168,
+      "to": 176,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-w-island-center-2",
+      "from": 176,
+      "to": 177,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-center-island-e-1",
+      "from": 177,
+      "to": 178,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-center-island-e-2",
+      "from": 178,
+      "to": 172,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-s-island-center-1",
+      "from": 170,
+      "to": 177,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-center-island-n-1",
+      "from": 177,
+      "to": 179,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-center-island-n-2",
+      "from": 179,
+      "to": 174,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-e-depot-north-1",
+      "from": 148,
+      "to": 180,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-e-depot-north-2",
+      "from": 180,
+      "to": 181,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-e-depot-north-3",
+      "from": 181,
+      "to": 182,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-e-depot-north-4",
+      "from": 182,
+      "to": 183,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-e-depot-north-5",
+      "from": 183,
+      "to": 184,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-north-depot-core-1",
+      "from": 184,
+      "to": 185,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "depot-north-depot-core-2",
+      "from": 185,
+      "to": 138,
+      "width": 28,
+      "clearance": 18.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-north-1",
+      "from": 129,
+      "to": 186,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-north-2",
+      "from": 186,
+      "to": 187,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "rides-n-depot-north-3",
+      "from": 187,
+      "to": 184,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-jump-s-runup-1",
+      "from": 13,
+      "to": 188,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-jump-s-runup-2",
+      "from": 188,
+      "to": 189,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-jump-s-runup-3",
+      "from": 189,
+      "to": 190,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-jump-s-runup-4",
+      "from": 190,
+      "to": 191,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "show-s-jump-s-runup-5",
+      "from": 191,
+      "to": 192,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "jump-s-runup-jump-s-1",
+      "from": 192,
+      "to": 193,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-n-jump-n-runup-1",
+      "from": 87,
+      "to": 194,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "jump-n-runup-jump-n-1",
+      "from": 194,
+      "to": 195,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-gate-w-1",
+      "from": 29,
+      "to": 196,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-gate-w-2",
+      "from": 196,
+      "to": 197,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-gate-w-3",
+      "from": 197,
+      "to": 198,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-gate-w-4",
+      "from": 198,
+      "to": 199,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-gate-w-5",
+      "from": 199,
+      "to": 200,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-w-gate-w-6",
+      "from": 200,
+      "to": 201,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-w-shore-nw-1",
+      "from": 201,
+      "to": 202,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-w-shore-nw-2",
+      "from": 202,
+      "to": 203,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-w-shore-nw-3",
+      "from": 203,
+      "to": 49,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-e-shore-w-1",
+      "from": 204,
+      "to": 205,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-e-shore-w-2",
+      "from": 205,
+      "to": 206,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-e-shore-w-3",
+      "from": 206,
+      "to": 44,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-e-shore-nw-1",
+      "from": 204,
+      "to": 207,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-e-shore-nw-2",
+      "from": 207,
+      "to": 208,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "gate-e-shore-nw-3",
+      "from": 208,
+      "to": 49,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-west-high-island-w-1",
+      "from": 209,
+      "to": 168,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-e-bridge-east-high-1",
+      "from": 172,
+      "to": 210,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-e-bridge-east-high-2",
+      "from": 210,
+      "to": 211,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-n-bridge-north-high-1",
+      "from": 174,
+      "to": 212,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-southwest-high-island-s-1",
+      "from": 213,
+      "to": 170,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-w-bridge-northwest-high-1",
+      "from": 168,
+      "to": 214,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-w-bridge-northwest-high-2",
+      "from": 214,
+      "to": 215,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-north-1",
+      "from": 49,
+      "to": 216,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-north-2",
+      "from": 216,
+      "to": 217,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "shore-nw-circus-north-3",
+      "from": 217,
+      "to": 218,
+      "width": 28,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-north-circus-center-1",
+      "from": 218,
+      "to": 219,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "circus-north-circus-center-2",
+      "from": 219,
+      "to": 60,
+      "width": 28,
+      "clearance": 30.0,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-w-bridge-west-high-1",
+      "from": 80,
+      "to": 220,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "west-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-w-bridge-west-high-2",
+      "from": 220,
+      "to": 221,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "west-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-w-bridge-west-high-3",
+      "from": 221,
+      "to": 209,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "west-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-east-high-shore-e-1",
+      "from": 211,
+      "to": 222,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "east-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-east-high-shore-e-2",
+      "from": 222,
+      "to": 223,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "east-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-east-high-shore-e-3",
+      "from": 223,
+      "to": 148,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "east-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-north-high-shore-n-1",
+      "from": 212,
+      "to": 224,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "north-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-north-high-shore-n-2",
+      "from": 224,
+      "to": 87,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "north-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-bridge-southwest-high-1",
+      "from": 25,
+      "to": 225,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "southwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-bridge-southwest-high-2",
+      "from": 225,
+      "to": 226,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "southwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-bridge-southwest-high-3",
+      "from": 226,
+      "to": 227,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "southwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "fair-e-bridge-southwest-high-4",
+      "from": 227,
+      "to": 213,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "southwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-northwest-high-shore-nw-1",
+      "from": 215,
+      "to": 228,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "northwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-northwest-high-shore-nw-2",
+      "from": 228,
+      "to": 229,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "northwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-northwest-high-shore-nw-3",
+      "from": 229,
+      "to": 230,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "northwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-northwest-high-shore-nw-4",
+      "from": 230,
+      "to": 231,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "northwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-northwest-high-shore-nw-5",
+      "from": 231,
+      "to": 49,
+      "width": 26,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "northwest-lake-bridge",
+      "bidirectional": true
+    },
+    {
+      "id": "island-south-launch",
+      "from": 193,
+      "to": 170,
+      "width": 12,
+      "clearance": 80,
+      "type": "LAUNCH",
+      "objectId": "island-south-launch",
+      "bidirectional": false
+    },
+    {
+      "id": "island-north-launch",
+      "from": 195,
+      "to": 174,
+      "width": 12,
+      "clearance": 80,
+      "type": "LAUNCH",
+      "objectId": "island-north-launch",
+      "bidirectional": false
+    },
+    {
+      "id": "gate-w-gate-e-1",
+      "from": 201,
+      "to": 204,
+      "width": 22,
+      "clearance": 100,
+      "type": "OPENABLE",
+      "objectId": "service-shortcut",
+      "bidirectional": true
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "ground-0-0",
+      "geometryId": "ground-0-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-0-1",
+      "geometryId": "ground-0-1",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-0-2",
+      "geometryId": "ground-0-2",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-1-0",
+      "geometryId": "ground-1-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-1-2",
+      "geometryId": "ground-1-2",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-2-0",
+      "geometryId": "ground-2-0",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-2-1",
+      "geometryId": "ground-2-1",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "ground-2-2",
+      "geometryId": "ground-2-2",
+      "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "lake-bottom",
+      "geometryId": "lake-bottom",
+      "level": -1,
+      "grip": 1
+    },
+    {
+      "id": "island",
+      "geometryId": "island",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "west-lake-bridge",
+      "geometryId": "west-lake-bridge",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "west-island-landing",
+      "geometryId": "west-island-landing",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "east-island-landing",
+      "geometryId": "east-island-landing",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "east-lake-bridge",
+      "geometryId": "east-lake-bridge",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "north-island-landing",
+      "geometryId": "north-island-landing",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "north-lake-bridge",
+      "geometryId": "north-lake-bridge",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "southwest-lake-bridge",
+      "geometryId": "southwest-lake-bridge",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "southwest-island-landing",
+      "geometryId": "southwest-island-landing",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "northwest-island-landing",
+      "geometryId": "northwest-island-landing",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "northwest-lake-bridge",
+      "geometryId": "northwest-lake-bridge",
+      "level": 1,
+      "grip": 1
+    }
+  ],
+  "launchPads": [
+    {
+      "id": "island-south-launch",
+      "source": {
+        "x": 720.0,
+        "y": 0.0,
+        "z": 420.0
+      },
+      "target": {
+        "x": 720.0,
+        "y": 3.0,
+        "z": 590.0
+      },
+      "sourceSurfaceId": "ground-1-0",
+      "landingSurfaceId": "island",
+      "length": 12,
+      "width": 12,
+      "maximumEntryAngle": 55,
+      "minimumSpeed": 8,
+      "compressionTicks": 12,
+      "flightSeconds": 3.2,
+      "rearmTicks": 120
+    },
+    {
+      "id": "island-north-launch",
+      "source": {
+        "x": 730.0,
+        "y": 0.0,
+        "z": 900.0
+      },
+      "target": {
+        "x": 730.0,
+        "y": 3.0,
+        "z": 740.0
+      },
+      "sourceSurfaceId": "ground-1-2",
+      "landingSurfaceId": "island",
+      "length": 12,
+      "width": 12,
+      "maximumEntryAngle": 55,
+      "minimumSpeed": 8,
+      "compressionTicks": 12,
+      "flightSeconds": 3,
+      "rearmTicks": 120
+    }
+  ],
+  "drops": [],
+  "destructibles": [
+    {
+      "id": "service-shortcut",
+      "geometryId": "service-shortcut-panel",
+      "maximumHp": 25
+    }
+  ],
+  "secrets": [],
+  "barriers": [],
+  "bosses": [
+    {
+      "id": "boss_emcee",
+      "name": "Конферансье",
+      "profileId": "boss_emcee",
+      "maximumHp": 4000,
+      "primary": "NAPALM",
+      "secondary": "POWER",
+      "entrances": [
+        {
+          "id": 0,
+          "position": {
+            "x": 1320.0,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "yawDegrees": 90
+        },
+        {
+          "id": 1,
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 1090.0
+          },
+          "yawDegrees": 90
+        }
+      ],
+      "launchPadIds": [
+        "island-south-launch",
+        "island-north-launch"
+      ],
+      "quotes": [
+        "Билеты невозвратные. Как и вы!",
+        "А теперь — через озеро!"
+      ]
+    }
+  ],
+  "layoutRevision": 2,
+  "meshes": [
+    {
+      "id": "west-lake-bridge",
+      "vertices": [
+        {
+          "x": 465.7215,
+          "y": 0.0,
+          "z": 571.8819
+        },
+        {
+          "x": 595.7215,
+          "y": 3.0,
+          "z": 612.9345
+        },
+        {
+          "x": 584.2785,
+          "y": 3.0,
+          "z": 649.1707
+        },
+        {
+          "x": 454.2785,
+          "y": 0.0,
+          "z": 608.1181
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "west-island-landing",
+      "vertices": [
+        {
+          "x": 595.7215,
+          "y": 3.0,
+          "z": 612.9345
+        },
+        {
+          "x": 655.7215,
+          "y": 3.0,
+          "z": 631.8819
+        },
+        {
+          "x": 644.2785,
+          "y": 3.0,
+          "z": 668.1181
+        },
+        {
+          "x": 584.2785,
+          "y": 3.0,
+          "z": 649.1707
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "east-island-landing",
+      "vertices": [
+        {
+          "x": 807.3866,
+          "y": 3.0,
+          "z": 633.5854
+        },
+        {
+          "x": 867.3866,
+          "y": 3.0,
+          "z": 660.5854
+        },
+        {
+          "x": 852.6134,
+          "y": 3.0,
+          "z": 693.4146
+        },
+        {
+          "x": 792.6134,
+          "y": 3.0,
+          "z": 666.4146
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "east-lake-bridge",
+      "vertices": [
+        {
+          "x": 867.3866,
+          "y": 3.0,
+          "z": 660.5854
+        },
+        {
+          "x": 1007.3866,
+          "y": 0.0,
+          "z": 723.5854
+        },
+        {
+          "x": 992.6134,
+          "y": 0.0,
+          "z": 756.4146
+        },
+        {
+          "x": 852.6134,
+          "y": 3.0,
+          "z": 693.4146
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "north-island-landing",
+      "vertices": [
+        {
+          "x": 745.4163,
+          "y": 3.0,
+          "z": 735.7177
+        },
+        {
+          "x": 762.083,
+          "y": 3.0,
+          "z": 795.7177
+        },
+        {
+          "x": 731.2504,
+          "y": 3.0,
+          "z": 804.2823
+        },
+        {
+          "x": 714.5837,
+          "y": 3.0,
+          "z": 744.2823
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "north-lake-bridge",
+      "vertices": [
+        {
+          "x": 762.083,
+          "y": 3.0,
+          "z": 795.7177
+        },
+        {
+          "x": 795.4163,
+          "y": 0.0,
+          "z": 915.7177
+        },
+        {
+          "x": 764.5837,
+          "y": 0.0,
+          "z": 924.2823
+        },
+        {
+          "x": 731.2504,
+          "y": 3.0,
+          "z": 804.2823
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "southwest-lake-bridge",
+      "vertices": [
+        {
+          "x": 541.6037,
+          "y": 0.0,
+          "z": 378.9839
+        },
+        {
+          "x": 691.6037,
+          "y": 3.0,
+          "z": 536.9839
+        },
+        {
+          "x": 668.3963,
+          "y": 3.0,
+          "z": 559.0161
+        },
+        {
+          "x": 518.3963,
+          "y": 0.0,
+          "z": 401.0161
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "southwest-island-landing",
+      "vertices": [
+        {
+          "x": 691.5862,
+          "y": 3.0,
+          "z": 536.9655
+        },
+        {
+          "x": 731.5862,
+          "y": 3.0,
+          "z": 578.9655
+        },
+        {
+          "x": 708.4138,
+          "y": 3.0,
+          "z": 601.0345
+        },
+        {
+          "x": 668.4138,
+          "y": 3.0,
+          "z": 559.0345
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "northwest-island-landing",
+      "vertices": [
+        {
+          "x": 658.8864,
+          "y": 3.0,
+          "z": 660.8182
+        },
+        {
+          "x": 598.8864,
+          "y": 3.0,
+          "z": 710.1039
+        },
+        {
+          "x": 581.1136,
+          "y": 3.0,
+          "z": 688.4675
+        },
+        {
+          "x": 641.1136,
+          "y": 3.0,
+          "z": 639.1818
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    },
+    {
+      "id": "northwest-lake-bridge",
+      "vertices": [
+        {
+          "x": 598.8864,
+          "y": 3.0,
+          "z": 710.1039
+        },
+        {
+          "x": 378.8864,
+          "y": 0.0,
+          "z": 890.8182
+        },
+        {
+          "x": 361.1136,
+          "y": 0.0,
+          "z": 869.1818
+        },
+        {
+          "x": 581.1136,
+          "y": 3.0,
+          "z": 688.4675
+        }
+      ],
+      "indices": [
+        0,
+        3,
+        2,
+        0,
+        2,
+        1
+      ],
+      "material": "steel",
+      "collision": true
+    }
+  ],
+  "districts": [
+    {
+      "id": "entrance",
+      "title": "Входная площадь",
+      "center": {
+        "x": 280.0,
+        "y": 0.0,
+        "z": 180.0
+      },
+      "patrolNodeIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        20,
+        21,
+        22,
+        23,
+        24,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        41,
+        196
+      ]
+    },
+    {
+      "id": "fair",
+      "title": "Ярмарка",
+      "center": {
+        "x": 350.0,
+        "y": 0.0,
+        "z": 450.0
+      },
+      "patrolNodeIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        77,
+        78,
+        79,
+        80,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        204,
+        205,
+        206,
+        209,
+        220,
+        221,
+        225,
+        226,
+        227
+      ]
+    },
+    {
+      "id": "lake",
+      "title": "Озеро и остров",
+      "center": {
+        "x": 730.0,
+        "y": 3.0,
+        "z": 650.0
+      },
+      "patrolNodeIds": [
+        80,
+        84,
+        85,
+        86,
+        87,
+        120,
+        148,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        192,
+        193,
+        195,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229
+      ]
+    },
+    {
+      "id": "rides",
+      "title": "Большие аттракционы",
+      "center": {
+        "x": 1190.0,
+        "y": 0.0,
+        "z": 540.0
+      },
+      "patrolNodeIds": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        145,
+        146,
+        147,
+        148,
+        156,
+        157,
+        158,
+        180,
+        181,
+        182,
+        183,
+        186,
+        187,
+        222,
+        223
+      ]
+    },
+    {
+      "id": "circus",
+      "title": "Цирк",
+      "center": {
+        "x": 350.0,
+        "y": 0.0,
+        "z": 1090.0
+      },
+      "patrolNodeIds": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        81,
+        82,
+        83,
+        84,
+        202,
+        203,
+        207,
+        208,
+        216,
+        217,
+        218,
+        219,
+        230,
+        231
+      ]
+    },
+    {
+      "id": "backstage",
+      "title": "Служебная территория",
+      "center": {
+        "x": 1220.0,
+        "y": 0.0,
+        "z": 960.0
+      },
+      "patrolNodeIds": [
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187
+      ]
+    }
+  ]
+}

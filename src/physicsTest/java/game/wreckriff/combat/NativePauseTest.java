@@ -22,7 +22,7 @@ class NativePauseTest {
     @Test void T14_pauseFreezesFullRuntimeAndResumesWithoutTimeDebt() {
         ArenaDefinition definition = ArenaDefinition.load();
         VehicleRules vehicleRules = VehicleRules.load();
-        MatchSession session = new MatchSession(42, 360);
+        MatchSession session = new MatchSession(42, 360);NativeCombatSupplies.halfLoad(session);
         PhysicsWorld world = new PhysicsWorld(vehicleRules);
         world.addStatic(new BoxCollisionShape(new Vector3f(300, 0.5f, 300)), new Vector3f(0, -0.5f, 0), new Quaternion());
         for (int id = 0; id < 5; id++) world.addVehicle(id, new Vector3f(id * 12, 0.6f, 50), new Quaternion());

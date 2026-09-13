@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Checks actual Bullet velocity response and constraints, without replacing the physics owner. */
 class NativeBlastResponseTest {
+    @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { NativeCombatSupplies.halfLoad(session); }
     private final MatchSession session=new MatchSession(42,360);
     private final CombatSystem combat=new CombatSystem(session,session.combatRules);
     private PhysicsWorld world() {
@@ -49,7 +50,7 @@ class NativeBlastResponseTest {
             Vector3f rawTorque=contact.position().subtract(world.position(1)).cross(world.velocity(1).mult(world.mass(1)));
             expectedShieldAngular=Math.min(2,world.vehicle(1).getInverseInertiaWorld(null).mult(rawTorque.mult(.3f)).length());
         }
-        MatchSession shieldSession=new MatchSession(42,360);CombatSystem shieldCombat=new CombatSystem(shieldSession,shieldSession.combatRules);
+        MatchSession shieldSession=new MatchSession(42,360);NativeCombatSupplies.halfLoad(shieldSession);CombatSystem shieldCombat=new CombatSystem(shieldSession,shieldSession.combatRules);
         try(PhysicsWorld world=world()) {
             shieldSession.vehicle(1).shieldTicks=300;
             shieldCombat.beginTick(Map.of(0,power()),world);shieldCombat.advanceProjectiles(world);shieldCombat.resolveDamage(world);

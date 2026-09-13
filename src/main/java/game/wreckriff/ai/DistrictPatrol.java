@@ -26,7 +26,8 @@ public final class DistrictPatrol {
         var districts=arena.districts();
         var district=districts.stream().filter(d->d.id().equals(cursor.district)).findFirst().orElse(null);
         if(district==null) {
-            district=districts.stream().min(Comparator.comparingDouble(d->d.center().vector().distanceSquared(position))).orElseThrow();
+            district=districts.stream().min(Comparator.comparingDouble((ArenaDefinition.District d)->
+                    d.contains(position.x,position.z)?-1:d.center().vector().distanceSquared(position))).orElseThrow();
             cursor.district=district.id();cursor.stop=Math.floorMod(participant,district.patrolNodeIds().size());
         } else if(cursor.visits>=Math.min(3,district.patrolNodeIds().size())) {
             cursor.visited.merge(district.id(),1,Integer::sum);

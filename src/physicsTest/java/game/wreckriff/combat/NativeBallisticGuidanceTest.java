@@ -49,6 +49,7 @@ class NativeBallisticGuidanceTest {
     }
     private Result salvo(VehicleDefinition definition,String manoeuvre,boolean roof) {
         var session=MatchSession.balanced(42,List.of("rivet",definition.id()),game.wreckriff.config.Configs.load("combat",CombatRules.class));
+        NativeCombatSupplies.halfLoad(session);
         var combat=new CombatSystem(session,session.combatRules);
         try(var world=new PhysicsWorld(VEHICLES)) {
             world.addStatic("road",new BoxCollisionShape(new Vector3f(400,.5f,400)),new Vector3f(0,-.5f,0),new Quaternion());

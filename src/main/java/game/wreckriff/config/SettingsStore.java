@@ -10,7 +10,7 @@ import java.util.*;
 
 public final class SettingsStore {
     public static final class Settings {
-        public int schemaVersion=4, width=1280,height=720, samples=4;
+        public int schemaVersion=5, width=1280,height=720, samples=4;
         public String selectedVehicleId="rivet";
         public boolean fullscreen=false,vsync=true,subtitles=true,glow=true;
         public float master=0.8f,music=0.8f,sfx=0.9f,shake=0.6f,sensitivity=1,deadZone=0.15f,uiScale=1,flashes=.6f;
@@ -59,13 +59,13 @@ public final class SettingsStore {
         try(Reader reader=Files.newBufferedReader(path,StandardCharsets.UTF_8)) {
             JsonObject tree=JsonParser.parseReader(reader).getAsJsonObject();
             int version=tree.has("schemaVersion")?tree.get("schemaVersion").getAsInt():-1;
-            boolean supported=version>=1&&version<=4;
+            boolean supported=version>=1&&version<=5;
             if (!supported) {
                 settingsWritable=false;
                 warn("Unsupported "+name+" version; original file preserved."); return fallback;
             }
-            if(version<4) {
-                tree.addProperty("schemaVersion",4);
+            if(version<5) {
+                tree.addProperty("schemaVersion",5);
                 if(version<3&&tree.has("keys")&&tree.get("keys").isJsonObject()) {
                     JsonObject keys=tree.getAsJsonObject("keys");
                     // v1 did not define zero as an unbound action; it was an invalid key.
@@ -75,6 +75,7 @@ public final class SettingsStore {
                     keys.remove("Ability modifier");
                     if(formerSpecial!=null) keys.add("Shield",formerSpecial);
                 }
+                if(tree.has("keys")&&tree.get("keys").isJsonObject())migrateDefaultWeaponKeys(tree.getAsJsonObject("keys"));
                 migratedFromVersion=version;
             }
             Settings loaded=Configs.gson().fromJson(tree,Settings.class);normalize(loaded);
@@ -107,7 +108,7 @@ public final class SettingsStore {
         } catch(IOException | SecurityException e) { warn("Could not save "+name+"; this session continues in memory."); }
     }
     private static void normalize(Settings value) {
-        value.schemaVersion=4;
+        value.schemaVersion=5;
         try {value.selectedVehicleId=VehicleDefinition.forId(value.selectedVehicleId).id();}
         catch(IllegalArgumentException|NullPointerException e) {value.selectedVehicleId="rivet";}
         if(value.width<640 || value.width>7680 || value.height<480 || value.height>4320) { value.width=1280; value.height=720; value.fullscreen=false; }
@@ -141,10 +142,22 @@ public final class SettingsStore {
         keys.put("Previous weapon",KeyInput.KEY_Q); keys.put("Next weapon",KeyInput.KEY_E);
         keys.put("Shield",KeyInput.KEY_F); keys.put("Special",KeyInput.KEY_C); keys.put("Freeze",KeyInput.KEY_Z);
         keys.put("Select Homing",KeyInput.KEY_1); keys.put("Select Power",KeyInput.KEY_2);
-        keys.put("Select Mine",KeyInput.KEY_3); keys.put("Select Napalm",KeyInput.KEY_4);
-        keys.put("Select Ballistic",KeyInput.KEY_5); keys.put("Select Cannon",KeyInput.KEY_6);
+        keys.put("Select Napalm",KeyInput.KEY_3); keys.put("Select Ballistic",KeyInput.KEY_4);
+        keys.put("Select Cannon",KeyInput.KEY_5); keys.put("Select Mine",KeyInput.KEY_6);
         keys.put("Rear view",KeyInput.KEY_V); keys.put("Recover",KeyInput.KEY_R);
         keys.put("Tactical map",KeyInput.KEY_M);
         return keys;
+    }
+    private static void migrateDefaultWeaponKeys(JsonObject keys) {
+        String[] actions={"Select Homing","Select Power","Select Mine","Select Napalm","Select Ballistic","Select Cannon"};
+        int[] previous={KeyInput.KEY_1,KeyInput.KEY_2,KeyInput.KEY_3,KeyInput.KEY_4,KeyInput.KEY_5,KeyInput.KEY_6};
+        // An incomplete or edited tuple is a user choice, including explicitly unbound actions.
+        for(int i=0;i<actions.length;i++) {
+            var value=keys.get(actions[i]);
+            if(value==null||!value.isJsonPrimitive()||!value.getAsJsonPrimitive().isNumber()
+                    ||value.getAsDouble()!=previous[i])return;
+        }
+        var defaults=defaultKeys();
+        for(String action:actions)keys.addProperty(action,defaults.get(action));
     }
 }

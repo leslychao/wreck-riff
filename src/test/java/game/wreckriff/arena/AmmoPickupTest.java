@@ -18,8 +18,9 @@ class AmmoPickupTest {
             var pickup=arena.pickups().stream().filter(p->p.type()==type).findFirst().orElseThrow();
             world.positions[0]=pickup.position().vector().add(0,.8f,0);
             WeaponType weapon=type==ArenaDefinition.PickupType.MINE_AMMO?WeaponType.MINE:WeaponType.NAPALM;
-            systems.collectPickups(world);assertEquals(5,session.vehicle(0).weapon(weapon).ammo);
-            assertEquals(6,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+            systems.collectPickups(world);assertEquals(2,session.vehicle(0).weapon(weapon).ammo);
+            assertEquals(0,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+            session.vehicle(0).weapon(weapon).ammo=session.vehicle(0).weapon(weapon).maximumAmmo-1;
             assertEquals(2400,pickup.respawnTicks());session.tick=2400;systems.collectPickups(world);
             assertEquals(6,session.vehicle(0).weapon(weapon).ammo);assertEquals(1,systems.drainEvents().getLast().value());
         }
@@ -33,7 +34,7 @@ class AmmoPickupTest {
             int amount=weapon==WeaponType.BALLISTIC?1:2,respawn=weapon==WeaponType.BALLISTIC?3600:3000;
             var slot=session.vehicle(0).weapon(weapon);slot.ammo=0;
             world.positions[0]=pickup.position().vector().add(0,.8f,0);systems.collectPickups(world);
-            assertEquals(amount,slot.ammo);assertEquals(6,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
+            assertEquals(amount,slot.ammo);assertEquals(0,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
             assertEquals(respawn,pickup.respawnTicks());assertFalse(systems.active(pickup.id()));
             session.tick=respawn-1;systems.collectPickups(world);assertEquals(amount,slot.ammo);
             slot.ammo=slot.maximumAmmo-1;session.tick=respawn;systems.collectPickups(world);

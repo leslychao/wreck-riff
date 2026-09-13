@@ -29,7 +29,7 @@ class NativeScriptedRuntimeTest {
             assertEquals(10,events.stream().filter(e->e.type()==GameEvent.Type.SHOT).count());
             assertTrue(events.stream().filter(e->e.type()==GameEvent.Type.SHOT).allMatch(e->e.sourceId()==0));
             for(int id=0;id<5;id++)assertEquals(0,runtime.bots().metrics(id).aliveTicks(),"Scripted runs do not secretly advance AI decisions");
-            assertTrue(world.position(2).distance(parked)<.02f);assertEquals(6,session.vehicle(2).weapon(WeaponType.HOMING).ammo);
+            assertTrue(world.position(2).distance(parked)<.02f);assertEquals(0,session.vehicle(2).weapon(WeaponType.HOMING).ammo);
             Vector3f before=world.position(2);
             VehicleCommand gas=new VehicleCommand(1,0,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
             for(int i=0;i<120;i++)runtime.tick(Map.of(2,gas),false);

@@ -29,14 +29,31 @@ public final class ArenaArt {
             if(id==null||id.isBlank()||group==null||anchor==null||material==null||size==null
                     ||size.x()<=0||size.y()<=0||size.z()<=0)throw new IllegalArgumentException("Invalid art part");}
     }
-    public record Scene(int schemaVersion,String arenaId,String source,String license,List<Group> groups,List<Part> parts) {
+    public record ModelInstance(String id,String group,String anchor,String asset,String distantAsset,
+            ArenaDefinition.Vec3 position,ArenaDefinition.Vec3 size,ArenaDefinition.Vec3 rotation,float lodDistance) {
+        public ModelInstance {
+            Objects.requireNonNull(position);Objects.requireNonNull(size);Objects.requireNonNull(rotation);
+            if(id==null||id.isBlank()||group==null||anchor==null||!localModel(asset)||distantAsset==null
+                    ||!distantAsset.isEmpty()&&!localModel(distantAsset)||size.x()<=0||size.y()<=0||size.z()<=0
+                    ||!Float.isFinite(lodDistance)||lodDistance<=0)throw new IllegalArgumentException("Invalid authored model instance");
+        }
+        private static boolean localModel(String asset) {
+            return asset!=null&&asset.startsWith("models/arenas/")&&asset.endsWith(".j3o")&&!asset.contains("..")&&!asset.contains(":")&&!asset.contains("\\");
+        }
+    }
+    public record Scene(int schemaVersion,String arenaId,String source,String license,List<Group> groups,List<Part> parts,List<ModelInstance> models) {
+        public Scene(int version,String arenaId,String source,String license,List<Group> groups,List<Part> parts) {
+            this(version,arenaId,source,license,groups,parts,List.of());
+        }
         public Scene {
-            if(schemaVersion!=1||source==null||license==null||arenaId==null)throw new IllegalArgumentException("Invalid art scene");
-            groups=List.copyOf(groups);parts=List.copyOf(parts);
+            if((schemaVersion!=1&&schemaVersion!=2)||source==null||license==null||arenaId==null)throw new IllegalArgumentException("Invalid art scene");
+            groups=List.copyOf(groups);parts=List.copyOf(parts);models=models==null?List.of():List.copyOf(models);
             Set<String> groupIds=new HashSet<>(),partIds=new HashSet<>();
             for(var group:groups)if(!groupIds.add(group.id()))throw new IllegalArgumentException("Duplicate art group");
             for(var part:parts)if(!partIds.add(part.id())||!part.group().isEmpty()&&!groupIds.contains(part.group()))
                 throw new IllegalArgumentException("Invalid art part identity: "+part.id());
+            for(var model:models)if(!partIds.add(model.id())||!model.group().isEmpty()&&!groupIds.contains(model.group()))
+                throw new IllegalArgumentException("Invalid model identity: "+model.id());
         }
     }
     private ArenaArt() {}
@@ -51,6 +68,11 @@ public final class ArenaArt {
     public static List<String> surfaceMaterials(Scene scene) {
         return scene.parts().stream().filter(ArenaArt::usesSurfaceMaterial).map(Part::material).distinct().toList();
     }
+    public static List<String> modelAssets(Scene scene) {
+        LinkedHashSet<String> paths=new LinkedHashSet<>();
+        for(var model:scene.models()){paths.add(model.asset());if(!model.distantAsset().isEmpty())paths.add(model.distantAsset());}
+        return List.copyOf(paths);
+    }
     private static boolean usesSurfaceMaterial(Part part) {return !part.material().equals("steam");}
     public static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials,Scene scene) {
         if(!scene.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
@@ -62,7 +84,7 @@ public final class ArenaArt {
         Set<String> dynamic=new HashSet<>();
         definition.destructibles().forEach(object->dynamic.add(object.geometryId()));
         definition.barriers().forEach(barrier->dynamic.add(barrier.geometryId()));
-        Map<String,Mesh> meshes=new HashMap<>();Map<String,Material> overlayMaterials=new HashMap<>();
+        Map<String,Mesh> meshes=new HashMap<>();
         for(var part:scene.parts()) {
             var size=part.size();
             String key=part.shape()+":"+size;
@@ -85,13 +107,6 @@ public final class ArenaArt {
                 visual.setQueueBucket(RenderQueue.Bucket.Transparent);visual.setShadowMode(RenderQueue.ShadowMode.Off);
             } else {
                 material=materials.material(part.material());
-                int layer=overlayLayer(part);
-                if(layer>0)material=overlayMaterials.computeIfAbsent(part.material()+":"+layer,ignored->{
-                    Material overlay=materials.material(part.material()).clone();
-                    // Metre-scale worlds need polygon depth bias for flush road paint at distant viewpoints.
-                    // Physical surface height, vehicle support and the scene's lit material stay unchanged.
-                    overlay.getAdditionalRenderState().setPolyOffset(-1,-layer*3);return overlay;
-                });
                 if(!part.group().isEmpty())material=material.clone();
                 if(part.material().startsWith("light-")||size.y()<.1f)visual.setShadowMode(RenderQueue.ShadowMode.Off);
             }
@@ -104,9 +119,11 @@ public final class ArenaArt {
             });
             if(part.group().isEmpty()&&anchor==art) {
                 int cellSize=definition.layoutRevision()>=2?160:40;
-                boolean detail=definition.layoutRevision()>=2&&Math.max(size.x(),Math.max(size.y(),size.z()))<=8;
-                String cell=(int)Math.floor(part.position().x()/cellSize)+":"+(int)Math.floor(part.position().z()/cellSize)+(detail?":detail":"");
-                Node node=cells.computeIfAbsent(cell,ignored->new Node("art-cell-"+cell));node.attachChild(visual);
+                for(Geometry chunk:SpatialChunks.split(visual,cellSize)) {
+                    String cell=chunk.getUserData("spatialCell");
+                    if(cell==null)cell=(int)Math.floor(part.position().x()/cellSize)+":"+(int)Math.floor(part.position().z()/cellSize);
+                    String cellKey=cell;Node node=cells.computeIfAbsent(cellKey,ignored->new Node("art-cell-"+cellKey));node.attachChild(chunk);
+                }
             } else if(part.group().isEmpty()) {
                 Node statics=anchorStatics.computeIfAbsent(part.anchor(),id->new Node("art-anchor-static-"+id));
                 statics.attachChild(visual);
@@ -126,33 +143,54 @@ public final class ArenaArt {
         }
         for(var entry:cells.entrySet()) {
             Node cell=entry.getValue();cell.updateGeometricState();GeometryBatchFactory.optimize(cell,false);
-            if(entry.getKey().endsWith(":detail"))cell.addControl(new DetailDistance());
             art.attachChild(cell);
         }
         for(var entry:anchorStatics.entrySet()) {
             Node statics=entry.getValue();statics.updateGeometricState();GeometryBatchFactory.optimize(statics,false);
             anchors.get(entry.getKey()).attachChild(statics);
         }
+        Map<String,Spatial> prototypes=new HashMap<>();
+        SurfaceMaterials.lightingDefinition(assets);
+        for(var model:scene.models()) {
+            Node instance=new Node(model.id());instance.setLocalTranslation(model.position().vector());instance.setLocalScale(model.size().vector());
+            instance.setLocalRotation(new Quaternion().fromAngles(model.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)));
+            Spatial detailed=prototypes.computeIfAbsent(model.asset(),assets::loadModel).clone(false);
+            instance.attachChild(detailed);
+            if(!model.distantAsset().isEmpty()) {
+                Spatial distant=prototypes.computeIfAbsent(model.distantAsset(),assets::loadModel).clone(false);
+                distant.setCullHint(Spatial.CullHint.Always);instance.attachChild(distant);
+                instance.addControl(new ModelDistance(detailed,distant,model.lodDistance()));
+            }
+            Node parent=art;
+            if(dynamic.contains(model.anchor()))parent=anchors.computeIfAbsent(model.anchor(),id->{
+                Node node=new Node("art-anchor-"+id);node.setUserData("artAnchor",id);art.attachChild(node);return node;
+            });
+            if(!model.group().isEmpty()) {
+                String groupKey=model.group()+":"+(parent==art?"static":model.anchor());Node owner=parent;
+                parent=groups.computeIfAbsent(groupKey,ignored->{
+                    Group group=definitions.get(model.group());Node motion=new Node("art-motion-"+group.id());
+                    motion.setLocalTranslation(group.position().vector());motion.setUserData("artMotion",group.motion().name());
+                    motion.setUserData("artPeriod",group.period());motion.setUserData("artPhase",group.phase());owner.attachChild(motion);return motion;
+                });
+            }
+            parent.attachChild(instance);
+        }
         root.attachChild(art);
     }
-    private static int overlayLayer(Part part) {
-        if(part.id().startsWith("district-paving"))return 1;
-        if(part.id().startsWith("road-shoulder"))return 2;
-        if(part.id().startsWith("road-asphalt"))return 3;
-        if(part.id().startsWith("road-edge-line")||part.id().startsWith("lane-dash")||part.id().startsWith("asphalt-repair"))return 4;
-        return 0;
-    }
-    /** Keep silhouettes, structural surfaces and simulation at distance; omit tiny facade/road details. */
-    private static final class DetailDistance extends AbstractControl {
-        private Boolean visible;
+    /** Each authored building swaps to its silhouette mesh independently; no district-wide detail blackout. */
+    private static final class ModelDistance extends AbstractControl {
+        private final Spatial detailed,distant;
+        private final float distance;
+        private boolean near=true;
+        ModelDistance(Spatial detailed,Spatial distant,float distance) {this.detailed=detailed;this.distant=distant;this.distance=distance;}
         @Override protected void controlUpdate(float tpf) {}
         @Override protected void controlRender(RenderManager manager,ViewPort view) {
             if(spatial.getWorldBound()==null)return;
-            float distance=spatial.getWorldBound().distanceToEdge(view.getCamera().getLocation());
-            boolean next=distance<(Boolean.TRUE.equals(visible)?420:360);
-            if(visible!=null&&next==visible)return;visible=next;
-            // Cull the children, preserving this parent's bounds/render callback for re-entry.
-            for(Spatial child:((Node)spatial).getChildren())child.setCullHint(next?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
+            float range=spatial.getWorldBound().distanceToEdge(view.getCamera().getLocation());
+            boolean next=range<distance*(near?1.08f:.92f);
+            if(next==near)return;near=next;
+            detailed.setCullHint(near?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
+            distant.setCullHint(near?Spatial.CullHint.Always:Spatial.CullHint.Inherit);
         }
     }
     private static Mesh patchMesh(ArenaDefinition.Vec3 size) {

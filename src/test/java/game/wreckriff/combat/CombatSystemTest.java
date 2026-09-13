@@ -43,6 +43,7 @@ class CombatSystemTest {
 
     @BeforeEach void createSession() {
         session = new MatchSession(42, 360);
+        CombatTestSupplies.halfLoad(session);
         rules = Configs.load("combat", CombatRules.class);
         combat = new CombatSystem(session, rules);
         world = new FakeWorld();
@@ -140,6 +141,7 @@ class CombatSystemTest {
         slot.cooldownTicks = 0;
         MatchCheckpoint.restorePlayer(player, saved);
         assertEquals(540, slot.cooldownTicks);
+        assertEquals(0,slot.ammo);slot.refill(2); // Rounds collected after continuation retain the saved reload.
         int ammo = slot.ammo;
         for (int i = 0; i < 539; i++) step(rocket());
         assertEquals(ammo, slot.ammo);
@@ -487,6 +489,7 @@ class CombatSystemTest {
         mutate.accept(json);
         rules = Configs.gson().fromJson(json, CombatRules.class);
         session=new MatchSession(session.seed,360,rules);session.vehicles.forEach(v->v.hp=200);
+        CombatTestSupplies.halfLoad(session);
         combat = new CombatSystem(session, rules);
     }
 

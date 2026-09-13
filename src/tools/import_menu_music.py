@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import wave
@@ -135,7 +136,10 @@ def main():
                             compensationDb=compensation_db, compensationGain=compensation_gain,
                             finalPeakSafetyGain=final_peak_gain, **measured,
                             measurementSha256=sha(staging))
-            staging.replace(path)
+            # Keep the destination directory's normal ACL. On Windows the
+            # TemporaryDirectory has a protected ACL that replace() would move
+            # into the source tree and make assets unreadable to sandbox tools.
+            shutil.copyfile(staging, path)
         actual = pcm.astype(np.float64) / 32768
         peak = float(np.max(np.abs(actual)))
         rms = float(np.sqrt(np.mean(actual**2)))

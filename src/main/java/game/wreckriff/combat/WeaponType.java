@@ -2,7 +2,7 @@ package game.wreckriff.combat;
 
 /** The complete selectable arsenal; the machine gun has its own input. */
 public enum WeaponType {
-    HOMING("homing"), POWER("power"), MINE("mine"), NAPALM("napalm"), BALLISTIC("ballistic"), CANNON("cannon");
+    HOMING("homing"), POWER("power"), NAPALM("napalm"), BALLISTIC("ballistic"), CANNON("cannon"), MINE("mine");
     private final String id;
     WeaponType(String id) { this.id=id; }
     public String id() { return id; }

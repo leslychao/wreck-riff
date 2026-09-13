@@ -12,7 +12,7 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
         List<Pickup> pickups, List<Hazard> hazards, List<NavNode> nodes, List<NavEdge> edges,
         List<Surface> surfaces,List<LaunchPad> launchPads,List<Drop> drops,
         List<Destructible> destructibles,List<Secret> secrets,List<Barrier> barriers,List<Boss> bosses,
-        int layoutRevision,List<TriangleSurface> meshes,List<District> districts) {
+        int layoutRevision,List<TriangleSurface> meshes,List<District> districts,List<Road> roads) {
     public enum Theme { INDUSTRIAL_YARD, CONSTRUCTION, NEON, CARNIVAL }
     public enum Axis { X, Z }
     public enum Transition { ROAD, RAMP, LAUNCH, DROP, OPENABLE }
@@ -96,9 +96,30 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
         }
         public Vector3f normalAt(float x,float z) {int i=triangleAt(x,z);return i<0?Vector3f.UNIT_Y.clone():normal(i);}
     }
-    public record District(String id,String title,Vec3 center,List<Integer> patrolNodeIds) {
+    public record District(String id,String title,Vec3 center,List<Integer> patrolNodeIds,List<Vec3> boundary) {
+        public District(String id,String title,Vec3 center,List<Integer> patrolNodeIds) {this(id,title,center,patrolNodeIds,List.of());}
         public District {text(id,"district");text(title,"district title");Objects.requireNonNull(center);patrolNodeIds=List.copyOf(patrolNodeIds);
+            boundary=List.copyOf(boundary);
+            require(boundary.isEmpty()||boundary.size()>=3,"District needs a polygon: "+id);
             require(patrolNodeIds.size()>=2&&new HashSet<>(patrolNodeIds).size()==patrolNodeIds.size(),"District needs distinct patrol nodes: "+id);}
+        public boolean contains(float x,float z) {
+            boolean inside=false;
+            for(int i=0,j=boundary.size()-1;i<boundary.size();j=i++) {
+                Vec3 a=boundary.get(i),b=boundary.get(j);
+                float cross=(x-a.x)*(b.z-a.z)-(z-a.z)*(b.x-a.x);
+                if(Math.abs(cross)<.01f&&x>=Math.min(a.x,b.x)&&x<=Math.max(a.x,b.x)&&z>=Math.min(a.z,b.z)&&z<=Math.max(a.z,b.z))return true;
+                if((a.z>z)!=(b.z>z)&&x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x)inside=!inside;
+            }
+            return inside;
+        }
+    }
+    /** Authored road footprint; graph edges describe driving choices, never generate asphalt. */
+    public record Road(String id,String title,float width,List<String> geometryIds,List<Integer> navNodeIds) {
+        public Road {
+            text(id,"road");text(title,"road title");require(Float.isFinite(width)&&width>=3,"Invalid road width: "+id);
+            geometryIds=List.copyOf(geometryIds);navNodeIds=List.copyOf(navNodeIds);
+            require(!geometryIds.isEmpty()&&navNodeIds.size()>=2,"Road needs geometry and navigation: "+id);
+        }
     }
     public record Ramp(String id, float minX, float maxX, float minZ, float maxZ,
                        float startY, float endY, float bottomY, Axis axis, String material) {
@@ -194,13 +215,13 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
     }
 
     public ArenaDefinition {
-        if (schemaVersion != 3 || id == null || id.isBlank()||layoutRevision<1) throw new IllegalArgumentException("Invalid arena identity");
+        if ((schemaVersion != 3&&schemaVersion!=4) || id == null || id.isBlank()||layoutRevision<1) throw new IllegalArgumentException("Invalid arena identity");
         Objects.requireNonNull(bounds);Objects.requireNonNull(metadata);
         boxes=List.copyOf(boxes); ramps=List.copyOf(ramps); spawns=List.copyOf(spawns);
         pickups=List.copyOf(pickups); nodes=List.copyOf(nodes); edges=List.copyOf(edges);
         hazards=List.copyOf(hazards);surfaces=List.copyOf(surfaces);launchPads=List.copyOf(launchPads);
         drops=List.copyOf(drops);destructibles=List.copyOf(destructibles);secrets=List.copyOf(secrets);barriers=List.copyOf(barriers);bosses=List.copyOf(bosses);
-        meshes=List.copyOf(meshes);districts=List.copyOf(districts);
+        meshes=List.copyOf(meshes);districts=List.copyOf(districts);roads=List.copyOf(roads);
         if (!(bounds.minX < bounds.maxX && bounds.minZ < bounds.maxZ)) throw new IllegalArgumentException("Invalid bounds");
         Set<String> objectIds=new HashSet<>();
         for (BoxPart box:boxes) {
@@ -232,6 +253,16 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
             throw new IllegalArgumentException("Invalid navigation node "+id+"/"+node.id+" surface "+node.surfaceId);
         Set<String> districtIds=new HashSet<>();
         for(var district:districts)require(districtIds.add(district.id)&&bounds.contains(district.center.vector())&&nodeIds.containsAll(district.patrolNodeIds),"Invalid district: "+district.id);
+        if(schemaVersion>=4)for(var district:districts) {
+            require(district.boundary.size()>=3&&district.contains(district.center.x,district.center.z),"Invalid district boundary: "+district.id);
+            for(var point:district.boundary)require(bounds.contains(point.vector()),"District boundary outside arena: "+district.id);
+            for(int nodeId:district.patrolNodeIds) {
+                var node=nodes.stream().filter(n->n.id==nodeId).findFirst().orElseThrow();
+                require(district.contains(node.position.x,node.position.z),"Patrol outside district: "+district.id+"/"+nodeId);
+            }
+        }
+        Set<String> roadIds=new HashSet<>();
+        for(var road:roads)require(roadIds.add(road.id)&&objectIds.containsAll(road.geometryIds)&&nodeIds.containsAll(road.navNodeIds),"Invalid authored road: "+road.id);
         Set<String> edgeIds=new HashSet<>();
         for (NavEdge edge:edges) {
             String key=edge.id;
@@ -260,7 +291,14 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
             List<Surface> surfaces,List<LaunchPad> launchPads,List<Drop> drops,List<Destructible> destructibles,
             List<Secret> secrets,List<Barrier> barriers,List<Boss> bosses) {
         this(schemaVersion,id,metadata,bounds,boxes,ramps,spawns,pickups,hazards,nodes,edges,surfaces,launchPads,drops,
-                destructibles,secrets,barriers,bosses,1,List.of(),List.of());
+                destructibles,secrets,barriers,bosses,1,List.of(),List.of(),List.of());
+    }
+    public ArenaDefinition(int schemaVersion,String id,Metadata metadata,Bounds bounds,List<BoxPart> boxes,List<Ramp> ramps,
+            List<Spawn> spawns,List<Pickup> pickups,List<Hazard> hazards,List<NavNode> nodes,List<NavEdge> edges,
+            List<Surface> surfaces,List<LaunchPad> launchPads,List<Drop> drops,List<Destructible> destructibles,
+            List<Secret> secrets,List<Barrier> barriers,List<Boss> bosses,int layoutRevision,List<TriangleSurface> meshes,List<District> districts) {
+        this(schemaVersion,id,metadata,bounds,boxes,ramps,spawns,pickups,hazards,nodes,edges,surfaces,launchPads,drops,
+                destructibles,secrets,barriers,bosses,layoutRevision,meshes,districts,List.of());
     }
     public static ArenaDefinition load() { return Configs.load("arena",ArenaDefinition.class); }
     public List<Spawn> shuffledSpawns(long seed) {
@@ -270,7 +308,7 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
     }
     public ArenaDefinition withPickups(List<Pickup> replacement) {
         return new ArenaDefinition(schemaVersion,id,metadata,bounds,boxes,ramps,spawns,replacement,hazards,nodes,edges,
-                surfaces,launchPads,drops,destructibles,secrets,barriers,bosses,layoutRevision,meshes,districts);
+                surfaces,launchPads,drops,destructibles,secrets,barriers,bosses,layoutRevision,meshes,districts,roads);
     }
     public Optional<Surface> surfaceAt(Vector3f point,float inset,float tolerance) {
         Surface found=null;float nearest=tolerance;

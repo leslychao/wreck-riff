@@ -73,7 +73,7 @@ public final class NativeMenuAudioReview extends SimpleApplication {
         var app=new NativeMenuAudioReview(options);var settings=new AppSettings(true);
         settings.setTitle("Wreck Riff / "+(options.music?"Menu and music review":options.profile+" full turn"));
         settings.setResolution(1280,720);settings.setSamples(4);settings.setGammaCorrection(true);
-        settings.setVSync(false);settings.setFrameRate(60);
+        settings.setVSync(false);settings.setFrameRate(RECORDING_FPS);
         app.setSettings(settings);app.setShowSettings(false);app.start(JmeContext.Type.Display);
         if(!app.ended.await(240,TimeUnit.SECONDS)) {
             app.failure="Real-window recording exceeded the 240-second wall-time limit";app.stop();

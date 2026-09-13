@@ -35,7 +35,7 @@ class LargeMapProgressMigrationTest {
             var cp=saved.campaign().checkpoint();assertNotNull(cp,store.warning());
             assertEquals(stage,cp.stage());assertEquals(profile,cp.profileId());assertEquals(773,cp.activeTicksBeforeBoss());
             var before=JSON.fromJson(original.getAsJsonObject("campaign").get("checkpoint"),HistoricalCheckpoint.class);
-            assertEquals(before.player(),cp.player());assertEquals(before.seed(),cp.seed());assertEquals(before.liveryId(),cp.liveryId());
+            assertEquals(before.player().withoutAmmunition(),cp.player());assertEquals(before.seed(),cp.seed());assertEquals(before.liveryId(),cp.liveryId());
             assertNotEquals(before.safePose(),cp.safePose());assertNotEquals(before.arena(),cp.arena());
             assertEquals(CURRENT_LAYOUT_REVISION,cp.layoutRevision());
             assertDoesNotThrow(()->MatchCheckpoint.validateReferences(registry,cp));
@@ -43,7 +43,7 @@ class LargeMapProgressMigrationTest {
             assertTrue(cp.arena().pickups().values().stream().allMatch(p->p.respawnTicks()==0));
             assertTrue(cp.arena().objects().values().stream().noneMatch(ObjectState::destroyed));
             assertEquals(before,saved.historicalLayouts().get("revision-1").checkpoint());
-            assertFalse(saved.records().containsKey(arenaId));assertTrue(saved.records().containsKey(LEGACY_ARENA));
+            assertTrue(saved.records().isEmpty());assertTrue(saved.historicalLayouts().get("revision-1").records().containsKey(LEGACY_ARENA));
             assertTrue(store.flush(TIMEOUT),store.warning());assertEquals(MIGRATION_NOTICE,store.warning());
             assertEquals(bytes,Files.readString(directory.resolve("stats.json.v3.bak")));
             assertEquals(bytes,Files.readString(directory.resolve("stats.json.bak")));
@@ -135,6 +135,35 @@ class LargeMapProgressMigrationTest {
             assertTrue(store.writable());assertEquals(6,store.snapshot().stats().wins());assertTrue(store.flush(TIMEOUT));
         }
         try(var files=Files.list(directory)) {assertTrue(files.anyMatch(p->p.getFileName().toString().startsWith("stats.json.broken-")));}
+    }
+
+    @Test void revisionTwoArchivesCurrentRecordsAndPreservesRevisionOneHistory() throws Exception {
+        var old=original("construction_17","rivet",CheckpointStage.BOSS);
+        var oldCheckpoint=JSON.fromJson(old.getAsJsonObject("campaign").get("checkpoint"),HistoricalCheckpoint.class);
+        var firstHistory=new LayoutHistory(1,"construction_17",Set.of("construction_17"),Set.of(),
+                Map.of("construction_17",new ArenaRecord(1,0,100L,null)),oldCheckpoint);
+        var checkpoint=new Checkpoint("construction_17",2,"rivet",oldCheckpoint.liveryId(),oldCheckpoint.seed(),"normal",CheckpointStage.BOSS,
+                oldCheckpoint.player(),oldCheckpoint.safePose(),oldCheckpoint.arena(),oldCheckpoint.activeTicksBeforeBoss());
+        var prior=new Snapshot(SCHEMA_VERSION,CURRENT_LAYOUT_REVISION,10,9,new Stats(4,3,1,0,12,500),
+                new Campaign("construction_17",Set.of("construction_17"),Set.of(),checkpoint),null,
+                Map.of("construction_17",new ArenaRecord(1,0,120L,null),LEGACY_ARENA,new ArenaRecord(1,0,220L,null)),Map.of("revision-1",firstHistory));
+        var tree=JSON.toJsonTree(prior).getAsJsonObject();tree.addProperty("schemaVersion",4);tree.addProperty("layoutRevision",2);
+        String bytes=tree.toString();Files.writeString(directory.resolve("stats.json"),bytes);
+        var registry=ArenaRegistry.load();Snapshot migrated;
+        try(var store=new ProgressStore(directory,MatchCheckpoint.references(registry))) {
+            assertTrue(store.writable(),store.warning());migrated=store.snapshot();
+            assertEquals(firstHistory,migrated.historicalLayouts().get("revision-1"));
+            assertEquals(prior.records(),migrated.historicalLayouts().get("revision-2").records());
+            assertEquals(oldCheckpoint.player(),migrated.historicalLayouts().get("revision-2").checkpoint().player());
+            assertTrue(migrated.records().isEmpty());assertEquals(prior.stats(),migrated.stats());
+            assertEquals(oldCheckpoint.player().withoutAmmunition(),migrated.campaign().checkpoint().player());
+            assertEquals(CURRENT_LAYOUT_REVISION,migrated.campaign().checkpoint().layoutRevision());
+            assertTrue(store.flush(TIMEOUT),store.warning());
+            assertEquals(bytes,Files.readString(directory.resolve("stats.json.v4.bak")));
+        }
+        try(var reopened=new ProgressStore(directory,MatchCheckpoint.references(registry))) {
+            assertEquals(migrated,reopened.snapshot());assertFalse(reopened.savePending());
+        }
     }
 
     static JsonObject original(String current,String profile,CheckpointStage stage) {

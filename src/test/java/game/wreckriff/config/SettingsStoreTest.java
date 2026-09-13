@@ -25,7 +25,7 @@ class SettingsStoreTest {
                 """;
         Path file=directory.resolve("settings.json");Files.writeString(file,original);
         SettingsStore store=new SettingsStore(directory);
-        assertFalse(store.firstRun());assertEquals(4,store.settings().schemaVersion);
+        assertFalse(store.firstRun());assertEquals(5,store.settings().schemaVersion);
         assertEquals(1600,store.settings().width);assertEquals(900,store.settings().height);
         assertFalse(store.settings().fullscreen);assertEquals(.35f,store.settings().music);
         assertEquals(KeyInput.KEY_Z,store.settings().keys.get("Throttle"));
@@ -58,11 +58,11 @@ class SettingsStoreTest {
                  "keys":{"Recover":6,"Shield":33,"Freeze":44,"Rear view":0}}
                 """);
         var store=new SettingsStore(directory);var settings=store.settings();
-        assertEquals(4,settings.schemaVersion);assertEquals(1600,settings.width);assertEquals(.35f,settings.music);
-        assertEquals(KeyInput.KEY_5,settings.keys.get("Recover"));assertEquals(0,settings.keys.get("Select Ballistic"));
-        assertEquals(KeyInput.KEY_6,settings.keys.get("Select Cannon"));assertEquals(0,settings.keys.get("Rear view"));
+        assertEquals(5,settings.schemaVersion);assertEquals(1600,settings.width);assertEquals(.35f,settings.music);
+        assertEquals(KeyInput.KEY_5,settings.keys.get("Recover"));assertEquals(0,settings.keys.get("Select Cannon"));
+        assertEquals(KeyInput.KEY_4,settings.keys.get("Select Ballistic"));assertEquals(0,settings.keys.get("Rear view"));
         assertEquals(KeyInput.KEY_F,settings.keys.get("Shield"));assertEquals(KeyInput.KEY_Z,settings.keys.get("Freeze"));
-        assertFalse(settings.keys.containsValue(KeyInput.KEY_X));assertTrue(store.bindingWarning().contains("Select Ballistic"));
+        assertFalse(settings.keys.containsValue(KeyInput.KEY_X));assertTrue(store.bindingWarning().contains("Select Cannon"));
         store.saveSettings();assertEquals(settings.keys,new SettingsStore(directory).settings().keys);
     }
     @Test void firstRunIsDifferentFromKnownOrDamagedUserSettings() throws Exception {
@@ -83,6 +83,30 @@ class SettingsStoreTest {
         Files.writeString(path,future);
         SettingsStore store=new SettingsStore(directory);store.settings().master=.1f;store.saveSettings();
         assertEquals(future,Files.readString(path));assertTrue(store.warning().contains("preserved"));
+    }
+    @Test void schemaFourMigratesTheWholeDefaultArsenalTupleAndPreservesOtherPreferences() throws Exception {
+        var previous=new SettingsStore.Settings();previous.schemaVersion=4;previous.width=1600;previous.music=.31f;
+        previous.keys.put("Select Mine",KeyInput.KEY_3);previous.keys.put("Select Napalm",KeyInput.KEY_4);
+        previous.keys.put("Select Ballistic",KeyInput.KEY_5);previous.keys.put("Select Cannon",KeyInput.KEY_6);
+        previous.keys.put("Recover",KeyInput.KEY_T);
+        String original=Configs.gson().toJson(previous);Files.writeString(directory.resolve("settings.json"),original);
+        var migrated=new SettingsStore(directory).settings();
+        assertEquals(5,migrated.schemaVersion);assertEquals(1600,migrated.width);assertEquals(.31f,migrated.music);
+        for(String action:List.of("Select Homing","Select Power","Select Napalm","Select Ballistic","Select Cannon","Select Mine"))
+            assertEquals(SettingsStore.defaultKeys().get(action),migrated.keys.get(action));
+        assertEquals(KeyInput.KEY_T,migrated.keys.get("Recover"));
+        assertEquals(original,Files.readString(directory.resolve("settings.json.v4.bak")));
+        assertEquals(migrated.keys,new SettingsStore(directory).settings().keys);
+    }
+    @Test void aSingleCustomOrDisabledWeaponBindingPreservesTheEntireOldTuple() throws Exception {
+        for(int edited:new int[]{KeyInput.KEY_Y,0}) {
+            var previous=new SettingsStore.Settings();previous.schemaVersion=4;
+            previous.keys.put("Select Mine",KeyInput.KEY_3);previous.keys.put("Select Napalm",KeyInput.KEY_4);
+            previous.keys.put("Select Ballistic",KeyInput.KEY_5);previous.keys.put("Select Cannon",KeyInput.KEY_6);
+            previous.keys.put("Select Power",edited);
+            Files.writeString(directory.resolve("settings.json"),Configs.gson().toJson(previous));
+            assertEquals(previous.keys,new SettingsStore(directory).settings().keys);
+        }
     }
     @Test void damagedJsonIsRetainedAndDefaultsCanBeSavedAsUtf8WithoutBom() throws Exception {
         Files.writeString(directory.resolve("settings.json"),"{bad-json",StandardCharsets.UTF_8);

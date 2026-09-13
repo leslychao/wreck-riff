@@ -45,6 +45,19 @@ class ArenaRulesTest {
         assertFalse(graph.crossesHazard(new Vector3f(0,6,-36),new Vector3f(0,6,-12)));
         assertFalse(graph.crossesHazard(new Vector3f(-20,0,-36),new Vector3f(-20,0,-12)));
     }
+    @Test void oneSupplySearchMatchesIndividualRoutesIncludingHazardAndFloorCosts() {
+        NavGraph graph=new NavGraph(arena);
+        var goals=Set.of(4,17,25,33,36);var mobility=NavGraph.Mobility.car();
+        for(var hazards:List.of(Set.<String>of(),arena.hazards().stream().map(ArenaDefinition.Hazard::id).collect(java.util.stream.Collectors.toSet()))) {
+            var routes=graph.routes(0,goals,mobility,hazards,8,150);
+            assertEquals(goals,routes.keySet());
+            for(int goal:goals) {
+                var direct=graph.route(0,goal,mobility,hazards,8,150);
+                assertEquals(direct.cost(),routes.get(goal).cost(),.001f);
+                assertEquals(0,routes.get(goal).nodes().getFirst());assertEquals(goal,routes.get(goal).nodes().getLast());
+            }
+        }
+    }
     @Test void geometryUsesExactSharedRampDeckTopAndWideOpenGarage() {
         var deck=arena.boxes().stream().filter(b->b.id().equals("upper-deck")).findFirst().orElseThrow();
         float top=deck.center().y()+deck.size().y()/2;

@@ -15,7 +15,7 @@ class BotArsenalAndWarningsTest {
     private final AiRules rules=AiRules.load();
 
     @Test void allSixWeaponsAreActuallyRequestedWhenUsefulAndReady() {
-        MatchSession session=new MatchSession(42,360);World world=new World();
+        MatchSession session=armedSession();World world=new World();
         world.positions[1]=new Vector3f(0,.8f,-15);
         world.positions[2]=new Vector3f(-7,.8f,-54);world.velocities[2]=new Vector3f(0,0,6);
         BotController bots=new BotController(session,arena,rules);EnumSet<WeaponType> used=EnumSet.noneOf(WeaponType.class);
@@ -31,7 +31,7 @@ class BotArsenalAndWarningsTest {
         assertEquals(EnumSet.allOf(WeaponType.class),used);
     }
     @Test void cooldownAndEmptyAmmoCannotBlockAnotherReadyWeaponOrRequestAnInvalidShot() {
-        MatchSession session=new MatchSession(42,360);World world=new World();world.positions[1]=new Vector3f(0,.8f,-15);
+        MatchSession session=armedSession();World world=new World();world.positions[1]=new Vector3f(0,.8f,-15);
         for(WeaponType weapon:WeaponType.values())session.vehicle(0).weapon(weapon).cooldownTicks=240;
         BotController bots=new BotController(session,arena,rules);
         for(int tick=0;tick<72;tick++) {session.tick=tick;assertFalse(bots.commands(world).get(0).selectedWeapon());}
@@ -54,18 +54,24 @@ class BotArsenalAndWarningsTest {
         assertFalse(ballisticRequested(35,true,false));
         assertFalse(ballisticRequested(35,false,true));
     }
-    @Test void exhaustedNewAmmoFindsTheCorrectAuthoredPickupThroughTheExistingGraph() {
-        for(WeaponType weapon:List.of(WeaponType.BALLISTIC,WeaponType.CANNON)) {
-            MatchSession session=new MatchSession(42,360);World world=new World();
-            session.vehicle(0).weapon(weapon).ammo=0;BotController bots=new BotController(session,arena,rules);
-            bots.commands(world);
-            ArenaDefinition.PickupType type=weapon==WeaponType.BALLISTIC?ArenaDefinition.PickupType.BALLISTIC_AMMO:ArenaDefinition.PickupType.CANNON_AMMO;
-            assertEquals(BotController.State.SEEK_PICKUP,bots.state(0));
-            assertTrue(arena.pickups().stream().anyMatch(p->p.type()==type&&p.position().vector().equals(bots.metrics(0).destination())));
-        }
+    @Test void emptyCarChoosesNearbyPowerInsteadOfDistantHomingOrNearbyMines() {
+        MatchSession session=new MatchSession(42,360);World world=new World();NavGraph graph=new NavGraph(arena);
+        int start=graph.nearest(world.position(0));
+        int next=graph.links(start).stream().filter(e->e.type()==ArenaDefinition.Transition.ROAD).findFirst().orElseThrow().to();
+        var nearby=new ArenaDefinition.Pickup("near-power",ArenaDefinition.PickupType.POWER_AMMO,new ArenaDefinition.Vec3(graph.position(next).x,graph.position(next).y,graph.position(next).z),3000);
+        var local=arena.withPickups(List.of(nearby,
+                new ArenaDefinition.Pickup("distant-homing",ArenaDefinition.PickupType.HOMING_AMMO,new ArenaDefinition.Vec3(54,6,0),3000),
+                new ArenaDefinition.Pickup("near-mines",ArenaDefinition.PickupType.MINE_AMMO,new ArenaDefinition.Vec3(0,0,-45),3000)));
+        var bots=new BotController(session,local,rules);bots.commands(world);
+        assertEquals(BotController.State.SEEK_PICKUP,bots.state(0));
+        assertEquals(nearby.position().vector(),bots.metrics(0).destination());
+        session.vehicle(0).weapon(WeaponType.POWER).ammo=2;
+        world.positions[1]=new Vector3f(0,.8f,-15);session.tick=12;bots.commands(world);
+        assertEquals(BotController.State.ATTACK,bots.state(0),"A collected weapon is enough to engage a visible opponent");
+        assertEquals(0,session.vehicle(0).weapon(WeaponType.HOMING).ammo);
     }
     @Test void visibleSameFloorWarningUsesAnOutsideGraphDestinationAndImminentShieldThenExpires() {
-        MatchSession session=new MatchSession(42,360);World world=new World();BotController bots=new BotController(session,arena,rules);
+        MatchSession session=armedSession();World world=new World();BotController bots=new BotController(session,arena,rules);
         Vector3f impact=world.position(0).add(0,-.8f,0);
         List<CombatSystem.BallisticWarningView> warnings=new ArrayList<>();
         warnings.add(new CombatSystem.BallisticWarningView(1,1,impact,Vector3f.UNIT_Y,6,18));bots.observeBallisticWarnings(()->warnings);
@@ -79,7 +85,7 @@ class BotArsenalAndWarningsTest {
     }
     @Test void wallsRoofsOtherFloorsAndExpiredWarningsCannotRevealDangerOrTriggerShield() {
         for(String hidden:List.of("wall","roof","other-floor","expired","behind")) {
-            MatchSession session=new MatchSession(42,360);World world=new World();BotController bots=new BotController(session,arena,rules);
+            MatchSession session=armedSession();World world=new World();BotController bots=new BotController(session,arena,rules);
             Vector3f point=world.position(0).add(0,-.8f,0);int ticks=18;
             if(hidden.equals("wall"))world.wall=true;
             if(hidden.equals("roof")) {point.y=1.8f;world.wall=true;}
@@ -93,13 +99,18 @@ class BotArsenalAndWarningsTest {
         }
     }
     @Test void aCarAlreadyLeavingBeforeImpactKeepsItsShield() {
-        MatchSession session=new MatchSession(42,360);World world=new World();world.velocities[0]=new Vector3f(0,0,28);
+        MatchSession session=armedSession();World world=new World();world.velocities[0]=new Vector3f(0,0,28);
         BotController bots=new BotController(session,arena,rules);
         bots.observeBallisticWarnings(()->List.of(new CombatSystem.BallisticWarningView(1,1,new Vector3f(0,0,-45),Vector3f.UNIT_Y,6,60)));
         assertNotEquals(AbilityId.SHIELD,bots.commands(world).get(0).ability());
     }
+    private static MatchSession armedSession() {
+        var session=new MatchSession(42,360);
+        for(var vehicle:session.vehicles)for(var type:WeaponType.values())vehicle.weapon(type).ammo=2;
+        return session;
+    }
     private boolean napalmRequested(float distance,float degrees,Vector3f velocity) {
-        MatchSession session=new MatchSession(42,360);World world=new World();
+        MatchSession session=armedSession();World world=new World();
         float angle=(float)Math.toRadians(degrees);
         world.positions[1]=world.muzzle(0).add((float)Math.sin(angle)*distance,0,(float)Math.cos(angle)*distance);
         world.velocities[1]=velocity;
@@ -107,7 +118,7 @@ class BotArsenalAndWarningsTest {
         return requested(session,world,WeaponType.NAPALM);
     }
     private boolean ballisticRequested(float distance,boolean ceiling,boolean hidden) {
-        MatchSession session=new MatchSession(42,360);World world=new World();world.positions[1]=world.muzzle(0).add(0,0,distance);
+        MatchSession session=armedSession();World world=new World();world.positions[1]=world.muzzle(0).add(0,0,distance);
         world.ceiling=ceiling;world.hideTarget=hidden;
         for(WeaponType weapon:WeaponType.values())if(weapon!=WeaponType.BALLISTIC)session.vehicle(0).weapon(weapon).cooldownTicks=240;
         return requested(session,world,WeaponType.BALLISTIC);
