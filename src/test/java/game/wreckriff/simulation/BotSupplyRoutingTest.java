@@ -67,6 +67,16 @@ class BotSupplyRoutingTest {
         assertEquals(before+1,rig.graph.searchCount(),"Opening a real passage invalidates the cached multi-goal route exactly once");
     }
 
+    @Test void aNewlyObservedHazardReplacesTheDrivingRouteBeforeItsPeriodicReplanTimer() {
+        var source=ArenaDefinition.load();
+        var rig=new Rig(source.withPickups(List.of(pickup(source,"beyond-electric",ArenaDefinition.PickupType.HOMING_AMMO,25))),17);
+        var hazards=new AtomicReference<List<ArenaDefinition.Hazard>>(List.of());rig.bots.observeHazards(hazards::get);
+        rig.bots.commands(rig.world);assertTrue(rig.bots.route(0).contains(39));
+        hazards.set(source.hazards());rig.session.tick=12;rig.bots.commands(rig.world);
+        assertFalse(rig.bots.route(0).contains(39),"The new cached supply route replaces the old dangerous corridor immediately");
+        assertEquals(2,rig.graph.searchCount());
+    }
+
     @Test void prefectWithOnlyMinesStillSeeksHomingBeforeStartingAnOffensiveRun() {
         var source=Configs.load("arena-neon-zero",ArenaDefinition.class);var graph=new NavGraph(source);
         var arena=source.withPickups(List.of(pickup(source,"near-mine",ArenaDefinition.PickupType.MINE_AMMO,1),

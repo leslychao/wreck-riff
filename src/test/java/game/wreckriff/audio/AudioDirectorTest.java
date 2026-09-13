@@ -33,7 +33,7 @@ class AudioDirectorTest {
                 AudioNode activation=find(scene,"sound-hazard-"+kind+"-active");assertNotNull(activation,kind);
                 assertEquals(AudioSource.Status.Stopped,alert.getStatus());assertNull(alert.getParent());
                 assertTrue(activation.isPositional());assertFalse(activation.isLooping());assertEquals(upperDeck,activation.getLocalTranslation());
-                assertEquals(2,director.voiceCount());assertEquals(0,director.pendingImpactCount());
+                assertEquals(2,director.voiceCount());
                 assertNull(find(scene,"sound-hazard-warning"));assertNull(find(scene,"sound-hazard-active"));
             }
             int before=director.voiceCount();
@@ -83,7 +83,7 @@ class AudioDirectorTest {
             assertEquals(30,director.voiceCount());assertEquals(2,director.musicSourceCount());
             assertSame(warning,find(scene,"sound-hazard-crane-warning"));assertSame(active,find(scene,"sound-hazard-traffic-active"));
             double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
-            assertTrue(total[0]<=1.000001);assertEquals(0,director.pendingImpactCount());
+            assertTrue(total[0]<=1.000001);
         }
     }
 
@@ -164,7 +164,7 @@ class AudioDirectorTest {
                 assertEquals(before+1,director.voiceCount(),"Duplicate delivery must not replay a pickup");
                 AudioNode node=find(scene,"sound-pickup-"+cue.getValue());assertNotNull(node,cue.getKey());
                 assertFalse(node.isPositional(),"Own confirmation remains clear at any camera distance");
-                assertFalse(node.isLooping());assertEquals(0,director.pendingImpactCount());
+                assertFalse(node.isLooping());
             }
             int before=director.voiceCount();
             director.accept(List.of(event(GameEvent.Type.PICKUP,id++,0,0,"cannon-ammo",0),
@@ -218,7 +218,7 @@ class AudioDirectorTest {
             AudioNode warning=find(scene,"sound-hazard-warning"),danger=find(scene,"sound-hazard-active");
             List<GameEvent> flood=new ArrayList<>();
             for(int i=0;i<200;i++)flood.add(event(GameEvent.Type.PICKUP,i,0,0,"homing-ammo",1));
-            director.accept(flood);assertEquals(30,director.voiceCount());assertEquals(0,director.pendingImpactCount());
+            director.accept(flood);assertEquals(30,director.voiceCount());
             assertSame(warning,find(scene,"sound-hazard-warning"));assertSame(danger,find(scene,"sound-hazard-active"));
             double[] total={0};scene.depthFirstTraversal(node->{if(node instanceof AudioNode audio)total[0]+=audio.getVolume();});
             assertTrue(total[0]<=1.000001,"Pickup rush respects the shared mix ceiling");
@@ -518,7 +518,7 @@ class AudioDirectorTest {
                     AudioData sample=node.getAudioData();if(prior!=null)assertNotSame(prior,sample);
                     samples.add(sample);prior=sample;
                     assertNull(find(scene,"sound-metal-hit"));assertNull(find(scene,"sound-machine-gun"));
-                    assertEquals(0,director.pendingImpactCount());
+                    
                 }
                 assertEquals(3,samples.size(),cue.bank);
             }
@@ -552,8 +552,7 @@ class AudioDirectorTest {
                     event(GameEvent.Type.SHIELD_HIT,71,1,0,"machine-gun",6),
                     event(GameEvent.Type.SHIELD_HIT,71,2,0,"machine-gun",6));
             director.accept(events);
-            assertEquals(baseline+3,director.voiceCount());
-            assertEquals(1,director.pendingImpactCount());
+            assertEquals(baseline+4,director.voiceCount());
             director.update(session,world(Vector3f.ZERO),.05f);
             assertEquals(baseline+4,director.voiceCount());
             assertEquals(muzzle,find(scene,"sound-machine-gun").getLocalTranslation());
@@ -564,25 +563,21 @@ class AudioDirectorTest {
             assertEquals(baseline+4,director.voiceCount(),"Retry clears event dedupe state");
         }
     }
-    @Test void bulletContactDelayIsSharedBoundedPausedAndClearedByDeathOrRetry() {
+    @Test void deliveredBulletContactPlaysAtTheSharedTimelineDeadlineWithoutASecondAudioDelay() {
         Node scene=new Node();MatchSession session=match(42,180);
         try(AudioDirector director=new AudioDirector(new DesktopAssetManager(true),renderer(),new Listener(),scene)) {
             director.startMatch(SESSION_ID,MUSIC,MUSIC);director.update(session,world(Vector3f.ZERO),.01f);
             GameEvent hit=new GameEvent(GameEvent.Type.IMPACT,901,1,0,new Vector3f(18,0,0),"machine-gun",6,Vector3f.ZERO,Vector3f.UNIT_Y).inSession(SESSION_ID);
             assertEquals(.1f,hit.cosmeticImpactDelaySeconds(),1e-6);
-            director.accept(List.of(hit));assertNull(find(scene,"sound-metal-hit"));
+            var timeline=new game.wreckriff.presentation.ContactPresentationTimeline(SESSION_ID);
+            director.accept(timeline.accept(List.of(hit),0));assertNull(find(scene,"sound-metal-hit"));
             director.pause();director.update(session,world(Vector3f.ZERO),.1f);
-            assertEquals(1,director.pendingImpactCount());assertNull(find(scene,"sound-metal-hit"));
-            director.resume();director.update(session,world(Vector3f.ZERO),.05f);
-            assertNull(find(scene,"sound-metal-hit"));director.update(session,world(Vector3f.ZERO),.051f);
-            assertNotNull(find(scene,"sound-metal-hit"));assertEquals(0,director.pendingImpactCount());
-            List<GameEvent> flood=new ArrayList<>();
-            for(int i=0;i<160;i++)flood.add(new GameEvent(GameEvent.Type.SHIELD_HIT,1000+i,1,0,new Vector3f(18,0,0),"machine-gun",6).inSession(SESSION_ID));
-            director.accept(flood);assertEquals(128,director.pendingImpactCount());
-            director.accept(List.of(event(GameEvent.Type.DESTROYED,2000,1,0,"destroyed",1)));
-            assertEquals(0,director.pendingImpactCount());
-            director.accept(List.of(new GameEvent(GameEvent.Type.IMPACT,3000,-1,0,new Vector3f(18,0,0),"machine-gun",6).inSession(SESSION_ID)));
-            assertEquals(1,director.pendingImpactCount());director.startMatch(SESSION_ID,MUSIC,MUSIC);assertEquals(0,director.pendingImpactCount());
+            assertEquals(1,timeline.pendingCount());assertNull(find(scene,"sound-metal-hit"));
+            director.resume();director.accept(timeline.advanceTo(.05));
+            assertNull(find(scene,"sound-metal-hit"));director.accept(timeline.advanceTo(.101));
+            assertNotNull(find(scene,"sound-metal-hit"));assertEquals(0,timeline.pendingCount());
+            timeline.close();director.startMatch(SESSION_ID,MUSIC,MUSIC);
+            assertNull(find(scene,"sound-metal-hit"));
         }
     }
     private static MatchSession match(long seed,int seconds) {

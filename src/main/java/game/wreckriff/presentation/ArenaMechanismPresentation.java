@@ -10,7 +10,7 @@ import com.jme3.scene.control.AbstractControl;
 import game.wreckriff.arena.ArenaDefinition;
 import game.wreckriff.arena.ArenaSystems;
 import game.wreckriff.simulation.MatchSession;
-import game.wreckriff.presentation.VehicleVisual.Builder;
+
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -78,7 +78,7 @@ public final class ArenaMechanismPresentation extends AbstractControl implements
         return node;
     }
     private void crane(Node node,Vector3f h) {
-        Builder load=new Builder(),frame=new Builder(),mark=new Builder();
+        SurfaceAuthor load=new SurfaceAuthor(),frame=new SurfaceAuthor(),mark=new SurfaceAuthor();
         load.box(0,-h.y*.06f,0,h.x*.96f,h.y*.86f,h.z*.96f);
         // Layer seams and steel retaining bands make an eight-metre suspended load readable at arena scale.
         for(float y:new float[]{-.47f,.03f,.53f})for(int side:new int[]{-1,1}) {
@@ -94,7 +94,7 @@ public final class ArenaMechanismPresentation extends AbstractControl implements
         mark.attach(node,"load-markings",materials.material("yellow"));
     }
     private void carousel(Node node,Vector3f h) {
-        Builder beam=new Builder(),padding=new Builder(),drive=new Builder();
+        SurfaceAuthor beam=new SurfaceAuthor(),padding=new SurfaceAuthor(),drive=new SurfaceAuthor();
         beam.box(0,0,0,h.x*.985f,h.y*.64f,h.z*.69f);
         for(int side:new int[]{-1,1}) {
             padding.box(side*h.x*.82f,0,0,h.x*.18f,h.y*.95f,h.z*.95f);
@@ -112,7 +112,7 @@ public final class ArenaMechanismPresentation extends AbstractControl implements
     private void traffic(Node node,Vector3f half,ArenaDefinition.Hazard hazard) {
         // Author a service van with +Z nose, then orient its mesh inside the native X-long body.
         float w=half.z,h=half.y,l=half.x;
-        Builder body=new Builder(),metal=new Builder(),dark=new Builder(),glass=new Builder(),lamps=new Builder();
+        SurfaceAuthor body=new SurfaceAuthor(),metal=new SurfaceAuthor(),dark=new SurfaceAuthor(),glass=new SurfaceAuthor(),lamps=new SurfaceAuthor();
         body.loft(new float[][]{{-l*.97f,w*.83f,-h*.60f,h*.18f},{-l*.82f,w*.94f,-h*.62f,h*.32f},
                 {l*.74f,w*.91f,-h*.62f,h*.30f},{l*.98f,w*.76f,-h*.49f,h*.02f}});
         body.loft(new float[][]{{-l*.74f,w*.78f,h*.22f,h*.86f},{-l*.62f,w*.79f,h*.22f,h*.95f},
@@ -148,7 +148,7 @@ public final class ArenaMechanismPresentation extends AbstractControl implements
             float along=endpoint==0?start:end;Node marker=new Node("service-"+(endpoint==0?"entry-":"exit-")+hazard.id());
             marker.setLocalTranslation(cx+(alongX?along:0),hazard.minY()+.108f,cz+(alongX?0:along));
             if(!alongX)marker.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y));
-            Builder paint=new Builder();
+            SurfaceAuthor paint=new SurfaceAuthor();
             for(int stripe=-3;stripe<=3;stripe++)paint.box(0,0,stripe*.55f,.30f,.004f,.17f);
             paint.attach(marker,"service-threshold",materials.material("ivory"));marker.setShadowMode(RenderQueue.ShadowMode.Off);
             marker.setUserData("hazardId",hazard.id());root.attachChild(marker);

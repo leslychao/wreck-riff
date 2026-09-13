@@ -397,7 +397,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             Vector3f firstPoint=a==first?event.getPositionWorldOnA():event.getPositionWorldOnB();
             Vector3f secondPoint=a==second?event.getPositionWorldOnA():event.getPositionWorldOnB();
             rams.put(key,new Ram(first,second,closing,point,normal,
-                    vehicleContact(first,firstPoint,normal),vehicleContact(second,secondPoint,normal.negate())));
+                    vehicleContact(first,firstPoint,normal.negate()),vehicleContact(second,secondPoint,normal)));
         }
     }
     private void observeArenaContact(PhysicsCollisionEvent event,Integer a,Integer b) {

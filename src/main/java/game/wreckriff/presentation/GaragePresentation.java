@@ -149,8 +149,8 @@ public final class GaragePresentation implements AutoCloseable {
         box(room,"workshop-outer-right",floor,120,35,61,.2f,35,69,3);
         box(room,"workshop-front-wall",floor,0,35,130,120,35,.2f,3);
         // Corrugated steel shutter, bolted support frames and roof trusses anchor the room in real metres.
-        var dark=new VehicleVisual.Builder();var structure=new VehicleVisual.Builder();
-        var wear=new VehicleVisual.Builder();var warm=new VehicleVisual.Builder();var cool=new VehicleVisual.Builder();
+        var dark=new SurfaceAuthor();var structure=new SurfaceAuthor();
+        var wear=new SurfaceAuthor();var warm=new SurfaceAuthor();var cool=new SurfaceAuthor();
         dark.box(0,2.5f,-7.65f,4.2f,2.5f,.12f);
         for(int rib=0;rib<26;rib++)structure.box(0,.17f+rib*.19f,-7.49f,4.1f,.035f,.038f);
         for(float x:new float[]{-10,-5,5,10}) {
@@ -199,7 +199,7 @@ public final class GaragePresentation implements AutoCloseable {
         wear.attach(room,"workshop-worn-trim",rust);warm.attach(room,"workshop-warm-fixtures",amber);cool.attach(room,"workshop-cool-fixtures",cyan);
         room.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         for(int stack=0;stack<3;stack++) {
-            Node tyre=VehicleVisual.wheel(stack,metal,surfaces.rubber());tyre.setName("spare-tyre-"+stack);
+            Node tyre=SurfaceAuthor.wheel(stack,metal,surfaces.rubber());tyre.setName("spare-tyre-"+stack);
             tyre.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Z));
             tyre.setLocalTranslation(5.6f,.21f+stack*.31f,-4.8f);room.attachChild(tyre);
         }
@@ -207,17 +207,17 @@ public final class GaragePresentation implements AutoCloseable {
 
     private void buildTurntable(Node room,Material steel,Material metal,Material rust) {
         room.attachChild(turntable);
-        var base=new VehicleVisual.Builder();base.cylinderZ(0,0,0,4.42f,.075f,96);
+        var base=new SurfaceAuthor();base.cylinderZ(0,0,0,4.42f,.075f,96);
         base.attach(room,"turntable-bearing",metal);
         Spatial bearing=room.getChild("turntable-bearing");
         bearing.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_X));
         bearing.setLocalTranslation(0,.0375f,0);
-        var deck=new VehicleVisual.Builder();deck.cylinderZ(0,0,0,4.30f,DECK_HEIGHT,96);
+        var deck=new SurfaceAuthor();deck.cylinderZ(0,0,0,4.30f,DECK_HEIGHT,96);
         deck.attach(turntable,"service-deck",steel);
         Spatial surface=turntable.getChild("service-deck");
         surface.setLocalRotation(new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_X));
         surface.setLocalTranslation(0,DECK_HEIGHT/2,0);
-        var seams=new VehicleVisual.Builder();var markings=new VehicleVisual.Builder();
+        var seams=new SurfaceAuthor();var markings=new SurfaceAuthor();
         for(int index=0;index<32;index++) {
             float angle=index*FastMath.TWO_PI/32,x=FastMath.sin(angle),z=FastMath.cos(angle);
             seams.box(x*4.16f,DECK_HEIGHT+.008f,z*4.16f,.025f,.008f,.025f);
@@ -234,11 +234,11 @@ public final class GaragePresentation implements AutoCloseable {
         markings.attach(turntable,"turntable-index-marks",rust);
     }
 
-    private void buildFan(Node room,VehicleVisual.Builder dark,VehicleVisual.Builder structure,Material metal) {
+    private void buildFan(Node room,SurfaceAuthor dark,SurfaceAuthor structure,Material metal) {
         dark.cylinderZ(8.9f,5.25f,-7.25f,.94f,.23f,48);
         structure.cylinderZ(8.9f,5.25f,-7.09f,.14f,.22f,20);
         fan.setLocalTranslation(8.9f,5.25f,-7.10f);room.attachChild(fan);
-        var blades=new VehicleVisual.Builder();
+        var blades=new SurfaceAuthor();
         for(int index=0;index<5;index++) {
             Quaternion rotation=new Quaternion().fromAngleAxis(index*FastMath.TWO_PI/5,Vector3f.UNIT_Z);
             blades.quad(rotation.mult(new Vector3f(.11f,-.05f,.06f)),rotation.mult(new Vector3f(.78f,-.19f,.03f)),
@@ -252,7 +252,7 @@ public final class GaragePresentation implements AutoCloseable {
     }
 
     private void buildCables(Node room,Material material) {
-        var cables=new VehicleVisual.Builder();
+        var cables=new SurfaceAuthor();
         for(int cable=0;cable<3;cable++)for(int part=0;part<32;part++) {
             float phase=part/31f;
             Vector3f from=new Vector3f(-8.9f+phase*4.6f,.038f,-4.3f+cable*.16f+.58f*FastMath.sin(phase*FastMath.PI*2));

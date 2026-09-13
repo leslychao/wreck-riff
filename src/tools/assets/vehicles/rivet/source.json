@@ -1,10 +1,10 @@
 {
   "id": "rivet",
   "lodTriangles": [
-    15060,
-    5796,
-    2532
+    16788,
+    6116,
+    996
   ],
-  "sourceBlendSha256": "7fe5621a13b3e8a61f7f89aae7c45740b5887a6279c3f933c9d6bf1a6a880961",
-  "meshSha256": "e89feeff77bf6157137fb93f3bdf226edbc223ca5c0ad95df7ddda366a3a7534"
+  "sourceBlendSha256": "b60caba0afdbd764fa5a5b466012b54d0b86b62279e89a583d596ff40b5bbbde",
+  "meshSha256": "d41fbd81677c579f2b870efd8b1baeb95459b7426242444dabb36c4cd3928ba7"
 }

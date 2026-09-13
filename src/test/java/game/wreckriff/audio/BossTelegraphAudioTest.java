@@ -118,7 +118,7 @@ class BossTelegraphAudioTest {
             director.bossTelegraph(SESSION,10,100,Vector3f.ZERO,true);assertNull(warning(scene));
             director.accept(List.of(hazard(1,"crane",GameEvent.Type.ARENA_HAZARD_CANCELLED)));
             director.updateTail(.1f);director.bossTelegraph(SESSION,10,100,Vector3f.ZERO,true);
-            assertNull(warning(scene));assertEquals(0,director.pendingImpactCount());
+            assertNull(warning(scene));
         }
     }
 

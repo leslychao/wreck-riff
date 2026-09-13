@@ -114,7 +114,7 @@ public final class MatchRuntime implements AutoCloseable {
         arenaSystems.afterPhysics(world,drivers);
         combatStarted=stamp();combat.advanceProjectiles(world);
         for (var ram:world.rams()) {
-            combat.queueRam(ram.first(),ram.second(),ram.closingSpeed(),ram.point(),ram.normal());
+            combat.queueRam(ram.first(),ram.second(),ram.closingSpeed(),ram.point(),ram.normal(),ram.firstContact(),ram.secondContact());
             if(ram.first()==session.bossParticipantId||ram.second()==session.bossParticipantId)bots.confirmRamContact(session.bossParticipantId,session.tick);
         }
         for(var contact:world.arenaContacts())combat.queueArenaRam(contact.objectId(),contact.vehicleId(),contact.closingSpeed());
@@ -131,12 +131,17 @@ public final class MatchRuntime implements AutoCloseable {
         if(events.stream().anyMatch(event->event.type()==GameEvent.Type.LANDED&&event.subjectId()==session.bossParticipantId))
             arenaSystems.completeBossAction(ArenaSystems.BossAction.LANDED);
         for (var state:session.vehicles) if (state.alive()) drivers.get(state.id).recordSafePose(session.tick);
-        finishTick(session);
+        long completedTick=session.tick;
+        HealthChange repair=finishTick(session);
+        if(repair!=null)events.add(new GameEvent(GameEvent.Type.REPAIRED,Long.MIN_VALUE/8,0,0,world.position(0),"pre-boss-repair",
+                repair.hpAfter()-repair.hpBefore()).withHealthChange(repair));
         if (session.outcome!=MatchSession.Outcome.NONE) {
             events.add(new GameEvent(GameEvent.Type.MATCH_FINISHED,Long.MAX_VALUE,0,-1,world.position(0),session.outcome.name().toLowerCase(Locale.ROOT),0));
             combat.clear();arenaSystems.stop(world);
         }
-        return events.stream().map(e->e.inSession(session.sessionId)).toList();
+        List<GameEvent> ordered=new ArrayList<>(events.size());
+        for(int ordinal=0;ordinal<events.size();ordinal++)ordered.add(events.get(ordinal).inSession(session.sessionId).atTick(completedTick,ordinal));
+        return List.copyOf(ordered);
     }
     public void skipIntro() { if(session.phase==MatchSession.Phase.INTRO)session.transition(MatchSession.Phase.ARENA_COMBAT); }
     public ProgressStore.Checkpoint checkpoint(ProgressStore.CheckpointStage stage) {
@@ -167,8 +172,9 @@ public final class MatchRuntime implements AutoCloseable {
         MatchCheckpoint.restorePlayer(session.vehicle(0),checkpoint.player());
     }
     /** Whole-tick outcome priority is shared by native execution and pure transition tests. */
-    public static void finishTick(MatchSession session) {
-        if(session.outcome!=MatchSession.Outcome.NONE||session.phase==MatchSession.Phase.ERROR)return;
+    public static HealthChange finishTick(MatchSession session) {
+        if(session.outcome!=MatchSession.Outcome.NONE||session.phase==MatchSession.Phase.ERROR)return null;
+        HealthChange repair=null;
         session.tick++;session.phaseTicks++;
         if(session.combatPhase())session.activeTicks++;
         if(session.mode==MatchSession.Mode.LEGACY) {
@@ -177,7 +183,7 @@ public final class MatchRuntime implements AutoCloseable {
             else if(!session.vehicle(0).alive())finish(session,MatchSession.Outcome.DEFEAT,"Rivet destroyed");
             else if(alive==1)finish(session,MatchSession.Outcome.VICTORY,"Last machine standing");
             else if(session.tick>=session.maximumTicks())finish(session,MatchSession.Outcome.DRAW,"Time limit");
-            return;
+            return null;
         }
         if(session.bossParticipantId>=0&&!session.vehicle(session.bossParticipantId).alive()) {
             finish(session,MatchSession.Outcome.VICTORY,session.vehicle(0).alive()?"Босс уничтожен":"Босс уничтожен. Машина уничтожена");
@@ -187,7 +193,8 @@ public final class MatchRuntime implements AutoCloseable {
             session.transition(MatchSession.Phase.ARENA_COMBAT);
         } else if(session.phase==MatchSession.Phase.ARENA_COMBAT&&session.normalRivalsAlive()==0) {
             if(!session.preBossRepairApplied) {
-                var player=session.vehicle(0);player.hp=Math.max(player.hp,player.maximumHp*.65f);
+                var player=session.vehicle(0);float before=player.hp;player.hp=Math.max(player.hp,player.maximumHp*.65f);
+                if(player.hp>before)repair=new HealthChange(before,player.hp);
                 session.preBossRepairApplied=true;session.checkpointRequested=true;
             }
             session.transition(MatchSession.Phase.BOSS_ENTRY);
@@ -199,6 +206,7 @@ public final class MatchRuntime implements AutoCloseable {
             var boss=session.vehicle(session.bossParticipantId);float hp=boss.hp/boss.maximumHp;
             session.bossMode=Math.max(session.bossMode,hp<=.3f?3:hp<=.65f?2:1);
         }
+        return repair;
     }
     private static void finish(MatchSession session,MatchSession.Outcome outcome,String reason) {
         session.outcome=outcome;session.outcomeReason=reason;session.transition(MatchSession.Phase.RESULT);

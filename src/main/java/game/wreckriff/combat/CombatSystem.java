@@ -126,8 +126,13 @@ public final class CombatSystem {
     }
     private record ShotIntent(long id, int ownerId, String kind, int targetId, float pitch, float yaw, int barrel) {}
     private record DamageKey(long eventId, int targetId) {}
-    private record Damage(int targetId, int sourceId, float amount, String cause, long eventId, Vector3f point, Vector3f normal,Vector3f origin) {}
-    private record ControlHit(int targetId,int sourceId,long eventId,Vector3f point,Vector3f normal) {}
+    private record Damage(int targetId, int sourceId, float amount, String cause, long eventId, Vector3f point, Vector3f normal,
+                          Vector3f origin,ContactSurface surface,VehicleContact contact) {}
+    private record ControlHit(int targetId,int sourceId,long eventId,Vector3f point,Vector3f normal,ContactSurface surface,VehicleContact contact) {}
+    private record RamHit(float speed,Vector3f point,Vector3f normal,VehicleContact first,VehicleContact second) {
+        private RamHit {point=point.clone();normal=normal.clone();}
+    }
+    public record FireExposureView(int vehicleId,long zoneId,VehicleContact contact) {}
     private static final class BlastSum { final Vector3f linear=new Vector3f(),torque=new Vector3f();boolean heavy; }
     public record BallisticWarningView(long id,int ownerId,Vector3f point,Vector3f normal,float radius,int remainingTicks) {
         public BallisticWarningView {point=point.clone();normal=normal.clone();}
@@ -192,6 +197,8 @@ public final class CombatSystem {
     private final List<ShotIntent> intents = new ArrayList<>();
     private final List<Damage> damage = new ArrayList<>();
     private final List<GameEvent> events = new ArrayList<>();
+    private long eventTick=-1;
+    private int eventOrdinal;
     private final List<ControlHit> controlHits=new ArrayList<>();
     private final List<Mine> mines=new ArrayList<>();
     private final List<FireZone> fireZones=new ArrayList<>();
@@ -201,10 +208,11 @@ public final class CombatSystem {
     private final Map<Long,FallingCharge> warnings=new LinkedHashMap<>();
     private final Map<Integer,Integer> napalmTargets=new HashMap<>();
     private final Map<Integer,Integer> fireExposureTicks=new HashMap<>();
+    private final Map<Integer,FireExposureView> fireExposures=new LinkedHashMap<>();
     private final Map<Integer, Lock> locks = new HashMap<>();
     private final Map<Integer, SplittableRandom> spreadRandom = new HashMap<>();
     private final Map<Integer, Long> emptyFeedbackAfter = new HashMap<>();
-    private final Map<Pair, Float> ramSpeeds = new TreeMap<>();
+    private final Map<Pair, RamHit> ramHits = new TreeMap<>();
     private final Map<Pair, Long> ramReadyAt = new HashMap<>();
     private final Map<Pair, Long> ramFeedbackAt=new HashMap<>();
     private final Map<Integer, BlastSum> blasts = new TreeMap<>();
@@ -246,7 +254,7 @@ public final class CombatSystem {
                 endControl(vehicle,world);
                 vehicle.shieldTicks=ticks(rules.control().shieldSeconds());
                 vehicle.abilityCooldown(AbilityId.SHIELD,ticks(rules.control().shieldCooldownSeconds()));
-                events.add(event(GameEvent.Type.SHIELD,nextShotId++,vehicle.id,vehicle.id,world.position(vehicle.id),"shield",rules.control().shieldSeconds()));
+                emit(event(GameEvent.Type.SHIELD,nextShotId++,vehicle.id,vehicle.id,world.position(vehicle.id),"shield",rules.control().shieldSeconds()));
             }
         }
         for (VehicleState vehicle : orderedVehicles) {
@@ -290,7 +298,7 @@ public final class CombatSystem {
     }
     private void denied(VehicleState vehicle,WorldQuery world,String reason) {
         if(session.tick<emptyFeedbackAfter.getOrDefault(vehicle.id,Long.MIN_VALUE))return;
-        events.add(event(GameEvent.Type.EMPTY,nextShotId++,vehicle.id,vehicle.id,world.position(vehicle.id),reason,0));
+        emit(event(GameEvent.Type.EMPTY,nextShotId++,vehicle.id,vehicle.id,world.position(vehicle.id),reason,0));
         emptyFeedbackAfter.put(vehicle.id,session.tick+ticks(rules.emptyFeedbackSeconds()));
     }
     private void acceptWeapon(VehicleState vehicle,WorldQuery world) {
@@ -344,11 +352,11 @@ public final class CombatSystem {
                 owner.dashDirection.y=0;owner.dashDirection.normalizeLocal();
                 long id=nextShotId++;
                 specialBombs.add(new SpecialBomb(id,owner.id,support,session.tick+ticks(SpecialRules.BOMB_FUSE)));
-                events.add(new GameEvent(GameEvent.Type.BOMB_PLACED,id,owner.id,owner.id,support.point(),"special-bomb",
+                emit(new GameEvent(GameEvent.Type.BOMB_PLACED,id,owner.id,owner.id,support.point(),"special-bomb",
                         SpecialRules.BOMB_RADIUS,world.position(owner.id),support.normal()));
             }
         }
-        events.add(event(GameEvent.Type.SPECIAL_STARTED,nextShotId++,owner.id,owner.id,world.position(owner.id),owner.profileId,
+        emit(event(GameEvent.Type.SPECIAL_STARTED,nextShotId++,owner.id,owner.id,world.position(owner.id),owner.profileId,
                 owner.specialTicks/(float)MatchSession.TICKS_PER_SECOND));
     }
 
@@ -374,7 +382,7 @@ public final class CombatSystem {
                                 &&world.beginGrab(owner.id,target.id)) {
                             // Cancel an in-progress dodge or windup as soon as the physical capture succeeds.
                             cancelSpecial(target,world);target.grabbedBy=owner.id;
-                            events.add(event(GameEvent.Type.GRAB_STARTED,nextShotId++,target.id,owner.id,world.position(target.id),"grinder",SpecialRules.GRINDER_CONTACT));
+                            emit(event(GameEvent.Type.GRAB_STARTED,nextShotId++,target.id,owner.id,world.position(target.id),"grinder",SpecialRules.GRINDER_CONTACT));
                         }
                         grind(owner,world);
                     } else if(--owner.specialTicks==0)cancelSpecial(owner,world);
@@ -387,15 +395,16 @@ public final class CombatSystem {
         for(var iterator=specialBombs.iterator();iterator.hasNext();) {
             var bomb=iterator.next();if(session.tick+1<bomb.explodeAt)continue;
             Vector3f center=bomb.support.point().add(bomb.support.normal().mult(.08f));
-            events.add(new GameEvent(GameEvent.Type.EXPLOSION,bomb.id,-1,bomb.ownerId,center,"special-bomb",SpecialRules.BOMB_RADIUS,
+            emit(new GameEvent(GameEvent.Type.EXPLOSION,bomb.id,-1,bomb.ownerId,center,"special-bomb",SpecialRules.BOMB_RADIUS,
                     center,bomb.support.normal()));
             for(var target:orderedVehicles) {
                 if(!target.alive())continue;
                 float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/SpecialRules.BOMB_RADIUS);
                 if(falloff<=0||!exposed(center,target.id,world))continue;
                 float amount=SpecialRules.BOMB_DAMAGE*falloff*(target.id==bomb.ownerId?rules.ownerSplashMultiplier():1);
+                Vector3f point=world.closestHullPoint(target.id,center);
                 queueContactDamage(target.id,bomb.ownerId,amount,"special-bomb",bomb.id,
-                        world.closestHullPoint(target.id,center),bomb.support.normal(),center);
+                        point,center.subtract(point).normalizeLocal(),center,world);
             }
             radialArenaDamage(bomb.id,bomb.ownerId,"special-bomb",center,SpecialRules.BOMB_RADIUS,SpecialRules.BOMB_DAMAGE,null,world);
             iterator.remove();
@@ -417,9 +426,9 @@ public final class CombatSystem {
         }
         long id=nextShotId++;
         Vector3f end=chosen==null?origin.add(forward.mult(SpecialRules.PULSE_RANGE)):world.closestHullPoint(chosen.id,origin);
-        events.add(new GameEvent(GameEvent.Type.SPECIAL_HIT,id,chosen==null?-1:chosen.id,owner.id,end,"pulse",SpecialRules.PULSE_DAMAGE,origin,forward));
+        emit(new GameEvent(GameEvent.Type.SPECIAL_HIT,id,chosen==null?-1:chosen.id,owner.id,end,"pulse",SpecialRules.PULSE_DAMAGE,origin,forward));
         if(chosen==null)return;
-        queueContactDamage(chosen.id,owner.id,SpecialRules.PULSE_DAMAGE,"pulse",id,end,forward.negate(),origin);
+        queueContactDamage(chosen.id,owner.id,SpecialRules.PULSE_DAMAGE,"pulse",id,end,forward.negate(),origin,world);
         Vector3f direction=world.position(chosen.id).subtract(world.position(owner.id)).setY(0);
         if(direction.lengthSquared()<.0001f)direction.set(forward);else direction.normalizeLocal();
         float magnitude=Math.min(SpecialRules.PULSE_IMPULSE,SpecialRules.PULSE_MAX_DELTA_SPEED*world.mass(chosen.id));
@@ -465,7 +474,7 @@ public final class CombatSystem {
         if(amount>0) {
             owner.specialDamage+=amount;
             Vector3f intake=world.position(owner.id).add(world.rotation(owner.id).mult(world.profile(owner.id).grinderIntake()));
-            queueContactDamage(target.id,owner.id,amount,"grinder",nextShotId++,world.closestHullPoint(target.id,intake),world.forward(owner.id).negate(),intake);
+            queueContactDamage(target.id,owner.id,amount,"grinder",nextShotId++,world.closestHullPoint(target.id,intake),world.forward(owner.id).negate(),intake,world);
         }
         if(--owner.specialTicks==0)cancelSpecial(owner,world);
     }
@@ -474,12 +483,12 @@ public final class CombatSystem {
             var target=session.vehicle(owner.specialTargetId);
             if(target.grabbedBy==owner.id) {
                 target.grabbedBy=-1;target.controlImmunityTicks=ticks(rules.control().immunitySeconds());
-                events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,owner.id,world.position(target.id),"grinder",0));
+                emit(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,owner.id,world.position(target.id),"grinder",0));
             }
         }
         world.endGrab(owner.id);
         if(owner.dashing())world.endDash(owner.id);
-        if(owner.specialActive())events.add(event(GameEvent.Type.SPECIAL_ENDED,nextShotId++,owner.id,owner.id,world.position(owner.id),owner.profileId,0));
+        if(owner.specialActive())emit(event(GameEvent.Type.SPECIAL_ENDED,nextShotId++,owner.id,owner.id,world.position(owner.id),owner.profileId,0));
         owner.clearSpecial();
     }
     public List<SpecialBombView> specialBombs() {
@@ -584,12 +593,13 @@ public final class CombatSystem {
             Vector3f direction = orientation.mult(spread.mult(Vector3f.UNIT_Z)).normalizeLocal();
             Vector3f end = muzzle.add(direction.mult(rules.machineGun().range()));
             WorldQuery.Hit hit = blocked == null ? world.ray(muzzle, end, intent.ownerId) : blocked;
-            events.add(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
-                    hit==null?end:hit.point(),intent.kind,rules.machineGun().damage(),muzzle,Vector3f.ZERO));
+            emit(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
+                    hit==null?end:hit.point(),intent.kind,rules.machineGun().damage(),muzzle,Vector3f.ZERO)
+                    .withEmission(new ShotEmission("machine-gun-muzzle-"+intent.barrel,direction,world.velocity(intent.ownerId))));
             if(hit!=null)impact(intent.id,intent.ownerId,intent.kind,hit,muzzle);
             directArenaDamage(hit,intent.ownerId,rules.machineGun().damage(),intent.kind,intent.id);
             if (hit != null && hit.vehicleId() >= 0 && hit.vehicleId() != intent.ownerId) {
-                queueContactDamage(hit.vehicleId(),intent.ownerId,directDamage(hit.vehicleId(),hit.point(),rules.machineGun().damage(),world),intent.kind,intent.id,hit.point(),hit.normal(),muzzle);
+                queueHitDamage(hit.vehicleId(),intent.ownerId,directDamage(hit.vehicleId(),hit.point(),rules.machineGun().damage(),world),intent.kind,intent.id,hit,muzzle,world);
             }
             return;
         }
@@ -605,8 +615,9 @@ public final class CombatSystem {
         }
         if(intent.kind.equals("cannon"))projectile.velocity.set((aimedIntoGrinder?forward:forwardXZ(intent.ownerId,world)).mult(rules.cannon().speed())).addLocal(0,rules.cannon().upwardSpeed(),0);
         if(intent.kind.equals("ballistic"))launchCarrier(projectile,world);
-        events.add(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
-                blocked==null?muzzle:blocked.point(),intent.kind,0,muzzle,Vector3f.ZERO));
+        emit(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
+                blocked==null?muzzle:blocked.point(),intent.kind,0,muzzle,Vector3f.ZERO)
+                .withEmission(new ShotEmission("weapon-muzzle",projectile.direction(),world.velocity(intent.ownerId))));
         if (blocked == null) projectiles.add(projectile);
         else {
             projectile.position.set(blocked.point());
@@ -665,7 +676,8 @@ public final class CombatSystem {
         if(projectile.exploded)return;projectile.exploded=true;
         impact(projectile.id(),projectile.ownerId(),projectile.kind(),hit,projectile.previousPosition);
         if(projectile.kind().equals("freeze")) {
-            if(hit.vehicleId()>=0&&hit.vehicleId()!=projectile.ownerId())controlHits.add(new ControlHit(hit.vehicleId(),projectile.ownerId(),projectile.id(),hit.point(),hit.normal()));
+            if(hit.vehicleId()>=0&&hit.vehicleId()!=projectile.ownerId())controlHits.add(new ControlHit(hit.vehicleId(),projectile.ownerId(),projectile.id(),hit.point(),hit.normal(),hit.surface(),
+                    hit.vehicleContact()!=null?hit.vehicleContact():world.vehicleContact(hit.vehicleId(),hit.point(),hit.normal())));
             return;
         }
         reservedFireZones--;
@@ -677,7 +689,7 @@ public final class CombatSystem {
         if(points.isEmpty())return;
         FireZone zone=new FireZone(projectile.id(),projectile.ownerId(),support,session.tick+ticks(rules.napalm().durationSeconds()),points);
         fireZones.add(zone);
-        events.add(event(GameEvent.Type.FIRE_STARTED,zone.id,zone.ownerId,zone.ownerId,support.point(),"napalm-fire",rules.napalm().radius()));
+        emit(event(GameEvent.Type.FIRE_STARTED,zone.id,zone.ownerId,zone.ownerId,support.point(),"napalm-fire",rules.napalm().radius()));
     }
     private void acceptMine(VehicleState vehicle,WorldQuery world) {
         if(mines.size()>=rules.mine().maximumActive()||mines.stream().filter(m->m.ownerId==vehicle.id).count()>=2) {
@@ -696,7 +708,7 @@ public final class CombatSystem {
         long id=nextShotId++;
         mines.add(new Mine(id,vehicle.id,support,session.tick+ticks(rules.mine().armSeconds()),session.tick+ticks(rules.mine().lifetimeSeconds())));
         WeaponSlot slot=vehicle.weapon(WeaponType.MINE);slot.ammo--;slot.cooldownTicks=ticks(rules.mine().cooldownSeconds());
-        events.add(event(GameEvent.Type.MINE_PLACED,id,vehicle.id,vehicle.id,place,"mine",rules.mine().triggerRadius()));
+        emit(event(GameEvent.Type.MINE_PLACED,id,vehicle.id,vehicle.id,place,"mine",rules.mine().triggerRadius()));
     }
     private void advanceMines(WorldQuery world) {
         Iterator<Mine> iterator=mines.iterator();
@@ -711,14 +723,14 @@ public final class CombatSystem {
         }
     }
     private void radialDamage(long id,int owner,String kind,Vector3f center,float radius,float maximum,CombatRules.Blast blast,Vector3f normal,WorldQuery world) {
-        events.add(new GameEvent(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius,Vector3f.ZERO,normal));
+        emit(new GameEvent(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius,Vector3f.ZERO,normal));
         radialArenaDamage(id,owner,kind,center,radius,maximum,null,world);
         for(VehicleState target:orderedVehicles) {
             if(!target.alive())continue;
             float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/radius);
             if(falloff<=0||!exposed(center,target.id,world))continue;
             Vector3f point=world.closestHullPoint(target.id,center);
-            queueContactDamage(target.id,owner,maximum*falloff*(target.id==owner?rules.ownerSplashMultiplier():1),kind,id,point,center.subtract(point).normalizeLocal());
+            queueContactDamage(target.id,owner,maximum*falloff*(target.id==owner?rules.ownerSplashMultiplier():1),kind,id,point,center.subtract(point).normalizeLocal(),center,world);
             addBlast(target.id,owner,center,point,blast,falloff,world);
         }
     }
@@ -751,7 +763,8 @@ public final class CombatSystem {
     }
     private static long gridKey(int x,int z) {return ((long)x<<32)|(z&0xffffffffL);}
     private void advanceFire(WorldQuery world) {
-        for(FireZone zone:fireZones)if(session.tick>=zone.expiresAt)events.add(event(GameEvent.Type.FIRE_ENDED,zone.id,zone.ownerId,zone.ownerId,zone.support.point(),"napalm-fire",0));
+        fireExposures.clear();
+        for(FireZone zone:fireZones)if(session.tick>=zone.expiresAt)emit(event(GameEvent.Type.FIRE_ENDED,zone.id,zone.ownerId,zone.ownerId,zone.support.point(),"napalm-fire",0));
         fireZones.removeIf(zone->session.tick>=zone.expiresAt);
         int interval=ticks(rules.napalm().intervalSeconds());
         float baseAmount=rules.napalm().damagePerSecond()*interval*MatchSession.DT;
@@ -765,10 +778,12 @@ public final class CombatSystem {
                 maximumAmount=Math.max(maximumAmount,amount);
             }
             if(selected==null||target.protectionTicks>0) {fireExposureTicks.remove(target.id);continue;}
+            Vector3f point=world.closestHullPoint(target.id,selected.support.point());
+            Vector3f normal=selected.support.point().subtract(point).normalizeLocal();
+            fireExposures.put(target.id,new FireExposureView(target.id,selected.id,world.vehicleContact(target.id,point,normal)));
             int elapsed=fireExposureTicks.getOrDefault(target.id,0)+1;
             if(elapsed>=interval) {
-                Vector3f point=world.closestHullPoint(target.id,selected.support.point());
-                queueContactDamage(target.id,selected.ownerId,maximumAmount,"napalm-fire",nextShotId++,point,selected.support.normal());elapsed=0;
+                queueContactDamage(target.id,selected.ownerId,maximumAmount,"napalm-fire",nextShotId++,point,normal,selected.support.point(),world);elapsed=0;
             }
             fireExposureTicks.put(target.id,elapsed);
         }
@@ -935,7 +950,7 @@ public final class CombatSystem {
         int direct=hit==null?-1:hit.vehicleId();String kind=ricochet?"cannon-ricochet":"cannon";
         if(hit!=null)impact(id,projectile.ownerId(),kind,hit,projectile.previousPosition);
         float radius=ricochet?cannon.ricochetRadius():cannon.splashRadius();
-        events.add(new GameEvent(GameEvent.Type.EXPLOSION,id,direct,projectile.ownerId(),center,kind,radius,projectile.previousPosition,normal));
+        emit(new GameEvent(GameEvent.Type.EXPLOSION,id,direct,projectile.ownerId(),center,kind,radius,projectile.previousPosition,normal));
         directArenaDamage(hit,projectile.ownerId(),cannon.directDamage(),kind,id);
         radialArenaDamage(id,projectile.ownerId(),kind,center,radius,ricochet?cannon.ricochetDamage():cannon.splashDamage(),
                 hit==null?null:hit.objectId(),world);
@@ -943,7 +958,7 @@ public final class CombatSystem {
             if(!target.alive())continue;
             if(target.id==direct) {
                 float owner=target.id==projectile.ownerId()?rules.ownerSplashMultiplier():1;
-                queueContactDamage(target.id,projectile.ownerId(),directDamage(target.id,point,cannon.directDamage()*owner,world),"cannon",id,point,normal);
+                queueHitDamage(target.id,projectile.ownerId(),directDamage(target.id,point,cannon.directDamage()*owner,world),"cannon",id,hit,projectile.previousPosition,world);
                 if(target.protectionTicks==0) {
                     float multiplier=owner*(target.shieldTicks>0?rules.control().shieldDamageMultiplier():1)
                             *projectile.velocity.length()/cannon.speed();
@@ -961,7 +976,7 @@ public final class CombatSystem {
             Vector3f hullPoint=world.closestHullPoint(target.id,center);
             float amount=(ricochet?cannon.ricochetDamage():cannon.splashDamage())*falloff
                     *(target.id==projectile.ownerId()?rules.ownerSplashMultiplier():1);
-            queueContactDamage(target.id,projectile.ownerId(),amount,"cannon",id,hullPoint,center.subtract(hullPoint).normalizeLocal());
+            queueContactDamage(target.id,projectile.ownerId(),amount,"cannon",id,hullPoint,center.subtract(hullPoint).normalizeLocal(),center,world);
             addBlast(target.id,projectile.ownerId(),center,hullPoint,cannon.splashBlast(),falloff,world);
         }
         if(!ricochet)projectile.exploded=true;
@@ -1044,8 +1059,9 @@ public final class CombatSystem {
             ProjectileState projectile=new ProjectileState(charge.id,charge.ownerId,"ballistic-fall",charge.origin,
                     charge.velocity,charge.lifeTicks,target);
             projectile.velocity.set(charge.velocity);projectile.originalVelocity.set(charge.velocity);projectiles.add(projectile);
-            events.add(new GameEvent(GameEvent.Type.SHOT,charge.id,charge.ownerId,charge.ownerId,charge.origin,
-                    "ballistic-fall",0,charge.origin,Vector3f.ZERO));
+            emit(new GameEvent(GameEvent.Type.SHOT,charge.id,charge.ownerId,charge.ownerId,charge.origin,
+                    "ballistic-fall",0,charge.origin,Vector3f.ZERO)
+                    .withEmission(new ShotEmission("carrier-release",charge.velocity,salvo.carrier.velocity)));
             reservedCharges--;salvo.released++;iterator.remove();
             if(salvo.released==rules.ballistic().charges()) {salvo.carrier.exploded=true;salvos.remove(charge.carrierId);}
         }
@@ -1174,8 +1190,9 @@ public final class CombatSystem {
         }
         CombatRules.Rocket rocket = rocketRules(projectile.kind());
         int directTarget = hit == null ? -1 : hit.vehicleId();
-        events.add(event(GameEvent.Type.EXPLOSION, projectile.id(), directTarget, projectile.ownerId(),
-                center, projectile.kind(), rocket.explosionRadius()));
+        emit(new GameEvent(GameEvent.Type.EXPLOSION, projectile.id(), directTarget, projectile.ownerId(),
+                center, projectile.kind(), rocket.explosionRadius(),projectile.previousPosition,hit==null?Vector3f.ZERO:hit.normal())
+                .withContact(hit==null?ContactSurface.UNKNOWN:hit.surface(),hit==null?null:hit.vehicleContact()));
         directArenaDamage(hit,projectile.ownerId(),rocket.directDamage(),projectile.kind(),projectile.id());
         radialArenaDamage(projectile.id(),projectile.ownerId(),projectile.kind(),center,rocket.explosionRadius(),rocket.splashDamage(),
                 hit==null?null:hit.objectId(),world);
@@ -1189,7 +1206,8 @@ public final class CombatSystem {
             if (target.id == projectile.ownerId()) amount *= rules.ownerSplashMultiplier();
             Vector3f point=direct?hit.point():world.closestHullPoint(target.id,center);
             Vector3f normal=direct?hit.normal():center.subtract(point).normalizeLocal();
-            queueContactDamage(target.id,projectile.ownerId(),direct?directDamage(target.id,point,amount,world):amount,projectile.kind(),projectile.id(),point,normal);
+            if(direct)queueHitDamage(target.id,projectile.ownerId(),directDamage(target.id,point,amount,world),projectile.kind(),projectile.id(),hit,projectile.previousPosition,world);
+            else queueContactDamage(target.id,projectile.ownerId(),amount,projectile.kind(),projectile.id(),point,normal,center,world);
             addBlast(target.id,projectile.ownerId(),center,point,rocket.blast(),direct?1:falloff,world);
         }
     }
@@ -1214,23 +1232,28 @@ public final class CombatSystem {
         sum.linear.addLocal(linear);sum.torque.addLocal(point.subtract(world.position(targetId)).cross(linear));
     }
     private void impact(long id,int owner,String kind,WorldQuery.Hit hit,Vector3f origin) {
-        var event=new GameEvent(GameEvent.Type.IMPACT,id,hit.vehicleId(),owner,hit.point(),kind,0,origin,hit.normal());
-        events.add(hit.objectId()==null?event:event.forObject(hit.objectId()));
+        var event=new GameEvent(GameEvent.Type.IMPACT,id,hit.vehicleId(),owner,hit.point(),kind,0,origin,hit.normal())
+                .withContact(hit.surface(),hit.vehicleContact());
+        emit(hit.objectId()==null?event:event.forObject(hit.objectId()));
     }
-    private void shieldHit(int target,int source,long id,Vector3f point,Vector3f normal,Vector3f origin,String kind,float incoming) {
+    private void shieldHit(int target,int source,long id,Vector3f point,Vector3f normal,Vector3f origin,String kind,float incoming,ContactSurface surface,VehicleContact contact) {
         if(session.tick<shieldFeedbackAfter.getOrDefault(target,Long.MIN_VALUE))return;
         shieldFeedbackAfter.put(target,session.tick+12);
-        events.add(new GameEvent(GameEvent.Type.SHIELD_HIT,id,target,source,point,kind,incoming,origin,normal));
+        emit(new GameEvent(GameEvent.Type.SHIELD_HIT,id,target,source,point,kind,incoming,origin,normal).withContact(surface,contact));
     }
 
     /** External event ids must be unique for the session and not collide with positive combat shot ids. */
     public void queueDamage(int targetId, int sourceId, float amount, String cause, long sourceEvent) {
-        queueContactDamage(targetId,sourceId,amount,cause,sourceEvent,null,null);
+        queueContactDamage(targetId,sourceId,amount,cause,sourceEvent,null,null,Vector3f.ZERO,ContactSurface.UNKNOWN,null);
     }
-    private void queueContactDamage(int targetId,int sourceId,float amount,String cause,long sourceEvent,Vector3f point,Vector3f normal) {
-        queueContactDamage(targetId,sourceId,amount,cause,sourceEvent,point,normal,Vector3f.ZERO);
+    private void queueHitDamage(int target,int source,float amount,String cause,long event,WorldQuery.Hit hit,Vector3f origin,WorldQuery world) {
+        queueContactDamage(target,source,amount,cause,event,hit.point(),hit.normal(),origin,hit.surface(),
+                hit.vehicleContact()!=null?hit.vehicleContact():world.vehicleContact(target,hit.point(),hit.normal()));
     }
-    private void queueContactDamage(int targetId,int sourceId,float amount,String cause,long sourceEvent,Vector3f point,Vector3f normal,Vector3f origin) {
+    private void queueContactDamage(int target,int source,float amount,String cause,long event,Vector3f point,Vector3f normal,Vector3f origin,WorldQuery world) {
+        queueContactDamage(target,source,amount,cause,event,point,normal,origin,ContactSurface.METAL,world.vehicleContact(target,point,normal));
+    }
+    private void queueContactDamage(int targetId,int sourceId,float amount,String cause,long sourceEvent,Vector3f point,Vector3f normal,Vector3f origin,ContactSurface surface,VehicleContact contact) {
         if (!Float.isFinite(amount) || amount < 0) throw new IllegalArgumentException("Damage must be finite and nonnegative");
         if (targetId < 0 || targetId >= session.vehicles.size() || sourceId < -1 || sourceId >= session.vehicles.size()) {
             throw new IllegalArgumentException("Invalid damage participant");
@@ -1238,23 +1261,28 @@ public final class CombatSystem {
         Objects.requireNonNull(cause, "cause");
         if(session.phase==MatchSession.Phase.BOSS_ENTRY&&sourceId==session.bossParticipantId&&sourceId>=0)return;
         if (amount == 0 || !seenDamage.add(new DamageKey(sourceEvent, targetId))) return;
-        damage.add(new Damage(targetId, sourceId, amount, cause, sourceEvent,point,normal,origin));
+        damage.add(new Damage(targetId, sourceId, amount, cause, sourceEvent,point==null?null:point.clone(),normal==null?null:normal.clone(),origin.clone(),surface,contact));
     }
 
     public void queueRam(int first, int second, float closingSpeed,Vector3f point,Vector3f normal) {
+        queueRam(first,second,closingSpeed,point,normal,null,null);
+    }
+    public void queueRam(int first,int second,float closingSpeed,Vector3f point,Vector3f normal,VehicleContact firstContact,VehicleContact secondContact) {
         if (!Float.isFinite(closingSpeed) || closingSpeed < 0) throw new IllegalArgumentException("Closing speed must be finite and nonnegative");
         if (first == second || first < 0 || second < 0 || first >= session.vehicles.size() || second >= session.vehicles.size()) return;
         // Audible body contact is independent of the higher gameplay damage threshold.
         if (closingSpeed < 1.25f) return;
         Pair pair = Pair.of(first, second);
         if(session.tick>=ramFeedbackAt.getOrDefault(pair,Long.MIN_VALUE)) {
-            events.add(new GameEvent(GameEvent.Type.RAM,nextShotId++,pair.first,pair.second,point,"ram",closingSpeed,
+            emit(new GameEvent(GameEvent.Type.RAM,nextShotId++,pair.first,pair.second,point,"ram",closingSpeed,
                     Vector3f.ZERO,first==pair.first?normal:normal.negate()));
             ramFeedbackAt.put(pair,session.tick+ticks(.15f));
         }
         if (closingSpeed <= rules.ram().minimumClosingSpeed()) return;
         if (session.tick < ramReadyAt.getOrDefault(pair, Long.MIN_VALUE)) return;
-        ramSpeeds.merge(pair, closingSpeed, Math::max);
+        RamHit incoming=new RamHit(closingSpeed,point,first==pair.first?normal:normal.negate(),
+                first==pair.first?firstContact:secondContact,first==pair.first?secondContact:firstContact);
+        ramHits.merge(pair,incoming,(previous,next)->previous.speed>=next.speed?previous:next);
     }
 
     /** One resolution after projectiles, contacts, recovery penalties, and hazards have queued all damage. */
@@ -1264,23 +1292,27 @@ public final class CombatSystem {
             arenaDamage.clear();arenaRamSpeeds.clear();
             controlHits.clear();
             expiredShields.clear();
-            ramSpeeds.clear();
+            ramHits.clear();fireExposures.clear();
             blasts.clear();
             return;
         }
         advanceSpecials(world);
         resolveArenaDamage();
-        for (Map.Entry<Pair, Float> entry : ramSpeeds.entrySet()) {
+        for (Map.Entry<Pair, RamHit> entry : ramHits.entrySet()) {
             Pair pair = entry.getKey();
             if (!session.vehicle(pair.first).alive() || !session.vehicle(pair.second).alive()) continue;
             float amount = Math.min(rules.ram().maximumDamage(), rules.ram().damagePerExcessSpeed()
-                    * (entry.getValue() - rules.ram().minimumClosingSpeed()));
+                    * (entry.getValue().speed - rules.ram().minimumClosingSpeed()));
             long eventId = nextShotId++;
-            queueDamage(pair.first, pair.second, amount, "ram", eventId);
-            queueDamage(pair.second, pair.first, amount, "ram", eventId);
+            RamHit hit=entry.getValue();
+            Vector3f firstNormal=hit.normal.negate(),secondNormal=hit.normal;
+            queueContactDamage(pair.first,pair.second,amount,"ram",eventId,hit.point,firstNormal,world.position(pair.second),ContactSurface.METAL,
+                    hit.first!=null?hit.first:world.vehicleContact(pair.first,hit.point,firstNormal));
+            queueContactDamage(pair.second,pair.first,amount,"ram",eventId,hit.point,secondNormal,world.position(pair.first),ContactSurface.METAL,
+                    hit.second!=null?hit.second:world.vehicleContact(pair.second,hit.point,secondNormal));
             ramReadyAt.put(pair, session.tick + ticks(rules.ram().cooldownSeconds()));
         }
-        ramSpeeds.clear();
+        ramHits.clear();
         damage.sort(Comparator.comparingInt(Damage::targetId).thenComparingInt(Damage::sourceId).thenComparingLong(Damage::eventId));
         Map<Integer, List<Damage>> grouped = new TreeMap<>();
         for (Damage request : damage) {
@@ -1292,7 +1324,7 @@ public final class CombatSystem {
         for (Map.Entry<Integer, List<Damage>> entry : grouped.entrySet()) applyDamage(entry.getKey(), entry.getValue(), world);
         damage.clear();
         for(int id:expiredShields)if(session.vehicle(id).alive())
-            events.add(event(GameEvent.Type.SHIELD_ENDED,nextShotId++,id,id,world.position(id),"shield",0));
+            emit(event(GameEvent.Type.SHIELD_ENDED,nextShotId++,id,id,world.position(id),"shield",0));
         expiredShields.clear();
         resolveControl(world);
         for(var entry:blasts.entrySet()) {
@@ -1318,7 +1350,8 @@ public final class CombatSystem {
             int killer = target.lastAttacker >= 0 && session.tick - target.lastAttackTick <= ticks(rules.killCreditSeconds())
                     ? target.lastAttacker : -1;
             if (killer >= 0 && killer != target.id) session.vehicle(killer).eliminations++;
-            events.add(event(GameEvent.Type.DESTROYED, target.id, target.id, killer, world.position(target.id), "destroyed", 0));
+            emit(event(GameEvent.Type.DESTROYED, target.id, target.id, killer, world.position(target.id), "destroyed", 0));
+            fireExposures.remove(target.id);fireExposureTicks.remove(target.id);
             locks.remove(target.id);
         }
     }
@@ -1326,13 +1359,14 @@ public final class CombatSystem {
     private void applyDamage(int targetId, List<Damage> requests, WorldQuery world) {
         VehicleState target = session.vehicle(targetId);
         if(target.shieldTicks>0)for(Damage request:requests)if(request.point!=null)
-            shieldHit(targetId,request.sourceId,request.eventId,request.point,request.normal,request.origin,request.cause,request.amount);
+            shieldHit(targetId,request.sourceId,request.eventId,request.point,request.normal,request.origin,request.cause,request.amount,request.surface,request.contact);
         if(target.shieldTicks>0)requests=requests.stream().map(request->
                 request.cause.equals("recovery")||request.cause.equals("out-of-bounds")?request:
-                        new Damage(request.targetId,request.sourceId,request.amount*rules.control().shieldDamageMultiplier(),request.cause,request.eventId,request.point,request.normal,request.origin)).toList();
+                        new Damage(request.targetId,request.sourceId,request.amount*rules.control().shieldDamageMultiplier(),request.cause,request.eventId,request.point,request.normal,request.origin,request.surface,request.contact)).toList();
         double total = requests.stream().mapToDouble(Damage::amount).sum();
         if(total<=0)return;
         double loss = Math.min(target.hp, total);
+        double remainingHealth=target.hp;
         Map<Integer, Double> externalAmounts = new TreeMap<>();
         for (Damage request : requests) {
             float actual = (float) (loss * request.amount / total);
@@ -1341,8 +1375,10 @@ public final class CombatSystem {
                 // equal-hit events must not turn a true tie into a different kill credit.
                 externalAmounts.merge(request.sourceId, (double) request.amount, Double::sum);
             }
-            events.add(event(GameEvent.Type.DAMAGE, request.eventId, targetId, request.sourceId,
-                    world.position(targetId), request.cause, actual));
+            float hpBefore=(float)Math.max(0,remainingHealth);remainingHealth-=loss*request.amount/total;
+            emit(new GameEvent(GameEvent.Type.DAMAGE, request.eventId, targetId, request.sourceId,
+                    request.point==null?world.position(targetId):request.point, request.cause, actual,request.origin,request.normal)
+                    .withContact(request.surface,request.contact).withHealthChange(new HealthChange(hpBefore,(float)Math.max(0,remainingHealth))));
         }
         target.hp = Math.max(0, target.hp - (float) loss);
         double greatest = -1;
@@ -1367,7 +1403,7 @@ public final class CombatSystem {
                 target.frozenTicks=Math.max(0,target.frozenTicks-1);
                 if(controlled&&target.frozenTicks==0) {
                     target.controlImmunityTicks=ticks(rules.control().immunitySeconds());world.immobilize(target.id,false);
-                    events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"freeze",0));
+                    emit(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"freeze",0));
                 }
             }
         }
@@ -1375,11 +1411,11 @@ public final class CombatSystem {
         for(ControlHit hit:controlHits) {
             VehicleState target=session.vehicle(hit.targetId);
             if(!target.alive()||target.protectionTicks>0)continue;
-            if(target.shieldTicks>0) {shieldHit(target.id,hit.sourceId,hit.eventId,hit.point,hit.normal,Vector3f.ZERO,"freeze",0);continue;}
+            if(target.shieldTicks>0) {shieldHit(target.id,hit.sourceId,hit.eventId,hit.point,hit.normal,Vector3f.ZERO,"freeze",0,hit.surface,hit.contact);continue;}
             if(target.controlled()||target.controlImmunityTicks>0)continue;
             cancelSpecial(target,world);
             target.frozenTicks=ticks(rules.control().freezeSeconds());world.immobilize(target.id,true);
-            events.add(new GameEvent(GameEvent.Type.FREEZE,hit.eventId,target.id,hit.sourceId,hit.point,"freeze",rules.control().freezeSeconds(),Vector3f.ZERO,hit.normal));
+            emit(new GameEvent(GameEvent.Type.FREEZE,hit.eventId,target.id,hit.sourceId,hit.point,"freeze",rules.control().freezeSeconds(),Vector3f.ZERO,hit.normal).withContact(hit.surface,hit.contact));
         }
         controlHits.clear();
     }
@@ -1389,12 +1425,13 @@ public final class CombatSystem {
         if(target.grabbedBy>=0)cancelSpecial(session.vehicle(target.grabbedBy),world);
         if(target.frozenTicks>0) {
             target.frozenTicks=0;target.controlImmunityTicks=ticks(rules.control().immunitySeconds());
-            if(feedback)events.add(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"freeze",0));
+            if(feedback)emit(event(GameEvent.Type.CONTROL_ENDED,nextShotId++,target.id,target.id,world.position(target.id),"freeze",0));
         }
         world.immobilize(target.id,false);
     }
 
     public List<ProjectileState> projectiles() { return List.copyOf(projectiles); }
+    public List<FireExposureView> fireExposures() {return List.copyOf(fireExposures.values());}
     public List<MineView> mines() {
         return mines.stream().map(m->new MineView(m.id,m.ownerId,m.support.point(),m.support.normal(),session.tick>=m.armedAt,rules.mine().triggerRadius())).toList();
     }
@@ -1403,6 +1440,10 @@ public final class CombatSystem {
     }
     public int reservedFireZones() {return reservedFireZones;}
     public int pendingDamageCount() { return damage.size(); }
+    private void emit(GameEvent event) {
+        if(eventTick!=session.tick){eventTick=session.tick;eventOrdinal=0;}
+        events.add(event.atTick(session.tick,eventOrdinal++));
+    }
     public List<GameEvent> drainEvents() {
         List<GameEvent> result = events.stream().map(e->e.inSession(session.sessionId)).toList();
         events.clear();
@@ -1418,7 +1459,7 @@ public final class CombatSystem {
             vehicle.clearSpecial();vehicle.grabbedBy=-1;
             vehicle.heavyImpactPending=false;
         }
-        mines.clear();fireZones.clear();specialBombs.clear();controlHits.clear();fireExposureTicks.clear();reservedFireZones=0;
+        mines.clear();fireZones.clear();specialBombs.clear();controlHits.clear();fireExposureTicks.clear();fireExposures.clear();reservedFireZones=0;
         projectiles.clear();
         salvos.clear();pendingCharges.clear();warnings.clear();napalmTargets.clear();reservedCharges=0;
         intents.clear();
@@ -1427,7 +1468,7 @@ public final class CombatSystem {
         locks.clear();
         spreadRandom.clear();
         emptyFeedbackAfter.clear();nextBarrels.clear();shieldFeedbackAfter.clear();expiredShields.clear();
-        ramSpeeds.clear();
+        ramHits.clear();
         ramReadyAt.clear();
         ramFeedbackAt.clear();
         blasts.clear();

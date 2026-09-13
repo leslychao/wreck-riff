@@ -37,6 +37,11 @@ class Author:
                 self.tri(p0,p1,p2);self.tri(p0,p2,p3)
     def box(self,x,y,z,hx,hy,hz,sub=1,bevel=.025):
         # Chamfered formed metal; subdivided broad faces support smooth damage folds.
+        if self.lod==2:
+            a=(x-hx,y-hy,z-hz);b=(x+hx,y-hy,z-hz);c=(x+hx,y+hy,z-hz);d=(x-hx,y+hy,z-hz)
+            e=(x-hx,y-hy,z+hz);f=(x+hx,y-hy,z+hz);g=(x+hx,y+hy,z+hz);h=(x-hx,y+hy,z+hz)
+            for face in ((a,d,c,b),(e,f,g,h),(a,e,h,d),(b,c,g,f),(d,h,g,c),(a,b,f,e)):self.quad(*face)
+            return
         b=min(bevel,hx*.3,hy*.3,hz*.3)
         rings=[(-hz,hx-b,hy-b),(-hz+b,hx,hy),(hz-b,hx,hy),(hz,hx-b,hy-b)]
         prior=None
@@ -165,6 +170,17 @@ class Author:
                 if self.lod<2:
                     for i in range(10):
                         a=i*math.tau/10;self.box(side*.62,.42+math.cos(a)*.32,2.78+math.sin(a)*.32,.49,.045,.045,1,.01)
+        # Rounded carcass, sidewall and recessed hub exported in wheel-local metres.
+        for wheel in range(4):
+            self.part('wheel-'+str(wheel)+'-tyre')
+            count=(24,8,6)[self.lod]
+            ring=[(-.15,.22),(-.165,.30),(-.13,.36),(-.08,.38),(.08,.38),(.13,.36),(.165,.30),(.15,.22)] if self.lod==0 else [(-.15,.24),(-.14,.38),(.14,.38),(.15,.24)]
+            for (ax,ar),(bx,br) in zip(ring,ring[1:]):
+                for i in range(count):
+                    a=i*math.tau/count;b=(i+1)*math.tau/count
+                    self.quad((ax,math.cos(a)*ar,math.sin(a)*ar),(ax,math.cos(b)*ar,math.sin(b)*ar),
+                              (bx,math.cos(b)*br,math.sin(b)*br),(bx,math.cos(a)*br,math.sin(a)*br))
+            self.part('wheel-'+str(wheel)+'-hub');self.cylinder(0,0,0,.225,.31,'x',count)
         return self.parts
 
 def normals(p):

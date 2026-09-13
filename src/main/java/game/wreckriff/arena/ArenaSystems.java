@@ -406,10 +406,15 @@ public final class ArenaSystems {
                 }
             }
             if (winner!=null) {
+                float hpBefore=winner.hp;
                 float amount=apply(winner,pickup.type());
                 returnsAt.put(pickup.id(),session.tick+pickup.respawnTicks());
-                events.add(new GameEvent(GameEvent.Type.PICKUP,nextPickupEventId--,
-                        winner.id,winner.id,surface,pickupKind(pickup.type()),amount).forObject(pickup.id()));
+                long eventId=nextPickupEventId--;
+                events.add(new GameEvent(GameEvent.Type.PICKUP,eventId,
+                        winner.id,winner.id,surface,pickupKind(pickup.type()),amount).forObject(pickup.id()).atTick(session.tick,events.size()));
+                if(pickup.type()==ArenaDefinition.PickupType.REPAIR&&amount>0)
+                    events.add(new GameEvent(GameEvent.Type.REPAIRED,eventId,winner.id,winner.id,world.position(winner.id),"repair",amount)
+                            .forObject(pickup.id()).withHealthChange(new HealthChange(hpBefore,winner.hp)).atTick(session.tick,events.size()));
             }
         }
     }

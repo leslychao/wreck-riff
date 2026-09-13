@@ -1,6 +1,18 @@
 MaterialDef CombatParticles {
     MaterialParameters {
         Float FlashIntensity : 1.0
+        Texture2D SmokeAtlas
+        Texture2D FlameAtlas
+        Texture2D BlastAtlas
+        Texture2D DustAtlas
+        Texture2D AuxiliaryAtlas
+        Texture2D SceneDepth
+        Int NumSamplesDepth
+        Boolean SoftParticles
+        Vector2 CameraPlanes
+        Vector3 LightDirection
+        Color KeyLight
+        Color FillLight
     }
     Technique {
         VertexShader GLSL150 GLSL100 : materials/CombatParticles.vert
@@ -8,6 +20,10 @@ MaterialDef CombatParticles {
         WorldParameters {
             WorldViewMatrix
             ProjectionMatrix
+        }
+        Defines {
+            SOFT_PARTICLES : SoftParticles
+            RESOLVE_DEPTH_MS : NumSamplesDepth
         }
     }
 }

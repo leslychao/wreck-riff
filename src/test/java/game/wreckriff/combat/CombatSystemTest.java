@@ -50,7 +50,7 @@ class CombatSystemTest {
         for(var event:damage) {
             assertEquals(strongest,event.position());
             assertEquals(strongest.subtract(world.position(event.subjectId())),event.vehicleContact().localPoint());
-            assertEquals(event.subjectId()==0?Vector3f.UNIT_X.negate():Vector3f.UNIT_X,event.normal());
+            assertEquals(event.subjectId()==0?Vector3f.UNIT_X:Vector3f.UNIT_X.negate(),event.normal());
         }
         combat.queueDamage(0,-1,2,"recovery",-50);combat.resolveDamage(world);
         var recovery=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.DAMAGE).findFirst().orElseThrow();

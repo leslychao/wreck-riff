@@ -72,6 +72,7 @@ public final class SceneLighting {
             // linked it to this processor yet. Keep the active-filter index in sync as well.
             setFilterState(bloom,enabled);
         }
+        void setCombatEnabled(CombatVfxFilter filter,boolean enabled) {setFilterState(filter,enabled);}
     }
 
     public static final class Handle {
@@ -122,7 +123,7 @@ public final class SceneLighting {
         public void bindCombatVisuals(CombatVisuals visuals) {
             combatVisuals=visuals;combatVfx.bind(visuals);updateParticleLight();
             // Filter.setEnabled before initialization does not update jME's last-filter index.
-            post.setFilterState(combatVfx,visuals!=null);
+            post.setCombatEnabled(combatVfx,visuals!=null);
         }
         public void setCombatVfxProbe(CombatVfxFilter.Probe probe) {combatVfx.setProbe(probe);}
         private void updateParticleLight() {

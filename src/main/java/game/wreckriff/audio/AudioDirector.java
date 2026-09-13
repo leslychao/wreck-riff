@@ -12,9 +12,8 @@ import java.util.*;
 public final class AudioDirector implements AutoCloseable {
     private enum Group { ENGINE, WEAPON, THREAT, UI, MENU_UI }
     private static final int MENU_UI_SOURCES=2;
-    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder");
+    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder","napalm","fire");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
-    private record DelayedImpact(GameEvent event,double due) {}
     private record BossWarning(long beganTick,Voice voice) {}
     private static final class Voice {
         final AudioNode node;
@@ -38,7 +37,6 @@ public final class AudioDirector implements AutoCloseable {
     private final Map<String,List<String>> cueBanks;
     private final Map<String,Integer> nextTake = new HashMap<>();
     private final Set<EventKey> acceptedEvents = new LinkedHashSet<>();
-    private final Deque<DelayedImpact> delayedImpacts=new ArrayDeque<>();
     private final List<Voice> voices = new ArrayList<>();
     private final Map<String,Voice> loops = new HashMap<>();
     /** References to already-budgeted one shots, keyed by the authoritative arena object. */
@@ -59,7 +57,6 @@ public final class AudioDirector implements AutoCloseable {
     private boolean menuActive,leavingMenu,matchPrepared;
     private List<AudioSource> suspended=List.of();
     private AudioCapture capture;
-    private double impactClock;
     private boolean closed, paused, matchActive, warningWasActive;
     private float master = 1, musicVolume = 1, sfxVolume = 1, duck, lowHpClock;
     private UUID sessionId;
@@ -249,7 +246,7 @@ public final class AudioDirector implements AutoCloseable {
         matchActive=false;matchPrepared=false;paused=false;suspended=List.of();
         if(leavingMenu)stopMenu();
         warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
-        nextTake.clear(); acceptedEvents.clear(); delayedImpacts.clear();impactClock=0;
+        nextTake.clear(); acceptedEvents.clear();
         motion.clear();bossWarnings.clear();
     }
 
@@ -258,12 +255,6 @@ public final class AudioDirector implements AutoCloseable {
         prune();
         if (!matchActive || paused || session == null || world == null || !session.sessionId.equals(sessionId)) return;
         dt=Math.max(0, Math.min(dt, .1f));
-        impactClock+=dt;
-        for(Iterator<DelayedImpact> pending=delayedImpacts.iterator();pending.hasNext();) {
-            DelayedImpact impact=pending.next();int subject=impact.event.subjectId();
-            if(subject>=0&&!session.vehicles.get(subject).alive()) {pending.remove();continue;}
-            if(impact.due<=impactClock) {playImpact(impact.event);pending.remove();}
-        }
         duck=Math.max(0, duck-dt);
         lowHpClock=Math.max(0, lowHpClock-dt);
         for (VehicleState vehicle : session.vehicles) {
@@ -316,6 +307,7 @@ public final class AudioDirector implements AutoCloseable {
         applyVolumes();
     }
 
+    /** Events have already passed through the match's ContactPresentationTimeline. */
     public void accept(List<GameEvent> events) {
         if (closed || renderer == null || paused) return;
         prune();
@@ -338,7 +330,7 @@ public final class AudioDirector implements AutoCloseable {
                     float gain=id.equals("machine-gun")?.32f:id.equals("ballistic-fall")?.7f:1;
                     shot(id,Group.WEAPON,player?96:58,event.origin(),gain,1);
                 }
-                case IMPACT -> { if(kind.equals("machine-gun"))contact(event); }
+                case IMPACT -> { if(kind.equals("machine-gun"))playImpact(event); }
                 case EXPLOSION -> {
                     String cue=switch(kind) {
                         case "cannon-ricochet" -> "cannon-ricochet";case "cannon" -> "cannon-hit";
@@ -358,7 +350,6 @@ public final class AudioDirector implements AutoCloseable {
                 case DAMAGE -> { if (event.value()>=1 && !OWN_CONTACT_CUE.contains(kind)) shot("metal-hit",Group.WEAPON,event.subjectId()==0?83:35,
                         event.position(),clamp(event.value()/25f,.1f,.7f),1); }
                 case DESTROYED -> {
-                    delayedImpacts.removeIf(impact->impact.event.subjectId()==event.subjectId());
                     stopLoop("special-grinder-"+event.subjectId());
                     shot("destroyed",Group.WEAPON,94,event.position(),1,1);
                     duck=config.musicDuckSeconds();
@@ -395,7 +386,7 @@ public final class AudioDirector implements AutoCloseable {
                 case FIRE_ENDED -> stopLoop("fire-"+event.eventId());
                 case FREEZE -> shot("freeze-hit",Group.THREAT,event.subjectId()==0?100:80,event.position(),.8f,1);
                 case SHIELD -> shot("shield-on",Group.THREAT,player?100:80,event.position(),.8f,1);
-                case SHIELD_HIT -> contact(event);
+                case SHIELD_HIT -> playImpact(event);
                 case SHIELD_ENDED -> shot("shield-end",Group.THREAT,event.subjectId()==0?95:70,event.position(),.7f,1);
                 case CONTROL_ENDED -> { if(kind.equals("freeze"))shot("freeze-end",Group.THREAT,
                         event.subjectId()==0?95:70,event.position(),.7f,1); }
@@ -508,15 +499,6 @@ public final class AudioDirector implements AutoCloseable {
         if(capture!=null)capture.stopAll();
         capture=next;
         if(capture!=null)captureVoices();
-    }
-    int pendingImpactCount() {return delayedImpacts.size();}
-
-    private void contact(GameEvent event) {
-        float delay=event.cosmeticImpactDelaySeconds();
-        if(delay<=0) {playImpact(event);return;}
-        // At most 128 cosmetic contacts; no native source is reserved while a tracer travels.
-        if(delayedImpacts.size()>=128)delayedImpacts.removeFirst();
-        delayedImpacts.addLast(new DelayedImpact(event,impactClock+delay));
     }
     private void playImpact(GameEvent event) {
         if(event.type()==GameEvent.Type.SHIELD_HIT)

@@ -39,7 +39,7 @@ public final class BotController {
         final Map<String,Long> pickupUnavailableUntil=new HashMap<>();
         final DistrictPatrol.Cursor patrol=new DistrictPatrol.Cursor();
         int supplyStart=-1;
-        long supplyRevision=-1;
+        long supplyRevision=-1,supplyGeneration,routeSupplyGeneration=-1;
         Set<String> supplyHazards=Set.of();
         NavGraph.Mobility supplyMobility;
         Map<Integer,NavGraph.Route> supplyRoutes=Map.of();
@@ -153,6 +153,7 @@ public final class BotController {
                 observe(vehicle,brain,world,active);
                 decide(vehicle,brain,world);
             }
+            if(brain.state!=State.SEEK_PICKUP)releasePickup(brain,vehicle.id);
             VehicleCommand command=drive(vehicle,brain,world);
             AbilityId ability=chooseAbility(vehicle,brain,world);
             // Save explosive ammunition until the receiver has its target: launching it on
@@ -592,7 +593,7 @@ public final class BotController {
             brain.supplyRoutes.forEach((node,route)->lengths.put(node,graph.pathLength(route.nodes())));
             brain.supplyLengths=Map.copyOf(lengths);
             brain.supplyStart=start;brain.supplyRevision=graph.revision();brain.supplyHazards=Set.copyOf(hazards);
-            brain.supplyMobility=mobility;
+            brain.supplyMobility=mobility;brain.supplyGeneration++;
         }
         float startDistance=position.distance(graph.position(start));var bounds=arena.bounds();
         float maximumPath=arena.districts().isEmpty()?rules.maximumPickupPath():(float)Math.hypot(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ());
@@ -637,7 +638,8 @@ public final class BotController {
             }
         }
         int goal=graph.nearest(destination);
-        if (goal==brain.goalNode && !brain.path.isEmpty() && session.tick<brain.replanAt&&brain.routeRevision==graph.revision()) {
+        if (goal==brain.goalNode && !brain.path.isEmpty() && session.tick<brain.replanAt&&brain.routeRevision==graph.revision()
+                &&(brain.state!=State.SEEK_PICKUP||brain.routeSupplyGeneration==brain.supplyGeneration)) {
             brain.destination=destination.clone(); return;
         }
         brain.destination=destination.clone(); brain.goalNode=goal;
@@ -660,6 +662,7 @@ public final class BotController {
             if(!planned.found())brain.destination=position.clone();
         }
         brain.path=planned.nodes();brain.traversals=planned.traversals();brain.routeRevision=planned.revision();brain.transition=null;
+        brain.routeSupplyGeneration=brain.state==State.SEEK_PICKUP?brain.supplyGeneration:-1;
         brain.pathIndex=0;
         if (brain.path.size()>1) {
             Vector3f start=graph.position(brain.path.getFirst()),next=graph.position(brain.path.get(1));

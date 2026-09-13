@@ -56,7 +56,7 @@ class Location:
     def __init__(self,identity,title,theme,width,depth,enemies,boss):
         self.resource='arena-'+identity.replace('_','-');self.width=width;self.depth=depth
         self.data=dict(schemaVersion=4,id=identity,metadata=dict(title=title,theme=theme,normalEnemies=enemies,durationSeconds=0,recoveryCost=0,introduction='',music=f'audio/music/{identity}-normal.wav',bossMusic=f'audio/music/{identity}-boss.wav'),bounds=dict(minX=0,maxX=width,minZ=0,maxZ=depth,recoveryY=-45),boxes=[],ramps=[],spawns=[],pickups=[],hazards=[],nodes=[],edges=[],surfaces=[],launchPads=[],drops=[],destructibles=[],secrets=[],barriers=[],bosses=[boss],layoutRevision=3,meshes=[],districts=[],roads=[])
-        self.points={};self.paths=[];self.node_ids={};self.footprints=[];self.holes=[];self.special=[];self.regions=[];self.district_specs=[];self.sites=[];self.models=[];self.fixed=[];self.deck_openings={}
+        self.points={};self.paths=[];self.node_ids={};self.footprints=[];self.holes=[];self.special=[];self.regions=[];self.district_specs=[];self.sites=[];self.models=[];self.fixed=[];self.deck_openings={};self.trees=[]
     def box(self,name,center,size,material='concrete',collision=True,yaw=0):
         assert min(size)>0,(name,size)
         self.data['boxes'].append(dict(id=name,center=vec(center),size=vec(size),material=material,collision=collision,yawDegrees=yaw));return name
@@ -109,6 +109,26 @@ class Location:
         else:self.data['destructibles'].append(dict(id=name,geometryId=geometry,maximumHp=25))
         self.road(name,a+' '+b,22,kind='OPENABLE',object_id=name)
     def launch(self,name,a,b,flight=2.6):self.special.append((name,a,b,flight))
+    def landscape_clear(self,x,z,radius=8):
+        for path in self.paths:
+            for first,last in zip(path['names'],path['names'][1:]):
+                a,b=self.points[first],self.points[last];dx,dz=b[0]-a[0],b[2]-a[2];t=max(0,min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz)))
+                if math.hypot(x-a[0]-t*dx,z-a[2]-t*dz)<path['width']/2+radius:return False
+        if any(inside((x,z),hole) for hole in self.holes):return False
+        for box in self.data['boxes']:
+            c,s=box['center'],box['size']
+            if c['y']+s['y']/2<.1:continue
+            yaw=math.radians(box['yawDegrees']);dx,dz=x-c['x'],z-c['z']
+            if abs(math.cos(yaw)*dx-math.sin(yaw)*dz)<s['x']/2+radius and abs(math.sin(yaw)*dx+math.cos(yaw)*dz)<s['z']/2+radius:return False
+        return True
+    def grove(self,name,bounds,spacing=34):
+        x1,x2,z1,z2=bounds;self.site(name,name,'Озеленённый участок с группами деревьев','Посадки отступают от автомобильных проездов и служебных площадок',bounds,'landscape')
+        for row,z in enumerate(range(z1+12,z2-10,spacing)):
+            for col,x in enumerate(range(x1+12,x2-10,spacing)):
+                xx=x+math.sin(row*2.3+col*.7)*5;zz=z+math.cos(col*1.9+row)*5
+                if not self.landscape_clear(xx,zz,10):continue
+                scale=.7+.12*((row+col)%4);identity=f'{name}-tree-{row}-{col}'
+                self.box(identity,(xx,6*scale,zz),(2*scale,12*scale,2*scale),'wood',False);self.trees.append(dict(id=identity,position=(xx,0,zz),scale=scale))
     def boundaries(self):
         theme=self.data['metadata']['theme']
         if theme=='CARNIVAL':
@@ -275,7 +295,7 @@ class Location:
         for box in self.data['boxes']:
             if box['id'] in hero_roofs:box['collision']=False
         (OUT/(self.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-        (SOURCE/(self.data['id']+'-design.json')).write_text(json.dumps(dict(sites=self.sites,districts=self.data['districts'],roads=self.data['roads'],supply=self.supply_report),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        (SOURCE/(self.data['id']+'-design.json')).write_text(json.dumps(dict(sites=self.sites,districts=self.data['districts'],roads=self.data['roads'],supply=self.supply_report,trees=self.trees),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         print(self.data['id'],len(self.data['boxes']),'solids',len(self.data['meshes']),'meshes',len(self.data['nodes']),'nodes',len(self.data['pickups']),'pickups')
 
 def boss(identity,name,hp,weapons,entrances,quotes,pads=()):
@@ -300,6 +320,8 @@ def construction():
     a.site('unfinished-apartments','Корпус 17Б','Каркас жилого корпуса и монтажный двор','Западный въезд → открытый каркас → северный двор',[355,610,815,980],'through-interior')
     a.roof('unfinished-apartments',(360,595,820,950),16,'concrete');a.roof('unfinished-east-wing',(555,670,900,1050),29,'concrete')
     for x,z in [(370,830),(450,830),(570,810),(370,925),(450,925),(570,925),(610,940),(650,1025)]:a.box(f'frame-column-{x}-{z}',(x,8,z),(2.5,16,2.5))
+    
+    for x,z in [(560,910),(660,910),(560,1035),(660,1035)]:a.box(f'frame-wing-column-{x}-{z}',(x,14.5,z),(3,29,3),'concrete')
     a.building('unfinished-stair-core',(550,575,870,910),42);a.building('finished-shell-west',(70,120,815,980),35,'ivory');a.building('foundation-next-phase',(235,285,1100,1150),1.2)
     a.building('cladding-in-progress',(675,735,990,1045),48,'ivory');a.wall('frame-courtyard-wall',(355,960),(455,960),7)
     # Concrete processing: offset loading/discharge legs around mixer core, side escape.
@@ -309,6 +331,8 @@ def construction():
     a.building('plant-mixer-core',(1105,1135,530,565),31,'steel');a.building('plant-control-office',(1000,1040,650,685),12,'blue')
     for i,(x,z) in enumerate([(1020,370),(1130,375),(1350,440)]):a.building('silo-base-'+str(i),(x-17,x+17,z-17,z+17),3,'concrete')
     for x,z in [(1010,520),(1200,520),(1010,690),(1200,690)]:a.box(f'plant-column-{x}-{z}',(x,11.5,z),(3,23,3),'steel')
+    
+    for x,z in [(1050,520),(1100,520),(1150,520),(1080,690)]:a.box(f'plant-bay-column-{x}-{z}',(x,11.5,z),(2.5,23,2.5),'steel')
     a.wall('aggregate-bin-a',(870,410),(960,410),5,3);a.wall('aggregate-bin-b',(870,460),(960,460),5,3);a.wall('aggregate-bin-back',(870,410),(870,460),5,3)
     # Warehouse runs east-west then turns through north dock; racking defines a broad L.
     a.site('warehouse','Склад комплектации','Приём панелей и выдача деталей на стройку','Западные ворота → зона комплектации → северные доки',[1120,1350,180,315],'through-interior')
@@ -374,7 +398,7 @@ def neon():
     a.roof('technical-complex',(1045,1140,930,1080),14,'steel');a.wall('technical-west',(1050,1005),(1050,1080),14,2,'dark-concrete');a.wall('technical-south',(1050,935),(1140,935),14,2,'dark-concrete');a.building('technical-switchgear',(1110,1130,945,1005),6,'blue')
     # Underground roof is also a genuine surface, without an invisible ground sheet.
     a.roof('tunnel-cover',(1160,1220,540,820),1.5,'concrete')
-    a.wall('tunnel-west-wall',(1160,540),(1160,820),14,2,'concrete',-12);a.wall('tunnel-east-wall',(1220,540),(1220,820),14,2,'concrete',-12)
+    a.wall('tunnel-west-wall',(1162,540),(1162,820),14,2,'concrete',-12);a.wall('tunnel-east-wall',(1218,540),(1218,820),14,2,'concrete',-12)
     # Three compact parking levels. Open ramp slots are cut from decks before authoring.
     a.site('parking-ground-floor','Паркинг P‑03','Два крытых этажа, открытый верхний и встроенные рампы','Западный и восточный въезды; северный двор; рампы вдоль фасадов',[1400,1660,200,500],'through-interior')
     a.roof('parking-ground-floor',(1400,1660,290,400),7.2,'concrete')
@@ -398,7 +422,8 @@ def carnival():
     a.holes=[lake];a.fixed=[('lake-bottom',lake,-18,'earth',-1),('island',island,3,'district-warm',1)]
     a.mesh('lake-water',[lake],-1.2,'cyan',0,False)
     a.points=dict(entry=(160,0,180),entry_e=(400,0,200),entry_n=(200,0,330),fair_s=(380,0,390),fair_c=(310,0,560),fair_n=(320,0,780),fair_e=(420,0,620),fair_w=(170,0,620),circus_s=(330,0,930),circus_in=(330,0,1020),circus_e=(410,0,1080),circus_out=(530,0,1080),circus_w=(220,0,1060),circus_n=(330,0,1170),north=(750,0,1080),depot_w=(1080,0,1040),depot_in=(1180,0,1040),depot_turn=(1250,0,1040),depot_out=(1250,0,1160),depot_e=(1390,0,1040),backstage=(1370,0,900),rides_n=(1140,0,820),rides_c=(1210,0,600),rides_s=(1140,0,370),ride_in=(1210,0,440),ride_turn=(1290,0,500),ride_out=(1410,0,520),south=(740,0,250),se=(1340,0,220),shore_s=(720,0,345),shore_sw=(510,0,360),shore_w=(420,0,650),shore_nw=(460,0,890),shore_n=(760,0,975),shore_e=(1080,0,670),west_ramp=(390,0,650),west_high=(470,3,650),island_w=(640,3,650),island_c=(750,3,650),island_e=(870,3,650),east_high=(1030,3,650),east_ramp=(1100,0,700),island_n=(755,3,800),north_high=(755,3,945),north_ramp=(835,0,1020),island_s=(750,3,565),jump_s=(750,0,355),jump_run=(750,0,290),gate_a=(165,0,820),gate_b=(290,0,885),jump_back=(1120,0,950),jump_land=(1160,0,1160))
-    for name,path,w in [('arrival-walk','entry entry_e shore_sw south se rides_s',30),('entrance-alley','entry entry_n fair_s fair_c fair_n circus_s',24),('fair-backstage','entry_n fair_w gate_a circus_w circus_n circus_out north depot_out depot_e',22),('fair-crossings','fair_s shore_sw shore_s jump_s',24),('fair-front','fair_c fair_e shore_w shore_nw circus_s',24),('fair-north-cross','fair_n shore_nw shore_n north',24),('circus-arena','circus_s circus_in circus_e circus_out',24),('circus-backstage','circus_w circus_in circus_n',22),('east-promenade','se ride_out rides_c rides_n depot_w depot_in depot_turn depot_e',24),('ride-pavilion','rides_s ride_in ride_turn ride_out',24),('ride-front','ride_in rides_c shore_e east_ramp',26),('ride-servicing','ride_out depot_e',22),('depot-through','depot_turn depot_out',24),('depot-west-service','depot_w jump_back north',24),('depot-north-service','depot_out jump_land north',22),('north-shore','shore_n north_ramp depot_w',24),('southern-promenade','south shore_s rides_s shore_e',26),('island-path','island_w island_s island_e island_n island_w',24),('island-square','island_w island_c island_e',26),('island-north-path','island_c island_n',24),('bridge-west-approach','fair_w west_ramp shore_w',26),('jump-runup','south jump_run jump_s',24),('service-gate-a','fair_w gate_a',22),('service-gate-b','gate_b circus_s',22),('boss-depot-entry','backstage depot_e',24)]:a.road(name,path,w,'road-surface' if 'service' in name or 'backstage' in name else 'district-warm')
+    a.points.update(island_around=(815,3,700))
+    for name,path,w in [('arrival-walk','entry entry_e shore_sw south se rides_s',30),('entrance-alley','entry entry_n fair_s fair_c fair_n circus_s',24),('fair-backstage','entry_n fair_w gate_a circus_w circus_n circus_out north depot_out depot_e',22),('fair-crossings','fair_s shore_sw shore_s jump_s',24),('fair-front','fair_c fair_e shore_w shore_nw circus_s',24),('fair-north-cross','fair_n shore_nw shore_n north',24),('circus-arena','circus_s circus_in circus_e circus_out',24),('circus-backstage','circus_w circus_in circus_n',22),('east-promenade','se ride_out rides_c rides_n depot_w depot_in depot_turn depot_e',24),('ride-pavilion','rides_s ride_in ride_turn ride_out',24),('ride-front','ride_in rides_c shore_e east_ramp',26),('ride-servicing','ride_out depot_e',22),('depot-through','depot_turn depot_out',24),('depot-west-service','depot_w jump_back north',24),('depot-north-service','depot_out jump_land north',22),('north-shore','shore_n north_ramp depot_w',24),('southern-promenade','south shore_s rides_s shore_e',26),('island-path','island_w island_s island_e island_n island_w',24),('island-square','island_w island_c island_e',26),('island-north-path','island_c island_around island_n',24),('bridge-west-approach','fair_w west_ramp shore_w',26),('jump-runup','south jump_run jump_s',24),('service-gate-a','fair_w gate_a',22),('service-gate-b','gate_b circus_s',22),('boss-depot-entry','backstage depot_e',24)]:a.road(name,path,w,'road-surface' if 'service' in name or 'backstage' in name else 'district-warm')
     # Exactly three bridges. Their flat landings stop AT island polygon edges;
     # island pavement is clipped against ribbons, never hidden under another top face.
     a.road('west-bridge-rise','west_ramp west_high',30,'wood','RAMP');a.road('west-lake-bridge','west_high island_w',30,'wood')
@@ -410,6 +435,17 @@ def carnival():
     a.building('ticket-office-west',(105,140,240,280),6,'faded-red');a.building('ticket-office-east',(255,300,240,280),6,'ivory')
     for i,(x,z,w,d,yaw) in enumerate([(245,410,32,24,-12),(260,500,28,20,10),(375,475,40,26,-18),(205,725,34,28,15),(390,745,30,22,-8),(285,330,26,20,12),(360,700,32,24,-12)]):a.box('fair-stall-'+str(i),(x,4,z),(w,8,d),'wood' if i%2 else 'faded-red',True,yaw)
     a.building('fair-delivery-store',(70,115,710,780),7,'blue')
+    for identity,x,z,w,d,h,mat,yaw in [
+        ('sweet-shop',265,570,26,20,7,'faded-red',0),('shooting-gallery',270,665,32,22,8,'blue',-3),
+        ('fortune-cabinet',270,720,26,20,10,'purple',4),('arcade',365,520,30,26,9,'blue',-12),
+        ('tea-house',220,475,26,28,8,'wood',10),('bakery',225,535,30,22,7,'ivory',5),
+        ('prize-store',230,585,30,20,7,'faded-red',-8),('photo-kiosk',445,520,26,20,8,'ivory',8),
+        ('souvenir-row',405,795,34,22,9,'wood',18),('puppet-stage',220,775,36,26,9,'purple',-5)]:
+        a.box('fair-shop-'+identity,(x,h/2,z),(w,h,d),mat,True,yaw)
+    a.site('fair-street','Ярмарочная улица','Кафе, игры, призы и мастерские за торговым фасадом','Извилистая публичная улица и отдельный западный проезд разгрузки',[150,470,380,830],'market-frontage')
+    a.site('island-bandstand','Музыкальный павильон','Оркестровая эстрада и место отдыха у воды','Три мостовых подхода сходятся на площади; проезд обходит павильон',[725,785,685,745],'landmark')
+    a.box('island-bandstand-proxy',(755,11,715),(62,16,62),'ivory',False)
+    a.box('island-bandstand-base',(755,3.6,715),(52,1.2,52),'wood')
     # Polygonal circus with two cardinal entrances and an offset backstage exit.
     a.site('circus','Цирк Эйфория','Манеж, зрительские сектора и закулисье','Южный вход → манеж → восточное закулисье; северный обход',[240,455,975,1160],'through-interior')
     a.roof('circus',(245,450,975,1155),18,'faded-red')
@@ -426,6 +462,7 @@ def carnival():
     for i,x in enumerate((1165,1220,1290)):a.building('repair-bench-'+str(i),(x-10,x+10,995,1015),3,'steel')
     a.building('depot-parts-store',(1340,1435,1140,1185),10,'blue');a.building('maintenance-office',(1030,1080,1170,1220),8,'ivory')
     a.hazard('carousel','CAROUSEL',(925,0,315),(36,6,36));a.hazard('stage-fire','FIRE',(1280,0,500),(24,6,7))
+    for name,bounds in [('entry-garden',(45,130,75,305)),('front-lawn',(440,630,65,195)),('west-fair-garden',(45,130,340,865)),('south-promenade-grove',(540,675,235,330)),('circus-garden',(65,200,940,1220)),('north-bank-grove',(530,670,935,1020)),('wheel-garden',(1340,1450,610,880)),('backstage-green-buffer',(870,1030,1135,1240)),('fair-east-garden',(365,440,445,585)),('ride-arrival-garden',(1060,1200,80,250))]:a.grove(name,bounds)
     a.regions=[(rect(90,435,100,355),'district-warm'),(rect(1120,1450,950,1230),'district-service'),(rect(220,535,965,1190),'district-fair')]
     a.spawn('entry fair_s ride_out depot_e circus_out shore_nw island_e rides_n backstage se circus_w south fair_w')
     a.district('entrance','Входная площадь',(200,0,180),rect(40,600,50,365));a.district('fair','Ярмарка',(310,0,560),rect(40,480,370,925));a.district('lake','Озеро и остров',(750,3,650),[(485,430),(1010,430),(1060,740),(920,935),(480,925)]);a.district('rides','Большие аттракционы',(1210,0,600),rect(1065,1470,100,935));a.district('circus','Цирк',(330,0,1060),rect(50,700,940,1260));a.district('backstage','Служебная территория',(1250,0,1040),rect(705,1470,940,1260))
@@ -458,7 +495,7 @@ def write_review_routes():
     specs={
         'construction_17': [('pit','district','west pit_w pit_wb pit pit_eb pit_e'),('homes','district','frame_w frame_in frame_turn frame_out frame_e'),('plant','district','plant_w plant_in plant_turn plant_n plant_e'),('warehouses','district','warehouse_w warehouse_in warehouse_turn warehouse_out'),('interchange','district','ramp_s deck_s deck_c deck_n ramp_n'),('unfinished-apartments','interior','frame_w frame_in frame_turn frame_out'),('concrete-plant','interior','plant_w plant_in plant_turn plant_n'),('warehouse','interior','warehouse_w warehouse_in warehouse_turn warehouse_out')],
         'neon_zero': [('business','district','business_w business_c business_e n'),('market','district','market_w market_in market_c market_n'),('homes','district','home_w home_c home_e s'),('transport','district','tech_e tn tnb tc tsb ts'),('parking','district','park_w park_c park_s p1s p1e p1ne p1nw p2nw'),('shopping-passage','interior','market_w market_in market_c market_n'),('technical-complex','interior','tech_w tech_in tech_c tech_e'),('parking-ground-floor','interior','park_w park_c park_e park_out')],
-        'euphoria_park': [('entrance','district','entry entry_n fair_s'),('fair','district','fair_s fair_c fair_e shore_w'),('lake','district','west_ramp west_high island_w island_c island_n north_high north_ramp'),('rides','district','rides_s ride_in ride_turn ride_out'),('circus','district','circus_s circus_in circus_e circus_out'),('backstage','district','depot_w depot_in depot_turn depot_out'),('circus','interior','circus_s circus_in circus_e circus_out'),('ride-pavilion','interior','rides_s ride_in ride_turn ride_out'),('repair-depot','interior','depot_w depot_in depot_turn depot_out')]}
+        'euphoria_park': [('entrance','district','entry entry_n fair_s'),('fair','district','fair_s fair_c fair_e shore_w'),('lake','district','west_ramp west_high island_w island_c island_around island_n north_high north_ramp'),('rides','district','rides_s ride_in ride_turn ride_out'),('circus','district','circus_s circus_in circus_e circus_out'),('backstage','district','depot_w depot_in depot_turn depot_out'),('circus','interior','circus_s circus_in circus_e circus_out'),('ride-pavilion','interior','rides_s ride_in ride_turn ride_out'),('repair-depot','interior','depot_w depot_in depot_turn depot_out')]}
     routes=[]
     for factory in (construction,neon,carnival):
         a=factory();identity=a.data['id'];data=json.loads((OUT/(a.resource+'.json')).read_text(encoding='utf-8'))

@@ -90,6 +90,7 @@ public final class GameApplication extends SimpleApplication {
     private BotController bots;
     private CombatSystem combat;
     private CombatVisuals combatVisuals;
+    private ContactPresentationTimeline contactTimeline;
     private SpecialPresentation specialPresentation;
     private BossActionPresentation bossActionPresentation;
     private PickupPresentation pickupPresentation;
@@ -340,7 +341,9 @@ public final class GameApplication extends SimpleApplication {
             drivers.putAll(runtime.drivers());arenaSystems=runtime.arenaSystems();bots=runtime.bots();combat=runtime.combat();
             if(checkpoint!=null)runtime.restoreCheckpoint(checkpoint);
             ArenaPresentation.attach(assetManager,content.visual(),session,arena,arenaSystems);
-            combatVisuals=new CombatVisuals(assetManager,matchNode,world);createNavigationLines();
+            combatVisuals=new CombatVisuals(assetManager,matchNode,world);
+            contactTimeline=new ContactPresentationTimeline(session.sessionId);
+            sceneLighting.bindCombatVisuals(combatVisuals);createNavigationLines();
             specialPresentation=new SpecialPresentation(assetManager,matchNode,world);
             specialPresentation.bindModels(vehicleModels);
             UUID presentationSessionId=session.sessionId;
@@ -608,12 +611,9 @@ public final class GameApplication extends SimpleApplication {
         }
         report.tick(session,events,bots);
         if(session.vehicle(0).recoveries>recoveries) chase.reset();
-        for(GameEvent event:events) {
-            if(event.type()==GameEvent.Type.DAMAGE && event.subjectId()==0) chase.impact(Math.min(0.7f,event.value()/60));
-            if(event.type()==GameEvent.Type.RAM&&(event.subjectId()==0||event.sourceId()==0))
-                chase.impact(Math.min(.7f,event.value()/40));
-        }
-        combatVisuals.accept(events);
+        List<GameEvent> presented=contactTimeline.accept(events,session.seconds());
+        combatVisuals.accept(presented);
+        presentContactsAndVehicles(presented);
         specialPresentation.accept(events);
         pickupPresentation.accept(events);
         pickupFeedback.accept(events,session.tick);
@@ -625,18 +625,37 @@ public final class GameApplication extends SimpleApplication {
                     playerState.damageDealt,playerState.eliminations,session.activeTicks,
                     session.bossParticipantId>=0&&!session.vehicle(session.bossParticipantId).alive()));
             writeReport(); audio.stopMatch();
-            audio.accept(events);
+            audio.accept(presented);
             flow.results();
-        } else audio.accept(events);
+        } else audio.accept(presented);
+    }
+    private void presentContactsAndVehicles(List<GameEvent> events) {
+        combatVisuals.acceptPresented(events.stream().filter(event->event.type()==GameEvent.Type.IMPACT
+                ||event.type()==GameEvent.Type.SHIELD_HIT).toList());
+        for(var event:events) {
+            Node model=vehicleModels.get(event.subjectId());
+            if(model!=null)VehicleVisual.acceptPresented(model,event);
+            // Continuous fire/grinding owns continuous effects; only physical contacts kick the camera.
+            if(event.type()==GameEvent.Type.DAMAGE&&event.subjectId()==0&&event.vehicleContact()!=null
+                    &&!Set.of("ram","grinder","napalm","fire").contains(event.kind()))
+                chase.impact(Math.min(.7f,event.value()/60));
+            if(event.type()==GameEvent.Type.RAM&&(event.subjectId()==0||event.sourceId()==0))
+                chase.impact(Math.min(.7f,event.value()/40));
+        }
     }
     private void renderMatch(float dt) {
         long presentationStarted=profileStamp();
         boolean advancing=flow.screen()==Screen.RUNNING;
         boolean results=flow.screen()==Screen.RESULTS;
         float alpha=advancing||results&&runtime.hasWrecks()?loop.alpha():1;
+        if(advancing) {
+            List<GameEvent> delivered=contactTimeline.advanceTo(session.seconds());
+            presentContactsAndVehicles(delivered);audio.accept(delivered);
+        }
         for(var state:session.vehicles) {
             Node model=vehicleModels.get(state.id);
-            VehicleVisual.updateDamage(model,showcase==null?state.hp/state.maximumHp:showcase.displayHpFraction(state));
+            float visibleHp=contactTimeline.visibleHp(state.id,state.hp,state.maximumHp);
+            VehicleVisual.updateDamage(model,showcase!=null&&session.seconds()<12?showcase.displayHpFraction(state):visibleHp/state.maximumHp);
             if(state.id==session.bossParticipantId)VehicleVisual.updateBossPhase(model,session.bossMode-1,state.alive()&&arenaSystems.bossVulnerable());
             VehicleVisual.updateEffects(model,!results&&state.alive()&&state.frozenTicks>0,!results&&state.alive()&&state.shieldTicks>0);
             if(world.containsVehicle(state.id)) {
@@ -648,11 +667,13 @@ public final class GameApplication extends SimpleApplication {
                 model.removeFromParent();
                 for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
             }
+            VehicleVisual.updatePresentation(model,advancing||results?dt:0,cam);
         }
         bossActionPresentation.setGlow(store.settings().glow);
         bossActionPresentation.update(vehicleModels);
         if(advancing) {
             combatVisuals.setFlashIntensity(store.settings().flashes);
+            combatVisuals.setFireExposures(combat.fireExposures());
             combatVisuals.update(combat.projectiles(),combat.mines(),combat.fireZones(),combat.ballisticWarnings(),session,dt);
             long audioStarted=profileStamp();
             if(session.mode==MatchSession.Mode.LEGACY) {
@@ -664,6 +685,7 @@ public final class GameApplication extends SimpleApplication {
             audio.update(session,world,dt);
             profileStage(StageProfiler.Stage.AUDIO,audioStarted);
         } else if(results) {
+            combatVisuals.setFireExposures(List.of());
             combatVisuals.update(List.of(),List.of(),List.of(),List.of(),null,dt);
             audio.updateTail(dt);
         }
@@ -1166,7 +1188,10 @@ public final class GameApplication extends SimpleApplication {
         if(enemyHealthBars!=null){enemyHealthBars.clear();enemyHealthBars.setVisible(false);}
         enemyHealthMarkers.clear();
         if(!finishAudioCapture())diagnosticCompletion.shutdownFailed();
-        if(audio!=null)audio.stopMatch(); if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
+        if(audio!=null)audio.stopMatch();
+        if(contactTimeline!=null){contactTimeline.close();contactTimeline=null;}
+        if(sceneLighting!=null)sceneLighting.bindCombatVisuals(null);
+        if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
         else if(world!=null){world.close();world=null;}
         if(soak!=null&&unloading!=null) {

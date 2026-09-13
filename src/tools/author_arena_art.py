@@ -9,7 +9,7 @@ from author_campaign_arenas import ROOT,OUT,vec,construction,neon,carnival
 
 class Scene:
     def __init__(self,location):
-        self.location=location;self.data=json.loads((OUT/(location.resource+'.json')).read_text(encoding='utf-8'));self.parts=[];self.groups=[];self.models=[];self.lights=[];self.anchor='';self.group=''
+        self.location=location;self.data=json.loads((OUT/(location.resource+'.json')).read_text(encoding='utf-8'));self.data['boxes']=[b for b in self.data['boxes'] if not b['id'].startswith('dress-')];self.parts=[];self.groups=[];self.models=[];self.lights=[];self.anchor='';self.group=''
     def part(self,name,pos,size,material,shape='BOX',rotation=(0,0,0)):
         self.parts.append(dict(id=f'{name}-{len(self.parts):05}',group=self.group,anchor=self.anchor,shape=shape,material=material,position=vec(pos),size=vec(size),rotation=vec(rotation)))
     def cylinder(self,name,p,r,h,mat):self.part(name,p,(r*2,r*2,h),mat,'CYLINDER',(90,0,0))
@@ -47,10 +47,18 @@ class Scene:
                 if name in used:continue
                 used.add(name);p=self.location.points[name];q=self.location.points[names[index+1]]
                 if p[1]!=0:continue
-                dx,dz=q[0]-p[0],q[2]-p[2];length=math.hypot(dx,dz);side=path['width']/2+5;x,z=p[0]+dz/length*side,p[2]-dx/length*side
-                if not self.location.clear((x,0,z),3):continue
+                dx,dz=q[0]-p[0],q[2]-p[2];length=math.hypot(dx,dz);chosen=None
+                for along in (35,60,85):
+                    if along>length-15:continue
+                    for sign in (-1,1):
+                        side=sign*(path['width']/2+5);x,z=p[0]+dx/length*along+dz/length*side,p[2]+dz/length*along-dx/length*side
+                        if self.location.landscape_clear(x,z,2):chosen=(x,z);break
+                    if chosen:break
+                if not chosen:continue
+                x,z=chosen
                 self.anchor='';height=8 if self.data['metadata']['theme']=='CARNIVAL' else 11
-                self.cylinder('road-fixture-column',(x,height/2,z),.22,height,'steel');self.part('road-fixture-head',(x,height,z),(1.8,.6,1.2),'steel');self.part('road-fixture-lens',(x,height-.4,z),(1.2,.15,.8),'light-amber' if self.data['metadata']['theme']!='NEON' else 'light-white')
+                identity='dress-fixture-'+name;self.data['boxes'].append(dict(id=identity,center=vec((x,height/2,z)),size=vec((.45,height,.45)),material='steel',collision=True,yawDegrees=0));self.anchor=identity
+                self.part('road-fixture-head',(x,height,z),(1.8,.6,1.2),'steel');self.part('road-fixture-lens',(x,height-.4,z),(1.2,.15,.8),'light-amber' if self.data['metadata']['theme']!='NEON' else 'light-white')
                 if len(self.lights)<24:self.light('road-fixture-'+name,(x,height-.8,z),(1,.8,.5) if self.data['metadata']['theme']!='NEON' else (.6,.8,1),24)
         # Each raised span has fascia, underside and grounded supports. These are
         # structural faces offset below the canonical road, never a second top sheet.
@@ -119,4 +127,11 @@ class Scene:
         (OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json')).write_text(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
 if __name__=='__main__':
     for factory,method in [(construction,'construction'),(neon,'neon'),(carnival,'carnival')]:
-        scene=Scene(factory());scene.common();getattr(scene,method)();scene.save()
+        scene=Scene(factory());scene.common();getattr(scene,method)()
+        if method=='construction':
+            from dress_construction import dress
+            dress(scene)
+        elif method=='neon':
+            from dress_neon import dress
+            dress(scene)
+        scene.save()

@@ -75,7 +75,9 @@ public final class SurfaceMaterials {
             // becomes a conspicuously bright plate after gamma correction in the real renderer.
             case "road-patch" -> texturedRecipe("asphalt_02",new ColorRGBA(.19f,.20f,.21f,1),3,.018f);
             case "road-wet" -> texturedRecipe("asphalt_02",new ColorRGBA(.13f,.18f,.22f,1),88,.44f);
-            case "road-surface" -> texturedRecipe("asphalt_02",new ColorRGBA(.105f,.115f,.13f,1),5,.07f);
+            // The source already contains dark asphalt. A near-black multiplier erased
+            // road grain even under the construction site's overcast daylight.
+            case "road-surface" -> texturedRecipe("asphalt_02",new ColorRGBA(.30f,.31f,.33f,1),5,.07f);
             case "road-marking" -> new Recipe(new ColorRGBA(.70f,.65f,.46f,1),3,.025f,false,List.of());
             case "district-slate" -> texturedRecipe("cracked_concrete",new ColorRGBA(.32f,.39f,.47f,1),7,.08f);
             case "district-warm" -> texturedRecipe("cracked_concrete",new ColorRGBA(.58f,.44f,.29f,1),6,.055f);

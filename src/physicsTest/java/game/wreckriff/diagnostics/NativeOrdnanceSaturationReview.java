@@ -48,22 +48,25 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
     private boolean measuredFrame,previousMeasuredFrame,pendingRetry;
     private int setupFramesRemaining,activeCapFrames,completedCycles;
     private long previousFrameNanos,activeSimulationTicks,maximumHeapBytes;
-    private double initialLoadMilliseconds;
+    private double initialLoadMilliseconds,submittedSimulationSeconds;
 
     private NativeOrdnanceSaturationReview(Path output,String expectedSource,int performanceSeconds){this.output=output;this.expectedSource=expectedSource;this.performanceSeconds=performanceSeconds;}
     public static void main(String[] args)throws Exception {
         JmeSystem.setSystemDelegate(new game.wreckriff.audio.DesktopAudioSystem());
         if(args.length<2||args.length>3)throw new IllegalArgumentException("Usage: output-directory expected-image-source-sha256 [performance-seconds:60..90]");
         if(!args[1].matches("(?i)[0-9a-f]{64}"))throw new IllegalArgumentException("Expected exact immutable image source SHA-256");
-        Path output=Path.of(args[0]).toAbsolutePath();Files.createDirectories(output);Files.deleteIfExists(output.resolve("review.json"));
         int seconds=args.length==3?Integer.parseInt(args[2]):0;
         if(args.length==3&&(seconds<60||seconds>90))throw new IllegalArgumentException("Performance measurement must last 60..90 active seconds");
+        Path output=Path.of(args[0]).toAbsolutePath();Files.createDirectories(output);
+        Files.deleteIfExists(output.resolve(seconds==0?"review.json":"performance.json"));
         var app=new NativeOrdnanceSaturationReview(output,args[1],seconds);var settings=new AppSettings(true);
         settings.setTitle("Wreck Riff / Native combat ordnance limits");settings.setResolution(1920,1080);settings.setSamples(4);
         settings.setGammaCorrection(true);settings.setVSync(false);settings.setFrameRate(seconds==0?60:0);
+        if(seconds>0)app.setPauseOnLostFocus(false);
         app.setSettings(settings);app.setShowSettings(false);app.start(JmeContext.Type.Display);
     }
     @Override public void simpleInitApp() {
+        long initializationStarted=System.nanoTime();
         if(context.getType()!=JmeContext.Type.Display||audioRenderer==null)throw new IllegalStateException("A real window and audio device are required");
         try(var input=getClass().getResourceAsStream("/build-info.properties")) {
             if(input==null)throw new IllegalStateException("Image build-info missing");buildInfo.load(input);
@@ -78,7 +81,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         heading=new BitmapText(guiFont);heading.setSize(28);heading.setLocalTranslation(32,1040,0);guiNode.attachChild(heading);
         caption=new BitmapText(guiFont);caption.setSize(18);caption.setLocalTranslation(32,1000,0);guiNode.attachChild(caption);
         sound=new AudioDirector(assetManager,audioRenderer,listener,rootNode);sound.setVolumes(.8f,.3f,.8f);
-        long started=System.nanoTime();beginAttempt();initialLoadMilliseconds=(System.nanoTime()-started)/1_000_000.0;
+        beginAttempt();initialLoadMilliseconds=(System.nanoTime()-initializationStarted)/1_000_000.0;
         if(performanceSeconds>0) {
             profiler=new StageProfiler();profiler.attachGpu(renderer);setupFramesRemaining=2;
             setAppProfiler(new AppProfiler() {
@@ -178,7 +181,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
         if(measuredFrame) {
             // Retain all wall time and any remainder across Retry. There is no .25s clamp
             // or per-frame substep limit that could conceal lost simulation time.
-            accumulator+=dt;started=System.nanoTime();
+            submittedSimulationSeconds+=dt;accumulator+=dt;started=System.nanoTime();
             while(accumulator>=MatchSession.DT) {
                 var events=rig.step(phase==Phase.FILL,profiler);visuals.accept(events);sound.accept(events);
                 accumulator-=MatchSession.DT;activeSimulationTicks++;
@@ -200,9 +203,11 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
     private void finishPerformance() {
         done=true;attempts.add(rig.evidence());
         var profiling=profiler.snapshot();var gpu=(Map<?,?>)profiling.get("gpuTiming");
-        boolean samplesValid=combatFrames.count()>0&&activeCapFrames>0&&completedCycles>0&&"SUPPORTED".equals(gpu.get("status"));
+        var gpuFrames=gpu.get("frames") instanceof Map<?,?> frames?frames:Map.of();
+        boolean gpuSampled=gpuFrames.get("frames") instanceof Number frames&&frames.longValue()>0;
+        boolean samplesValid=combatFrames.count()>0&&activeCapFrames>0&&completedCycles>0&&"SUPPORTED".equals(gpu.get("status"))&&gpuSampled;
         try {
-            var evidence=new LinkedHashMap<String,Object>();evidence.put("status",samplesValid?"COMPLETE":"INVALID");
+            var evidence=new LinkedHashMap<String,Object>();evidence.put("status",samplesValid?"COMPLETE":"INVALID");evidence.put("runId",runId);
             evidence.put("sourceSha256",buildInfo.getProperty("sourceSha256"));evidence.put("context",context.getType().name());
             evidence.put("resolution",List.of(cam.getWidth(),cam.getHeight()));evidence.put("msaa",context.getSettings().getSamples());
             evidence.put("audioEnabled",audioRenderer!=null);evidence.put("vsync",context.getSettings().isVSync());evidence.put("frameRateLimit",context.getSettings().getFrameRate());
@@ -210,6 +215,8 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
             evidence.put("frameTimeGate",samplesValid&&combatFrames.withinTarget()?"PASS":"FAIL");
             evidence.put("completedCycles",completedCycles);evidence.put("activeFramesAtBothCaps",activeCapFrames);evidence.put("maximumFrustumInstances",maximumFrustumInstances);
             evidence.put("activeSimulationTicks",activeSimulationTicks);evidence.put("unspentAccumulatorSeconds",accumulator);evidence.put("discardedSimulationSeconds",0);
+            evidence.put("submittedSimulationSeconds",submittedSimulationSeconds);
+            evidence.put("simulationTimeBalanceErrorSeconds",submittedSimulationSeconds-activeSimulationTicks*(double)MatchSession.DT-accumulator);
             evidence.put("initialFixtureLoadMs",initialLoadMilliseconds);evidence.put("retryFixtureLoadMs",retryMilliseconds);evidence.put("excludedSetupFrames",setupFrames.snapshot());
             evidence.put("setupPolicy","Initial fixture creation, Retry and two presentation frames per attempt are outside active combat samples. Their frame times and fixture load durations are retained separately. All combat dt and substep remainder are retained.");
             evidence.put("maximumUsedJavaHeapBytes",maximumHeapBytes);evidence.put("memoryScope","Java heap only; process RSS must be measured by the external runner.");

@@ -1,4 +1,9 @@
 #import "Common/ShaderLib/GLSLCompat.glsllib"
+#ifdef SOFT_PARTICLES
+#import "Common/ShaderLib/MultiSample.glsllib"
+uniform DEPTHTEXTURE m_SceneDepth;
+uniform vec2 m_CameraPlanes;
+#endif
 
 varying vec4 effectColor;
 varying vec2 effectUv;
@@ -6,6 +11,51 @@ varying float effectShape;
 varying vec2 effectVariation;
 varying vec3 effectGroundPosition;
 uniform float m_FlashIntensity;
+uniform sampler2D m_SmokeAtlas;
+uniform sampler2D m_FlameAtlas;
+uniform sampler2D m_BlastAtlas;
+uniform sampler2D m_DustAtlas;
+uniform sampler2D m_AuxiliaryAtlas;
+uniform vec3 m_LightDirection;
+uniform vec4 m_KeyLight;
+uniform vec4 m_FillLight;
+varying vec2 effectAnimation;
+varying float effectViewDistance;
+varying vec4 effectClipPosition;
+
+vec2 frameUv(vec2 uv, float frame, float grid, float gutter) {
+    vec2 cell = vec2(mod(frame, grid), floor(frame / grid));
+    return (cell + gutter + clamp(uv, 0.0, 1.0) * (1.0 - gutter * 2.0)) / grid;
+}
+vec4 baked(sampler2D atlas, vec2 uv) {
+    float current = clamp(effectAnimation.x, 0.0, 63.0);
+    vec4 first = texture2D(atlas, frameUv(uv, floor(current), 8.0, 0.03125));
+    vec4 next = texture2D(atlas, frameUv(uv, min(63.0, floor(current) + 1.0), 8.0, 0.03125));
+    return mix(first, next, fract(current));
+}
+float surfaceFade() {
+#ifdef SOFT_PARTICLES
+    vec2 screen = effectClipPosition.xy / effectClipPosition.w * 0.5 + 0.5;
+    float fade = 0.0;
+    float softness = max(0.025, effectAnimation.y);
+#ifdef RESOLVE_DEPTH_MS
+    int count = m_NumSamplesDepth;
+#else
+    int count = 1;
+#endif
+    for (int i = 0; i < count; i++) {
+        float z = fetchTextureSample(m_SceneDepth, screen, i).r * 2.0 - 1.0;
+        float distance = 2.0 * m_CameraPlanes.x * m_CameraPlanes.y /
+            (m_CameraPlanes.y + m_CameraPlanes.x - z * (m_CameraPlanes.y - m_CameraPlanes.x));
+        // Average coverage, never depth: mixed MSAA foreground/background samples
+        // must not manufacture a phantom surface at the silhouette of a vehicle.
+        fade += clamp((distance - effectViewDistance) / softness, 0.0, 1.0);
+    }
+    return fade / float(count);
+#else
+    return 1.0;
+#endif
+}
 
 float groundHash(vec3 p) {
     return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
@@ -41,10 +91,10 @@ float groundEdgeDistance(vec2 uv) {
 void main() {
     float coverage = 1.0;
     vec3 color = effectColor.rgb;
-    if (effectShape > 5.5) {
+    if (effectShape > 5.5 && effectShape < 6.5) {
         // Feather both sides of the thin impact warning without moving its radius.
         coverage = 1.0 - smoothstep(0.35, 1.0, abs(effectUv.y));
-    } else if (effectShape > 4.5) {
+    } else if (effectShape > 4.5 && effectShape < 5.5) {
         float soot = groundNoise(effectGroundPosition * 2.3);
         float grain = groundNoise(effectGroundPosition * 17.0);
         float edge = groundEdgeDistance(effectUv);
@@ -53,33 +103,35 @@ void main() {
         float embers = smoothstep(0.70, 0.90, grain) * smoothstep(0.48, 0.78, soot);
         color = mix(color, vec3(0.9, 0.24, 0.025), embers * 0.8);
     } else if (effectShape > 0.5) {
-        // Original analytic sprite mask: no external bitmap or hard rectangular silhouette.
         float angle = effectVariation.x;
         mat2 turn = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
         vec2 uv = turn * effectUv;
-        // Stable per-particle masks share the same six vertices and bounded sprite radius.
-        uv.x *= mix(1.02, 1.35, effectVariation.y);
-        float radius = length(uv);
-        float seed = effectVariation.y * 6.283185;
-        if (effectShape > 3.5) {
-            float edge = 0.85 + 0.095 * sin(uv.x * 12.0 + seed) * sin(uv.y * 9.0 - seed);
-            coverage = 1.0 - smoothstep(0.10, edge, radius);
-        } else if (effectShape > 2.5) {
-            // Critical smoke retains a broad opaque core while its outer edge stays soft.
-            float edge = 0.89 + 0.075 * sin(uv.x * 8.0 + uv.y * 5.0 + seed)
-                                      * sin(uv.y * 7.0 - uv.x * 4.0);
-            coverage = 1.0 - smoothstep(0.35, edge, radius);
-        } else if (effectShape < 1.5) {
-            float lobes = 0.87 + 0.08 * sin(uv.x * 8.0 + uv.y * 5.0 + seed)
-                                * sin(uv.y * 7.0 - uv.x * 4.0);
-            coverage = 1.0 - smoothstep(0.12, lobes, radius);
-            coverage *= coverage;
+        vec2 texUv = uv * .5 + .5;
+        if (any(greaterThan(abs(uv), vec2(1.0)))) discard;
+        vec4 volume;
+        bool smoke = effectShape < 1.5 || (effectShape > 2.5 && effectShape < 3.5) ||
+                     (effectShape > 6.5 && effectShape < 7.5);
+        if (smoke) {
+            volume = effectShape > 6.5 ? baked(m_DustAtlas, texUv) : baked(m_SmokeAtlas, texUv);
+            // A density gradient plus rounded lobe normal adds directional scene
+            // lighting without another normal atlas or a light loop per fragment.
+            vec2 offset = vec2(1.0 / 240.0, 0.0);
+            float dx = baked(m_SmokeAtlas, clamp(texUv + offset.xy, 0.0, 1.0)).a - volume.a;
+            float dy = baked(m_SmokeAtlas, clamp(texUv + offset.yx, 0.0, 1.0)).a - volume.a;
+            vec3 normal = normalize(vec3(-uv.x - dx * 7.0, -uv.y - dy * 7.0, .8));
+            vec3 light = m_FillLight.rgb * .8 + m_KeyLight.rgb * (.23 + .60 * max(0.0, dot(normal, -m_LightDirection)));
+            color *= mix(vec3(.65), volume.rgb, .4) * light;
+        } else if (effectShape > 7.5) {
+            volume = baked(m_FlameAtlas, texUv);color *= volume.rgb * 1.6;
+        } else if (effectShape > 3.5) {
+            volume = baked(m_BlastAtlas, texUv);color *= volume.rgb * 1.6;
         } else {
-            coverage = 1.0 - smoothstep(0.0, 1.0, radius);
-            coverage *= coverage;
+            volume = texture2D(m_AuxiliaryAtlas, frameUv(texUv, floor(effectVariation.y * 7.99), 4.0, .03125));
+            color *= volume.rgb;
         }
+        coverage = volume.a;
     }
-    float alpha = effectColor.a * coverage;
+    float alpha = effectColor.a * coverage * surfaceFade();
     if ((effectShape > 1.5 && effectShape < 2.5) || (effectShape > 3.5 && effectShape < 4.5))
         alpha *= mix(0.25, 1.0, m_FlashIntensity);
     if (alpha < 0.003) discard;

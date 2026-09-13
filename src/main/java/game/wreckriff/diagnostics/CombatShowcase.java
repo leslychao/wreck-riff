@@ -22,6 +22,9 @@ public final class CombatShowcase {
     private Map<String,Object> warningCapture=Map.of();
     public CombatShowcase(MatchSession session,PhysicsWorld world,CombatSystem combat) {
         this.session=session;this.world=world;this.combat=combat;
+        // This labelled diagnostic stages resources, while firing still uses the normal combat owner.
+        // Production starts with the ammunition defined by combat.json.
+        for(var vehicle:session.vehicles)for(var slot:vehicle.weapons())slot.ammo=slot.maximumAmmo;
         pair();
         world.teleport(2,new Vector3f(-55,.85f,-35),new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y));
     }
