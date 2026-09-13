@@ -128,17 +128,45 @@ class OpenAlPauseTest {
         try (Device device = new Device()) {
             Node scene = new Node();
             AudioDirector director = director(device, scene);
+            int nativeSourcePool = device.nextSource;
             try {
                 for (int retry = 0; retry < 20; retry++) {
-                    director.startMatch(SESSION_ID,MUSIC,MUSIC);
+                    director.startMenu();
+                    AudioNode menuMusic = find(scene, "music-menu");
+                    director.prepareMatch(SESSION_ID,"audio/music/construction_17-normal.wav","audio/music/construction_17-boss.wav");
+                    assertSame(menuMusic, find(scene, "music-menu"), "Loading retains the current menu stream");
+                    assertEquals(2, director.menuSourceCount());
+                    director.startPreparedMatch();
+                    assertEquals(2, director.musicSourceCount());
+                    for (int frame = 0; frame < 7; frame++) director.updatePresentation(.1f);
+                    assertEquals(0, director.menuSourceCount());
+                    assertEquals(1, director.gameplayVoiceCount());
                     director.accept(List.of(shot()));
                     director.pause();
+                    director.ui(UiCue.NAVIGATE);
+                    director.ui(UiCue.CONFIRM);
+                    assertEquals(AudioSource.Status.Paused, find(scene, "music-normal").getStatus());
+                    assertEquals(AL_PLAYING, device.state(find(scene, "sound-ui-confirm")));
                     director.stopMatch();
                     assertFalse(device.paused);
                     assertEquals(0, director.voiceCount());
                     assertDoesNotThrow(() -> device.renderer.update(0));
+                    director.startMenu();
+                    assertEquals(2, director.menuSourceCount());
+                    assertEquals(0, director.gameplayVoiceCount());
+                    assertEquals(2, director.voiceCount());
+                    assertEquals(1, scene.getQuantity());
+                    assertEquals(2, ((Node) scene.getChild("game-audio")).getQuantity(),
+                            "Only the menu stream and ambience remain after every return");
+                    assertEquals(nativeSourcePool, device.nextSource, "Retries reuse the renderer's native source pool");
+                    assertFalse(device.paused);
+                    assertEquals(device.pauseCalls, device.resumeCalls);
+                    assertDoesNotThrow(() -> device.renderer.update(0));
                 }
-                director.startMatch(SESSION_ID,MUSIC,MUSIC); director.pause();
+                director.prepareMatch(SESSION_ID,MUSIC,MUSIC);
+                director.startPreparedMatch();
+                director.pause();
+                director.ui(UiCue.BACK);
             } finally {
                 director.close();
             }

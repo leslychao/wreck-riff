@@ -14,6 +14,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class VerifyAssetsTest {
     @TempDir Path directory;
 
+    @Test void finalMusicLoudnessRequiresFixedTargetToleranceAndMatchingEncodedPcm() throws Exception {
+        String sha="b".repeat(64);
+        var item=com.google.gson.JsonParser.parseString("""
+                {"loudness":{"targetIntegratedLufs":-16,"toleranceLu":0.5,"integratedLufs":-16.01,
+                "truePeakDbtp":-2.5,"measurementMethod":"FFmpeg loudnorm input analysis of final encoded WAV"}}
+                """).getAsJsonObject();
+        var measurement=item.getAsJsonObject("loudness");measurement.addProperty("measurementSha256",sha);
+        assertDoesNotThrow(()->VerifyAssets.verifyMusicLoudness(item,sha));
+        assertThrows(IOException.class,()->VerifyAssets.verifyMusicLoudness(item,"c".repeat(64)),"Measurement from another PCM cannot approve this file");
+        for(double value:List.of(-15.49,-16.51,Double.NaN,Double.POSITIVE_INFINITY)) {
+            measurement.addProperty("integratedLufs",value);
+            assertThrows(IOException.class,()->VerifyAssets.verifyMusicLoudness(item,sha),"Reject out-of-range/non-finite delivery measurement");
+        }
+        measurement.addProperty("integratedLufs",-16);
+        measurement.addProperty("toleranceLu",2);
+        assertThrows(IOException.class,()->VerifyAssets.verifyMusicLoudness(item,sha),"Manifest cannot widen acceptance tolerance");
+        measurement.addProperty("toleranceLu",.5);measurement.addProperty("targetIntegratedLufs",-14);
+        assertThrows(IOException.class,()->VerifyAssets.verifyMusicLoudness(item,sha),"Manifest cannot move the target");
+    }
+
     @Test void A02_readsActualPcmSamplesAndDistinguishesMonoFromStereo() throws Exception {
         Path mono = wav("mono.wav", 1, new short[]{16384, -16384, 8192, -8192});
         VerifyAssets.WaveMetrics metrics = VerifyAssets.inspectWave(mono.toUri().toURL());

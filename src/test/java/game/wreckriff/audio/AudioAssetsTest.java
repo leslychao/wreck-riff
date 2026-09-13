@@ -23,7 +23,7 @@ class AudioAssetsTest {
             lengths.add(header.dataBytes());
             byte[] pcm=input.readNBytes((int)header.dataBytes());assertEquals(header.dataBytes(),pcm.length);
             assertTrue(hashes.add(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(pcm))),path+" repeats another recording");
-            Metrics signal=metrics(pcm);assertTrue(signal.peak>.6&&signal.peak<.85,path);assertTrue(signal.rms>.07,path);
+            Metrics signal=metrics(pcm);assertTrue(signal.peak>.6&&signal.peak<=.84,path);assertTrue(signal.rms>.07,path);
             assertTrue(Math.abs(signal.mean)<.002,path+" DC offset");
             long stereoFrames=0;for(int i=0;i<pcm.length;i+=4)if(sample(pcm,i)!=sample(pcm,i+2))stereoFrames++;
             assertTrue(stereoFrames>header.dataBytes()/8,path+" must contain a stereo arrangement");
@@ -38,6 +38,13 @@ class AudioAssetsTest {
             assertEquals("LICENSED_RECORDINGS",provenance.get("origin").getAsString());assertEquals(8,provenance.getAsJsonArray("assets").size());
             assertEquals("CC-BY-4.0",provenance.get("license").getAsString());
             assertEquals("NEEDS_CREATIVE_REVIEW",provenance.get("artisticStatus").getAsString());
+            for(var entry:provenance.getAsJsonArray("assets")) {
+                var item=entry.getAsJsonObject();var loudness=item.getAsJsonObject("loudness");
+                assertEquals(-16,loudness.get("targetIntegratedLufs").getAsDouble());
+                assertEquals(.5,loudness.get("toleranceLu").getAsDouble());
+                assertEquals(-16,loudness.get("integratedLufs").getAsDouble(),.5,item.get("path").getAsString());
+                assertEquals(item.get("sha256").getAsString(),loudness.get("measurementSha256").getAsString());
+            }
         }
     }
 

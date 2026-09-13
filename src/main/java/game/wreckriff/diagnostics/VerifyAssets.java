@@ -537,8 +537,9 @@ public final class VerifyAssets {
                     ||!item.get("creatorPage").getAsString().equals("https://creatorchords.com/music/"+slug+"/")
                     ||item.get("transformation").getAsString().isBlank())throw new IOException("Creator recording/license binding mismatch: "+path);
             WaveMetrics signal=inspectWave(uniqueResource(path));String[] row=metricsByPath.get(path);
+            verifyMusicLoudness(item,signal.sha256());
             if(row==null||signal.channels()!=2||signal.rate()!=48000||signal.bits()!=16||signal.frames()<60L*48000||signal.frames()>600L*48000
-                    ||signal.peak()<.60||signal.peak()>.85||signal.rms()<.07||!hashes.add(signal.sha256())
+                    ||signal.peak()<.60||signal.peak()>.84||signal.rms()<.07||!hashes.add(signal.sha256())
                     ||!signal.sha256().equals(item.get("sha256").getAsString())||!signal.sha256().equals(row[7])
                     ||signal.frames()!=item.get("frames").getAsLong()||signal.frames()!=Long.parseLong(row[1])
                     ||!row[2].equals("2")||!row[3].equals("48000")||!row[4].equals("16")
@@ -555,6 +556,21 @@ public final class VerifyAssets {
         assets.add(asset(generator,"procedural-source",recipe,"Explicit local licensed-recording import recipe; builds never download","SOURCE_PRESENT"));
         verifyReplacedMusicHistory(assets);
         verifyRetiredCampaignHistory(assets);
+    }
+
+    /** Offline builds bind the authoring measurement to the actual PCM checksum. */
+    static void verifyMusicLoudness(JsonObject item,String actualPcmSha256)throws IOException {
+        JsonObject measurement=item.getAsJsonObject("loudness");
+        if(measurement==null)throw new IOException("Final encoded soundtrack loudness measurement is missing");
+        double target=measurement.get("targetIntegratedLufs").getAsDouble();
+        double tolerance=measurement.get("toleranceLu").getAsDouble();
+        double integrated=measurement.get("integratedLufs").getAsDouble();
+        double truePeak=measurement.get("truePeakDbtp").getAsDouble();
+        if(target!=-16.0||tolerance!=.5||!Double.isFinite(integrated)||!Double.isFinite(truePeak)
+                ||Math.abs(integrated-target)>tolerance
+                ||!actualPcmSha256.equals(measurement.get("measurementSha256").getAsString())
+                ||!"FFmpeg loudnorm input analysis of final encoded WAV".equals(measurement.get("measurementMethod").getAsString()))
+            throw new IOException("Soundtrack delivery loudness must be -16 +/-0.5 LUFS and measured on the packaged PCM");
     }
 
     private static void verifyReplacedMusicHistory(List<Asset> assets)throws Exception {

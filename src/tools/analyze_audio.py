@@ -10,7 +10,7 @@ import numpy as np
 
 def analyze(path):
     with wave.open(str(path)) as wav:
-        if wav.getnchannels() != 2 or wav.getsampwidth() != 2 or wav.getframerate() != 48000 or wav.getnframes() > 48000 * 210:
+        if wav.getnchannels() != 2 or wav.getsampwidth() != 2 or wav.getframerate() != 48000 or wav.getnframes() > 48000 * 600:
             raise ValueError("Expected bounded stereo PCM48k/16")
         samples = np.frombuffer(wav.readframes(wav.getnframes()), dtype="<i2").reshape(-1, 2).astype(np.float32) / 32768
     bands = [(20, 250), (250, 2000), (2000, 8000), (8000, 20000)]
@@ -37,7 +37,7 @@ def analyze(path):
 
 
 if __name__ == "__main__":
-    path = Path(sys.argv[1] if len(sys.argv) > 1 else "build/generated-resources/audio/metalmania.wav")
+    path = Path(sys.argv[1] if len(sys.argv) > 1 else "build/generated-resources/audio/music/menu.wav")
     result = analyze(path)
     target = Path("build/reports/audio-review.json")
     target.parent.mkdir(parents=True, exist_ok=True)

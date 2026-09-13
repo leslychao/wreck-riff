@@ -382,7 +382,8 @@ public final class GameApplication extends SimpleApplication {
             int bodies=world.bodyCount(),listeners=world.space().countCollisionListeners();
             loadedResourceKey=resourceKey();
             resourceRetention.add(resourceSample("LOAD",loadedResourceKey,bodies,listeners,world.space().countTickListeners(),false),false);
-            if(resourceRetention.failed()||!combat.projectiles().isEmpty()||audio.voiceCount()>audio.musicSourceCount())
+            if(resourceRetention.failed()||!combat.projectiles().isEmpty()
+                    ||audio.gameplayVoiceCount()!=(audioRenderer==null?0:1))
                 throw new IllegalStateException("Retry resource baseline changed");
             diagnostic.cycle(diagnosticRetries,bodies,listeners,combat.projectiles().size(),audio.voiceCount());
             if(session.tick!=0 || session.vehicles.stream().anyMatch(v->world.wheelContacts(v.id)!=4||

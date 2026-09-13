@@ -1,8 +1,8 @@
 """Explicit one-time asset import. Never invoked by a normal build or the game.
 
-Uses five author-approved Poly Haven CC0 materials, creator-hosted Metalmania,
-and the official Roboto release. Original bytes and per-file provenance are kept.
-Run with the bundled Python (Pillow/numpy), with imageio-ffmpeg in build/asset-tooling.
+Uses five author-approved Poly Haven CC0 materials and the official Roboto release.
+Original bytes and per-file provenance are kept. Run with bundled Python (Pillow/numpy).
+Soundtrack authoring is separate: src/tools/import_menu_music.py.
 Diffuse derivatives use Microsoft JDK 21 via JAVA_HOME or --java. To regenerate
 only these derivatives from preserved local originals, use --runtime-diffuse-only;
 that mode never fetches assets or changes other resource/provenance entries.
@@ -179,34 +179,6 @@ def font():
     print("Imported Roboto Condensed regular/bold", flush=True)
 
 
-def music():
-    catalog_url = "https://incompetech.com/music/royalty-free/pieces.json"
-    catalog = json.loads(fetch(catalog_url))
-    # Creator's catalog shape is inspected, and only this approved ISRC is used.
-    tracks = catalog.values() if isinstance(catalog, dict) else catalog
-    track = next(t for t in tracks if isinstance(t, dict) and "USUAN1700023" in json.dumps(t))
-    save(SOURCES / "audio/creator-catalog-entry.json", json.dumps(track, ensure_ascii=False, indent=2).encode())
-    mp3_url = next((v for v in track.values() if isinstance(v, str) and v.endswith("Metalmania.mp3")),
-                   "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Metalmania.mp3")
-    if not mp3_url.startswith("https://"):
-        mp3_url = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/" + mp3_url.lstrip("/")
-    mp3 = SOURCES / "audio/Metalmania-original.mp3"
-    save(mp3, fetch(mp3_url))
-    sys.path.insert(0, str(ROOT / "build/asset-tooling"))
-    import imageio_ffmpeg
-    wav = SOURCES / "audio/Metalmania-source.wav"
-    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-loglevel", "warning", "-y", "-i", str(mp3),
-        "-map_metadata", "-1", "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", "-bitexact", str(wav)], check=True)
-    save(SOURCES / "audio/source.json", json.dumps(dict(title="Metalmania", author="Kevin MacLeod",
-        isrc="USUAN1700023", sourceUrl=mp3_url,
-        creatorPage="https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1700023",
-        license="CC-BY-4.0", licenseUrl="https://creativecommons.org/licenses/by/4.0/", acquired=DATE,
-        originalSha256=sha(mp3.read_bytes()), pcmSha256=sha(wav.read_bytes()),
-        decode="imageio-ffmpeg 0.6.0; bundled FFmpeg; pcm_s16le 48000Hz stereo; metadata stripped",
-        artisticStatus="NEEDS_CREATIVE_REVIEW", audition="Not auditioned by an audio-capable tool; owner must listen in the actual mix"), indent=2).encode())
-    print("Imported creator-hosted Metalmania", flush=True)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime-diffuse-only", action="store_true", help="Offline: prepare only local diffuse derivatives and their provenance")
@@ -217,7 +189,6 @@ if __name__ == "__main__":
         sys.exit(0)
     materials(arguments.java)
     font()
-    music()
     for name, url in [("CC0-1.0", "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt"),
                       ("CC-BY-4.0", "https://creativecommons.org/licenses/by/4.0/legalcode.txt")]:
         save(RESOURCES / "licenses/assets" / (name + ".txt"), fetch(url))

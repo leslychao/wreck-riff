@@ -6,7 +6,7 @@
   "licensePath": "licenses/assets/CC-BY-4.0.txt",
   "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
   "generator": "src/tools/import_menu_music.py",
-  "generatorSha256": "81950b510a0ca6b057ab4e03e059b1707da6d6aae506d4dbbf52fd64b14e3a6d",
+  "generatorSha256": "bac336bdffcd08e4b2b66ba8a164ee0cba752210964213618281d32e7a6028df",
   "decoderVersion": "ffmpeg version 7.1-essentials_build-www.gyan.dev Copyright (c) 2000-2024 the FFmpeg developers",
   "numpyVersion": "2.3.5",
   "artisticStatus": "NEEDS_CREATIVE_REVIEW",

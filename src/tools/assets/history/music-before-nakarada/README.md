@@ -7,6 +7,7 @@ This directory preserves actual local sources at replacement time, including unc
 - `GenerateAudio.java.txt`: full ancillary/import/result generator before replacement.
 - `Metalmania-original.mp3`, `Metalmania-source.wav`, `source.json`: Kevin MacLeod recording under CC BY 4.0 and exact original/PCM hashes.
 - `campaign-music.md`: former authoring documentation.
+- `import_assets.py.txt`, `creator-catalog-entry.json`: former explicit Metalmania download/decoder and creator catalog evidence.
 
 Older removed arenas and statue cues remain in `src/tools/assets/retired-campaign-20260913`. Historical documents retain original paths as evidence, not as a supported runtime workflow. `VerifyAssets` checks original recording/recipe hashes and rejects packaged campaign music at retired paths.
 

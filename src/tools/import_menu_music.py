@@ -1,6 +1,6 @@
 """Explicit, offline authoring of the approved CreatorChords recordings.
 
-Prerequisites: Python with numpy, FFmpeg 7.0.2 (imageio-ffmpeg 0.6.0 bundle).
+Prerequisites: Python with numpy, FFmpeg 7.1 (imageio-ffmpeg 0.6.0 bundle).
 Run: python src/tools/import_menu_music.py --ffmpeg <ffmpeg executable>
 Builds never invoke this importer or download media. Originals and creator-page
 license evidence are preserved alongside the finished music and SHA256 manifest.
@@ -9,8 +9,10 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 import subprocess
+import tempfile
 import wave
 
 import numpy as np
@@ -18,6 +20,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 MUSIC = ROOT / "src/tools/assets/audio/music"
 RATE = 48_000
+TARGET_LUFS = -16.0
+LOUDNESS_TOLERANCE_LU = .5
 TRACKS = (
     ("menu", "riffs", "Riffs"),
     ("dead-air-yard", "metal-interlude", "Metal Interlude"),
@@ -34,10 +38,35 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def write_pcm(path, pcm):
+    with wave.open(str(path), "wb") as output:
+        output.setnchannels(2)
+        output.setsampwidth(2)
+        output.setframerate(RATE)
+        output.writeframes(pcm.tobytes())
+
+
+def measure_loudness(ffmpeg, path):
+    """Analyze the encoded delivery PCM; input_* values measure it without edits."""
+    result = subprocess.run([
+        ffmpeg, "-hide_banner", "-nostdin", "-i", str(path),
+        "-af", "loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-",
+    ], capture_output=True, check=True)
+    log = result.stderr.decode("utf-8")
+    values = json.loads(log[log.rfind("{"):log.rfind("}")+1])
+    measurement = dict(integratedLufs=float(values["input_i"]),
+                       truePeakDbtp=float(values["input_tp"]),
+                       loudnessRangeLu=float(values["input_lra"]))
+    if not all(math.isfinite(value) for value in measurement.values()):
+        raise ValueError(f"Non-finite delivery loudness: {path}")
+    return measurement
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ffmpeg", required=True)
     args = parser.parse_args()
+    (ROOT / "build").mkdir(exist_ok=True)
     sources = {item["slug"]: item for item in json.loads((MUSIC / "sources.json").read_text("utf-8"))}
     assets, rows = [], []
     decoder_version = subprocess.run([args.ffmpeg, "-version"], capture_output=True, check=True, text=True).stdout.splitlines()[0]
@@ -55,7 +84,7 @@ def main():
             "-map_metadata", "-1", "-ar", str(RATE), "-ac", "2", "-f", "f32le", "-",
         ], capture_output=True, check=True)
         log = decoded.stderr.decode("utf-8")
-        loudness = json.loads(log[log.rfind("{"):log.rfind("}")+1])
+        source_normalization = json.loads(log[log.rfind("{"):log.rfind("}")+1])
         samples = np.frombuffer(decoded.stdout, dtype="<f4").reshape(-1, 2).copy()
         # Start with a useful musical attack; remove the trailing release/silence.
         # Fixed 50 ms windows and threshold are recorded for reproducibility.
@@ -83,11 +112,30 @@ def main():
         gain = min(1.0, .84 / float(np.max(np.abs(clip))))
         pcm = np.rint(clip * gain * 32767).astype("<i2")
         path = MUSIC / f"{identity}.wav"
-        with wave.open(str(path), "wb") as output:
-            output.setnchannels(2)
-            output.setsampwidth(2)
-            output.setframerate(RATE)
-            output.writeframes(pcm.tobytes())
+        # One-pass loudnorm's output_i is not the delivery measurement: trim,
+        # resampling, peak safety and quantization happen afterward. Measure the
+        # actual loop PCM, compensate its integrated loudness and remeasure the
+        # final encoded bytes. Only an accepted result replaces the local asset.
+        with tempfile.TemporaryDirectory(prefix="music-loudness-", dir=ROOT / "build") as temporary:
+            staging = Path(temporary) / path.name
+            write_pcm(staging, pcm)
+            before = measure_loudness(args.ffmpeg, staging)
+            compensation_db = TARGET_LUFS - before["integratedLufs"]
+            compensation_gain = 10 ** (compensation_db / 20)
+            clip *= gain * compensation_gain
+            final_peak_gain = min(1.0, .84 / float(np.max(np.abs(clip))))
+            pcm = np.rint(clip * final_peak_gain * 32767).astype("<i2")
+            write_pcm(staging, pcm)
+            measured = measure_loudness(args.ffmpeg, staging)
+            if abs(measured["integratedLufs"] - TARGET_LUFS) > LOUDNESS_TOLERANCE_LU:
+                raise ValueError(f"Delivery loudness/peak constraints cannot both be met: {identity}: {measured}")
+            loudness = dict(targetIntegratedLufs=TARGET_LUFS, toleranceLu=LOUDNESS_TOLERANCE_LU,
+                            measurementMethod="FFmpeg loudnorm input analysis of final encoded WAV",
+                            preCompensationIntegratedLufs=before["integratedLufs"],
+                            compensationDb=compensation_db, compensationGain=compensation_gain,
+                            finalPeakSafetyGain=final_peak_gain, **measured,
+                            measurementSha256=sha(staging))
+            staging.replace(path)
         actual = pcm.astype(np.float64) / 32768
         peak = float(np.max(np.abs(actual)))
         rms = float(np.sqrt(np.mean(actual**2)))
@@ -102,12 +150,13 @@ def main():
             acquired=record["acquired"], sha256=digest, frames=len(pcm), sampleRate=RATE,
             bits=16, channels=2, trimStartSeconds=start/RATE, trimEndSeconds=end/RATE,
             loopOverlapSeconds=cross/RATE, boundaryDeclickMs=3, peakSafetyGain=gain,
-            loudness=loudness,
+            sourceNormalization=source_normalization, loudness=loudness,
             transformation="FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; "
                 "50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; "
-                "peak ceiling0.84; round to signed little-endian16bit; metadata removed",
+                "measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; "
+                "round to signed little-endian16bit; independently remeasure final bytes; metadata removed",
         ))
-        print(f"{identity}: {len(pcm)/RATE:.3f}s, peak {peak:.3f}, RMS {rms:.3f}", flush=True)
+        print(f"{identity}: {len(pcm)/RATE:.3f}s, {measured['integratedLufs']:.2f} LUFS, peak {peak:.3f}, RMS {rms:.3f}", flush=True)
     with (MUSIC / "audio-metrics.csv").open("w", encoding="utf-8", newline="") as output:
         writer = csv.writer(output, lineterminator="\n")
         writer.writerow(["asset", "frames", "channels", "sample_rate", "bits", "peak", "rms", "sha256"])
@@ -126,6 +175,7 @@ def main():
     for asset in assets:
         score += [f"{asset['title']} -> {asset['path']}", asset["creatorPage"]]
     score += ["", "Changes: loudness normalization, activity trim, prepared cyclic loop, PCM conversion.",
+              "Each final encoded loop is measured and compensated to -16 LUFS (+/-0.5 LU), peak ceiling0.84.",
               "Victory, defeat and draw contain edited excerpts from Riffs with CC0 metal impact.",
               "Original deterministic workshop ambience and mechanical UI cues: GenerateAudio.java.",
               "Author pages and original MP3 hashes retained in provenance.json and sources.json.",

@@ -71,7 +71,8 @@ https://creativecommons.org/licenses/by/4.0/ . Full legal text is retained in
 
 Changes: MP3 decoded to stereo PCM 48 kHz / 16-bit; loudness normalized toward
 -16 LUFS, active musical portions trimmed, cyclic 125 ms loop crossfade,
-DC removal, 3 ms boundary de-click and peak ceiling 0.84. Original MP3s and
+DC removal, 3 ms boundary de-click and peak ceiling 0.84. Final encoded loops
+are measured, compensated to -16 +/-0.5 LUFS and independently remeasured. Original MP3s and
 creator license pages remain under `src/tools/assets/audio/music`.
 Packaged `audio/music/provenance.json` binds source/evidence/output by SHA-256.
 This credit does not imply endorsement by Alexander Nakarada. Retain this track
