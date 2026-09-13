@@ -26,6 +26,8 @@ public final class CombatVisuals implements AutoCloseable {
     private static final ColorRGBA BLAST_SMOKE=new ColorRGBA(.075f,.062f,.053f,.66f), BLAST_FLAME=new ColorRGBA(1,.27f,.025f,.95f);
     private static final ColorRGBA METAL=new ColorRGBA(.47f,.43f,.35f,1);
     private static final ColorRGBA DUST=new ColorRGBA(.42f,.34f,.25f,.28f);
+    private static final ColorRGBA SCORCH=new ColorRGBA(.085f,.060f,.038f,1);
+    private static final int FIELD_VERTEX_LIMIT=20000, CACHED_FIRE_POINT_LIMIT=FIELD_VERTEX_LIMIT/6;
     private static final float SMOKE_RADIUS_LIMIT=.55f, FLASH_RADIUS_LIMIT=2.4f;
     private static final float[] SPRITE_UV={0,0,1,0,1,1,0,0,1,1,0,1};
     private static final class Particle {
@@ -62,6 +64,51 @@ public final class CombatVisuals implements AutoCloseable {
         final Vector3f position,normal;final int priority;float age,clock;
         CosmeticFire(GameEvent event,int priority) {position=event.position();normal=contactNormal(event);this.priority=priority;}
     }
+    /** Static surface data only: remaining lifetime and flame animation never invalidate it. */
+    private static final class FireSurface {
+        final long id;
+        final Vector3f origin,normal;
+        final float[] support,vertices;
+        final byte[] edges;
+        FireSurface(CombatSystem.FireZoneView fire) {
+            id=fire.id();origin=fire.position().clone();normal=fire.normal().clone();
+            var points=fire.surfacePoints();int count=Math.min(points.size(),CACHED_FIRE_POINT_LIMIT);
+            support=new float[count*3];vertices=new float[count*18];edges=new byte[count];
+            // Primitive sorted keys avoid Long boxing and the x^z hash collisions of packed grid cells.
+            long[] cells=new long[points.size()];
+            for(int i=0;i<points.size();i++) {
+                Vector3f point=points.get(i);
+                cells[i]=gridCell(Math.round(point.x-origin.x),Math.round(point.z-origin.z));
+            }
+            Arrays.sort(cells);
+            for(int i=0;i<count;i++) {
+                Vector3f point=points.get(i);support[i*3]=point.x;support[i*3+1]=point.y;support[i*3+2]=point.z;
+                int x=Math.round(point.x-origin.x),z=Math.round(point.z-origin.z),mask=0;
+                for(int neighbour=0;neighbour<8;neighbour++) {
+                    int dx=switch(neighbour){case 0,4,6->1;case 1,5,7->-1;default->0;};
+                    int dz=switch(neighbour){case 2,4,5->1;case 3,6,7->-1;default->0;};
+                    if(Arrays.binarySearch(cells,gridCell(x+dx,z+dz))<0)mask|=1<<neighbour;
+                }
+                edges[i]=(byte)mask;
+                Vector3f a=surfacePoint(point,normal,-.5f,-.5f,.028f),b=surfacePoint(point,normal,.5f,-.5f,.028f);
+                Vector3f c=surfacePoint(point,normal,.5f,.5f,.028f),d=surfacePoint(point,normal,-.5f,.5f,.028f);
+                Vector3f[] quad={a,b,c,a,c,d};
+                for(int vertex=0;vertex<6;vertex++) {
+                    int offset=i*18+vertex*3;Vector3f p=quad[vertex];
+                    vertices[offset]=p.x;vertices[offset+1]=p.y;vertices[offset+2]=p.z;
+                }
+            }
+        }
+        boolean matches(CombatSystem.FireZoneView fire) {
+            var points=fire.surfacePoints();
+            if(!origin.equals(fire.position())||!normal.equals(fire.normal())||points.size()*3!=support.length)return false;
+            for(int i=0;i<points.size();i++) {
+                Vector3f point=points.get(i);
+                if(point.x!=support[i*3]||point.y!=support[i*3+1]||point.z!=support[i*3+2])return false;
+            }
+            return true;
+        }
+    }
     private static final class BlastLight {
         final PointLight light=new PointLight();float age;int priority;
     }
@@ -83,6 +130,8 @@ public final class CombatVisuals implements AutoCloseable {
     private final List<Shard> shards=new ArrayList<>();
     private final List<HitFlare> hitFlares=new ArrayList<>();
     private final List<CosmeticFire> cosmeticFires=new ArrayList<>();
+    private final List<FireSurface> fireSurfaces=new ArrayList<>();
+    private int cachedFirePoints,fireTopologyBuilds;
     private final BlastLight[] lights={new BlastLight(),new BlastLight()};
     private final Map<Integer,Integer> gunShotCount=new HashMap<>();
     private final Map<Long,Vector3f> trailHeads=new HashMap<>();
@@ -106,7 +155,7 @@ public final class CombatVisuals implements AutoCloseable {
         particleBatch.geometry.getMaterial().setFloat("FlashIntensity",flashIntensity);
         rocketBatch=new Batch(root,"rocket-models",assets,PROJECTILE_LIMIT*450+10*500,false,false);
         fragmentBatch=new Batch(root,"impact-fragments",assets,SHARD_LIMIT*12+FLARE_LIMIT*16*3,true,false);
-        fieldBatch=new Batch(root,"ground-fire",assets,20000,true,true);
+        fieldBatch=new Batch(root,"ground-fire",assets,FIELD_VERTEX_LIMIT,true,true);
         particleBatch.geometry.addControl(new AbstractControl() {
             @Override protected void controlUpdate(float dt) { }
             @Override protected void controlRender(RenderManager manager,ViewPort view) {
@@ -576,39 +625,49 @@ public final class CombatVisuals implements AutoCloseable {
         fragmentBatch.end();
     }
     private void renderFields() {
+        pruneFireSurfaces();
         fieldBatch.begin();
         // Reserve every warning first, but draw it last so transparent soot cannot dim it.
         fieldBatch.reserveVertices(warnings.size()*(48*6+12));
         for(var fire:fires) {
-            // The grid clips geometry, but only exposed edges/corners feather out. Shared
-            // cells use continuous world-space soot so the support lattice is never drawn.
-            Set<Long> cells=new HashSet<>();Vector3f origin=fire.position();
-            for(Vector3f point:fire.surfacePoints())cells.add(gridCell(Math.round(point.x-origin.x),Math.round(point.z-origin.z)));
-            for(Vector3f point:fire.surfacePoints()) {
-                int x=Math.round(point.x-origin.x),z=Math.round(point.z-origin.z),edges=0;
-                for(int neighbour=0;neighbour<8;neighbour++) {
-                    int dx=switch(neighbour){case 0,4,6->1;case 1,5,7->-1;default->0;};
-                    int dz=switch(neighbour){case 2,4,5->1;case 3,6,7->-1;default->0;};
-                    if(!cells.contains(gridCell(x+dx,z+dz)))edges|=1<<neighbour;
-                }
-                renderGroundPatch(point,fire.normal(),.5f,.028f,edges,.48f);
-            }
+            if(fieldBatch.positions.remaining()<18)break;
+            if(!fire.surfacePoints().isEmpty())fieldBatch.groundPatches(fireSurface(fire));
         }
         for(CosmeticFire fire:cosmeticFires) {
             // Ballistic impacts can hit walls as well as driveable support surfaces.
             Quaternion pose=surfaceRotation(fire.normal);Vector3f centre=fire.position.add(fire.normal.mult(.035f));
             fieldBatch.maskedQuad(local(centre,pose,-.82f,0,-.82f),local(centre,pose,.82f,0,-.82f),
                     local(centre,pose,.82f,0,.82f),local(centre,pose,-.82f,0,.82f),
-                    new ColorRGBA(.085f,.060f,.038f,1),.40f*(1-fire.age/2),5,255);
+                    SCORCH,.40f*(1-fire.age/2),5,255);
         }
         fieldBatch.releaseReservedVertices();
         renderWarnings();
         fieldBatch.end();
     }
-    private void renderGroundPatch(Vector3f point,Vector3f normal,float halfWidth,float lift,int edges,float alpha) {
-        fieldBatch.maskedQuad(surfacePoint(point,normal,-halfWidth,-halfWidth,lift),surfacePoint(point,normal,halfWidth,-halfWidth,lift),
-                surfacePoint(point,normal,halfWidth,halfWidth,lift),surfacePoint(point,normal,-halfWidth,halfWidth,lift),
-                new ColorRGBA(.085f,.060f,.038f,1),alpha,5,edges);
+    private FireSurface fireSurface(CombatSystem.FireZoneView fire) {
+        for(int i=0;i<fireSurfaces.size();i++) {
+            FireSurface surface=fireSurfaces.get(i);
+            if(surface.id!=fire.id())continue;
+            if(surface.matches(fire))return surface;
+            cachedFirePoints-=surface.edges.length;fireSurfaces.remove(i);break;
+        }
+        FireSurface surface=new FireSurface(fire);fireTopologyBuilds++;
+        // Even oversized diagnostic snapshots cannot retain more than one ground buffer.
+        // Uncached overflow uses the same prepared geometry and still respects draw priority.
+        if(cachedFirePoints+surface.edges.length<=CACHED_FIRE_POINT_LIMIT&&fire.surfacePoints().size()<=CACHED_FIRE_POINT_LIMIT) {
+            fireSurfaces.add(surface);cachedFirePoints+=surface.edges.length;
+        }
+        return surface;
+    }
+    private void pruneFireSurfaces() {
+        for(int i=fireSurfaces.size()-1;i>=0;i--) {
+            FireSurface surface=fireSurfaces.get(i);boolean live=false;
+            for(int j=0;j<fires.size();j++) {
+                var fire=fires.get(j);
+                if(fire.id()==surface.id&&!fire.surfacePoints().isEmpty()){live=true;break;}
+            }
+            if(!live){cachedFirePoints-=surface.edges.length;fireSurfaces.remove(i);}
+        }
     }
     private static Vector3f surfacePoint(Vector3f point,Vector3f normal,float x,float z,float lift) {
         return point.add(x,-(normal.x*x+normal.z*z)/Math.max(.6f,normal.y),z).addLocal(normal.mult(lift));
@@ -644,9 +703,12 @@ public final class CombatVisuals implements AutoCloseable {
     }
     public int effectCount(){return particles.size()+shots.size()+shards.size()+hitFlares.size()+cosmeticFires.size();}
     int cosmeticFireCount(){return cosmeticFires.size();}
+    int fireTopologyBuildCount(){return fireTopologyBuilds;}
+    int cachedFirePointCount(){return cachedFirePoints;}
     public int projectileCount(){return Math.min(projectiles.size(),PROJECTILE_LIMIT);}
     @Override public void close(){if(closed)return;closed=true;root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
         particles.clear();shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();trailHeads.clear();
+        fireSurfaces.clear();cachedFirePoints=0;
         projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();}
 
     private static final class Batch {
@@ -705,6 +767,16 @@ public final class CombatVisuals implements AutoCloseable {
                 // Zero sprite radius leaves these vertices fixed to the support plane.
                 vertex(p.x,p.y,p.z,color,alpha,SPRITE_UV[i*2],SPRITE_UV[i*2+1],0,shape);
                 spriteVariation.put(spriteVariation.position()-2,mask);
+            }
+        }
+        void groundPatches(FireSurface surface) {
+            int count=Math.min(surface.edges.length,positions.remaining()/18);
+            for(int patch=0;patch<count;patch++) {
+                positions.put(surface.vertices,patch*18,18);textureCoordinates.put(SPRITE_UV);
+                for(int vertex=0;vertex<6;vertex++) {
+                    colors.put(SCORCH.r).put(SCORCH.g).put(SCORCH.b).put(.48f);
+                    spriteData.put(0).put(5);spriteVariation.put(surface.edges[patch]&255).put(0);
+                }
             }
         }
         void quad(Vector3f a,Vector3f b,Vector3f c,Vector3f d,ColorRGBA color,float alpha) {

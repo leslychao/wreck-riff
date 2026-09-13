@@ -6,6 +6,24 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ScreenFlowTest {
+    @Test void pauseReasonSurvivesNestedSettingsAndClearsWhenTheMatchResumesOrRestarts() {
+        ScreenFlow flow=new ScreenFlow();flow.running();
+        flow.pause("Controller disconnected");assertEquals("Controller disconnected",flow.pauseReason());
+        flow.open(ScreenFlow.Screen.SETTINGS);flow.open(ScreenFlow.Screen.CONTROLS);flow.back();flow.back();
+        assertEquals(ScreenFlow.Screen.PAUSED,flow.screen());assertEquals("Controller disconnected",flow.pauseReason());
+        flow.resume();assertEquals("",flow.pauseReason());flow.pause();assertEquals("",flow.pauseReason());
+        flow.resume();flow.pause("Focus lost");flow.open(ScreenFlow.Screen.CONFIRM);flow.loading();
+        assertEquals("",flow.pauseReason());flow.running();flow.pause();assertEquals("",flow.pauseReason());
+        flow.resume();flow.pause("Controller disconnected");flow.menu();assertEquals("",flow.pauseReason());
+        flow.running();flow.pause();assertEquals("",flow.pauseReason());
+    }
+    @Test void pauseReasonIsAvailableToTheFirstRedrawAndUnrelatedFocusLossDoesNotReplaceIt() {
+        ScreenFlow flow=new ScreenFlow();flow.running();var observed=new ArrayList<String>();
+        flow.onChanged(()->observed.add(flow.pauseReason()));flow.pause("Controller disconnected");
+        assertEquals(List.of("Controller disconnected"),observed);
+        flow.pause("Focus lost");assertEquals("Controller disconnected",flow.pauseReason());
+        flow.error();assertEquals("",flow.pauseReason());
+    }
     @Test void controlsAndConfirmationReturnThroughTheFullPauseSettingsStack() {
         ScreenFlow flow=new ScreenFlow();flow.running();flow.pause();flow.open(ScreenFlow.Screen.SETTINGS);
         flow.open(ScreenFlow.Screen.CONTROLS);flow.back();assertEquals(ScreenFlow.Screen.SETTINGS,flow.screen());

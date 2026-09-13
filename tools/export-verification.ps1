@@ -2,7 +2,7 @@
 .SYNOPSIS
 Exports the existing release-gate evidence for one immutable final ZIP.
 .DESCRIPTION
-Requires successful technical checks. Pending human acceptance stays pending.
+Requires successful technical checks. Pending factual/owner reviews stay pending.
 Copies original reports unchanged and maps their original paths in evidence-index.json.
 Historical artifacts must be selected explicitly and are labelled history, never current.
 Does not run a game, manufacture an approval, publish, or include the game runtime.
@@ -108,7 +108,7 @@ foreach($item in $historyFiles) {
 $package=[IO.Compression.ZipFile]::OpenRead($identity.zipPath)
 try {
     foreach($entry in $package.Entries) {
-        if($entry.Name.Length -eq 0 -or ($entry.FullName -notmatch '^WreckRiff/(reports/|licenses/|README\.txt$)')){continue}
+        if($entry.Name.Length -eq 0 -or ($entry.FullName -notmatch '^WreckRiff/(reports/|licenses/|(?:README|CONTROLS|RELEASE_NOTES|KNOWN_LIMITATIONS|TESTED_HARDWARE|VERIFICATION_STATUS)\.txt$)')){continue}
         $target=Join-Path $destination ('current/package/'+$entry.FullName.Substring('WreckRiff/'.Length))
         [IO.Directory]::CreateDirectory((Split-Path -Parent $target)) | Out-Null
         $sourceStream=$entry.Open();$targetStream=[IO.File]::Create($target)
@@ -120,7 +120,7 @@ $helpers=@('release-evidence.ps1','prepare-windows-release.ps1','package-windows
 [IO.Directory]::CreateDirectory((Join-Path $destination 'tools')) | Out-Null
 foreach($helper in $helpers){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $helper) -Destination (Join-Path $destination "tools/$helper")}
 [IO.Directory]::CreateDirectory((Join-Path $destination 'tools/fixtures')) | Out-Null
-foreach($fixture in @('release-acceptance.example.json','test-release-evidence.ps1')) {
+foreach($fixture in @('release-acceptance.example.json','test-release-evidence.ps1','test-source-package-evidence.ps1')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "fixtures/$fixture") -Destination (Join-Path $destination "tools/fixtures/$fixture")
 }
 $index=[ordered]@{schemaVersion=1;version=$identity.version;sourceSha256=$identity.sourceSha256;mainJarSha256=$identity.mainJarSha256;

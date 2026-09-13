@@ -8,6 +8,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LaunchReportTest {
     @TempDir Path directory;
+    @Test void newCampaignAndLoadedCheckpointKeepDistinctResumeEvidence() throws Exception {
+        var report=new LaunchReport(directory,false);report.started(1280,720,true,true);
+        report.sessionStarted("construction_17","CAMPAIGN","rivet",false);
+        report.sessionStarted("construction_17","CAMPAIGN","rivet",true);report.closed(true,true);
+        var starts=JsonParser.parseString(Files.readString(directory.resolve("launch-summary.json"))).getAsJsonObject().getAsJsonArray("sessionStarts");
+        assertFalse(starts.get(0).getAsJsonObject().get("resumedCheckpoint").getAsBoolean());
+        assertTrue(starts.get(1).getAsJsonObject().get("resumedCheckpoint").getAsBoolean());
+    }
     @Test void normalLaunchRecordsRealLifecycleWithoutGrantingAcceptance() throws Exception {
         var report=new LaunchReport(directory,true);report.started(1280,720,true,true);
         var starting=JsonParser.parseString(Files.readString(directory.resolve("launch-summary.json"))).getAsJsonObject();

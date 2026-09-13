@@ -1,6 +1,5 @@
 package game.wreckriff.presentation;
 
-import com.jme3.asset.DesktopAssetManager;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.math.*;
 import com.jme3.scene.*;
@@ -14,8 +13,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ArenaMechanismPresentationPhysicsTest {
-    private static final DesktopAssetManager ASSETS=new DesktopAssetManager(true);
-
     @ParameterizedTest @ValueSource(strings={"construction_17","euphoria_park","neon_zero"})
     void presentationFollowsActualNativeWarningAndActivePosesWithoutOwningAnyCollider(String arenaId) {
         var arena=ArenaRegistry.load().definition(arenaId);var session=new MatchSession(42,arena,MatchSession.Mode.ARENA,Configs.load("combat",CombatRules.class));
@@ -30,7 +27,7 @@ class ArenaMechanismPresentationPhysicsTest {
             int participantBodies=world.bodyCount();
             phase(systems,world,graph,hazard,ProgressStore.HazardPhase.WARNING,hazard.warningTicks());
             int initialBodies=world.bodyCount();assertTrue(initialBodies>participantBodies);
-            try(var presentation=new ArenaMechanismPresentation(ASSETS,scene,session,arena,systems)) {
+            try(var presentation=new ArenaMechanismPresentation(NativeArenaAssets.MANAGER,scene,session,arena,systems)) {
                 var first=systems.mechanisms().stream().filter(v->v.hazardId().equals(hazard.id())).findFirst().orElseThrow();
                 Node model=(Node)scene.getChild(first.id());assertNativeAndVisual(world,first,model);
                 if(hazard.type()==ArenaDefinition.HazardType.CRANE)assertEquals(hazard.minY()+.1f+12,first.position().y,.001f);

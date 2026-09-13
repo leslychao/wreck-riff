@@ -46,8 +46,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "5ece01bf6064af65e63e2e4be21076cc9a462d16e1a11fc0a99a908ebeaebb8e",
-      "sha256": "5ece01bf6064af65e63e2e4be21076cc9a462d16e1a11fc0a99a908ebeaebb8e",
-      "transformation": "Unmodified 2K PNG; sRGB color"
+      "sha256": "ff01401f2d92c02a02abaf254e4d601302a7b0cf4d5e437312ad48e532cea4d7",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
     },
     {
       "path": "textures/materials/cracked_concrete/normal.png",
@@ -82,8 +82,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "a28f2b0976c471c24f51c32bd2aa23331dcf72749d96e3e9c08fa320d5a5e13e",
-      "sha256": "a28f2b0976c471c24f51c32bd2aa23331dcf72749d96e3e9c08fa320d5a5e13e",
-      "transformation": "Unmodified 2K PNG; sRGB color"
+      "sha256": "5b17e3952d97812838abdbb988e2396621c2cea5468ce7958c25c716747072be",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
     },
     {
       "path": "textures/materials/metal_plate_02/normal.png",
@@ -118,8 +118,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "c37be7a33c50cd92308577132833bb1d1cc33688b6d3b1ffe68c976f5357ff02",
-      "sha256": "c37be7a33c50cd92308577132833bb1d1cc33688b6d3b1ffe68c976f5357ff02",
-      "transformation": "Unmodified 2K PNG; sRGB color"
+      "sha256": "eaa1f977f1a361d91e72e691e7bbfb6bf49efd76ca8b9f100974af5a057a8870",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
     },
     {
       "path": "textures/materials/blue_metal_plate/normal.png",
@@ -154,8 +154,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "7d3556497d7f7125e2d6932e0ea511355b8c56f40487ed5f443a9070c8b7c2f5",
-      "sha256": "7d3556497d7f7125e2d6932e0ea511355b8c56f40487ed5f443a9070c8b7c2f5",
-      "transformation": "Unmodified 2K PNG; sRGB color"
+      "sha256": "5af337a04f114c5fe3042900cd23aafc595914eb673055499eea8f8631dc20bf",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
     },
     {
       "path": "textures/materials/rusty_metal_03/normal.png",

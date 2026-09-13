@@ -1,6 +1,6 @@
 # Shared, read-only identity and acceptance checks. Compatible with Windows PowerShell 5.1.
 Set-StrictMode -Version Latest
-Add-Type -AssemblyName System.IO.Compression.FileSystem
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 
 function Get-ReleaseSha256([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -14,7 +14,25 @@ function Write-ReleaseJson([string]$Path,$Value) {
     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($Path))) | Out-Null
     [IO.File]::WriteAllText($Path,($Value | ConvertTo-Json -Depth 30),[Text.UTF8Encoding]::new($false))
 }
-function Read-ReleaseJson([string]$Path) { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+function Read-ReleaseJson([string]$Path) { return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json }
+function Invoke-ReleaseNativeCommand([string]$Executable,[string[]]$Arguments,[string]$LogPath) {
+    # Windows PowerShell 5.1 wraps redirected native stderr in NativeCommandError,
+    # even for successful INFO output. Let the native process finish, then check
+    # its exit code; do not relax error handling for the surrounding build checks.
+    $savedPreference=$ErrorActionPreference;$global:LASTEXITCODE=$null;$exitCode=$null
+    try {
+        $ErrorActionPreference='Continue'
+        & $Executable @Arguments *> $LogPath
+        $exitCode=$global:LASTEXITCODE
+    } finally {$ErrorActionPreference=$savedPreference}
+    if($null -eq $exitCode){throw "Native command did not provide an exit code: $Executable; see $LogPath"}
+    if($exitCode -ne 0) {
+        $failure=[InvalidOperationException]::new("Native command failed ($exitCode): $Executable; see $LogPath")
+        $failure.Data['exitCode']=[int]$exitCode
+        throw $failure
+    }
+    return [int]$exitCode
+}
 function New-ReleaseZip([string]$Image,[string]$ZipPath) {
     # .NET Framework's CreateFromDirectory uses backslashes on Windows. ZIP paths
     # are always slash-separated, including when this is run by PowerShell 5.1.
@@ -65,7 +83,7 @@ function Get-ReleaseInputHash([string]$Root,[switch]$RuntimeOnly) {
         }
     }
     $names=@('build.gradle','settings.gradle','gradle.lockfile')
-    if(!$RuntimeOnly){$names+=@('gradlew','gradlew.bat','gradle.properties')}
+    if(!$RuntimeOnly){$names+=@('gradlew','gradlew.bat','gradle.properties','README.md')}
     foreach($name in $names){$path=Join-Path $Root $name;if(Test-Path -LiteralPath $path){$files[$name]=$path}}
     $ordered=[string[]]@($files.Keys);[Array]::Sort($ordered,[StringComparer]::Ordinal)
     $hash=[Security.Cryptography.SHA256]::Create()
@@ -116,6 +134,7 @@ function Get-ReleasePackageIdentity([string]$ZipPath) {
         if($package.schemaVersion -lt 2 -or $package.status -ne 'PACKAGE_STRUCTURE_VERIFIED' -or $package.sourceSha256 -ne $info.sourceSha256 -or $package.mainJarSha256 -ne $info.mainJarSha256 -or $package.version -ne $info.version -or $package.verificationInputsSha256 -notmatch '^[a-f0-9]{64}$') {
             throw 'Package metadata does not identify the application JAR (repackage with current tooling).'
         }
+        Assert-ReleaseDocumentation $zip $package
         if((Get-ReleaseSha256 $absolute) -ne $zipHash){throw 'ZIP changed while its identity was read.'}
         return [pscustomobject][ordered]@{version=$info.version;sourceSha256=$info.sourceSha256;mainJarSha256=$info.mainJarSha256;
             verificationInputsSha256=$package.verificationInputsSha256;zipSha256=$zipHash;zipPath=$absolute;packagedAtUtc=$package.packagedAtUtc}
@@ -160,6 +179,148 @@ function Assert-ReleaseZipFile($Zip,[string]$Name,[string]$Sha256,[long]$Bytes) 
 }
 function Assert-ReleaseMaterialPath([string]$Path) {
     if([string]::IsNullOrWhiteSpace($Path) -or $Path.StartsWith('/') -or $Path -match '(^|/)\.\.?(/|$)|\\|:'){throw 'Unsafe source material path.'}
+}
+function ConvertTo-ReleasePlainText([string]$Text) {
+    # Local repository links are labels in the portable text; the package guide
+    # provides the actual portable filenames. Do not ship links into absent docs.
+    $text=[regex]::Replace($Text,'!?\[([^\]]+)\]\([^)]+\)','$1')
+    $text=[regex]::Replace($text,'(?m)^#{1,6}\s+','')
+    return $text.Replace('`','').Trim()
+}
+function New-ReleaseDocumentation([string]$ProjectRoot,[string]$Image,[string]$Version) {
+    $sourceNames=@('README.md','docs/RELEASE_NOTES.md','docs/ACCEPTANCE.md','docs/PERFORMANCE_BASELINE_2026-09-13.md','docs/THIRD_PARTY_NOTICES.md')
+    $sources=@();$texts=@{}
+    foreach($name in $sourceNames) {
+        $path=Join-Path $ProjectRoot $name
+        $texts[$name]=[IO.File]::ReadAllText($path,[Text.Encoding]::UTF8)
+        $sources+=@{path=$name;bytes=(Get-Item -LiteralPath $path).Length;sha256=(Get-ReleaseSha256 $path)}
+    }
+    $readmeSections=[regex]::Split($texts['README.md'],'(?m)(?=^## )')
+    $controls=@($readmeSections | Where-Object {$_ -match '(?m)^\|'}) | Select-Object -First 1
+    if(!$controls -or !$controls.Contains('Controls') -or !$controls.Contains('Grinder') -or !$controls.Contains('Spark')) {
+        throw 'The current README does not provide the expected three-chassis control guide.'
+    }
+    $acceptanceSections=[regex]::Split($texts['docs/ACCEPTANCE.md'],'(?m)(?=^## )')
+    $limits=@($acceptanceSections | Where-Object {$_ -match '^## ' -and $_ -match 'benchmark' -and $_ -match 'PENDING'})
+    if($limits.Count -ne 1){throw 'Expected one current limitations section in ACCEPTANCE; review the portable guide extractor.'}
+    $baseline=$texts['docs/PERFORMANCE_BASELINE_2026-09-13.md']
+    $gpu=[regex]::Match($baseline,'(?m)^GPU[^\r\n]+').Value
+    $window=[regex]::Match($baseline,'(?m)^[^\r\n]*undrawableSeconds[^\r\n]*').Value
+    $priorSource=[regex]::Match($baseline,'[a-f0-9]{64}').Value
+    if(!$gpu -or !$window -or !$priorSource){throw 'The historical hardware observation is incomplete.'}
+    $header="Wreck Riff $Version - Windows x64 release candidate`r`n`r`n"
+    $guide="Portable guide: README.txt (installation/data), CONTROLS.txt, RELEASE_NOTES.txt,`r`nKNOWN_LIMITATIONS.txt, TESTED_HARDWARE.txt, VERIFICATION_STATUS.txt.`r`nResources: reports/asset-register.csv. Notices: licenses/THIRD_PARTY_NOTICES.md.`r`n`r`n"
+    $contents=[ordered]@{}
+    $contents['CONTROLS.txt']=$header+(ConvertTo-ReleasePlainText $controls)
+    $contents['RELEASE_NOTES.txt']=$header+$guide+(ConvertTo-ReleasePlainText $texts['docs/RELEASE_NOTES.md'])
+    $contents['KNOWN_LIMITATIONS.txt']=$header+@"
+Snapshot of the documented pre-package limitations. Developer log paths mentioned
+below identify historical investigations; those logs are not inside this game ZIP.
+Packaging runs no graphical, performance, controller or owner-acceptance scenario.
+Later evidence for this exact ZIP must be delivered separately; see VERIFICATION_STATUS.txt.
+
+"@+(ConvertTo-ReleasePlainText $limits[0])
+    $contents['TESTED_HARDWARE.txt']=$header+@"
+HISTORICAL_DEVELOPMENT_OBSERVATION_ONLY
+The following configuration was observed before packaging, for source:
+$priorSource
+$gpu
+$window
+
+This was a short 1280x720 diagnostic profile, not the final ZIP benchmark.
+CPU, RAM and exact Windows build are not established by this source document.
+Minimum system requirements have not been established. One observed GPU does not
+prove other configurations. Physical controller and a separate clean Windows
+installation require actual hardware observations for the exact candidate.
+This document is a factual hardware record, not an owner approval.
+"@
+    $contents['VERIFICATION_STATUS.txt']=$header+@"
+RELEASE_CANDIDATE - PACKAGE_CANDIDATE_SNAPSHOT
+This immutable package records structure/material integrity and its source/JAR identity.
+It was assembled before final EXE scenarios; it cannot contain their future results.
+Graphical launch / normal profiles / six benchmarks / 1800-second soak:
+NOT_RUN_BY_PACKAGING. Physical controller and another Windows installation:
+NOT_VERIFIED_BY_PACKAGING. Owner feel: OWNER_REVIEW_NOT_RECORDED_BY_PACKAGING.
+Documentation completeness is a technical check, separate from owner feel.
+
+The supplied reports/package-verification.json identifies the version, source and
+application JAR and binds every portable guide file and its source-document SHA-256.
+reports/verification.json, reports/asset-register.csv and reports/source-distribution.json
+record asset/source-material checks; they do not grant distribution or owner approval.
+
+Final acceptance must accompany this candidate separately as the release-gate report
+and verification archive bound to this exact ZIP SHA-256. Their timestamps must follow
+packaging. No such external result is manufactured or implied by this guide.
+The game ZIP remains immutable after measurement; a changed ZIP needs new evidence.
+"@
+    foreach($name in $contents.Keys) {
+        [IO.File]::WriteAllText((Join-Path $Image $name),$contents[$name]+"`r`n",[Text.UTF8Encoding]::new($false))
+    }
+    $files=@()
+    foreach($name in @('README.txt')+@($contents.Keys)+@('reports/asset-register.csv','licenses/THIRD_PARTY_NOTICES.md')) {
+        $path=Join-Path $Image $name
+        $files+=@{path=$name;bytes=(Get-Item -LiteralPath $path).Length;sha256=(Get-ReleaseSha256 $path)}
+    }
+    return [ordered]@{schemaVersion=1;version=$Version;scope='PACKAGE_CANDIDATE_SNAPSHOT';finalEvidence='EXTERNAL_AFTER_PACKAGING';sources=$sources;files=$files}
+}
+function Assert-ReleaseDocumentation($Zip,$Package) {
+    $docs=$Package.documentation
+    if($docs.schemaVersion -ne 1 -or $docs.version -ne $Package.version -or $docs.scope -ne 'PACKAGE_CANDIDATE_SNAPSHOT' -or $docs.finalEvidence -ne 'EXTERNAL_AFTER_PACKAGING') {
+        throw 'Package documentation must identify this candidate without claiming future acceptance.'
+    }
+    $expected=@('README.txt','CONTROLS.txt','RELEASE_NOTES.txt','KNOWN_LIMITATIONS.txt','TESTED_HARDWARE.txt','VERIFICATION_STATUS.txt','reports/asset-register.csv','licenses/THIRD_PARTY_NOTICES.md')
+    $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($file in $docs.files) {
+        if($expected -cnotcontains $file.path -or !$names.Add($file.path)){throw 'Unexpected or duplicate release document.'}
+        Assert-ReleaseZipFile $Zip ('WreckRiff/'+$file.path) $file.sha256 $file.bytes
+        if($file.path.EndsWith('.txt')) {
+            $text=Read-ReleaseZipText $Zip ('WreckRiff/'+$file.path)
+            if(!$text.Contains('Wreck Riff '+$Package.version) -or $text -match '!?\[[^\]]+\]\([^)]+\)'){throw 'Release guide has stale version or non-portable Markdown links.'}
+        }
+    }
+    if($names.Count -ne $expected.Count){throw 'Incomplete portable release documentation.'}
+    $sourceNames=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($source in $docs.sources) {
+        Assert-ReleaseMaterialPath $source.path
+        if(!$sourceNames.Add($source.path) -or $source.bytes -lt 1 -or $source.sha256 -notmatch '^[a-f0-9]{64}$'){throw 'Invalid release documentation provenance.'}
+    }
+    foreach($name in @('README.md','docs/RELEASE_NOTES.md','docs/ACCEPTANCE.md','docs/PERFORMANCE_BASELINE_2026-09-13.md','docs/THIRD_PARTY_NOTICES.md')) {
+        if(!$sourceNames.Contains($name)){throw "Missing release documentation source: $name"}
+    }
+    $status=Read-ReleaseZipText $Zip 'WreckRiff/VERIFICATION_STATUS.txt'
+    foreach($required in @('RELEASE_CANDIDATE','PACKAGE_CANDIDATE_SNAPSHOT','NOT_RUN_BY_PACKAGING','NOT_VERIFIED_BY_PACKAGING','OWNER_REVIEW_NOT_RECORDED_BY_PACKAGING')) {
+        if(!$status.Contains($required)){throw 'Portable status omitted a pending acceptance boundary.'}
+    }
+}
+function Get-ReleaseRuntimeBinding([string]$JdkRoot,[string]$Image,$SourceReport) {
+    $releaseSha=Get-ReleaseSha256 (Join-Path $JdkRoot 'release')
+    if($releaseSha -ne $SourceReport.selectedJdkReleaseSha256){throw 'Selected JDK release differs from verified source materials.'}
+    $jmodPath=Join-Path $JdkRoot 'jmods/java.base.jmod';$jmodFile=Get-Item -LiteralPath $jmodPath
+    if($jmodFile.Length -lt 4 -or $jmodFile.Length -gt 128MB){throw 'Selected java.base.jmod is absent or oversized.'}
+    $jmodSha=Get-ReleaseSha256 $jmodPath
+    $inputStream=[IO.File]::OpenRead($jmodPath);$zipStream=[IO.MemoryStream]::new()
+    try {
+        # JMOD 1.0 is a ZIP preceded by these four bytes. ZIP offsets are relative
+        # to the ZIP payload, so passing the whole JMOD to ZipArchive is incorrect.
+        $header=[byte[]]::new(4)
+        if($inputStream.Read($header,0,4) -ne 4 -or [BitConverter]::ToString($header) -ne '4A-4D-01-00'){throw 'Unsupported JMOD header.'}
+        $inputStream.CopyTo($zipStream);$zipStream.Position=0
+        $archive=[IO.Compression.ZipArchive]::new($zipStream,[IO.Compression.ZipArchiveMode]::Read,$true)
+        try {
+            $binaries=@();$mapping=[ordered]@{'bin/java.exe'='runtime/bin/java.exe';'lib/server/jvm.dll'='runtime/bin/server/jvm.dll'}
+            foreach($entryName in $mapping.Keys) {
+                $entries=@($archive.Entries | Where-Object {$_.FullName -ceq $entryName})
+                if($entries.Count -ne 1 -or $entries[0].Length -lt 1 -or $entries[0].Length -gt 64MB){throw "Missing or invalid JMOD native entry: $entryName"}
+                $entry=$entries[0];$stream=$entry.Open();try{$sha=Get-ReleaseStreamHash $stream}finally{$stream.Dispose()}
+                $file=Get-Item -LiteralPath (Join-Path $Image $mapping[$entryName])
+                if($file.Length -ne $entry.Length -or (Get-ReleaseSha256 $file.FullName) -ne $sha){throw "Bundled runtime differs from selected JDK JMOD entry: $entryName"}
+                $binaries+=[ordered]@{path=$mapping[$entryName];entry=$entryName;bytes=$entry.Length;sha256=$sha}
+            }
+        }finally{$archive.Dispose()}
+    }finally{$inputStream.Dispose();$zipStream.Dispose()}
+    if((Get-ReleaseSha256 $jmodPath) -ne $jmodSha){throw 'Selected JMOD changed during packaging.'}
+    return [ordered]@{schemaVersion=1;status='BUNDLED_RUNTIME_MATCHES_SELECTED_JMOD';selectedJdkReleaseSha256=$releaseSha;
+        jmod=[ordered]@{path='jmods/java.base.jmod';bytes=$jmodFile.Length;sha256=$jmodSha};binaries=$binaries}
 }
 function Assert-ReleaseSourceDistribution([string]$ZipPath) {
     $zip=[IO.Compression.ZipFile]::OpenRead($ZipPath)
@@ -223,14 +384,35 @@ function Assert-ReleaseSourceDistribution([string]$ZipPath) {
         foreach($field in @('sourceId','releaseFile','implementor','implementorVersion','runtimeVersion','javaVersion','source')){if($runtime.$field -ne $index.runtime.$field){throw 'Runtime source binding changed.'}}
         if($runtime.sourceId -ne 'microsoft-openjdk' -or $runtime.releaseFile -ne 'runtime/microsoft-jdk-release.txt' -or $runtime.implementor -ne 'Microsoft' -or !$runtime.javaVersion.StartsWith('21.') -or $runtime.runtimeVersion -ne $sources['microsoft-openjdk'].version -or $runtime.source -notmatch '^[a-f0-9]{12,40}$' -or !$sources['microsoft-openjdk'].commit.StartsWith($runtime.source)){throw 'Runtime source version or commit mismatch.'}
         $expected=@{IMPLEMENTOR=$runtime.implementor;IMPLEMENTOR_VERSION=$runtime.implementorVersion;JAVA_RUNTIME_VERSION=$runtime.runtimeVersion;JAVA_VERSION=$runtime.javaVersion;SOURCE=('.:git:'+$runtime.source)}
-        foreach($releasePath in @('WreckRiff/runtime/release','WreckRiff/licenses/'+$runtime.releaseFile)) {
-            $release=ConvertFrom-StringData (Read-ReleaseZipText $zip $releasePath)
-            foreach($field in $expected.Keys){if($release[$field].Trim('"') -ne $expected[$field]){throw "Bundled JDK/source metadata mismatch: $field"}}
-            if($releasePath -eq 'WreckRiff/runtime/release') {
-                foreach($module in @('java.base','java.desktop','java.logging','java.management','jdk.unsupported','jdk.crypto.ec','jdk.jfr')) {
-                    if($runtime.jlinkModules -notcontains $module -or $index.runtime.jlinkModules -notcontains $module -or $release['MODULES'].Trim('"').Split(' ') -notcontains $module){throw "Bundled runtime omitted $module"}
-                }
-            }
+        $originalReleasePath='WreckRiff/licenses/'+$runtime.releaseFile
+        $originalRelease=ConvertFrom-StringData (Read-ReleaseZipText $zip $originalReleasePath)
+        foreach($field in $expected.Keys) {
+            if(!$originalRelease.ContainsKey($field) -or [string]::IsNullOrEmpty($originalRelease[$field]) -or $originalRelease[$field].Trim('"') -ne $expected[$field]){throw "Original JDK/source metadata missing or mismatched: $field"}
+        }
+        # Stock jlink writes only JAVA_VERSION and MODULES. Its native files are
+        # bound below to the selected JDK's actual JMOD entries, not its signed bin/ copies.
+        $release=ConvertFrom-StringData (Read-ReleaseZipText $zip 'WreckRiff/runtime/release')
+        if(!$release.ContainsKey('JAVA_VERSION') -or $release['JAVA_VERSION'].Trim('"') -ne $runtime.javaVersion){throw 'Bundled jlink Java version is missing or differs from its source.'}
+        if(!$release.ContainsKey('MODULES') -or [string]::IsNullOrEmpty($release['MODULES'])){throw 'Bundled jlink module list is missing.'}
+        foreach($field in $expected.Keys) {
+            if($release.ContainsKey($field) -and $release[$field].Trim('"') -ne $expected[$field]){throw "Bundled jlink metadata contradicts its source: $field"}
+        }
+        foreach($module in @('java.base','java.desktop','java.logging','java.management','jdk.unsupported','jdk.crypto.ec','jdk.jfr')) {
+            if($runtime.jlinkModules -notcontains $module -or $index.runtime.jlinkModules -notcontains $module -or $release['MODULES'].Trim('"').Split(' ') -notcontains $module){throw "Bundled runtime omitted $module"}
+        }
+        if(!$package.PSObject.Properties['runtimeBinding']){throw 'Package lacks selected-JMOD runtime identity.'}
+        $runtimeBinding=$package.runtimeBinding
+        $originalReleaseEntry=$zip.GetEntry($originalReleasePath)
+        Assert-ReleaseZipFile $zip $originalReleasePath $report.selectedJdkReleaseSha256 $originalReleaseEntry.Length
+        if($runtimeBinding.schemaVersion -ne 1 -or $runtimeBinding.status -ne 'BUNDLED_RUNTIME_MATCHES_SELECTED_JMOD' -or $runtimeBinding.selectedJdkReleaseSha256 -ne $report.selectedJdkReleaseSha256 -or $runtimeBinding.jmod.path -ne 'jmods/java.base.jmod' -or $runtimeBinding.jmod.sha256 -notmatch '^[a-f0-9]{64}$'){throw 'Runtime JMOD/source binding is invalid.'}
+        Assert-ReleaseNumber $runtimeBinding.jmod.bytes 4 128MB 'selected JMOD size'
+        if($runtimeBinding.binaries.Count -ne 2){throw 'Runtime binding must cover both the launcher and JVM.'}
+        $nativeRuntimePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        $nativeRuntimeMapping=@{'runtime/bin/java.exe'='bin/java.exe';'runtime/bin/server/jvm.dll'='lib/server/jvm.dll'}
+        foreach($binary in $runtimeBinding.binaries) {
+            if(!$nativeRuntimeMapping.ContainsKey($binary.path) -or !$nativeRuntimePaths.Add($binary.path) -or $binary.entry -cne $nativeRuntimeMapping[$binary.path]){throw 'Unexpected or duplicate runtime JMOD entry binding.'}
+            Assert-ReleaseNumber $binary.bytes 1 64MB 'runtime native size'
+            Assert-ReleaseZipFile $zip ('WreckRiff/'+$binary.path) $binary.sha256 $binary.bytes
         }
         $noticeNames=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         foreach($notice in $binding.assetNotices) {
@@ -301,10 +483,178 @@ function Assert-ReleaseDiagnostic($Diagnostic,$Identity,[string]$Image,[string]$
         Assert-ReleaseNumber $Diagnostic.undrawableSeconds 0 0 'undrawable seconds'
     }
 }
+function Get-ReleaseUiReviewRequest([string]$Resolution,[double]$UiScale,[bool]$Windowed) {
+    $canonical=switch($Resolution){'720p'{'1280x720'} '1080p'{'1920x1080'} default{$Resolution}}
+    if($canonical -notin @('640x480','1280x720','1920x1080','2560x1440','3440x1440','3840x1080','3840x2160')){throw 'Unsupported UI review resolution.'}
+    Assert-ReleaseNumber $UiScale .8 1.5 'UI review scale'
+    $size=$canonical.Split('x');$fullscreen=(!$Windowed -and [int]$size[1] -ge 1080)
+    return [pscustomobject][ordered]@{width=[int]$size[0];height=[int]$size[1];uiScale=$UiScale;fullscreen=$fullscreen;windowMode=$(if($fullscreen){'fullscreen'}else{'windowed'})}
+}
+function Get-ReleaseUiReviewCaseIds {
+    # Fixed current UiReview.catalogue, not a count-only acceptance of arbitrary images.
+    $arenas=@('construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')
+    @('fresh-main','fresh-maps')
+    foreach($arena in $arenas){"fresh-maps-$arena"}
+    @('fresh-statistics','fresh-statistics-bottom','vehicles-rivet','vehicles-grinder','vehicles-spark',
+      'settings-video','settings-tab-1','settings-tab-2','settings-tab-3','controls-keyboard','controls-keyboard-bottom',
+      'controls-gamepad','controls-gamepad-bottom','video-keep-confirm','video-kept','video-revert-confirm','video-reverted',
+      'video-timeout-rollback','confirm-first','confirm-danger-focused','confirm-reopened','credits','credits-bottom',
+      'unlocked-main','unlocked-new-confirm','unlocked-maps')
+    foreach($arena in $arenas){"unlocked-maps-$arena"}
+    @('unlocked-statistics','unlocked-statistics-bottom','loading','error','error-return','results-defeat','results-draw','results-victory')
+    foreach($profile in @('rivet','grinder','spark')){foreach($variant in 0..5){"hud-$profile-$variant"}}
+    @('pause','pause-settings','pause-return','hardware-controller')
+}
+function Assert-ReleaseUiPng([string]$Path,[int]$Width,[int]$Height) {
+    $file=Get-Item -LiteralPath $Path
+    if($file.Length -lt 33 -or $file.Length -gt 128MB -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Invalid UI capture size or linked file.'}
+    $stream=[IO.File]::OpenRead($file.FullName)
+    try {$header=New-Object byte[] 24;if($stream.Read($header,0,24) -ne 24){throw 'Truncated PNG header.'}}finally{$stream.Dispose()}
+    if([BitConverter]::ToString($header,0,8) -ne '89-50-4E-47-0D-0A-1A-0A' -or [Text.Encoding]::ASCII.GetString($header,12,4) -ne 'IHDR'){throw 'UI capture is not a PNG with IHDR.'}
+    $widthBytes=$header[16..19];$heightBytes=$header[20..23];[Array]::Reverse($widthBytes);[Array]::Reverse($heightBytes)
+    if([BitConverter]::ToUInt32($widthBytes,0) -ne $Width -or [BitConverter]::ToUInt32($heightBytes,0) -ne $Height){throw 'UI PNG dimensions differ from the requested framebuffer.'}
+}
+function Get-ReleaseUiReviewEvidence([string]$ManifestPath,$Diagnostic,$Request) {
+    if((Get-Item -LiteralPath $ManifestPath).Length -gt 2MB){throw 'UI manifest exceeds its bounded size.'}
+    $manifest=Read-ReleaseJson $ManifestPath;$directory=[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($ManifestPath))
+    if($manifest.cases.Count -ne 68){throw 'UI manifest has an unexpected case count.'}
+    $captures=@(foreach($case in $manifest.cases) {
+        if($case.status -eq 'CAPTURED') {
+            if($case.captureFile -cnotmatch '^captures/[A-Za-z0-9_.-]+\.png$'){throw 'Unsafe UI capture path.'}
+            $path=Join-Path $directory $case.captureFile
+            Assert-ReleaseUiPng $path $Request.width $Request.height
+            $artifact=Get-ReleaseArtifact $path
+            [pscustomobject][ordered]@{caseId=$case.caseId;path=$artifact.path;sha256=$artifact.sha256}
+        }
+    })
+    $evidence=[pscustomobject][ordered]@{schemaVersion=1;status='CAPTURE_COLLECTION_COMPLETE';scenarioStatus='PASS';
+        releaseEligible=$false;ownerAcceptance='NOT_GRANTED';hardwareController='PENDING';visualReview='PENDING';
+        requestedFramebuffer=$Request;manifest=(Get-ReleaseArtifact $ManifestPath);captures=$captures}
+    Assert-ReleaseUiReview $evidence $Diagnostic $Request
+    return $evidence
+}
+function Assert-ReleaseUiReview($Evidence,$Diagnostic,$Request) {
+    if($Evidence.schemaVersion -ne 1 -or $Evidence.status -ne 'CAPTURE_COLLECTION_COMPLETE' -or $Evidence.scenarioStatus -ne 'PASS' -or
+       $Evidence.releaseEligible -isnot [bool] -or $Evidence.releaseEligible -ne $false -or $Evidence.ownerAcceptance -ne 'NOT_GRANTED' -or
+       $Evidence.hardwareController -ne 'PENDING' -or $Evidence.visualReview -ne 'PENDING'){throw 'UI collection cannot grant release, visual or hardware acceptance.'}
+    if($Diagnostic.mode -ne 'ui-review' -or $Diagnostic.status -ne 'CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING' -or
+       $Diagnostic.uiReviewCaptureStatus -ne 'CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING' -or $Diagnostic.uiReviewManifest -ne 'ui-review-manifest.json' -or
+       $Diagnostic.releaseEligible -isnot [bool] -or $Diagnostic.releaseEligible -ne $false -or $Diagnostic.hardwareController -ne 'PENDING_MANUAL' -or $Diagnostic.feelApproval -ne 'PENDING_MANUAL'){throw 'UI diagnostic collection was not completed without acceptance.'}
+    if($Diagnostic.width -ne $Request.width -or $Diagnostic.height -ne $Request.height){throw 'UI diagnostic framebuffer differs from the request.'}
+    foreach($field in @('width','height','uiScale','fullscreen','windowMode')) {
+        if($Evidence.requestedFramebuffer.$field -ne $Request.$field){throw "UI evidence request mismatch: $field"}
+    }
+    Assert-ReleaseArtifact $Evidence.manifest
+    $file=Get-Item -LiteralPath $Evidence.manifest.path
+    if($file.Name -ne 'ui-review-manifest.json' -or $file.Length -gt 2MB -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Invalid UI manifest file.'}
+    $manifest=Read-ReleaseJson $file.FullName
+    if($manifest.schemaVersion -ne 1 -or $manifest.mode -ne 'ui-review' -or $manifest.status -ne 'CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING' -or
+       $manifest.ownerAcceptance -ne 'NOT_GRANTED' -or $manifest.releaseEligible -isnot [bool] -or $manifest.releaseEligible -ne $false -or $manifest.plannedCases -ne 68 -or
+       $manifest.cases.Count -ne 68 -or $manifest.remainingCaseIds.Count -ne 0 -or $Evidence.captures.Count -ne 67){throw 'Incomplete UI manifest or invalid acceptance state.'}
+    if($manifest.requestedFramebuffer.width -ne $Request.width -or $manifest.requestedFramebuffer.height -ne $Request.height){throw 'UI manifest framebuffer differs from the request.'}
+    Assert-ReleaseNumber $manifest.requestedFramebuffer.uiScale ($Request.uiScale-.000001) ($Request.uiScale+.000001) 'manifest UI scale'
+    $required=@(Get-ReleaseUiReviewCaseIds);$caseIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $captureIds=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $capturePaths=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach($capture in $Evidence.captures) {
+        if(!$captureIds.Add($capture.caseId) -or !$capturePaths.Add([IO.Path]::GetFullPath($capture.path))){throw 'Duplicate UI capture binding.'}
+    }
+    $directory=$file.DirectoryName;$captureDirectory=Join-Path $directory 'captures'
+    if((Get-Item -LiteralPath $captureDirectory).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Linked UI captures directory.'}
+    foreach($case in $manifest.cases) {
+        if($required -cnotcontains $case.caseId -or !$caseIds.Add($case.caseId)){throw 'Missing, unexpected or duplicate UI case.'}
+        $observed=$case.observed
+        if($observed.visible -isnot [bool] -or $observed.visible -ne $true -or $observed.width -ne $Request.width -or $observed.height -ne $Request.height -or
+           $observed.state.fullscreen -isnot [bool] -or $observed.state.fullscreen -ne $Request.fullscreen){throw "Incorrect UI framebuffer, visibility or window mode: $($case.caseId)"}
+        Assert-ReleaseNumber $observed.scale ($Request.uiScale-.000001) ($Request.uiScale+.000001) 'observed UI scale'
+        Assert-ReleaseNumber $observed.state.storedWins 0 0 'UI stored wins'
+        Assert-ReleaseNumber $observed.state.storedMatches 0 0 'UI stored matches'
+        if($case.caseId -eq 'hardware-controller') {
+            if($case.status -ne 'PENDING' -or [string]::IsNullOrWhiteSpace($case.reason) -or $case.captureFile -ne '' -or $case.settledDrawFrames -ne 0){throw 'UI fixture cannot claim a physical controller pass.'}
+            continue
+        }
+        if($case.status -ne 'CAPTURED' -or $case.captureFile -cnotmatch '^captures/[A-Za-z0-9_.-]+\.png$'){throw 'UI case lacks a settled PNG capture.'}
+        Assert-ReleaseNumber $case.settledDrawFrames 2 ([double]::MaxValue) 'settled UI frames'
+        $path=[IO.Path]::GetFullPath((Join-Path $directory $case.captureFile))
+        $matching=@($Evidence.captures | Where-Object {$_.caseId -ceq $case.caseId})
+        if($matching.Count -ne 1 -or ![IO.Path]::GetFullPath($matching[0].path).Equals($path,[StringComparison]::OrdinalIgnoreCase)){throw 'UI capture path/case binding mismatch.'}
+        Assert-ReleaseArtifact $matching[0]
+        Assert-ReleaseUiPng $path $Request.width $Request.height
+    }
+    if(@(Get-ChildItem -LiteralPath $captureDirectory -File -Filter '*.png').Count -ne 67){throw 'UI capture directory does not contain exactly 67 PNG files.'}
+}
+
 function Assert-ReleaseNormal($Diagnostic) {
     if($Diagnostic.status -ne 'CLOSED' -or $Diagnostic.dev -ne $false -or $Diagnostic.shutdownComplete -ne $true -or $Diagnostic.progressFlushed -ne $true){throw 'Normal executable did not shut down and flush progress successfully.'}
     Assert-ReleaseNumber $Diagnostic.renderedFrames 1 ([double]::MaxValue) 'normal rendered frames'
     if([DateTime]$Diagnostic.closedAtUtc -lt [DateTime]$Diagnostic.startedAtUtc){throw 'Normal launch chronology is invalid.'}
+}
+function Assert-ReleaseObserved($Observations,[string[]]$Fields) {
+    foreach($field in $Fields){if($Observations.$field -isnot [bool] -or !$Observations.$field){throw "Unconfirmed observation: $field"}}
+}
+function Assert-ReleaseObservedList($Actual,[string[]]$Required,[string]$Name) {
+    if($Actual -isnot [array]){throw "Missing observation list: $Name"}
+    foreach($item in $Required){if($Actual -notcontains $item){throw "Missing $Name observation: $item"}}
+}
+function Assert-ReleaseReview([string]$Name,$Review,$Identity) {
+    if($Review.status -ne 'ACCEPTED' -or $Review.reviewerType -notin @('agent','human') -or [string]::IsNullOrWhiteSpace($Review.reviewedBy) -or [string]::IsNullOrWhiteSpace($Review.summary)){throw 'No explicit documented factual review.'}
+    $at=([DateTimeOffset]$Review.reviewedAtUtc).UtcDateTime
+    if($at -lt ([DateTimeOffset]$Identity.packagedAtUtc).UtcDateTime -or $at -gt [DateTime]::UtcNow.AddMinutes(5)){throw 'Review date does not match this candidate.'}
+    if($Review.artifacts.Count -eq 0){throw 'No supporting evidence artifacts.'}
+    foreach($artifact in $Review.artifacts){Assert-ReleaseArtifact $artifact}
+    $facts=$Review.observations
+    switch($Name) {
+        'normalNewProfile' {
+            if($facts.mode -ne 'NormalNew'){throw 'Review names another normal scenario.'}
+            Assert-ReleaseObserved $facts @('newProfile','campaignStarted','saveAndExit')
+        }
+        'normalMigratedProfile' {
+            if($facts.mode -ne 'NormalMigrated'){throw 'Review names another normal scenario.'}
+            Assert-ReleaseObserved $facts @('oldSchemaObserved','settingsRetained','statisticsRetained','saveAndExit')
+        }
+        'normalCampaignContinue' {
+            if($facts.mode -ne 'NormalContinue'){throw 'Review names another normal scenario.'}
+            Assert-ReleaseObserved $facts @('checkpointResumed','playerResourcesVerified','campaignProgressVerified','saveAndExit')
+        }
+        'ownerFeel' {
+            if($Review.reviewerType -ne 'human'){throw 'Owner feel requires the actual human owner review.'}
+            Assert-ReleaseObserved $facts @('handling','ui','visuals','sound')
+        }
+        'physicalController' {
+            if([string]::IsNullOrWhiteSpace($facts.deviceModel) -or [string]::IsNullOrWhiteSpace($facts.connection)){throw 'Controller hardware/connection is not identified.'}
+            Assert-ReleaseObserved $facts @('physicalDeviceObserved')
+            Assert-ReleaseObservedList $facts.checks @('menus','focus','remapping','combat','disconnect','reconnect') 'controller'
+        }
+        'otherWindows' {
+            if([string]::IsNullOrWhiteSpace($facts.machineDescription) -or [string]::IsNullOrWhiteSpace($facts.osVersion)){throw 'Other Windows machine/OS is not identified.'}
+            Assert-ReleaseObserved $facts @('separateInstallation','cleanInstallation','bundledJavaVerified','audioVerified','normalExit')
+        }
+        'graphicalUxMatrix' {
+            Assert-ReleaseObservedList $facts.resolutions @('640x480','1280x720','1920x1080','2560x1440','3840x2160') 'resolution'
+            $wide=@($facts.resolutions | Where-Object {$_ -match '^(\d+)x(\d+)$' -and [double]$Matches[1]/[Math]::Max(1,[double]$Matches[2]) -gt 2})
+            if($wide.Count -eq 0){throw 'Actual ultrawide dimensions are absent.'}
+            Assert-ReleaseObservedList $facts.windowModes @('windowed','fullscreen') 'window mode'
+            Assert-ReleaseObservedList $facts.checks @('resize','ui-scale','long-strings','notifications','empty-ammo','all-abilities','focus','mouse','keyboard') 'graphical UX'
+            Assert-ReleaseNumber $facts.openBlockingDefects 0 0 'open blocking UX defects'
+        }
+        'arenaRoutes' {
+            foreach($arena in @('dead-air-yard','construction_17','neon_zero','euphoria_park','ash_necropolis','doomsday_arena')) {
+                $rows=@($facts.arenas | Where-Object {$_.id -eq $arena})
+                if($rows.Count -ne 1){throw "Missing/duplicate route observations for $arena"}
+                $required=@('lower','upper-combat','pickup','descent')
+                if($arena -ne 'dead-air-yard'){$required+=@('launch','boss-lower','boss-upper')}
+                Assert-ReleaseObservedList $rows[0].checks $required "route $arena"
+            }
+        }
+        'distributionLicenses' {
+            Assert-ReleaseObserved $facts @('materialsVerified','sourceReplacementInstructionsReviewed','assetNoticesPresent')
+            if($facts.distributionApproval -ne 'NOT_GRANTED'){throw 'Material review must not manufacture a distribution approval.'}
+        }
+        'releaseDocumentation' {
+            Assert-ReleaseObservedList $facts.documents @('installation','controls','release-notes','known-limitations','hardware','resource-register','licenses','acceptance-report') 'release documentation'
+        }
+        default {throw 'Unknown release review category.'}
+    }
 }
 function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
     if($Report.status -ne 'PASS' -or $Diagnostic.status -ne 'SOAK_MEASURED' -or $Diagnostic.mode -ne 'soak'){throw 'Soak was not completed.'}
@@ -380,7 +730,7 @@ function Invoke-ReleaseProcess([string]$Image,[string]$RunRoot,[string[]]$Argume
         if($Arguments.Count -gt 0){$parameters.ArgumentList=$Arguments}
         $launcher=Start-Process @parameters;$null=$launcher.Handle
         while(([DateTime]::UtcNow-$started).TotalSeconds -lt 45) {
-            $line=Get-Content -LiteralPath $stdout | Where-Object {$_.StartsWith('DIAGNOSTIC_REPORT: ')} | Select-Object -First 1
+            $line=Get-Content -LiteralPath $stdout -Encoding UTF8 | Where-Object {$_.StartsWith('DIAGNOSTIC_REPORT: ')} | Select-Object -First 1
             if($line) {
                 $candidate=[IO.Path]::GetFullPath($line.Substring('DIAGNOSTIC_REPORT: '.Length).Trim())
                 $allowed=[IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'WreckRiff'))+[IO.Path]::DirectorySeparatorChar
@@ -435,5 +785,5 @@ function Invoke-ReleaseProcess([string]$Image,[string]$RunRoot,[string[]]$Argume
         Write-ReleaseJson (Join-Path $RunRoot 'memory.json') $memory
         $env:JAVA_HOME=$oldJava;$env:PATH=$oldPath;$env:LOCALAPPDATA=$oldLocal
     }
-    return [pscustomobject]@{diagnostic=$diagnostic;memory=[pscustomobject]$memory;gamePid=$game.Id;launcherPid=$launcher.Id;processStartTimeUtc=$processStarted.ToString('o');exitCode=$exitCode;startedAtUtc=$started.ToString('o');completedAtUtc=[DateTime]::UtcNow.ToString('o')}
+    return [pscustomobject]@{diagnostic=$diagnostic;reportPath=$reportPath;memory=[pscustomobject]$memory;gamePid=$game.Id;launcherPid=$launcher.Id;processStartTimeUtc=$processStarted.ToString('o');exitCode=$exitCode;startedAtUtc=$started.ToString('o');completedAtUtc=[DateTime]::UtcNow.ToString('o')}
 }

@@ -9,6 +9,30 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ArenaArtTest {
+    @Test void necropolisBellHasContinuousSupportFromFrameThroughItsSwayPivot() {
+        var art=ArenaArt.load(ArenaRegistry.load().definition("ash_necropolis"));
+        var pivot=art.groups().stream().filter(group->group.id().equals("necro-bell")).findFirst().orElseThrow();
+        var frame=part(art,"bell-overhead-frame-");
+        var hanger=part(art,"bell-fixed-hanger-");
+        var suspension=part(art,"bell-suspension-");
+        var bell=part(art,"ritual-bell-");
+        assertEquals("",hanger.group());
+        assertEquals(pivot.id(),suspension.group());
+        assertEquals(pivot.id(),bell.group());
+        assertEquals(pivot.position().x(),hanger.position().x(),.001f);
+        assertEquals(pivot.position().z(),hanger.position().z(),.001f);
+        assertEquals(pivot.position().y(),hanger.position().y()-rotatedHalf(hanger).y,.001f);
+        assertTrue(hanger.position().y()+rotatedHalf(hanger).y>=frame.position().y()-rotatedHalf(frame).y);
+        assertEquals(0,suspension.position().y()+rotatedHalf(suspension).y,.001f,
+                "Moving support must meet the fixed hanger at the sway pivot");
+        assertTrue(suspension.position().y()-rotatedHalf(suspension).y<=bell.position().y()+rotatedHalf(bell).y,
+                "Moving support must enter the bell crown, without a visible gap");
+    }
+
+    private static ArenaArt.Part part(ArenaArt.Scene art,String prefix) {
+        return art.parts().stream().filter(part->part.id().startsWith(prefix)).findFirst().orElseThrow();
+    }
+
     @Test void allSixLocalScenesHaveUniqueLandmarksProvenanceAndNoDecorationAcrossDrivingVolumes() {
         ArenaRegistry registry=ArenaRegistry.load();
         Map<String,String> landmarks=Map.of("dead-air-yard","mast-beacon", "construction_17","crane-lattice",

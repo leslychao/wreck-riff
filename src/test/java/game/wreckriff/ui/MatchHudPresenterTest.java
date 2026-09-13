@@ -19,6 +19,44 @@ import org.junit.jupiter.params.provider.CsvSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MatchHudPresenterTest {
+    @Test void airborneHudStopsUsingTheOldYawBranchOnceTheCarIsUprightWithoutRecovery() {
+        var session=new MatchSession(12,360);var presenter=new MatchHudPresenter();var rotation=new Quaternion();
+        WorldQuery world=(WorldQuery)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->switch(method.getName()) {
+            case "position"->new Vector3f();case "rotation"->rotation.clone();
+            case "roadContext"->new RoadContext("lower",0,1,RoadContext.Motion.AIRBORNE,"","",0);
+            default->throw new AssertionError(method.getName());
+        });
+        var targeting=new MatchHudPresenter.Targeting(-1,-1,-1);
+        assertEquals(1,presenter.snapshot(session,world,targeting,"RMB","",0).observer().heading().z());
+        for(float[] pose:new float[][]{{89,0},{89.8f,0},{89.8f,180},{89,180},{60,180},{0,180}}) {
+            rotation.set(new Quaternion().fromAngleAxis(pose[1]*(float)Math.PI/180,Vector3f.UNIT_Y)
+                    .mult(new Quaternion().fromAngleAxis(pose[0]*(float)Math.PI/180,Vector3f.UNIT_X)));
+            var observed=presenter.snapshot(session,world,targeting,"RMB","",1).observer().heading();
+            assertEquals(pose[0]<=60?-1:1,observed.z(),.001f,"pitch="+pose[0]+", yaw="+pose[1]);
+        }
+        assertEquals(0,session.vehicle(0).recoveries);assertEquals(0,session.tick);
+    }
+    @Test void airbornePitchKeepsRadarHeadingButGroundedTurnAndRecoveryUseTheNewPhysicalPose() {
+        var session=new MatchSession(12,360);var presenter=new MatchHudPresenter();
+        var rotation=new Quaternion();boolean[] flying={false};
+        WorldQuery world=(WorldQuery)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->switch(method.getName()) {
+            case "position"->new Vector3f();case "rotation"->rotation.clone();
+            case "roadContext"->new RoadContext("lower",0,1,flying[0]?RoadContext.Motion.AIRBORNE:RoadContext.Motion.ROAD,"","",0);
+            default->throw new AssertionError(method.getName());
+        });
+        var targeting=new MatchHudPresenter.Targeting(-1,-1,-1);
+        assertEquals(1,presenter.snapshot(session,world,targeting,"RMB","",0).observer().heading().z());
+        flying[0]=true;
+        for(int degrees=0;degrees<=180;degrees++) {
+            rotation.fromAngleAxis(degrees*(float)Math.PI/180,Vector3f.UNIT_X);
+            assertEquals(1,presenter.snapshot(session,world,targeting,"RMB","",1).observer().heading().z(),.001f);
+        }
+        rotation.fromAngles(0,(float)Math.PI,0);session.vehicle(0).recoveries++;
+        assertEquals(-1,presenter.snapshot(session,world,targeting,"RMB","",2).observer().heading().z(),.001f);
+        flying[0]=false;rotation.loadIdentity();
+        assertEquals(1,presenter.snapshot(session,world,targeting,"RMB","",3).observer().heading().z(),.001f);
+        assertEquals(0,session.tick,"Presentation never advances simulation");
+    }
     @ParameterizedTest
     @CsvSource({"rivet,14", "grinder,20", "spark,12"})
     void playerSpecialReadsProfileCooldownAndActiveStateWithoutAdvancingEither(String profileId,float duration) {

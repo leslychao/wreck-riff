@@ -12,6 +12,22 @@ import java.lang.reflect.Proxy;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InputSystemTest {
+    @Test void boundFunctionKeysActivateGameplayWithoutAlsoHandlingAnApplicationShortcut() {
+        for(int functionKey:new int[]{KeyInput.KEY_F1,KeyInput.KEY_F3,KeyInput.KEY_F4,KeyInput.KEY_F12}) {
+            var settings=new SettingsStore.Settings();settings.keys.put("Shield",functionKey);
+            var shortcutCalls=new java.util.concurrent.atomic.AtomicInteger();
+            try(InputSystem input=input(settings)) {
+                input.onKey(code->{if(!input.gameplayOwnsKey(code))shortcutCalls.incrementAndGet();});
+                input.setGameplay(true);input.onKeyEvent(key(functionKey,true));
+                assertEquals(0,shortcutCalls.get());assertEquals(AbilityId.SHIELD,input.consume().ability());
+                input.onKeyEvent(key(functionKey,false));input.setGameplay(false);input.onKeyEvent(key(functionKey,true));
+                assertEquals(1,shortcutCalls.get());assertEquals(AbilityId.NONE,input.consume().ability());
+                input.onKeyEvent(key(functionKey,false));settings.keys.put("Shield",KeyInput.KEY_F);
+                input.setGameplay(true);input.onKeyEvent(key(functionKey,true));
+                assertEquals(2,shortcutCalls.get());assertEquals(AbilityId.NONE,input.consume().ability());
+            }
+        }
+    }
     @Test void playerSpecialNeedsAFreshOwnKeyOrPadButtonAndClearsAcrossPause() {
         try(InputSystem input=input()) {
             input.setGameplay(true);input.onKeyEvent(key(KeyInput.KEY_C,true));

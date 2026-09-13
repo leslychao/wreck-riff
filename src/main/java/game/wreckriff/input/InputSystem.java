@@ -47,6 +47,8 @@ public final class InputSystem implements RawInputListener,AutoCloseable {
     public int activePad() { return activePad; }
     public boolean usingGamepad() {return usingGamepad;}
     public boolean shiftHeld() {return keys.contains(KeyInput.KEY_LSHIFT)||keys.contains(KeyInput.KEY_RSHIFT);}
+    /** Bound gameplay keys take precedence over optional application shortcuts during a match. */
+    public boolean gameplayOwnsKey(int code) {return gameplay&&code>0&&settings.get().keys.containsValue(code);}
     /** Prompts use the active physical device and its actual loaded bindings. */
     public String displayBinding(String action) {
         return displayBinding(action,usingGamepad);

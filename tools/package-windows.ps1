@@ -51,7 +51,7 @@ function Get-Sha256([string]$LiteralPath) {
 
 $inputLib = Assert-BuildChild (Join-Path $buildRoot 'install/wreck-riff/lib')
 $assetReportRoot = Assert-BuildChild (Join-Path $buildRoot 'reports/assets')
-$assetReport = Get-Content -LiteralPath (Join-Path $assetReportRoot 'verification.json') -Raw | ConvertFrom-Json
+$assetReport = Read-ReleaseJson (Join-Path $assetReportRoot 'verification.json')
 if ($assetReport.status -ne 'TECHNICAL_PASS') { throw 'verifyAssets must pass before packaging.' }
 $sourceReportPath=Join-Path $assetReportRoot 'source-distribution.json'
 $sourceReport=Read-ReleaseJson $sourceReportPath
@@ -96,11 +96,12 @@ $jpackageArgs = @(
     '--input', $inputStage, '--dest', $imageStage, '--main-jar', $mainJarName,
     '--main-class', 'game.wreckriff.Main',
     '--java-options', '-Xms128m', '--java-options', '-Xmx768m',
+    '--java-options', '-Dstdout.encoding=UTF-8', '--java-options', '-Dstderr.encoding=UTF-8',
     '--add-modules', 'java.base,java.desktop,java.logging,java.management,jdk.unsupported,jdk.crypto.ec,jdk.jfr',
     '--jlink-options', '--strip-debug --no-man-pages --no-header-files'
 )
-& $jpackage @jpackageArgs
-if ($LASTEXITCODE -ne 0) { throw "jpackage failed with exit code $LASTEXITCODE" }
+$jpackageLog=Join-Path $staging 'jpackage.log'
+$null=Invoke-ReleaseNativeCommand $jpackage $jpackageArgs $jpackageLog
 $image = Assert-BuildChild (Join-Path $imageStage 'WreckRiff')
 foreach ($relative in @('WreckRiff.exe', 'app/WreckRiff.cfg', 'runtime/bin/server/jvm.dll', 'runtime/bin/java.exe', 'runtime/release', 'runtime/legal/java.base/LICENSE')) {
     $expected = Join-Path $image $relative
@@ -108,6 +109,7 @@ foreach ($relative in @('WreckRiff.exe', 'app/WreckRiff.cfg', 'runtime/bin/serve
 }
 $runtimeRelease = Get-Content -LiteralPath (Join-Path $image 'runtime/release') -Raw
 if ($runtimeRelease -notmatch 'JAVA_VERSION="21\.') { throw 'The bundled runtime is not Java 21.' }
+$runtimeBinding=Get-ReleaseRuntimeBinding $jdkRoot $image $sourceReport
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $requiredNatives = @(
@@ -164,6 +166,11 @@ RMB selected weapon, 1/2/3/4/5/6 select Homing/Power/Mine/Napalm/Ballistic/Canno
 F Shield, Z Freeze, C vehicle special, hold R recovery, V rear view, Esc pause.
 Gamepad: A Shield, D-pad up Freeze, D-pad down vehicle special, D-pad left/right cycle weapons.
 The Controls screen is authoritative for current/rebound controls.
+The complete current control guide is CONTROLS.txt.
+
+Release changes: RELEASE_NOTES.txt. Current limitations: KNOWN_LIMITATIONS.txt.
+Observed hardware: TESTED_HARDWARE.txt. Candidate status: VERIFICATION_STATUS.txt.
+The resource register is reports/asset-register.csv.
 
 This local package is not digitally signed. Windows may display a warning for an
 unrecognized application; no claim is made about warnings on every Windows setup.
@@ -176,13 +183,16 @@ under licenses. Their integrity report is reports/source-distribution.json.
 Technical verification does not grant artistic or distribution approval.
 "@
 [IO.File]::WriteAllText((Join-Path $image 'README.txt'), $notice, [Text.UTF8Encoding]::new($false))
+$documentation=New-ReleaseDocumentation $projectRoot $image $Version
 $packageReport = [ordered]@{
     schemaVersion=2; version=$Version; platform='Windows x64'; status='PACKAGE_STRUCTURE_VERIFIED';
     packagedAtUtc=[DateTime]::UtcNow.ToString('o'); sourceSha256=$buildIdentity.sourceSha256;
     mainJarSha256=$buildIdentity.mainJarSha256; verificationInputsSha256=$verificationInputs;
+    documentation=$documentation;
     sourceDistribution=[ordered]@{path='reports/source-distribution.json';sha256=(Get-ReleaseSha256 (Join-Path $reports 'source-distribution.json'));
         inputIndexSha256=$sourceReport.inputIndexSha256;assetNotices=$assetNoticeEvidence};
     bundledJava=([regex]::Match($runtimeRelease, 'JAVA_VERSION="([^"]+)"').Groups[1].Value);
+    runtimeBinding=$runtimeBinding;
     launcher='WreckRiff.exe'; nativeEntries=$foundNatives; jars=$jarHashes;
     graphicalLaunch='NOT_RUN_BY_PACKAGING'; controller='NOT_VERIFIED_BY_PACKAGING';
     distributionStatus=$assetReport.distributionStatus; digitalSignature='UNSIGNED'; releaseStatus='RELEASE_CANDIDATE'
@@ -196,6 +206,7 @@ $stagedZip = Join-Path $staging $zipName
 if($verificationInputs -ne (Get-ReleaseInputHash $projectRoot)) {throw 'Sources or verification tools changed during packaging; retry from a stable snapshot.'}
 # Explicit entry names keep the ZIP format portable under Windows PowerShell 5.1.
 New-ReleaseZip $image $stagedZip
+$null=Get-ReleasePackageIdentity $stagedZip
 $null=Assert-ReleaseSourceDistribution $stagedZip
 $zipTarget = Assert-BuildChild (Join-Path $distributionRoot $zipName)
 Move-Item -LiteralPath $stagedZip -Destination $zipTarget -Force

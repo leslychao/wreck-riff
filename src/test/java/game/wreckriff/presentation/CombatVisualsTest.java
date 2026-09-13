@@ -507,6 +507,74 @@ class CombatVisualsTest {
             assertArrayEquals(before,floats(mesh,VertexBuffer.Type.TexCoord3),"Paused frames keep stable ground patterns");
         }
     }
+    @Test void unchangedFireSnapshotsReusePreparedTopologyAndGeometry() {
+        Node scene=new Node();Vector3f origin=new Vector3f(4,6,8);
+        List<Vector3f> support=List.of(origin,origin.add(1,0,0),origin.add(0,0,1));
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.update(List.of(),List.of(),List.of(cachedFire(9,origin,Vector3f.UNIT_Y,240,support)),List.of(),null,0);
+            Mesh mesh=batch(scene,"ground-fire").getMesh();
+            Map<VertexBuffer.Type,float[]> initial=new EnumMap<>(VertexBuffer.Type.class);
+            for(var type:List.of(VertexBuffer.Type.Position,VertexBuffer.Type.Color,VertexBuffer.Type.TexCoord,VertexBuffer.Type.TexCoord2,VertexBuffer.Type.TexCoord3))
+                initial.put(type,floats(mesh,type));
+            for(int frame=0;frame<120;frame++) {
+                // CombatSystem publishes fresh views/vectors and a decreasing TTL every frame.
+                visuals.update(List.of(),List.of(),List.of(cachedFire(9,origin,Vector3f.UNIT_Y,240-frame,support)),List.of(),null,0);
+            }
+            assertEquals(1,visuals.fireTopologyBuildCount());
+            assertEquals(3,visuals.cachedFirePointCount());
+            initial.forEach((type,data)->assertArrayEquals(data,floats(mesh,type),"Cache hits preserve all rendered attributes"));
+        }
+    }
+    @Test void changedFireSupportPoseAndLifecycleInvalidateOnlyTheirCachedGeometry() {
+        Node scene=new Node();Vector3f origin=new Vector3f(4,6,8);
+        var first=cachedFire(1,origin,Vector3f.UNIT_Y,240,List.of(origin));
+        var second=cachedFire(2,origin,Vector3f.UNIT_Y,240,List.of(origin.add(4,0,0)));
+        CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());
+        try {
+            visuals.update(List.of(),List.of(),List.of(first,second),List.of(),null,0);
+            assertEquals(2,visuals.fireTopologyBuildCount());
+            var changed=cachedFire(1,origin,Vector3f.UNIT_Y,239,List.of(origin,origin.add(1,0,0)));
+            visuals.update(List.of(),List.of(),List.of(changed,second),List.of(),null,0);
+            assertEquals(3,visuals.fireTopologyBuildCount());
+            var mesh=batch(scene,"ground-fire").getMesh();
+            assertEquals(0,((int)mesh.getFloatBuffer(VertexBuffer.Type.TexCoord3).get(0))&1,"Added neighbour removes the shared feathered edge");
+            changed=cachedFire(1,origin.add(.2f,0,0),new Vector3f(-.4f,1,0).normalizeLocal(),238,List.of(origin,origin.add(1,.4f,0)));
+            visuals.update(List.of(),List.of(),List.of(changed,second),List.of(),null,0);
+            assertEquals(4,visuals.fireTopologyBuildCount());
+            // A caller mutating a previously published vector cannot mutate the stored cache key.
+            changed.surfacePoints().getFirst().y+=.1f;
+            visuals.update(List.of(),List.of(),List.of(changed,second),List.of(),null,0);
+            assertEquals(5,visuals.fireTopologyBuildCount());
+            visuals.update(List.of(),List.of(),List.of(second),List.of(),null,0);
+            assertEquals(1,visuals.cachedFirePointCount());assertEquals(5,visuals.fireTopologyBuildCount());
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            assertEquals(0,visuals.cachedFirePointCount());
+            visuals.update(List.of(),List.of(),List.of(first),List.of(),null,0);
+            assertEquals(6,visuals.fireTopologyBuildCount(),"Reusing an ID after expiry creates a new entry");
+        } finally {visuals.close();}
+        assertEquals(0,visuals.cachedFirePointCount());
+        try(CombatVisuals retry=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            assertEquals(0,retry.cachedFirePointCount());assertEquals(0,retry.fireTopologyBuildCount());
+        }
+    }
+    @Test void fireTopologyRetentionIsBoundedByTheGroundVertexBudget() {
+        Node scene=new Node();List<Vector3f> support=new ArrayList<>();
+        for(int i=0;i<81;i++)support.add(new Vector3f(i%9,0,i/9));
+        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            for(int frame=0;frame<5;frame++) {
+                List<game.wreckriff.combat.CombatSystem.FireZoneView> fires=new ArrayList<>();
+                for(int i=0;i<64;i++)fires.add(cachedFire(frame*64L+i,Vector3f.ZERO,Vector3f.UNIT_Y,240,support));
+                visuals.update(List.of(),List.of(),fires,List.of(),null,0);
+                assertTrue(visuals.cachedFirePointCount()<=20000/6,"Retained geometry never exceeds the existing field budget");
+                assertTrue(batch(scene,"ground-fire").getMesh().getVertexCount()>19000,"The retention limit does not hide drawable fields");
+            }
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,0);
+            assertEquals(0,visuals.cachedFirePointCount());
+        }
+    }
+    private static game.wreckriff.combat.CombatSystem.FireZoneView cachedFire(long id,Vector3f origin,Vector3f normal,int ticks,List<Vector3f> support) {
+        return new game.wreckriff.combat.CombatSystem.FireZoneView(id,0,origin,normal,5,ticks,support);
+    }
     private static float[] floats(Mesh mesh,VertexBuffer.Type type) {
         var values=mesh.getFloatBuffer(type).duplicate().rewind();float[] result=new float[values.remaining()];values.get(result);return result;
     }

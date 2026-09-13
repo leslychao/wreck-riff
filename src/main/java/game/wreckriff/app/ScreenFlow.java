@@ -4,11 +4,13 @@ package game.wreckriff.app;
 public final class ScreenFlow {
     public enum Screen { BOOT,MENU,MAPS,VEHICLES,STATISTICS,LOADING,RUNNING,PAUSED,RESULTS,SETTINGS,CONTROLS,CREDITS,CONFIRM,ERROR }
     private Screen screen=Screen.BOOT;
+    private String pauseReason="";
     private final java.util.Deque<Screen> parents=new java.util.ArrayDeque<>();
     private Runnable changed=()->{};
     public void onChanged(Runnable callback) { changed=callback; }
     public Screen screen() { return screen; }
-    private void root(Screen next) {parents.clear();go(next);}
+    public String pauseReason() {return pauseReason;}
+    private void root(Screen next) {parents.clear();pauseReason="";go(next);}
     public void menu() {root(Screen.MENU);}
     public void maps() {root(Screen.MAPS);}
     public void statistics() {root(Screen.STATISTICS);}
@@ -16,8 +18,9 @@ public final class ScreenFlow {
     public void running() {root(Screen.RUNNING);}
     public void results() {root(Screen.RESULTS);}
     public void error() {root(Screen.ERROR);}
-    public void pause() {
-        if(screen==Screen.RUNNING) go(Screen.PAUSED);
+    public void pause() {pause("");}
+    public void pause(String reason) {
+        if(screen==Screen.RUNNING) {pauseReason=java.util.Objects.requireNonNull(reason);go(Screen.PAUSED);}
     }
     public void resume() { if(screen==Screen.PAUSED) go(Screen.RUNNING); }
     public void open(Screen overlay) {
@@ -25,5 +28,5 @@ public final class ScreenFlow {
         parents.push(screen);go(overlay);
     }
     public void back() {go(parents.isEmpty()?Screen.MENU:parents.pop());}
-    private void go(Screen next) { screen=next; changed.run(); }
+    private void go(Screen next) {if(next==Screen.RUNNING||next==Screen.MENU)pauseReason="";screen=next;changed.run();}
 }

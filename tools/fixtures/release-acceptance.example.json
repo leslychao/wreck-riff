@@ -1,20 +1,174 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "version": "COPY_FROM_PACKAGE_IDENTITY",
   "sourceSha256": "COPY_FROM_PACKAGE_IDENTITY",
   "mainJarSha256": "COPY_FROM_PACKAGE_IDENTITY",
   "verificationInputsSha256": "COPY_FROM_PACKAGE_IDENTITY",
   "zipSha256": "COPY_FROM_PACKAGE_IDENTITY",
   "checks": {
-    "normalNewProfile": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Play a new campaign with the normal EXE, save and exit; attach its launch report and resulting profile.","artifacts":[]},
-    "normalMigratedProfile": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Use the normal EXE with a copied old profile; verify settings/statistics survive migration, then exit; attach before/after and launch report.","artifacts":[]},
-    "normalCampaignContinue": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Restart the normal EXE with saved campaign, continue the checkpoint, verify progress/resources and exit; attach both real sessions.","artifacts":[]},
-    "physicalController": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Actual controller: menus, focus, remapping, combat, unplug/reconnect; name hardware and observations.","artifacts":[]},
-    "otherWindows": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Run this exact ZIP on another clean Windows installation; record hardware, OS, bundled JVM, audio and normal exit.","artifacts":[]},
-    "ownerFeel": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Owner's actual review of handling, UI, visuals and sound of this package.","artifacts":[]},
-    "graphicalUxMatrix": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Actual window/resolution/UI/input matrix from RELEASE_PLAN, linked screenshots and resolved defects.","artifacts":[]},
-    "arenaRoutes": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"All six maps: actual lower/launch/upper/pickup/drop routes and boss combat at both levels where applicable.","artifacts":[]},
-    "distributionLicenses": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Review shipped notices and source/replacement obligations, including the packaged OpenAL Soft binaries.","artifacts":[]},
-    "releaseDocumentation": {"status":"PENDING","reviewedBy":"","reviewedAtUtc":"","summary":"Installation, controls, release notes, known limitations, tested hardware, resource register and acceptance report are complete.","artifacts":[]}
+    "normalNewProfile": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Play a new campaign with the normal EXE, save and exit; attach its launch report and resulting profile.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "mode": "NormalNew",
+        "newProfile": false,
+        "campaignStarted": false,
+        "saveAndExit": false
+      }
+    },
+    "normalMigratedProfile": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Use the normal EXE with a copied old profile; verify settings/statistics survive migration, then exit; attach before/after and launch report.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "mode": "NormalMigrated",
+        "oldSchemaObserved": false,
+        "settingsRetained": false,
+        "statisticsRetained": false,
+        "saveAndExit": false
+      }
+    },
+    "normalCampaignContinue": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Restart the normal EXE with saved campaign, continue the checkpoint, verify progress/resources and exit; attach both real sessions.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "mode": "NormalContinue",
+        "checkpointResumed": false,
+        "playerResourcesVerified": false,
+        "campaignProgressVerified": false,
+        "saveAndExit": false
+      }
+    },
+    "physicalController": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Actual controller: menus, focus, remapping, combat, unplug/reconnect; name hardware and observations.",
+      "artifacts": [],
+      "reviewerType": "human",
+      "observations": {
+        "deviceModel": "",
+        "connection": "",
+        "physicalDeviceObserved": false,
+        "checks": []
+      }
+    },
+    "otherWindows": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Run this exact ZIP on another clean Windows installation; record hardware, OS, bundled JVM, audio and normal exit.",
+      "artifacts": [],
+      "reviewerType": "human",
+      "observations": {
+        "machineDescription": "",
+        "osVersion": "",
+        "separateInstallation": false,
+        "cleanInstallation": false,
+        "bundledJavaVerified": false,
+        "audioVerified": false,
+        "normalExit": false
+      }
+    },
+    "ownerFeel": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Owner's actual review of handling, UI, visuals and sound of this package.",
+      "artifacts": [],
+      "reviewerType": "human",
+      "observations": {
+        "handling": false,
+        "ui": false,
+        "visuals": false,
+        "sound": false
+      }
+    },
+    "graphicalUxMatrix": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Actual window/resolution/UI/input matrix from RELEASE_PLAN, linked screenshots and resolved defects.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "resolutions": [],
+        "windowModes": [],
+        "checks": [],
+        "openBlockingDefects": null
+      }
+    },
+    "arenaRoutes": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "All six maps: actual lower/launch/upper/pickup/drop routes and boss combat at both levels where applicable.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "arenas": [
+          {
+            "id": "dead-air-yard",
+            "checks": []
+          },
+          {
+            "id": "construction_17",
+            "checks": []
+          },
+          {
+            "id": "neon_zero",
+            "checks": []
+          },
+          {
+            "id": "euphoria_park",
+            "checks": []
+          },
+          {
+            "id": "ash_necropolis",
+            "checks": []
+          },
+          {
+            "id": "doomsday_arena",
+            "checks": []
+          }
+        ]
+      }
+    },
+    "distributionLicenses": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Review shipped notices and source/replacement obligations, including the packaged OpenAL Soft binaries.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "materialsVerified": false,
+        "sourceReplacementInstructionsReviewed": false,
+        "assetNoticesPresent": false,
+        "distributionApproval": "NOT_GRANTED"
+      }
+    },
+    "releaseDocumentation": {
+      "status": "PENDING",
+      "reviewedBy": "",
+      "reviewedAtUtc": "",
+      "summary": "Installation, controls, release notes, known limitations, tested hardware, resource register and acceptance report are complete.",
+      "artifacts": [],
+      "reviewerType": "agent",
+      "observations": {
+        "documents": []
+      }
+    }
   }
 }

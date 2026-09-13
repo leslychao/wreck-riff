@@ -23,6 +23,8 @@ public final class GenerateFont {
         codes.add(0x401);
         for(int code=0x410;code<=0x44f;code++)codes.add(code);
         codes.add(0x451);
+        // Existing UI strings: missing records/separators, quoted boss speech and pickup receipts.
+        codes.addAll(List.of(0x2014,0xab,0xbb,0xb7));
         List<String> records=new ArrayList<>();
         for(String style:List.of("Regular","Bold")) {
             Path source=sources.resolve("RobotoCondensed-"+style+".ttf");
@@ -69,12 +71,12 @@ public final class GenerateFont {
                     """.formatted(name,style,style,hash(Files.readAllBytes(source)),hash(Files.readAllBytes(descriptor)),hash(Files.readAllBytes(texture))).strip());
         }
         Files.writeString(output.resolve("font-provenance.json"),"""
-                {"schemaVersion":2,"name":"Roboto Condensed","externalFontInput":true,"glyphs":161,
+                {"schemaVersion":2,"name":"Roboto Condensed","externalFontInput":true,"glyphs":%d,
                 "sourceUrl":"https://github.com/googlefonts/roboto-3-classic/releases/download/v3.016/Roboto_v3.016.zip",
                 "author":"The Roboto Project Authors","license":"OFL-1.1","licensePath":"licenses/assets/Roboto-OFL.txt",
                 "rendering":"48px grayscale antialiasing; 2x supersampling; true lowercase and Cyrillic; no system font",
                 "artisticStatus":"NEEDS_CREATIVE_REVIEW","fonts":[%s]}
-                """.formatted(String.join(",",records)),StandardCharsets.UTF_8);
+                """.formatted(codes.size(),String.join(",",records)),StandardCharsets.UTF_8);
         System.out.println("Generated antialiased Roboto Condensed regular/bold: "+output);
     }
     private static String hash(byte[] bytes)throws Exception {

@@ -11,6 +11,10 @@ $reviewRoot=Join-Path $projectRoot ('build/art-review/collection-'+[DateTime]::U
 if(Test-Path -LiteralPath $reviewRoot) {throw 'Review collection already exists'}
 $null=New-Item -ItemType Directory -Path $reviewRoot
 function Escape-Html([string]$value) {[Net.WebUtility]::HtmlEncode($value)}
+function Arena-Title([string]$id) {
+    $titles=@{'dead-air-yard'='Dead Air Yard';construction_17='МЕГАСТРОЙ-17';neon_zero='НЕОН-РАЙОН ZERO';euphoria_park='ЛУНАПАРК ЭЙФОРИЯ';ash_necropolis='НЕКРОПОЛЬ ПЕПЛА';doomsday_arena='АРЕНА СУДНОГО ДНЯ'}
+    if($titles.ContainsKey($id)) {$titles[$id]} else {$id}
+}
 function Asset-Link([string]$path) {
     $resolved=(Resolve-Path -LiteralPath $path).ProviderPath
     [IO.Path]::GetRelativePath($reviewRoot,$resolved).Replace('\','/')
@@ -41,7 +45,8 @@ if($latest.Count -eq 0) {throw 'No passing graphical evidence'}
 $cards=foreach($result in $latest.Values) {
     $movie=Escape-Html (Asset-Link (Join-Path $result.reviewDirectory 'pickups.mp4'))
     $evidence=Escape-Html (Asset-Link (Join-Path $result.reviewDirectory 'diagnostic-result.json'))
-    '<section><h2>'+(Escape-Html $result.arena)+' / '+$result.resolution+' / glow='+$result.glow+'</h2>'+
+    $glowLabel=if($result.glow){'вкл.'}else{'выкл.'}
+    '<section><h2>'+(Escape-Html (Arena-Title $result.arena))+' / '+$result.resolution+' / свечение '+$glowLabel+'</h2>'+
         '<p class="meta">Source SHA256: '+$result.sourceSha256+' · <a href="'+$evidence+'">JSON проверки</a></p>'+
         (Image-Gallery $result.reviewDirectory '*-art-*.png')+
         '<details><summary>Все восемь подборов: модели и реальные начисления</summary>'+
@@ -63,7 +68,7 @@ foreach($extra in @(@{path=$CombatAfterDirectory;title='После обновл�
     $comparison+='</section>'
 }
 $failures=@($allResults | Where-Object {$_.status -ne 'GRAPHICS_PASS'})
-$manifest=[ordered]@{createdUtc=[DateTime]::UtcNow.ToString('o');arenas=@($latest.Values);failedAttempts=$failures;
+$manifest=[ordered]@{createdUtc=[DateTime]::UtcNow.ToString('o');arenas=@($latest.Values);attempts=$allResults;failedAttempts=$failures;
     baseline=$baseline;combatAfter=$CombatAfterDirectory;vehicles=$VehicleDirectory;performance='NOT_MEASURED';feel='PENDING_OWNER'}
 [IO.File]::WriteAllText((Join-Path $reviewRoot 'evidence.json'),(ConvertTo-Json -InputObject $manifest -Depth 12),[Text.UTF8Encoding]::new($false))
 $html='<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Wreck Riff — художественная приёмка</title><style>body{background:#151b21;color:#e8eced;font:17px/1.5 system-ui;margin:0 auto;max-width:1440px;padding:32px}h1,h2{color:#ffba68}a{color:#82ddea}video{width:100%;max-height:800px;margin:18px 0}section{margin:48px 0}.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}img{width:100%}.meta{font-size:13px;overflow-wrap:anywhere}summary{cursor:pointer;color:#ffba68;padding:16px 0}@media(max-width:800px){.shots{grid-template-columns:1fr}}</style><h1>Wreck Riff: реальные кадры обновления</h1><p>Все изображения сняты из настоящего окна игры. Для демонстрации подготовлены позиции и недостаток ресурсов; начисления, подбросы и приземления проходят штатную симуляцию. Аудиодорожка реконструирована из реально выделенных игровых голосов; это не loopback OpenAL/HRTF.</p><p>Показанные сборки обозначены своими SHA256. Кадры общего вида не доказывают полноценный верхний бой или прохождение босса. Performance: NOT_MEASURED. FEEL_APPROVED: PENDING_OWNER. Сохранённых неудачных попыток: '+$failures.Count+'. <a href="evidence.json">Полный реестр</a>.</p>'+($cards -join '')+$comparison+'</html>'

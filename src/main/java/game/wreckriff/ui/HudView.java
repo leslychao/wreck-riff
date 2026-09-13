@@ -105,13 +105,15 @@ public final class HudView implements AutoCloseable {
         int channels=(!pickupReceipt.isBlank()?1:0)|(!subtitle.isBlank()?2:0)
                 |(lastSnapshot!=null&&!lastSnapshot.notification.isBlank()?4:0);
         if(channels==noticeChannels)return;noticeChannels=channels;
-        show(noticePanel,channels!=0);
+        show(noticePanel,(channels&6)!=0);
         float pad=8*layout.scale(),line=Math.max(18,20*layout.scale()),bottom=layout.notification().y();
         float top=bottom+pad;
         if((channels&1)!=0){top+=line;receiptValue.top(top);}
+        float panelBottom=(channels&1)!=0?top:bottom;
         if((channels&2)!=0){top+=line*3;subtitleValue.top(top);}
         if((channels&4)!=0){top+=line*2;noticeValue.top(top);}
-        noticePanel.setLocalScale(layout.notification().width(),top+pad-bottom,1);
+        noticePanel.setLocalTranslation(layout.notification().x(),panelBottom,0);
+        noticePanel.setLocalScale(layout.notification().width(),top+pad-panelBottom,1);
     }
     public void setPickupHighlights(Set<WeaponType> types) {
         if(pickupHighlights.equals(types))return;pickupHighlights=Set.copyOf(types);

@@ -4,26 +4,31 @@ import com.jme3.math.*;
 import com.jme3.renderer.Camera;
 import game.wreckriff.config.CameraRules;
 import game.wreckriff.simulation.PhysicsWorld;
+import game.wreckriff.vehicle.VehicleOrientation;
 
 public final class ChaseCamera {
     private final Camera camera;
     private final CameraRules rules;
     private final Vector3f position=new Vector3f(),target=new Vector3f();
+    private Vector3f horizontalHeading;
     private boolean initialized;
-    private float fov,shake;
+    private float fov,shake,flightBlend;
     private double phase;
     public ChaseCamera(Camera camera,CameraRules rules) { this.camera=camera; this.rules=rules; fov=rules.fov(); }
-    public void reset() { initialized=false; }
+    public void reset() { initialized=false;horizontalHeading=null;flightBlend=0; }
     public void impact(float magnitude) { shake=Math.min(1,shake+magnitude); }
     public void update(PhysicsWorld world,int id,float alpha,float dt,boolean rear,boolean turbo,float intensity) {
         if(camera.getWidth()<=0 || camera.getHeight()<=0) return;
         var pose=world.interpolatedPose(id,alpha);
-        Vector3f heading=pose.rotation().mult(Vector3f.UNIT_Z); heading.y=0;
-        if(heading.lengthSquared()<0.01f) heading.set(Vector3f.UNIT_Z); else heading.normalizeLocal();
+        boolean flying=world.roadContext(id).flying();
+        horizontalHeading=VehicleOrientation.horizontalForward(pose.rotation(),flying?horizontalHeading:null);
+        Vector3f heading=horizontalHeading.clone();
+        flightBlend=advanceFlightBlend(flightBlend,flying,dt);
         if(rear) heading.negateLocal();
         Vector3f aim=pose.position().add(heading.mult(rules.lookAhead())).addLocal(0,rules.lookHeight(),0);
         Vector3f pivot=pose.position().add(0,rules.lookHeight(),0);
-        Vector3f desired=pose.position().subtract(heading.mult(rules.distance())).addLocal(0,rules.height(),0);
+        Vector3f desired=pose.position().subtract(heading.mult(rules.distance()*(1+.35f*flightBlend)))
+                .addLocal(0,rules.height()+.75f*flightBlend,0);
         var collision=world.staticSweep(pivot,desired,rules.sweepRadius());
         if(collision!=null) desired=pivot.clone().interpolateLocal(desired,Math.max(0,collision.fraction()-rules.wallMargin()/Math.max(0.1f,pivot.distance(desired))));
         if(!initialized) { position.set(desired); target.set(aim); initialized=true; }
@@ -41,5 +46,8 @@ public final class ChaseCamera {
         Vector3f offset=new Vector3f((float)Math.sin(phase*73),(float)Math.sin(phase*97),0).mult(rules.shakeDistance()*amount);
         camera.setLocation(position.add(offset)); camera.lookAt(target,Vector3f.UNIT_Y);
         if(amount>0) camera.setRotation(camera.getRotation().mult(new Quaternion().fromAngleAxis((float)Math.sin(phase*89)*rules.shakeAngle()*FastMath.DEG_TO_RAD*amount,Vector3f.UNIT_Z)));
+    }
+    static float advanceFlightBlend(float previous,boolean flying,float dt) {
+        return previous+((flying?1:0)-previous)*(1-(float)Math.exp(-4*Math.max(0,dt)));
     }
 }

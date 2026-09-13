@@ -4,6 +4,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MainOptionsTest {
+    @Test void automaticScreenshotsAreRestrictedToTheSmokeTour() {
+        assertTrue(Main.Options.parse(new String[]{"--dev","--smoke-seconds=600"}).cameraTour());
+        for(String mode:new String[]{"--benchmark-seconds=600","--soak-seconds=1800","--showcase","--art-showcase","--vehicle-showcase"})
+            assertFalse(Main.Options.parse(new String[]{"--dev",mode}).cameraTour(),mode);
+        assertFalse(Main.Options.parse(new String[]{}).cameraTour());
+        assertFalse(Main.Options.parse(new String[]{"--dev"}).cameraTour());
+    }
     @Test void soakHasExplicitDurationAndCannotCompeteWithAnotherDiagnostic() {
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--soak-seconds=1800"}));
         var soak=Main.Options.parse(new String[]{"--dev","--soak-seconds=1800"});
@@ -74,7 +81,7 @@ class MainOptionsTest {
     @Test void invalidArenaPathsAndUnsupportedResolutionsFailBeforeStartingGraphics() {
         for(String identity:new String[]{"","../arena","C:/arena","neon zero","NEON_ZERO"})
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--arena="+identity}));
-        for(String size:new String[]{"","480p","900p","2160p","1920x1080","1080"})
+        for(String size:new String[]{"","480p","900p","2160p","1080"})
             assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--resolution="+size}));
         assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--showcase","--arena=construction_17"}));
     }

@@ -693,7 +693,7 @@ public final class VerifyAssets {
     private static void verifyFont(List<Asset> assets) throws Exception {
         byte[] evidence = resource("fonts/font-provenance.json");
         JsonObject provenance = JsonParser.parseString(new String(evidence, StandardCharsets.UTF_8)).getAsJsonObject();
-        if (!provenance.get("externalFontInput").getAsBoolean() || provenance.get("glyphs").getAsInt() != 161
+        if (!provenance.get("externalFontInput").getAsBoolean() || provenance.get("glyphs").getAsInt() != 165
                 || provenance.get("schemaVersion").getAsInt() != 2 || !provenance.get("license").getAsString().equals("OFL-1.1")) {
             throw new IOException("Font provenance/checksum mismatch");
         }
@@ -783,7 +783,9 @@ public final class VerifyAssets {
         }
         for (int code = 32; code <= 126; code++) if (!characters.contains(code)) throw new IOException("Missing ASCII glyph " + code);
         for (int code = 0x410; code <= 0x44f; code++) if (!characters.contains(code)) throw new IOException("Missing Cyrillic glyph " + code);
-        if (!characters.contains(0x401) || !characters.contains(0x451) || characters.size() != 161 || !antialiased)
+        for (int code : List.of(0x2014, 0xab, 0xbb, 0xb7))
+            if (!characters.contains(code)) throw new IOException("Missing UI punctuation glyph " + code);
+        if (!characters.contains(0x401) || !characters.contains(0x451) || characters.size() != 165 || !antialiased)
             throw new IOException("Unexpected font charset or missing grayscale antialiasing");
     }
 

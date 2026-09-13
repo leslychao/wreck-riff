@@ -26,6 +26,9 @@ import game.wreckriff.diagnostics.FrameSample;
 import game.wreckriff.diagnostics.StageProfiler;
 import game.wreckriff.diagnostics.SoakSchedule;
 import game.wreckriff.diagnostics.ResourceRetention;
+import game.wreckriff.diagnostics.UiReview;
+import game.wreckriff.diagnostics.UiReviewFixtures;
+import game.wreckriff.diagnostics.SoakProfile;
 import game.wreckriff.input.*;
 import game.wreckriff.presentation.*;
 import game.wreckriff.simulation.*;
@@ -126,6 +129,12 @@ public final class GameApplication extends SimpleApplication {
     private final java.util.concurrent.CountDownLatch terminated=new java.util.concurrent.CountDownLatch(1);
     private final DiagnosticCompletion diagnosticCompletion=new DiagnosticCompletion();
     private DiagnosticEvidence diagnostic;
+    private UiReview uiReview;
+    private UiReview.Host uiReviewHost;
+    private ProgressStore.Snapshot uiReviewProgress;
+    private MatchSession uiReviewResult;
+    private boolean uiReviewHud,uiReviewFrameRendered;
+    private boolean loadingFramePrepared;
     private final LaunchReport launchReport;
     private boolean normalFramePending,normalFrameDrawable;
     private StageProfiler stageProfiler;
@@ -191,6 +200,7 @@ public final class GameApplication extends SimpleApplication {
                 if(options.showcase())diagnostic.put("mode","showcase");
                 if(options.artShowcase())diagnostic.put("mode","art-showcase");
                 if(options.vehicleShowcase())diagnostic.put("mode","vehicle-showcase");
+                if(options.uiReview())diagnostic.put("mode","ui-review");
                 diagnostic.put("arenaId",requestedArena);diagnostic.put("glow",store.settings().glow);
                 diagnostic.put("detailedProfiling",options.profile());
                 diagnostic.put("gpu",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_RENDERER));
@@ -217,6 +227,12 @@ public final class GameApplication extends SimpleApplication {
             catch(IOException e) { message="Screenshots unavailable: "+e.getMessage(); }
             flow.onChanged(this::screenChanged); flow.menu();
             initialized=true;
+            if(options.uiReview()) {
+                uiReview=new UiReview(store.directory(),store.settings().width,store.settings().height,store.settings().uiScale);
+                uiReviewHost=createUiReviewHost();
+                diagnostic.put("uiReviewManifest","ui-review-manifest.json");
+                diagnostic.put("progressFixture","Render-only snapshots, isolated settings, no combat results recorded");
+            }
             if(launchReport!=null) {
                 long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
                 launchReport.started(cam.getWidth(),cam.getHeight(),window!=0&&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_VISIBLE)!=0,audioRenderer!=null);
@@ -274,18 +290,33 @@ public final class GameApplication extends SimpleApplication {
         boolean bossCheckpoint=checkpoint!=null&&checkpoint.stage()==ProgressStore.CheckpointStage.BOSS;
         List<ArenaDefinition.Spawn> spawns=new ArrayList<>(selected.spawns());
         Collections.shuffle(spawns,new Random(seed));
+        var arenaFactory=new ArenaFactory(assetManager);
+        ArenaArt.Scene arenaArt;
+        List<SurfaceMaterials.TextureUse> textures;
+        try {
+            arenaArt=ArenaArt.load(selected);
+            textures=arenaFactory.textureRequirements(selected,arenaArt);
+        } catch(RuntimeException exception) {fail(exception);return;}
+        // Strong references keep jME's cloned textures alive only until scene materials own their images.
+        var decodedTextures=new ArrayList<com.jme3.texture.Texture>();
         List<MatchLoading.Stage> stages=new ArrayList<>();
         stages.add(new MatchLoading.Stage("Подготовка арены",()->{
-            cleanupMatch();arena=selected;
+            cleanupMatch(false);arena=selected;
             attempt=options.automated()&&soak==null?new ProgressStore.Attempt(1,UUID.randomUUID(),arenaId,mode,bossCheckpoint):
                     progress.beginAttempt(arenaId,mode,bossCheckpoint);
             session=new MatchSession(seed,arena,MatchSession.Mode.valueOf(mode.name()),Configs.load("combat",CombatRules.class),
                     attempt.id(),bossCheckpoint,checkpoint==null?0:checkpoint.liveryId(),requestedProfileId);
             report=new SessionReport();world=new PhysicsWorld(vehicleRules);world.configureArena(arena);
         }));
+        for(int i=0;i<textures.size();i++) {
+            var texture=textures.get(i);
+            stages.add(new MatchLoading.Stage("Текстуры: "+(i+1)+" / "+textures.size(),()->decodedTextures.add(texture.load(assetManager))));
+        }
         stages.add(new MatchLoading.Stage("Окружение",()->{
-            content=new ArenaFactory(assetManager).build(arena);matchNode.attachChild(content.visual());
-            if(options.automated()&&!options.showcase()&&!options.artShowcase()&&!options.vehicleShowcase())visualTour=new DiagnosticCameraTour(arena);
+            try {
+                content=arenaFactory.build(arena,arenaArt);matchNode.attachChild(content.visual());
+                if(options.cameraTour())visualTour=new DiagnosticCameraTour(arena);
+            } finally {decodedTextures.clear();}
         }));
         stages.add(new MatchLoading.Stage("Дорожные опоры",()->{
             for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
@@ -332,10 +363,12 @@ public final class GameApplication extends SimpleApplication {
                 retryCheckpoint=runtime.checkpoint(ProgressStore.CheckpointStage.ARENA);
                 if(!options.automated()||soak!=null)progress.saveCheckpoint(attempt,retryCheckpoint);
             }
-            loop=new SimulationLoop(matchRules);chase.reset();
+            chase.reset();menuNode.setCullHint(Spatial.CullHint.Always);createHud();
+        },()->{
+            loop=new SimulationLoop(matchRules);
             audio.startMatch(session.sessionId,arena.metadata().music(),arena.metadata().bossMusic());
             audio.bossMusic(session.phase==MatchSession.Phase.BOSS_ENTRY);
-            input.clear();flow.running();finishLoading();
+            input.clear();flow.running();finishLoading(checkpoint!=null);
         });
         flow.loading();
     }
@@ -350,9 +383,9 @@ public final class GameApplication extends SimpleApplication {
         }
         wheels.put(state.id,wheelNodes);
     }
-    private void finishLoading() {
+    private void finishLoading(boolean resumedCheckpoint) {
         report.loadSeconds((System.nanoTime()-loadingStarted)/1_000_000_000.0);
-        if(launchReport!=null)launchReport.sessionStarted(session.arenaId,session.mode.name(),session.vehicle(0).profileId,retryCheckpoint!=null);
+        if(launchReport!=null)launchReport.sessionStarted(session.arenaId,session.mode.name(),session.vehicle(0).profileId,resumedCheckpoint);
         if(diagnostic!=null) {
             int bodies=world.bodyCount(),listeners=world.space().countCollisionListeners();
             loadedResourceKey=resourceKey();
@@ -405,6 +438,7 @@ public final class GameApplication extends SimpleApplication {
     @Override public void simpleUpdate(float dt) {
         elapsed+=dt;
         if(ui==null || input==null) return;
+        loadingFramePrepared=false;
         try {
             observePreviousFrame();
             FrameSample.Phase startingPhase=framePhase();
@@ -429,12 +463,12 @@ public final class GameApplication extends SimpleApplication {
             }
             if(!diagnosticDrawable)undrawableSeconds+=dt;
             if(!drawable)pause("Window minimized. Resume when ready.");
-            if(flow.screen()!=Screen.RUNNING)menu.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
+            if(flow.screen()!=Screen.RUNNING&&!options.uiReview())menu.hover(inputManager.getCursorPosition().x,inputManager.getCursorPosition().y);
             if(previousVideo!=null && elapsed>=videoDeadline) restoreVideo();
             var volume=store.settings(); audio.setVolumes(volume.master,volume.music,volume.sfx);
             sceneLighting.apply(world==null?ArenaDefinition.Theme.INDUSTRIAL_YARD:arena.metadata().theme(),volume.glow);
             sceneLighting.setSamples(volume.samples);
-            if(options.automated() && !smokeStarted && elapsed>0.5) {
+            if(options.automated() && !options.uiReview() && !smokeStarted && elapsed>0.5) {
                 smokeStarted=true;
                 if(options.vehicleShowcase())chooseVehicle(this::startMatch);else startMatch();
             }
@@ -443,14 +477,17 @@ public final class GameApplication extends SimpleApplication {
                 if(elapsed>2.2)startMatch();
             }
             if(flow.screen()==Screen.LOADING&&loading!=null)loading.advance();
-            if(flow.screen()==Screen.RUNNING) {
+            if(flow.screen()==Screen.RUNNING&&!options.uiReview()) {
                 long simulationStarted=profileStamp();
-                loop.advance(dt,true,this::fixedTick);
+                advanceRunningFrame(loop,startingLoop,dt,this::fixedTick);
                 profileStage(StageProfiler.Stage.SIMULATION,simulationStarted);
             } else if(flow.screen()==Screen.RESULTS&&runtime!=null&&runtime.hasWrecks()) {
                 loop.advance(dt,true,runtime::tickPhysicsTail);
             } else loop.resetAccumulator();
-            if(world!=null&&drawable&&flow.screen()!=Screen.LOADING) renderMatch(Math.min(dt,0.1f));
+            if(world!=null&&drawable&&(flow.screen()!=Screen.LOADING||preparingLoadingFrame())) {
+                loadingFramePrepared=preparingLoadingFrame();
+                renderMatch(loadingFramePrepared?0:Math.min(dt,0.1f));
+            }
             else {
                 float rotation=(float)Math.sin(elapsed*0.16)*0.15f;
                 menuNode.setLocalRotation(new Quaternion().fromAngleAxis(rotation,Vector3f.UNIT_Y));
@@ -491,6 +528,7 @@ public final class GameApplication extends SimpleApplication {
         } catch(Exception e) { fail(e); }
     }
     private void observePreviousFrame() {
+        if(uiReview!=null&&uiReviewFrameRendered){uiReview.drawnFrame();uiReviewFrameRendered=false;}
         long now=System.nanoTime(),previous=previousFrameNanos;previousFrameNanos=now;
         if(launchReport!=null&&normalFramePending&&previous!=0) {
             launchReport.frame(normalFrameDrawable,(now-previous)/1_000_000_000.0);normalFramePending=false;
@@ -506,7 +544,21 @@ public final class GameApplication extends SimpleApplication {
     }
     private long profileStamp() {return stageProfiler==null?0:System.nanoTime();}
     private void profileStage(StageProfiler.Stage stage,long started) {if(stageProfiler!=null)stageProfiler.record(stage,System.nanoTime()-started);}
+    /** Incoming frame time belongs to the match that existed at the start of this update. */
+    static int advanceRunningFrame(SimulationLoop current,SimulationLoop atFrameStart,double seconds,Runnable tick) {
+        return current.advance(seconds,current==atFrameStart,tick);
+    }
+    private boolean preparingLoadingFrame() {return flow.screen()==Screen.LOADING&&loading!=null&&loading.awaitingFrame();}
     @Override public void simpleRender(com.jme3.renderer.RenderManager manager) {
+        if(uiReview!=null)uiReviewFrameRendered=true;
+        if(loadingFramePrepared&&preparingLoadingFrame()) {
+            // SimpleApplication calls this after RenderManager.render, so this acknowledges a real scene render.
+            long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+            boolean drawable=context.isRenderable()&&cam.getWidth()>0&&cam.getHeight()>0&&window!=0
+                    &&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_VISIBLE)!=0
+                    &&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_ICONIFIED)==0;
+            loading.frameRendered(drawable);loadingFramePrepared=false;
+        }
         if(stageProfiler!=null)stageProfiler.renderStatistics(renderer.getStatistics());
         if(launchReport!=null) {
             long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
@@ -617,14 +669,14 @@ public final class GameApplication extends SimpleApplication {
         specialPresentation.setFlashIntensity(store.settings().flashes);
         specialPresentation.update(session,combat.specialBombs(),alpha);
         pickupPresentation.setGlow(store.settings().glow);
-        if(advancing)pickupPresentation.update(alpha);
+        if(advancing||preparingLoadingFrame())pickupPresentation.update(alpha);
         chase.update(world,0,alpha,dt,rearView,drivers.get(0).turboActive(),store.settings().shake);
         updateHud();
         profileStage(StageProfiler.Stage.PRESENTATION,presentationStarted);
     }
     /** Runs after camera overrides, including rear view and diagnostic shots. */
     private void updateEnemyHealthBars(boolean drawable) {
-        boolean visible=drawable&&world!=null&&session!=null&&flow.screen()==Screen.RUNNING;
+        boolean visible=drawable&&world!=null&&session!=null&&(flow.screen()==Screen.RUNNING||preparingLoadingFrame());
         enemyHealthBars.setVisible(visible);
         if(!visible)return;
         enemyHealthBars.resize(cam.getWidth(),cam.getHeight(),store.settings().uiScale);
@@ -671,7 +723,7 @@ public final class GameApplication extends SimpleApplication {
             case STATISTICS -> drawStatistics();
             case LOADING -> {loadingUiPercent=-1;drawLoading();}
             case RUNNING -> createHud();
-            case PAUSED -> menu.show("pause","ПАУЗА",arena==null?"":arena.metadata().title(),List.of(),List.of(
+            case PAUSED -> menu.show("pause","ПАУЗА",!flow.pauseReason().isBlank()?flow.pauseReason():arena==null?"":arena.metadata().title(),List.of(),List.of(
                     new MenuView.Action("resume","ПРОДОЛЖИТЬ",flow::resume),
                     new MenuView.Action("settings","НАСТРОЙКИ",()->flow.open(Screen.SETTINGS)),
                     new MenuView.Action("controls","УПРАВЛЕНИЕ",()->flow.open(Screen.CONTROLS)),
@@ -695,7 +747,7 @@ public final class GameApplication extends SimpleApplication {
         if(flow.screen()!=Screen.RUNNING)menu.setStatus(noticeTime>0?message:progressStatus);
     }
     private void drawMainMenu() {
-        var campaign=progress.snapshot().campaign();var rows=new ArrayList<MenuView.Row>();
+        var campaign=displayProgress().campaign();var rows=new ArrayList<MenuView.Row>();
         boolean canContinue=campaign.currentArenaId()!=null&&(campaign.checkpoint()!=null||!campaign.completedArenaIds().isEmpty());
         if(canContinue)rows.add(new MenuView.Action("continue","ПРОДОЛЖИТЬ",arenaRegistry.definition(campaign.currentArenaId()).metadata().title(),true,this::continueCampaign));
         rows.add(new MenuView.Action("new","НОВАЯ КАМПАНИЯ",()->{
@@ -708,7 +760,7 @@ public final class GameApplication extends SimpleApplication {
         menu.show("main","WRECK RIFF","Тяжёлый металл. Последняя машина.",List.of(),rows,List.of(new MenuView.Action("quit","ВЫХОД",this::stop)),canContinue?"continue":"new");
     }
     private void drawMaps() {
-        var campaign=progress.snapshot().campaign();boolean duels=campaign.completedArenaIds().size()==ProgressStore.CAMPAIGN_ARENAS.size();
+        var campaign=displayProgress().campaign();boolean duels=campaign.completedArenaIds().size()==ProgressStore.CAMPAIGN_ARENAS.size();
         var rows=new ArrayList<MenuView.Row>();
         for(var entry:arenaRegistry.entries()) {
             var selected=arenaRegistry.definition(entry.id());boolean unlocked=!entry.campaign()||campaign.unlockedArenaIds().contains(entry.id());
@@ -720,7 +772,7 @@ public final class GameApplication extends SimpleApplication {
                 List.of(new MenuView.Action("back","НАЗАД",flow::menu)),null);
     }
     private void drawStatistics() {
-        var snapshot=progress.snapshot();var stats=snapshot.stats();var rows=new ArrayList<MenuView.Row>();
+        var snapshot=displayProgress();var stats=snapshot.stats();var rows=new ArrayList<MenuView.Row>();
         rows.add(new MenuView.Metrics("outcomes",List.of(new MenuView.Metric("Боёв",Long.toString(stats.completedMatches())),new MenuView.Metric("Побед",Long.toString(stats.wins())),new MenuView.Metric("Поражений",Long.toString(stats.losses())))));
         rows.add(new MenuView.Metrics("combat",List.of(new MenuView.Metric("Урон",String.format(Locale.ROOT,"%.0f",stats.totalDamage())),new MenuView.Metric("Уничтожено",Long.toString(stats.totalEliminations())),new MenuView.Metric("Ничьих",Long.toString(stats.draws())))));
         for(var entry:arenaRegistry.entries()) {
@@ -730,21 +782,23 @@ public final class GameApplication extends SimpleApplication {
         menu.show("statistics","СТАТИСТИКА","Пройдено арен: "+snapshot.campaign().completedArenaIds().size()+" / 5",List.of(),rows,List.of(new MenuView.Action("back","НАЗАД",flow::menu)),"back");
     }
     private void drawResults() {
-        var campaign=progress.snapshot().campaign();boolean victory=session.outcome==MatchSession.Outcome.VICTORY;
-        boolean completed= victory&&session.mode==MatchSession.Mode.CAMPAIGN&&campaign.currentArenaId()==null;
-        String title=completed?"КАМПАНИЯ ПРОЙДЕНА":victory?"ПОБЕДА":session.outcome==MatchSession.Outcome.DRAW?"НИЧЬЯ":"ПОРАЖЕНИЕ";
-        var player=session.vehicle(0);var rows=new ArrayList<MenuView.Row>();
-        rows.add(new MenuView.Metrics("result",List.of(new MenuView.Metric("Время",formatTicks(session.activeTicks)),new MenuView.Metric("Урон",String.format(Locale.ROOT,"%.0f",player.damageDealt)),new MenuView.Metric("Уничтожено",Integer.toString(player.eliminations)))));
-        if(victory&&session.bossParticipantId>=0)rows.add(new MenuView.Text("boss-result","Побеждён: "+session.vehicle(session.bossParticipantId).name));
+        MatchSession displayed=uiReviewResult==null?session:uiReviewResult;
+        var campaign=displayProgress().campaign();boolean victory=displayed.outcome==MatchSession.Outcome.VICTORY;
+        boolean completed= victory&&displayed.mode==MatchSession.Mode.CAMPAIGN&&campaign.currentArenaId()==null;
+        String title=completed?"КАМПАНИЯ ПРОЙДЕНА":victory?"ПОБЕДА":displayed.outcome==MatchSession.Outcome.DRAW?"НИЧЬЯ":"ПОРАЖЕНИЕ";
+        var player=displayed.vehicle(0);var rows=new ArrayList<MenuView.Row>();
+        rows.add(new MenuView.Metrics("result",List.of(new MenuView.Metric("Время",formatTicks(displayed.activeTicks)),new MenuView.Metric("Урон",String.format(Locale.ROOT,"%.0f",player.damageDealt)),new MenuView.Metric("Уничтожено",Integer.toString(player.eliminations)))));
+        if(victory&&displayed.bossParticipantId>=0)rows.add(new MenuView.Text("boss-result","Побеждён: "+displayed.vehicle(displayed.bossParticipantId).name));
         var actions=new ArrayList<MenuView.Action>();
-        if(victory&&session.mode==MatchSession.Mode.CAMPAIGN&&campaign.currentArenaId()!=null) {
+        if(victory&&displayed.mode==MatchSession.Mode.CAMPAIGN&&campaign.currentArenaId()!=null) {
             rows.add(new MenuView.Text("unlocked","Следующая арена: "+arenaRegistry.definition(campaign.currentArenaId()).metadata().title()));
             actions.add(new MenuView.Action("next","ДАЛЬШЕ",this::continueCampaign));
         } else if(!completed)actions.add(new MenuView.Action("retry",retryCheckpoint!=null&&retryCheckpoint.stage()==ProgressStore.CheckpointStage.BOSS?"ПОВТОР БОССА":"ПОВТОР КАРТЫ",this::startMatch));
         if(completed)rows.add(new MenuView.Text("duels","Все дуэли с боссами доступны в отдельном бою."));
         actions.add(new MenuView.Action("menu","ГЛАВНОЕ МЕНЮ",this::returnToMenu));
-        menu.show("results:"+session.sessionId,title,arena.metadata().title(),List.of(),rows,actions,actions.getFirst().id());
+        menu.show("results:"+displayed.sessionId,title,arena.metadata().title(),List.of(),rows,actions,actions.getFirst().id());
     }
+    private ProgressStore.Snapshot displayProgress() {return uiReviewProgress==null?progress.snapshot():uiReviewProgress;}
     private void drawLoading() {
         String title=arenaRegistry.definition(requestedArena).metadata().title();
         float fraction=loading==null?0:loading.fraction();String stage=loading==null?"Подготовка":loading.title();
@@ -810,7 +864,7 @@ public final class GameApplication extends SimpleApplication {
                 new HudView.HelpItem(input.displayBinding("Pause"),"Pause"));
     }
     private void updateHud() {
-        if(hud==null||session==null||flow.screen()!=Screen.RUNNING)return;
+        if(hud==null||session==null||flow.screen()!=Screen.RUNNING&&!preparingLoadingFrame())return;
         long hudStarted=profileStamp();
         var player=session.vehicle(0);
         if(hudUsesGamepad!=input.usingGamepad()) {hudUsesGamepad=input.usingGamepad();if(showHelp)hud.setHelp(hudHelp());}
@@ -948,6 +1002,7 @@ public final class GameApplication extends SimpleApplication {
         else if(code==KeyInput.KEY_LEFT)uiAction("left");else if(code==KeyInput.KEY_RIGHT)uiAction("right");
         else if(code==KeyInput.KEY_TAB&&flow.screen()!=Screen.RUNNING)menu.cycle(input.shiftHeld());
         else if(code==KeyInput.KEY_RETURN || code==KeyInput.KEY_NUMPADENTER) { if(flow.screen()!=Screen.RUNNING) uiAction("activate"); }
+        else if(input.gameplayOwnsKey(code)) return;
         else if(code==KeyInput.KEY_F1) {showHelp=!showHelp;if(flow.screen()==Screen.RUNNING)redraw();}
         else if(code==KeyInput.KEY_F3) {debug=!debug;}
         else if(code==KeyInput.KEY_F4) {navDebug=!navDebug;if(navNode!=null)navNode.setCullHint(navDebug?Spatial.CullHint.Inherit:Spatial.CullHint.Always);}
@@ -955,6 +1010,10 @@ public final class GameApplication extends SimpleApplication {
     }
     private void uiAction(String action) {
         if(options.automated()) return;
+        dispatchUiAction(action);
+    }
+    /** Shared by real input and the explicit UI review driver; external automated input stays ignored. */
+    private void dispatchUiAction(String action) {
         boolean driving=flow.screen()==Screen.RUNNING;
         if(driving&&action.equals("accept")&&session.phase==MatchSession.Phase.INTRO){runtime.skipIntro();input.clear();return;}
         if(action.equals("back") || action.equals("pause")) {
@@ -978,7 +1037,7 @@ public final class GameApplication extends SimpleApplication {
             default -> {}
         }
     }
-    private void pause(String reason) { if(input==null)return;message=reason;input.clear();flow.pause(); }
+    private void pause(String reason) { if(input==null)return;input.clear();flow.pause(reason); }
     @Override public void loseFocus() { super.loseFocus(); enqueue(()->{pause("Focus lost. Resume when ready.");return null;}); }
     private void confirm(String title,Runnable action) { confirmationTitle=title;confirmation=action;flow.open(Screen.CONFIRM); }
     private void returnToMenu() { cleanupMatch();flow.menu(); }
@@ -994,11 +1053,16 @@ public final class GameApplication extends SimpleApplication {
         capture("manual");
     }
     private void capture(String label) {
+        requestCapture(label);
+    }
+    private String requestCapture(String label) {
         if(screenshots!=null) {
             String prefix="WreckRiff-"+BuildInfo.current().version()+"-"+label+"-"+System.currentTimeMillis()+"-";
             screenshots.setFileName(prefix);screenshots.takeScreenshot();
             if(diagnostic!=null) {diagnosticCaptures.add(prefix);diagnostic.put("capturePrefixes",List.copyOf(diagnosticCaptures));}
+            return prefix;
         }
+        return null;
     }
     private void writeReport() {
         if(!options.dev()||session==null||world==null||report==null)return;
@@ -1007,6 +1071,10 @@ public final class GameApplication extends SimpleApplication {
         catch(IOException e) {Logger.getLogger(getClass().getName()).warning("Cannot write report: "+e.getMessage());}
     }
     private void cleanupMatch() {
+        cleanupMatch(true);
+    }
+    private void cleanupMatch(boolean cancelLoading) {
+        if(cancelLoading&&loading!=null){loading.close();loading=null;}
         PhysicsWorld unloading=world;
         if(soak!=null&&world!=null)unloadedResourceKey=loadedResourceKey==null?resourceKey():loadedResourceKey;
         if(specialPresentation!=null){specialPresentation.close();specialPresentation=null;}
@@ -1094,7 +1162,7 @@ public final class GameApplication extends SimpleApplication {
         super.requestClose(escape);
     }
     public boolean awaitDiagnostic() throws InterruptedException {
-        int timeout=options.showcase()||options.artShowcase()||options.vehicleShowcase()?240:options.soakSeconds()>0?options.soakSeconds()+120:options.benchmarkSeconds()>0?30+options.benchmarkSeconds()+Math.max(120,options.benchmarkSeconds()/2):options.smokeSeconds()+60;
+        int timeout=options.uiReview()?UiReview.MAXIMUM_SECONDS+60:options.showcase()||options.artShowcase()||options.vehicleShowcase()?240:options.soakSeconds()>0?options.soakSeconds()+120:options.benchmarkSeconds()>0?30+options.benchmarkSeconds()+Math.max(120,options.benchmarkSeconds()/2):options.smokeSeconds()+60;
         if(!terminated.await(timeout,java.util.concurrent.TimeUnit.SECONDS)) {
             System.err.println("Diagnostic shutdown timed out");diagnosticCompletion.shutdownFailed();
             try {
@@ -1112,6 +1180,17 @@ public final class GameApplication extends SimpleApplication {
     }
     private void advanceDiagnostic(boolean drawable) {
         if(diagnosticEnding)return;
+        if(uiReview!=null) {
+            try {
+                uiReview.advance(uiReviewHost,elapsed);
+                if(uiReview.complete()) {
+                    diagnostic.put("uiReviewCaptureStatus",uiReview.failed()?"FAIL":"CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING");
+                    if(uiReview.failed())diagnostic.error("UI review failed; see ui-review-manifest.json");
+                    finishDiagnostic(!uiReview.failed());
+                }
+            } catch(IOException failure){fail(failure);}
+            return;
+        }
         if(flow.screen()==Screen.ERROR) {diagnostic.error("Runtime entered error screen: "+error);finishDiagnostic(false);return;}
         if(soak!=null) {advanceSoak(drawable);return;}
         if(options.vehicleShowcase()) {
@@ -1267,4 +1346,59 @@ public final class GameApplication extends SimpleApplication {
         }
     }
     private static String percent(float value) {return Math.round(value*100)+"%";}
+
+    private UiReview.Host createUiReviewHost() {
+        return new UiReview.Host() {
+            public void command(UiReview.Command command) {
+                switch(command.kind()) {
+                    case FIXTURE->applyUiReviewFixture(command.value());
+                    case FOCUS->{if(!menu.focus(command.value()))throw new IllegalStateException("Missing focus target "+command.value()+" on "+menu.pageId());}
+                    case ACTIVATE->{if(!menu.focus(command.value()))throw new IllegalStateException("Missing action "+command.value()+" on "+menu.pageId());dispatchUiAction("activate");}
+                    case DISPATCH->dispatchUiAction(command.value());
+                }
+            }
+            public UiReview.Observation observe() {
+                long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+                boolean visible=window!=0&&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_VISIBLE)!=0
+                        &&org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_ICONIFIED)==0;
+                return new UiReview.Observation(flow.screen().name(),uiReviewHud&&flow.screen()==Screen.RUNNING?"hud":menu.pageId(),
+                        uiReviewHud&&flow.screen()==Screen.RUNNING?"":Objects.requireNonNullElse(menu.selectedId(),""),
+                        uiReviewHud&&flow.screen()==Screen.RUNNING?0:menu.scrollOffset(),cam.getWidth(),cam.getHeight(),store.settings().uiScale,visible,
+                        Map.of("vsync",store.settings().vsync,"fullscreen",store.settings().fullscreen,"videoConfirmationPending",previousVideo!=null,
+                                "storedWins",progress.snapshot().stats().wins(),"storedMatches",progress.snapshot().stats().completedMatches(),
+                                "settingsTab",settingsTab,"gamepadControlsTab",controlsGamepad));
+            }
+            public String capture(String caseId) {return requestCapture("ui-review-"+caseId);}
+        };
+    }
+    private void applyUiReviewFixture(String fixture) {
+        if(!options.uiReview())throw new IllegalStateException("UI fixtures require explicit --ui-review");
+        uiReviewHud=false;uiReviewResult=null;noticeTime=0;message="";
+        if(fixture.equals("fresh")||fixture.equals("unlocked")) {
+            uiReviewProgress=fixture.equals("fresh")?UiReviewFixtures.fresh():SoakProfile.unlockedSnapshot();flow.menu();return;
+        }
+        if(fixture.equals("loading")){flow.loading();return;}
+        if(fixture.equals("error")){error="Тестовый пример: не удалось прочитать контрольную точку. Повторите попытку или вернитесь в меню.";flow.error();return;}
+        if(fixture.startsWith("result:")) {
+            arena=arenaRegistry.definition(ProgressStore.LEGACY_ARENA);
+            uiReviewResult=new MatchSession(42,arena,MatchSession.Mode.LEGACY,Configs.load("combat",CombatRules.class));
+            uiReviewResult.outcome=MatchSession.Outcome.valueOf(fixture.substring(7));
+            uiReviewResult.activeTicks=21720;uiReviewResult.vehicle(0).damageDealt=12345.6f;uiReviewResult.vehicle(0).eliminations=4;
+            flow.results();return;
+        }
+        if(fixture.startsWith("hud:")) {
+            String[] parts=fixture.split(":");var definition=VehicleDefinition.forId(parts[1]);int variant=Integer.parseInt(parts[2]);
+            flow.running();uiReviewHud=true;
+            hud.setSpecial(definition.id(),definition.specialName(),input.displayBinding("Special"));
+            hud.setPickupReceipt(variant%2==0?"+4 ракеты · +2 мины · +25 HP":"");
+            hud.setSubtitles(variant%2==0?"Последний перекрёсток принадлежит мне. Попробуй пройти через эту арену!":"");
+            hud.setPickupHighlights(variant%2==0?Set.of(WeaponType.HOMING,WeaponType.MINE):Set.of());
+            hud.update(UiReviewFixtures.hud(definition.id(),variant));return;
+        }
+        if(fixture.equals("pause")) {
+            arena=arenaRegistry.definition(ProgressStore.CAMPAIGN_ARENAS.getFirst());
+            flow.running();flow.pause("Геймпад отключён. Подключите устройство и продолжите бой.");return;
+        }
+        throw new IllegalArgumentException("Unknown UI render fixture "+fixture);
+    }
 }

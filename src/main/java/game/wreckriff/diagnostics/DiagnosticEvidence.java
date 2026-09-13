@@ -86,6 +86,8 @@ public final class DiagnosticEvidence {
     private Number number(String key) {return data.get(key) instanceof Number number?number:0;}
     public String completionStatus(boolean completed) {
         if(!completed||!errors.isEmpty())return "FAIL";
+        if("ui-review".equals(data.get("mode")))return "CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING".equals(data.get("uiReviewCaptureStatus"))
+                ?"CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING":"FAIL";
         if(soak!=null)return soak.coverageComplete()&&resources.passed()?"SOAK_MEASURED":"DIAGNOSTIC_COMPLETE";
         if(!benchmark)return "PASS";
         return measuredActiveSeconds()>=BenchmarkGate.MINIMUM_MEASURED_ACTIVE_SECONDS?"BENCHMARK_MEASURED":"DIAGNOSTIC_COMPLETE";

@@ -24,6 +24,7 @@ public final class UiFocusModel {
         if(items.stream().noneMatch(item->item.enabled && item.id.equals(id)))return false;
         selected=id;return true;
     }
+    public void clearSelection() {selected=null;}
     public void cycle(int delta) {
         if(items.isEmpty())return;
         int index=selectedIndex();
@@ -41,7 +42,15 @@ public final class UiFocusModel {
             float dx=item.bounds.centerX()-current.centerX(),dy=item.bounds.centerY()-current.centerY();
             float along=switch(direction){case RIGHT->dx;case LEFT->-dx;case UP->dy;case DOWN->-dy;};
             if(along<=.01f)continue;
-            float across=(direction==Direction.UP||direction==Direction.DOWN)?Math.abs(dx):Math.abs(dy);
+            float edgeGap=switch(direction){
+                case RIGHT->item.bounds.x()-current.right();case LEFT->current.x()-item.bounds.right();
+                case UP->item.bounds.y()-current.top();case DOWN->current.y()-item.bounds.top();
+            };
+            if(edgeGap<-.01f)continue;
+            // Wide rows align with every tab above them even when their centers are far apart.
+            float across=(direction==Direction.UP||direction==Direction.DOWN)
+                    ?Math.max(0,Math.max(current.x()-item.bounds.right(),item.bounds.x()-current.right()))
+                    :Math.max(0,Math.max(current.y()-item.bounds.top(),item.bounds.y()-current.top()));
             double score=along+across*2;
             if(score<bestScore) {best=item;bestScore=score;}
         }

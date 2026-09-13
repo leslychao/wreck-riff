@@ -23,17 +23,19 @@ public final class MatchHudPresenter {
     private String previousFireBinding="",selectionHint="";
     private double hintUntil;
     private int previousSecond=-1,previousRivals=-1;
+    private int previousRecoveries=-1;
     private MatchSession.Phase previousPhase;
     private String objective="";
 
     public HudView.Snapshot snapshot(MatchSession session,WorldQuery world,Targeting targeting,
                                     String fireBinding,String notification,double presentationSeconds) {
         if(!session.sessionId.equals(matchId)) {
-            matchId=session.sessionId;heading=null;previousWeapon=null;previousSecond=previousRivals=-1;previousPhase=null;
+            matchId=session.sessionId;heading=null;previousWeapon=null;previousSecond=previousRivals=previousRecoveries=-1;previousPhase=null;
         }
         var player=session.vehicle(0);
-        heading=RadarProjection.Heading.fromRotation(world.rotation(player.id),heading);
         var position=world.position(player.id);var road=world.roadContext(player.id);
+        if(!road.flying()||previousRecoveries!=player.recoveries)heading=null;
+        heading=RadarProjection.Heading.fromRotation(world.rotation(player.id),heading);previousRecoveries=player.recoveries;
         var observer=new RadarProjection.Observer(position.x,position.z,heading,road.known()?road.level():RadarProjection.UNKNOWN_LEVEL);
         int locked=targeting.forWeapon(player.selectedWeapon);
         var targets=new ArrayList<RadarProjection.Target>();

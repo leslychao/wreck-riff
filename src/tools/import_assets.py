@@ -3,10 +3,15 @@
 Uses five author-approved Poly Haven CC0 materials, creator-hosted Metalmania,
 and the official Roboto release. Original bytes and per-file provenance are kept.
 Run with the bundled Python (Pillow/numpy), with imageio-ffmpeg in build/asset-tooling.
+Diffuse derivatives use Microsoft JDK 21 via JAVA_HOME or --java. To regenerate
+only these derivatives from preserved local originals, use --runtime-diffuse-only;
+that mode never fetches assets or changes other resource/provenance entries.
 """
+import argparse
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -22,6 +27,10 @@ SOURCES = ROOT / "src/tools/assets"
 RESOURCES = ROOT / "src/main/resources"
 ENTRIES = []
 DATE = "2026-09-09"
+DIFFUSE_TRANSFORMATION = ("2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, "
+    "matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; "
+    "sRGB color; no resize, tint, dithering or additional gamma conversion; "
+    "src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java")
 
 
 def sha(data):
@@ -54,7 +63,43 @@ def png(path, pixels):
     Image.fromarray(pixels).save(path, optimize=True)
 
 
-def materials():
+def runtime_diffuse(source, destination, java=None):
+    with Image.open(source) as image:
+        if image.size != (2048, 2048):
+            raise ValueError("Expected 2K source: " + str(source))
+    header = source.read_bytes()[:29]
+    if header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR" or header[25] not in (2, 6):
+        raise ValueError("Expected RGB(A) PNG: " + str(source))
+    if header[24] == 8:
+        save(destination, source.read_bytes())
+        return "Unmodified 2K PNG; sRGB color"
+    if header[24] != 16:
+        raise ValueError("Unexpected diffuse bit depth: " + str(source))
+    java_home = os.environ.get("JAVA_HOME")
+    executable = Path(java) if java else Path(java_home) / "bin/java.exe" if java_home else None
+    if executable is None or not executable.is_file():
+        raise ValueError("Set JAVA_HOME to Microsoft JDK 21 or supply --java")
+    helper = ROOT / "src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
+    subprocess.run([str(executable), "-Djava.awt.headless=true", str(helper), str(source), str(destination)], check=True)
+    return DIFFUSE_TRANSFORMATION
+
+
+def runtime_diffuse_only(java=None):
+    manifest = RESOURCES / "licenses/asset-provenance.json"
+    provenance = json.loads(manifest.read_text(encoding="utf-8"))
+    for item in provenance["assets"]:
+        if not item["path"].startswith("textures/materials/") or not item["path"].endswith("/diffuse.png"):
+            continue
+        source, destination = ROOT / item["sourcePath"], RESOURCES / item["path"]
+        if sha(source.read_bytes()) != item["sourceSha256"]:
+            raise ValueError("Original diffuse source hash mismatch: " + str(source))
+        item["transformation"] = runtime_diffuse(source, destination, java)
+        item["sha256"] = sha(destination.read_bytes())
+        print("Prepared local runtime diffuse", item["path"], flush=True)
+    save(manifest, json.dumps(provenance, indent=2).encode())
+
+
+def materials(java=None):
     for asset, author in [("asphalt_02", "Rob Tuytel"), ("cracked_concrete", "Dimitrios Savva"),
             ("metal_plate_02", "Rob Tuytel"), ("blue_metal_plate", "Rob Tuytel"),
             ("rusty_metal_03", "Amal Kumar")]:
@@ -95,8 +140,7 @@ def materials():
                 png(destination, normal)
                 change = "2K OpenGL normal vectors normalized per texel after source downsampling; RGB8 linear data PNG; color metadata removed"
             else:
-                save(destination, source.read_bytes())
-                change = "Unmodified 2K PNG; sRGB color"
+                change = runtime_diffuse(source, destination, java)
             entry(destination, source, url, author + " / Poly Haven", "CC0-1.0", "licenses/assets/CC0-1.0.txt", change)
         print("Imported material", asset, flush=True)
     # Vehicle paint is a neutral-color derivative of the flat blue painted sheet.
@@ -164,7 +208,14 @@ def music():
 
 
 if __name__ == "__main__":
-    materials()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--runtime-diffuse-only", action="store_true", help="Offline: prepare only local diffuse derivatives and their provenance")
+    parser.add_argument("--java", help="Path to Microsoft JDK 21 java executable; defaults to JAVA_HOME/bin/java.exe")
+    arguments = parser.parse_args()
+    if arguments.runtime_diffuse_only:
+        runtime_diffuse_only(arguments.java)
+        sys.exit(0)
+    materials(arguments.java)
     font()
     music()
     for name, url in [("CC0-1.0", "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt"),

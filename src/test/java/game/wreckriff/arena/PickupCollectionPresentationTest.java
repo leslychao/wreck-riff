@@ -49,21 +49,28 @@ class PickupCollectionPresentationTest {
     }
 
     @Test void tiedDriversReceiveOneGrantWithStableWinnerAndNoBotReceiptInOwnHud() {
-        ArenaDefinition arena=ArenaDefinition.load();var pickup=pickup(arena,ArenaDefinition.PickupType.CANNON_AMMO);
-        for(boolean playerFull:new boolean[]{false,true}) {
+        ArenaDefinition arena=ArenaDefinition.load();
+        for(var style:PickupStyle.values())for(boolean playerFull:new boolean[]{false,true}) {
+            var pickup=pickup(arena,style.type());
             MatchSession session=new MatchSession(42,360);ArenaSystems systems=new ArenaSystems(session,arena);TestWorld world=new TestWorld();
             for(int id=0;id<2;id++) {
-                var slot=session.vehicle(id).weapon(WeaponType.CANNON);slot.ammo=slot.maximumAmmo-1;
+                leaveRoomForOne(session.vehicle(id),style);
                 world.positions[id]=pickup.position().vector().add(0,.8f,0);
             }
-            if(playerFull)session.vehicle(0).weapon(WeaponType.CANNON).ammo++;
-            int winner=playerFull?1:0;int[] before={session.vehicle(0).weapon(WeaponType.CANNON).ammo,session.vehicle(1).weapon(WeaponType.CANNON).ammo};
+            if(playerFull) {
+                var player=session.vehicle(0);
+                if(style.weapon()!=null)player.weapon(style.weapon()).ammo++;
+                else if(style==PickupStyle.REPAIR)player.hp++;
+                else player.turbo++;
+            }
+            int winner=playerFull?1:0;float[] before={resource(session.vehicle(0),style),resource(session.vehicle(1),style)};
             systems.collectPickups(world);session.tick++;systems.collectPickups(world);
             var events=systems.drainEvents();assertEquals(1,events.size());assertEquals(winner,events.getFirst().subjectId());
             assertEquals(winner,events.getFirst().sourceId());assertEquals(pickup.id(),events.getFirst().objectId());
-            for(int id=0;id<2;id++)assertEquals(before[id]+(winner==id?1:0),session.vehicle(id).weapon(WeaponType.CANNON).ammo);
+            assertEquals(style.kind(),events.getFirst().kind());assertEquals(1,events.getFirst().value());
+            for(int id=0;id<2;id++)assertEquals(before[id]+(winner==id?1:0),resource(session.vehicle(id),style),style.name());
             PickupFeedback feedback=new PickupFeedback(session.sessionId,0);feedback.accept(events,session.tick);
-            assertEquals(playerFull?"":"Cannon +1",feedback.text(session.tick));assertFalse(systems.active(pickup.id()));
+            assertEquals(playerFull?"":style.receipt(1),feedback.text(session.tick));assertFalse(systems.active(pickup.id()));
         }
     }
 
@@ -110,5 +117,8 @@ class PickupCollectionPresentationTest {
         if(style.weapon()!=null)state.weapon(style.weapon()).ammo=state.weapon(style.weapon()).maximumAmmo-1;
         else if(style==PickupStyle.REPAIR)state.hp=state.maximumHp-1;
         else state.turbo=99;
+    }
+    private static float resource(VehicleState state,PickupStyle style) {
+        return style.weapon()!=null?state.weapon(style.weapon()).ammo:style==PickupStyle.REPAIR?state.hp:state.turbo;
     }
 }

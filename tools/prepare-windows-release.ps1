@@ -44,10 +44,7 @@ if($PlanOnly) {
 Push-Location -LiteralPath $root
 try {
     $env:JAVA_HOME=$jdk;$env:PATH="$jdk\bin;$savedPath";$env:GRADLE_USER_HOME=Join-Path $root '.gradle-user'
-    & .\gradlew.bat @($result.command) *> $log
-    $code=$LASTEXITCODE
-    $result.exitCode=$code;$result.log=Get-ReleaseArtifact $log
-    if($code -ne 0){throw "Clean release checks failed ($code): $log"}
+    $result.exitCode=Invoke-ReleaseNativeCommand '.\gradlew.bat' $result.command $log
     if($before -ne (Get-ReleaseInputHash $root)){throw 'Verification inputs changed during clean checks.'}
     $suites=[ordered]@{}
     foreach($suite in @('test','physicsTest')) {
@@ -62,8 +59,13 @@ try {
     $sourceMaterialsPath=Join-Path $releaseBuildRoot 'reports/assets/source-distribution.json'
     if((Get-Item -LiteralPath $sourceMaterialsPath).LastWriteTimeUtc -lt $started -or (Read-ReleaseJson $sourceMaterialsPath).status -ne 'SOURCE_AND_NOTICE_MATERIALS_VERIFIED'){throw 'Missing fresh corresponding-source/notice verification.'}
     $result.suites=$suites;$result.assets=Get-ReleaseArtifact $assetsPath;$result.sourceDistribution=Get-ReleaseArtifact $sourceMaterialsPath;$result.status='PASS'
-} catch {$result.status='FAIL';$result.failure=$_.Exception.Message;throw}
+} catch {
+    $result.status='FAIL';$result.failure=$_.Exception.Message
+    if($_.Exception.Data.Contains('exitCode')){$result.exitCode=$_.Exception.Data['exitCode']}
+    throw
+}
 finally {
+    if(Test-Path -LiteralPath $log){$result.log=Get-ReleaseArtifact $log}
     $result.completedAtUtc=[DateTime]::UtcNow.ToString('o')
     Write-ReleaseJson (Join-Path $root 'build/reports/release-build-verification.json') $result
     $env:JAVA_HOME=$savedJava;$env:PATH=$savedPath;$env:GRADLE_USER_HOME=$savedGradle
@@ -74,10 +76,11 @@ if(!$VerifyOnly) {
     try {
         $env:JAVA_HOME=$jdk;$env:PATH="$jdk\bin;$savedPath";$env:GRADLE_USER_HOME=Join-Path $root '.gradle-user'
         if($before -ne (Get-ReleaseInputHash $root)){throw 'Verification inputs changed before packaging.'}
-        & .\gradlew.bat @($result.packageCommand) *> $packageLog
-        $result.packageExitCode=$LASTEXITCODE
-        if($result.packageExitCode -ne 0){throw "packageWindows failed; see $packageLog"}
+        $result.packageExitCode=Invoke-ReleaseNativeCommand '.\gradlew.bat' $result.packageCommand $packageLog
         if($before -ne (Get-ReleaseInputHash $root)){throw 'Verification inputs changed during packaging.'}
+    } catch {
+        if($_.Exception.Data.Contains('exitCode')){$result.packageExitCode=$_.Exception.Data['exitCode']}
+        throw
     } finally {
         if(Test-Path -LiteralPath $packageLog){$result.packageLog=Get-ReleaseArtifact $packageLog}
         Write-ReleaseJson (Join-Path $root 'build/reports/release-build-verification.json') $result

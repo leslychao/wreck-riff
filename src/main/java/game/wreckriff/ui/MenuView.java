@@ -54,6 +54,11 @@ public final class MenuView {
     public String pageId() {return page==null?"":page.id;}
     public String selectedId() {return page==null?null:state().focus.selectedId();}
     public float scrollOffset() {return page==null?0:state().scroll.offset();}
+    /** Select an existing control through the same focus/scroll owner as keyboard navigation. */
+    public boolean focus(String id) {
+        if(page==null||!state().focus.select(id))return false;
+        ensureFocus();render();return Objects.equals(selectedId(),id);
+    }
     public void resize(int width,int height,float scale) {
         if(width<320||height<240)return;
         if(this.width==width&&this.height==height&&this.scale==scale)return;
@@ -62,7 +67,7 @@ public final class MenuView {
     public void show(String id,String title,String subtitle,List<Tab> tabs,List<Row> rows,List<Action> footer,String initialFocus) {
         boolean changed=page==null||!page.id.equals(id);
         page=new Page(id,title,subtitle,List.copyOf(tabs),List.copyOf(rows),List.copyOf(footer),initialFocus);
-        if(changed&&id.startsWith("confirm:"))states.remove(id);
+        if(changed&&(id.startsWith("confirm:")||id.equals("video-confirm")))states.remove(id);
         render();
     }
     public void setStatus(String text) {if(!Objects.equals(status,text)){status=text;if(statusText!=null)statusText.setText(text);}}
@@ -116,12 +121,18 @@ public final class MenuView {
             List<String> ids=ids(row);
             for(int j=0;j<ids.size();j++) {
                 String id=ids.get(j);spans.put(id,new Span(offset,h));
-                focusItems.add(new UiFocusModel.Item(id,new UiBounds(j*200,-offset-h,180,h),enabled(row)));
+                UiBounds rowBounds=new UiBounds(body.x(),body.top()-offset-h,body.width(),h);
+                focusItems.add(new UiFocusModel.Item(id,rowControlBounds(row,rowBounds,j),focusable(row)));
             }
             offset+=h+gap;
         }
-        for(int i=0;i<page.tabs.size();i++)focusItems.add(new UiFocusModel.Item(page.tabs.get(i).id,new UiBounds(i*200,100,180,40),true));
-        for(int i=0;i<page.footer.size();i++)focusItems.add(new UiFocusModel.Item(page.footer.get(i).id,new UiBounds(i*200,-contentHeight-80,180,40),page.footer.get(i).enabled));
+        for(int i=0;i<page.tabs.size();i++)focusItems.add(new UiFocusModel.Item(page.tabs.get(i).id,tabBounds(i),true));
+        for(int i=0;i<page.footer.size();i++) {
+            UiBounds bounds=footerBounds(i);
+            // Focus traverses the complete unscrolled list before reaching the pinned footer.
+            bounds=new UiBounds(bounds.x(),bounds.y()-Math.max(0,contentHeight-body.height()),bounds.width(),bounds.height());
+            focusItems.add(new UiFocusModel.Item(page.footer.get(i).id,bounds,page.footer.get(i).enabled));
+        }
         state().focus.replace(focusItems);
         if(!state().initialized){if(page.initialFocus!=null)state().focus.select(page.initialFocus);state().initialized=true;ensureFocus();}
         if(revealFocusedRow){ensureFocus();revealFocusedRow=false;}
@@ -133,12 +144,12 @@ public final class MenuView {
             offset+=h+gap;
         }
         for(int i=0;i<page.tabs.size();i++) {
-            Tab tab=page.tabs.get(i);float cell=layout.tabs().width()/page.tabs.size();
-            ui.button(tab.id,(tab.selected?"[ ":"")+tab.label+(tab.selected?" ]":""),new UiBounds(layout.tabs().x()+i*cell,layout.tabs().y()+4*s,cell-gap,layout.tabs().height()-8*s),true,tab.action);
+            Tab tab=page.tabs.get(i);
+            ui.button(tab.id,(tab.selected?"[ ":"")+tab.label+(tab.selected?" ]":""),tabBounds(i),true,tab.action);
         }
         for(int i=0;i<page.footer.size();i++) {
-            Action action=page.footer.get(i);float cell=layout.footer().width()/page.footer.size();
-            ui.button(action.id,action.label,new UiBounds(layout.footer().x()+i*cell,layout.footer().y(),cell-gap,layout.footer().height()),action.enabled,action.action);
+            Action action=page.footer.get(i);
+            ui.button(action.id,action.label,footerBounds(i),action.enabled,action.action);
         }
         if(contentHeight>body.height()) {
             float barHeight=Math.max(16,body.height()*body.height()/contentHeight);
@@ -178,16 +189,39 @@ public final class MenuView {
         return switch(row) {
             case Action action->List.of(action.id);
             case Slider slider->List.of(slider.id);
-            case ArenaCard card->card.duel==null?List.of(card.id):List.of(card.id,card.id+":boss");
+            case ArenaCard card->!card.enabled||card.duel==null?List.of(card.id):List.of(card.id,card.id+":boss");
             case VehicleCard card->List.of(card.id);
             case Text text->List.of(text.id);
             case Metrics metrics->List.of(metrics.id);
         };
     }
-    private boolean enabled(Row row) {return row instanceof Action action?action.enabled:!(row instanceof ArenaCard card)||card.enabled;}
+    private boolean focusable(Row row) {return !(row instanceof Action action)||action.enabled;}
+    private UiBounds tabBounds(int index) {
+        float s=layout.scale(),cell=layout.tabs().width()/page.tabs.size();
+        return new UiBounds(layout.tabs().x()+index*cell,layout.tabs().y()+4*s,cell-8*s,layout.tabs().height()-8*s);
+    }
+    private UiBounds footerBounds(int index) {
+        float cell=layout.footer().width()/page.footer.size();
+        return new UiBounds(layout.footer().x()+index*cell,layout.footer().y(),cell-8*layout.scale(),layout.footer().height());
+    }
+    private UiBounds rowControlBounds(Row row,UiBounds bounds,int index) {
+        float s=layout.scale();
+        return switch(row) {
+            case Action action->new UiBounds(bounds.x(),bounds.y()+(action.detail.isBlank()?0:28*s),bounds.width(),bounds.height()-(action.detail.isBlank()?0:28*s));
+            case Slider ignored->new UiBounds(bounds.x(),bounds.y()+25*s,bounds.width(),bounds.height()-25*s);
+            case VehicleCard ignored->{float left=bounds.x()+Math.min(180*s,bounds.width()*.3f)+12*s;yield new UiBounds(left,bounds.y(),bounds.right()-left,Math.max(36,40*s));}
+            case ArenaCard card->card.enabled?arenaButtonBounds(card,bounds,index):bounds;
+            default->bounds;
+        };
+    }
+    private UiBounds arenaButtonBounds(ArenaCard card,UiBounds bounds,int index) {
+        float s=layout.scale(),left=bounds.x()+Math.min(150*s,bounds.width()*.25f)+12*s;
+        float available=bounds.right()-left,buttonWidth=card.duel==null?available:(available-8*s)/2;
+        return new UiBounds(left+index*(buttonWidth+8*s),bounds.y(),buttonWidth,Math.max(36,40*s));
+    }
     private void drawRow(Row row,UiBounds bounds) {
         float s=layout.scale(),font=layout.fontSize(),pad=12*s;
-        if(row.id().equals(selectedId())&&(row instanceof Text||row instanceof Metrics))
+        if(row.id().equals(selectedId())&&(row instanceof Text||row instanceof Metrics||row instanceof ArenaCard card&&!card.enabled))
             ui.rect("read-focus",bounds.x(),bounds.y(),3*s,bounds.height(),GameUi.ACCENT,3);
         switch(row) {
             case VehicleCard card-> {
@@ -195,10 +229,10 @@ public final class MenuView {
                 vehiclePreview(card.model.get(),new UiBounds(bounds.x(),bounds.y(),preview,bounds.height()));
                 ui.paragraph(card.name,new UiBounds(left,bounds.top()-32*s,bounds.right()-left,30*s),font,GameUi.PAPER);
                 ui.paragraph(card.detail,new UiBounds(left,bounds.y()+43*s,bounds.right()-left,bounds.height()-75*s),Math.max(14,16*s),GameUi.ACCENT);
-                ui.button(card.id,card.selected?"ВЫБРАНА":"ВЫБРАТЬ",new UiBounds(left,bounds.y(),bounds.right()-left,Math.max(36,40*s)),true,card.select);
+                ui.button(card.id,card.selected?"ВЫБРАНА":"ВЫБРАТЬ",rowControlBounds(row,bounds,0),true,card.select);
             }
             case Action action-> {
-                ui.button(action.id,action.label,new UiBounds(bounds.x(),bounds.y()+(action.detail.isBlank()?0:28*s),bounds.width(),bounds.height()-(action.detail.isBlank()?0:28*s)),action.enabled,action.action);
+                ui.button(action.id,action.label,rowControlBounds(row,bounds,0),action.enabled,action.action);
                 if(!action.detail.isBlank())ui.paragraph(action.detail,new UiBounds(bounds.x()+pad,bounds.y(),bounds.width()-pad*2,28*s),Math.max(14,16*s),GameUi.PAPER);
             }
             case Text text->ui.paragraph(text.text,new UiBounds(bounds.x()+pad,bounds.y(),bounds.width()-pad*2,bounds.height()),font,GameUi.PAPER);
@@ -213,7 +247,7 @@ public final class MenuView {
             }
             case Slider slider-> {
                 sliders.put(slider.id,slider);
-                ui.button(slider.id,slider.label+"   "+slider.valueText,new UiBounds(bounds.x(),bounds.y()+25*s,bounds.width(),bounds.height()-25*s),true,()->{});
+                ui.button(slider.id,slider.label+"   "+slider.valueText,rowControlBounds(row,bounds,0),true,()->{});
                 UiBounds track=new UiBounds(bounds.x()+pad,bounds.y()+9*s,bounds.width()-pad*2,10*s);sliderTracks.put(slider.id,track);
                 ui.rect(slider.id+"-track",track.x(),track.y(),track.width(),track.height(),new ColorRGBA(.18f,.21f,.24f,1),2);
                 float fraction=(slider.value-slider.minimum)/(slider.maximum-slider.minimum);
@@ -225,9 +259,8 @@ public final class MenuView {
                 preview(card.arena,new UiBounds(bounds.x(),bounds.y(),preview,bounds.height()));
                 ui.paragraph(card.arena.metadata().title(),new UiBounds(left,bounds.top()-33*s,bounds.right()-left,31*s),font,GameUi.PAPER);
                 ui.paragraph(card.detail,new UiBounds(left,bounds.y()+42*s,bounds.right()-left,45*s),Math.max(14,16*s),GameUi.ACCENT);
-                float available=bounds.right()-left,buttonWidth=card.duel==null?available:(available-8*s)/2;
-                ui.button(card.id,card.enabled?"БОЙ":"ЗАКРЫТО",new UiBounds(left,bounds.y(),buttonWidth,Math.max(36,40*s)),card.enabled,card.play);
-                if(card.duel!=null)ui.button(card.id+":boss","БОСС",new UiBounds(left+buttonWidth+8*s,bounds.y(),buttonWidth,Math.max(36,40*s)),card.enabled,card.duel);
+                ui.button(card.id,card.enabled?"БОЙ":"ЗАКРЫТО",arenaButtonBounds(card,bounds,0),card.enabled,card.play);
+                if(card.duel!=null)ui.button(card.id+":boss","БОСС",arenaButtonBounds(card,bounds,1),card.enabled,card.duel);
             }
         }
     }

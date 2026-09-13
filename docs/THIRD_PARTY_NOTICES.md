@@ -2,7 +2,8 @@
 
 The game uses unmodified dependency JARs and their native libraries. `verifyAssets`
 records the exact filenames, Maven coordinates and SHA-256 values in
-`build/reports/assets/third-party/dependency-evidence.json`. The Windows package
+`build/reports/assets/third-party/dependency-evidence.json` (the portable package
+includes it as `licenses/dependency-evidence.json`). The Windows package
 includes only Windows x64 native classifiers; it retains the original JAR contents.
 
 License text presence is a technical evidence check, not a claim of legal approval.
@@ -76,7 +77,10 @@ https://creativecommons.org/publicdomain/zero/1.0/ ; retained legal text:
 | Blue Metal Plate | Rob Tuytel | https://polyhaven.com/a/blue_metal_plate |
 | Rusty Metal 03 | Amal Kumar | https://polyhaven.com/a/rusty_metal_03 |
 
-All selected sources are 2K PNG. Diffuse maps retain their source bytes. OpenGL normal vectors are normalized per
+All selected sources are 2K PNG. Four diffuse maps (blue_metal_plate, cracked_concrete,
+metal_plate_02 and rusty_metal_03) are converted from 16-bit to 8-bit RGB(A) PNG,
+preserving the exact decoded pixel values used by the game's AWTLoader. The already
+8-bit asphalt_02 diffuse map retains its source bytes. OpenGL normal vectors are normalized per
 texel after source downsampling and color metadata is removed from the linear data
 PNG; the unmodified source maps are retained separately. Roughness is transformed into a restrained Phong specular-strength mask:
 `0.025 + k * (1 - roughness)^2`, with k=0.70 for metal_plate_02/blue_metal_plate and
@@ -84,8 +88,10 @@ k=0.22 for the other three materials. This is a rendering approximation for the
 existing Lighting.j3md, not a metallic-roughness PBR conversion. Neutral paint/rubber
 diffuse derivatives come from blue_metal_plate; the renderer owns their final tint.
 Exact original/download URLs, SHA-256 values and transformations for all 17 texture
-outputs are in `licenses/asset-provenance.json`. Original maps remain under
-`src/tools/assets/materials`. No Poly Haven webpage previews, logos or example
+outputs are in the main game JAR's classpath resource `licenses/asset-provenance.json`;
+the portable package also includes `reports/asset-register.csv` with shipped resource
+paths and hashes. Original maps remain under
+the source repository's `src/tools/assets/materials`. No Poly Haven webpage previews, logos or example
 renders are included as game assets. CC0 does not require credit; provenance is
 retained voluntarily for maintenance.
 

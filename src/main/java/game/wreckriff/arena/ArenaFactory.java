@@ -25,6 +25,18 @@ public final class ArenaFactory {
     public ArenaFactory(AssetManager assets) { this.assets=Objects.requireNonNull(assets);this.materials=new SurfaceMaterials(assets); }
 
     public ArenaContent build(ArenaDefinition definition) {
+        return build(definition,ArenaArt.load(definition));
+    }
+    public List<SurfaceMaterials.TextureUse> textureRequirements(ArenaDefinition definition,ArenaArt.Scene art) {
+        if(!art.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
+        var names=new LinkedHashSet<String>();
+        definition.boxes().forEach(part->names.add(surfaceMaterial(part,definition.metadata().theme())));
+        definition.ramps().forEach(ramp->names.add(ramp.material()));
+        names.addAll(ArenaArt.surfaceMaterials(art));
+        return SurfaceMaterials.texturesFor(names);
+    }
+    public ArenaContent build(ArenaDefinition definition,ArenaArt.Scene art) {
+        if(!art.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
         Node root=new Node(definition.metadata().title());
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         List<ArenaContent.StaticBody> bodies=new ArrayList<>();
@@ -43,7 +55,7 @@ public final class ArenaFactory {
             // The same exact top vertices provide both ramp contacts and visible seam.
             bodies.add(new ArenaContent.StaticBody(ramp.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
         }
-        addDecoration(root,definition);
+        addDecoration(root,definition,art);
         root.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry &&
                 geometry.getMaterial().getParam("NormalMap")!=null && geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(geometry.getMesh());});
@@ -76,7 +88,7 @@ public final class ArenaFactory {
         List<Vector3f> triangles=new ArrayList<>();for(int vertex:faces)triangles.add(v[vertex]);
         return SurfaceMesh.triangles(triangles,tileSize(ramp.material()));
     }
-    private void addDecoration(Node root,ArenaDefinition definition) {
+    private void addDecoration(Node root,ArenaDefinition definition,ArenaArt.Scene art) {
         Node structure=new Node("authored-industrial-details");
         Node markings=new Node("static-road-markings");
         markings.setShadowMode(RenderQueue.ShadowMode.Off);
@@ -105,7 +117,7 @@ public final class ArenaFactory {
         structure.updateGeometricState();GeometryBatchFactory.optimize(structure,false);root.attachChild(structure);
         markings.updateGeometricState();GeometryBatchFactory.optimize(markings,false);root.attachChild(markings);
         if(definition.metadata().theme()==ArenaDefinition.Theme.INDUSTRIAL_YARD)addSigns(root);
-        ArenaArt.attach(assets,root,definition,materials);
+        ArenaArt.attach(assets,root,definition,materials,art);
     }
     private void box(Node root,String id,Vector3f position,Vector3f half,String material) {
         Geometry visual=new Geometry(id,SurfaceMesh.box(half.x,half.y,half.z,tileSize(material)));

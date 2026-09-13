@@ -69,6 +69,24 @@ class VerifyAssetsTest {
             assertThrows(IOException.class,()->VerifyAssets.verifyFontBytes(missing.getBytes(StandardCharsets.UTF_8),png));
         }
     }
+    @Test void fontRendersRequiredRecordSubtitleAndReceiptPunctuation() throws Exception {
+        for(String face:List.of("wreck","wreck-bold"))for(int code:List.of(0x2014,0xab,0xbb,0xb7)) {
+            byte[] fnt=bundled("fonts/"+face+".fnt"),png=bundled("fonts/"+face+".png");
+            String descriptor=new String(fnt,StandardCharsets.UTF_8);
+            var dash=java.util.regex.Pattern.compile("(?m)^char id="+code+" x=(\\d+) y=(\\d+) width=(\\d+) height=(\\d+) .*xadvance=(\\d+).*$").matcher(descriptor);
+            assertTrue(dash.find(),face+" must render UI punctuation U+"+Integer.toHexString(code));
+            assertTrue(Integer.parseInt(dash.group(5))>0);
+            VerifyAssets.verifyFontBytes(fnt,png);
+            String missing=descriptor.replaceAll("(?m)^char id="+code+" .*\\R", "");
+            assertThrows(IOException.class,()->VerifyAssets.verifyFontBytes(missing.getBytes(StandardCharsets.UTF_8),png));
+            var image=javax.imageio.ImageIO.read(new ByteArrayInputStream(png));
+            int x=Integer.parseInt(dash.group(1)),y=Integer.parseInt(dash.group(2));
+            int width=Integer.parseInt(dash.group(3)),height=Integer.parseInt(dash.group(4));
+            for(int row=y;row<y+height;row++)for(int column=x;column<x+width;column++)image.setRGB(column,row,0);
+            var empty=new ByteArrayOutputStream();javax.imageio.ImageIO.write(image,"png",empty);
+            assertThrows(IOException.class,()->VerifyAssets.verifyFontBytes(fnt,empty.toByteArray()));
+        }
+    }
     @Test void materialValidationRejectsLowResolutionAndColorAsNormalData() throws Exception {
         VerifyAssets.verifyTextureBytes(bundled("textures/materials/asphalt_02/normal.png"),true);
         VerifyAssets.verifyTextureBytes(bundled("textures/materials/metal_plate_02/diffuse.png"),false);

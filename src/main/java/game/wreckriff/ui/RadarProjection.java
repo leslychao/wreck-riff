@@ -2,6 +2,7 @@ package game.wreckriff.ui;
 
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import game.wreckriff.vehicle.VehicleOrientation;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,9 +21,8 @@ public final class RadarProjection {
             x/=length;z/=length;
         }
         public static Heading fromRotation(Quaternion rotation,Heading previous) {
-            Vector3f forward=rotation.mult(Vector3f.UNIT_Z);
-            if(!Float.isFinite(forward.x)||!Float.isFinite(forward.z)||forward.x*forward.x+forward.z*forward.z<.0001f)
-                return previous==null?new Heading(0,1):previous;
+            Vector3f forward=VehicleOrientation.horizontalForward(rotation,previous==null?null:new Vector3f(previous.x,0,previous.z));
+            if(previous!=null&&forward.x==previous.x&&forward.z==previous.z)return previous;
             return new Heading(forward.x,forward.z);
         }
     }

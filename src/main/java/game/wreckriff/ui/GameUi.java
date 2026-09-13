@@ -31,7 +31,7 @@ public final class GameUi {
     public void clear() {root.detachAllChildren();buttons.clear();focus.replace(List.of());restoreFocus=null;}
     public void clearPreservingFocus() {String selected=focus.selectedId();clear();restoreFocus=selected;}
     public String selectedId() {return focus.selectedId();}
-    public boolean select(String id) {boolean changed=focus.select(id);highlight();return changed;}
+    public boolean select(String id) {boolean found=focus.select(id);if(!found)focus.clearSelection();highlight();return found;}
     public UiScrollModel scrollModel(String id,float contentHeight,float viewportHeight) {
         UiScrollModel model=scrollModels.computeIfAbsent(id,ignored->new UiScrollModel());model.resize(contentHeight,viewportHeight);return model;
     }

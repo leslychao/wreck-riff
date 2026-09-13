@@ -45,7 +45,12 @@ public final class ArenaArt {
     public static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials) {
         attach(assets,root,definition,materials,load(definition));
     }
-    static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials,Scene scene) {
+    public static List<String> surfaceMaterials(Scene scene) {
+        return scene.parts().stream().filter(ArenaArt::usesSurfaceMaterial).map(Part::material).distinct().toList();
+    }
+    private static boolean usesSurfaceMaterial(Part part) {return !part.material().equals("steam");}
+    public static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials,Scene scene) {
+        if(!scene.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
         Node art=new Node("authored-arena-art");
         art.setUserData("source",scene.source());art.setUserData("arenaId",scene.arenaId());
         art.setUserData("authoredPartCount",scene.parts().size());
@@ -69,7 +74,7 @@ public final class ArenaArt {
             visual.setLocalTranslation(part.position().vector());
             visual.setLocalRotation(new Quaternion().fromAngles(part.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)));
             Material material;
-            if(part.material().equals("steam")) {
+            if(!usesSurfaceMaterial(part)) {
                 material=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");
                 material.setColor("Color",new ColorRGBA(.40f,.45f,.49f,.10f));
                 material.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);

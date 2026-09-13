@@ -107,6 +107,8 @@ class HudViewTest {
         try(var view=new HudView(ASSETS,new Node())) {
             view.resize(640,480,1.5f);var base=snapshot(false,List.of());
             view.setPickupReceipt("Homing +2");
+            assertEquals("Homing +2",((BitmapText)view.root().getChild("pickup-receipt")).getText());
+            assertEquals(Spatial.CullHint.Always,view.root().getChild("notice-panel").getCullHint());
             view.setSubtitles("Префект: «В этом районе даже аварии происходят по разрешению»");
             view.update(new HudView.Snapshot(base.vitals(),base.selectedWeapon(),base.weapons(),base.abilities(),base.objective(),null,false,"",
                     "Progress not saved",base.observer(),base.radarTargets()));
@@ -122,7 +124,7 @@ class HudViewTest {
             assertTrue(view.root().getChild("notice-panel").getLocalScale().y<fullHeight,"Hidden subtitles release panel space");
         }
     }
-    @Test void authoredLongSubtitleAndBothFeedbackRowsStayInsideTheCompactPanel() {
+    @Test void authoredLongSubtitleAndNotificationKeepTheirPanelAboveThePickupReceipt() {
         for(int[] size:new int[][]{{640,480},{1920,1080},{3840,2160}})for(float scale:new float[]{.8f,1,1.5f}) {
             Node gui=new Node();try(var view=new HudView(ASSETS,gui)) {
                 view.resize(size[0],size[1],scale);var base=snapshot(false,List.of());
@@ -132,15 +134,21 @@ class HudViewTest {
                         "Прогресс не сохранён",base.observer(),base.radarTargets()));
                 gui.updateGeometricState();
                 Spatial panel=view.root().getChild("notice-panel");float bottom=panel.getLocalTranslation().y,top=bottom+panel.getLocalScale().y;
-                float previousTop=bottom;
+                float previousTop=view.layout().notification().y();
                 for(String name:new String[]{"pickup-receipt","encounter-subtitle","notification"}) {
                     BitmapText row=(BitmapText)view.root().getChild(name);
                     float rowTop=row.getLocalTranslation().y,rowBottom=rowTop-row.getHeight();
                     assertTrue(row.getSize()>=14,name);assertTrue(rowTop<=top,name);
+                    if(name.equals("pickup-receipt"))assertTrue(rowTop<=bottom,"Pickup receipt has no panel behind it");
+                    else assertTrue(rowBottom>=bottom-.01f,name+" leaves panel");
                     assertTrue(rowBottom>=previousTop-.01f,name+" overlaps previous row at "+size[0]+" / "+scale);
                     previousTop=rowTop;
                 }
                 assertTrue(top<=view.layout().notification().top()+.01f);
+                view.setPickupReceipt("");gui.updateGeometricState();
+                assertEquals(view.layout().notification().y(),panel.getLocalTranslation().y,.01f);
+                view.setSubtitles("");view.update(base);
+                assertEquals(Spatial.CullHint.Always,panel.getCullHint());
             }
         }
     }

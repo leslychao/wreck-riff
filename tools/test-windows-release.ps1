@@ -5,8 +5,8 @@ Validates evidence for one immutable Windows ZIP. Missing evidence keeps it a ca
 First run prepare-windows-release.ps1 on a stable workspace. Then use -RunAutomated
 to run real EXE Smoke, six 600-second benchmarks and a 1800-second soak sequentially.
 Run test-windows-package.ps1 separately with NormalNew, NormalMigrated and NormalContinue
-and actually perform those scenarios in the game. -AcceptancePath is a human-authored
-JSON review, not a switch that grants owner/controller/other-Windows acceptance.
+and actually perform those scenarios in the game. -AcceptancePath records factual
+agent or human reviews; ownerFeel requires the owner's actual human review.
 See tools/fixtures/release-acceptance.example.json for the deliberately pending format.
 This script never publishes or changes the ZIP, and never generates approval entries.
 #>
@@ -100,6 +100,12 @@ foreach($mode in @('NormalNew','NormalMigrated','NormalContinue')) {
             if($run.report.profileInputs.Count -ne 2){throw 'Original profile inputs are absent.'}
             foreach($artifact in $run.report.profileInputs){Assert-ReleaseArtifact $artifact}
         }
+        if($mode -eq 'NormalNew' -and ($run.diagnostic.initialCheckpointPresent -ne $false -or @($run.diagnostic.sessionStarts | Where-Object {$_.mode -eq 'CAMPAIGN' -and $_.resumedCheckpoint -eq $false}).Count -eq 0)){throw 'Fresh campaign was not started in the normal launch.'}
+        if($mode -eq 'NormalContinue' -and ($run.diagnostic.initialCheckpointPresent -ne $true -or @($run.diagnostic.sessionStarts | Where-Object {$_.mode -eq 'CAMPAIGN' -and $_.resumedCheckpoint -eq $true}).Count -eq 0)){throw 'Normal launch did not actually resume the saved campaign checkpoint.'}
+        if($mode -eq 'NormalMigrated') {
+            if($run.report.profileBefore.stats.schemaVersion -ge 3 -and $run.report.profileBefore.settings.schemaVersion -ge 4){throw 'Migration scenario started with an already-current profile.'}
+            if($run.report.profileAfter.stats.schemaVersion -ne 3 -or $run.report.profileAfter.settings.schemaVersion -ne 4){throw 'Migration did not persist current profile schemas.'}
+        }
     }
 }
 $requiredReviews=@('normalNewProfile','normalMigratedProfile','normalCampaignContinue','physicalController','otherWindows','ownerFeel','graphicalUxMatrix','arenaRoutes','distributionLicenses','releaseDocumentation')
@@ -108,15 +114,11 @@ else {
     try {
         $acceptance=Read-ReleaseJson $AcceptancePath
         Assert-ReleaseIdentity $acceptance $identity
-        if($acceptance.schemaVersion -ne 1){throw 'Unknown acceptance schema.'}
+        if($acceptance.schemaVersion -ne 2){throw 'Unknown factual review schema; reviewerType and observations are required.'}
         foreach($name in $requiredReviews) {
             try {
                 $review=$acceptance.checks.$name
-                if($review.status -ne 'ACCEPTED' -or [string]::IsNullOrWhiteSpace($review.reviewedBy) -or [string]::IsNullOrWhiteSpace($review.summary)){throw 'No explicit documented human acceptance.'}
-                $at=[DateTime]$review.reviewedAtUtc
-                if($at -lt [DateTime]$identity.packagedAtUtc -or $at -gt [DateTime]::UtcNow.AddMinutes(5)){throw 'Acceptance date does not match this candidate.'}
-                if($review.artifacts.Count -eq 0){throw 'No supporting evidence artifacts.'}
-                foreach($artifact in $review.artifacts){Assert-ReleaseArtifact $artifact}
+                Assert-ReleaseReview $name $review $identity
                 $accepted.Add($name)
             } catch {$pending.Add($name+': '+$_.Exception.Message)}
         }
