@@ -257,7 +257,7 @@ def construction():
     p=dict(sw=(170,0,250),south=(720,0,190),warehouse_w=(1070,0,240),warehouse_in=(1180,0,240),warehouse_turn=(1260,0,240),warehouse_out=(1260,0,345),warehouse_e=(1420,0,240),east=(1420,0,500),plant_e=(1420,0,780),ne=(1420,0,1100),north=(830,0,1100),nw=(170,0,1060),west=(170,0,570),pit_w=(280,0,530),pit_wb=(365,-14,530),pit=(465,-14,530),pit_eb=(565,-14,530),pit_e=(650,0,530),pit_sb=(465,-14,415),pit_s=(465,0,330),pit_nb=(465,-14,645),pit_n=(465,0,730),frame_w=(310,0,860),frame_in=(410,0,860),frame_turn=(510,0,860),frame_out=(510,0,1000),frame_e=(710,0,920),frame_s=(680,0,780),spine=(830,0,600),plant_w=(970,0,600),plant_in=(1070,0,600),plant_turn=(1160,0,600),plant_n=(1160,0,780),plant_s=(1070,0,450),plant_bypass=(1280,0,600),silos_s=(930,0,370),ramp_s=(1000,0,820),deck_s=(1140,18,920),deck_c=(1260,18,1000),deck_n=(1360,18,1100),ramp_n=(1510,0,1150),under=(1220,0,950),gate_w=(820,0,360),gate_e=(950,0,360),jump=(1000,0,930),landing=(1140,18,1010))
     a.points=p
     for name,path,width in [('arrival-haul','sw south warehouse_w warehouse_in warehouse_turn warehouse_e east plant_e ne',30),('west-haul','sw west nw north ne',28),('pit-west','west pit_w',26),('pit-bottom','pit_wb pit pit_eb',30),('pit-cross','pit_sb pit pit_nb',28),('pit-south-approach','south pit_s',26),('pit-north-approach','pit_n frame_s frame_e north',24),('pit-plant','pit_e spine plant_w plant_in plant_turn plant_bypass east',28),('frame-courtyard','nw frame_w frame_in frame_turn frame_out north',22),('frame-service','frame_w west',24),('frame-east','frame_turn frame_s spine',22),('frame-north','frame_out frame_e',24),('factory-dispatch','plant_turn plant_n plant_e',26),('factory-loading','plant_in plant_s silos_s warehouse_w',24),('factory-bypass','plant_n plant_bypass warehouse_out warehouse_e',26),('warehouse-north-dock','warehouse_turn warehouse_out plant_s',24),('central-haul','south gate_w spine',28),('interchange-underpass','spine ramp_s under plant_e',28),('north-maintenance','under north',24),('east-maintenance','ne ramp_n',22),('jump-runup','frame_e jump ramp_s',22),('deck-service','deck_s landing deck_c',24),('cut-west-approach','gate_w south',22),('cut-east-approach','gate_e silos_s',22)]:a.road(name,path,width)
-    for name,first,last in [('west','pit_w','pit_wb'),('east','pit_eb','pit_e'),('south','pit_s','pit_sb'),('north','pit_nb','pit_n')]:a.road('pit-'+name,first+' '+last,32,kind='RAMP',object_id='pit-'+name+'-slope',draw=False)
+    for name,first,last in [('west','pit_w','pit_wb'),('east','pit_eb','pit_e'),('south','pit_s','pit_sb'),('north','pit_nb','pit_n')]:a.road('pit-slope-'+name,first+' '+last,32,kind='RAMP',object_id='pit-'+name+'-slope',draw=False)
     a.road('interchange-rise','ramp_s deck_s',34,'concrete','RAMP');a.road('interchange-span','deck_s deck_c deck_n',34,'concrete');a.road('interchange-descent','deck_n ramp_n',34,'concrete','RAMP')
     a.opening('warehouse-service-gate','gate_w','gate_e');a.launch('construction-gantry-launch','jump','landing',3.2)
     # Unfinished L-shaped frame: open bays, two connected courts, staggered upper wings.
@@ -394,5 +394,36 @@ def expand_yard():
 def main():
     for factory,counts in [(construction,(18,18,12,8,10,6)),(neon,(24,24,16,10,14,8)),(carnival,(30,30,20,12,18,10))]:factory().finish(counts)
     expand_yard()
+    write_review_routes()
+def write_review_routes():
+    import html
+    specs={
+        'construction_17': [('pit','district','west pit_w pit_wb pit pit_eb pit_e'),('homes','district','frame_w frame_in frame_turn frame_out frame_e'),('plant','district','plant_w plant_in plant_turn plant_n plant_e'),('warehouses','district','warehouse_w warehouse_in warehouse_turn warehouse_out'),('interchange','district','ramp_s deck_s deck_c deck_n ramp_n'),('unfinished-apartments','interior','frame_w frame_in frame_turn frame_out'),('concrete-plant','interior','plant_w plant_in plant_turn plant_n'),('warehouse','interior','warehouse_w warehouse_in warehouse_turn warehouse_out')],
+        'neon_zero': [('business','district','business_w business_c business_e n'),('market','district','market_w market_in market_c market_n'),('homes','district','home_w home_c home_e s'),('transport','district','tech_e tn tnb tc tsb ts'),('parking','district','park_w park_c park_s p1s p1e p1ne p1nw p2nw'),('shopping-passage','interior','market_w market_in market_c market_n'),('technical-complex','interior','tech_w tech_in tech_c tech_e'),('parking-ground-floor','interior','park_w park_c park_e park_out')],
+        'euphoria_park': [('entrance','district','entry entry_n fair_s'),('fair','district','fair_s fair_c fair_e shore_w'),('lake','district','west_ramp west_high island_w island_c island_n north_high north_ramp'),('rides','district','rides_s ride_in ride_turn ride_out'),('circus','district','circus_s circus_in circus_e circus_out'),('backstage','district','depot_w depot_in depot_turn depot_out'),('circus','interior','circus_s circus_in circus_e circus_out'),('ride-pavilion','interior','rides_s ride_in ride_turn ride_out'),('repair-depot','interior','depot_w depot_in depot_turn depot_out')]}
+    routes=[]
+    for factory in (construction,neon,carnival):
+        a=factory();identity=a.data['id'];data=json.loads((OUT/(a.resource+'.json')).read_text(encoding='utf-8'))
+        for name,kind,names in specs[identity]:routes.append(dict(arenaId=identity,id=name,kind=kind,points=[vec(a.points[n]) for n in names.split()]))
+        elements=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -90 {a.width+60} {a.depth+120}"><rect x="-30" y="-90" width="{a.width+60}" height="{a.depth+120}" fill="#172026"/><text x="20" y="-35" fill="white" font-size="32" font-family="sans-serif">{html.escape(data["metadata"]["title"])} · REVISION 3</text><g transform="translate(0 {a.depth}) scale(1 -1)">']
+        for i,d in enumerate(data['districts']):
+            coords=' '.join(f'{p["x"]},{p["z"]}' for p in d['boundary']);elements.append(f'<polygon points="{coords}" fill="{["#39484e","#524b36","#40594e","#4a4560","#61474b","#3c5962"][i]}" stroke="#809197" stroke-width="2"/>')
+        for m in data['meshes']:
+            if m['id']=='lake-water':elements.append('<polygon points="'+' '.join(f'{v["x"]},{v["z"]}' for v in m['vertices'])+'" fill="#295b78"/>')
+        for path in a.paths:
+            coords=' '.join(f'{a.points[n][0]},{a.points[n][2]}' for n in path['names']);color='#daaf68' if any(a.points[n][1]>1 for n in path['names']) else '#7095bc' if any(a.points[n][1]<-1 for n in path['names']) else '#b2b8b7'
+            elements.append(f'<polyline points="{coords}" stroke="{color}" stroke-width="{path["width"]}" fill="none" stroke-linejoin="round"/>')
+        for b in data['boxes']:
+            if b['id'].startswith('edge-'):continue
+            c,s=b['center'],b['size']
+            if s['y']<3:continue
+            elements.append(f'<rect x="{c["x"]-s["x"]/2}" y="{c["z"]-s["z"]/2}" width="{s["x"]}" height="{s["z"]}" fill="#20272c" stroke="#a0a2a1" transform="rotate({-b["yawDegrees"]} {c["x"]} {c["z"]})"/>')
+        for p in data['pickups']:
+            if p['type'] in AMMO:elements.append(f'<circle cx="{p["position"]["x"]}" cy="{p["position"]["z"]}" r="5" fill="#f8d25c"/>')
+        for p in data['spawns']:elements.append(f'<circle cx="{p["position"]["x"]}" cy="{p["position"]["z"]}" r="10" fill="#83d6ff"/>')
+        elements.append('</g>')
+        for d in data['districts']:elements.append(f'<text x="{d["center"]["x"]}" y="{a.depth-d["center"]["z"]-38}" fill="white" text-anchor="middle" font-size="22" font-family="sans-serif">{html.escape(d["title"])}</text>')
+        elements.append('</svg>');(SOURCE/(identity+'-plan.svg')).write_text('\n'.join(elements),encoding='utf-8')
+    path=ROOT/'src/tools/assets/architecture';path.mkdir(parents=True,exist_ok=True);(path/'review-routes.json').write_text(json.dumps(dict(schemaVersion=1,routes=routes),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 if __name__=='__main__':main()
 

@@ -42,7 +42,7 @@ public final class SceneLighting {
     public static Profile profile(Theme theme) {
         return switch(Objects.requireNonNull(theme)) {
             case INDUSTRIAL_YARD -> new Profile(c(.28f,.33f,.43f),c(.99f,.82f,.62f),c(.20f,.30f,.45f),c(.085f,.105f,.16f),.52f);
-            case CONSTRUCTION -> new Profile(c(.20f,.25f,.33f),c(.54f,.68f,.88f),c(.42f,.26f,.13f),c(.012f,.023f,.050f),.65f);
+            case CONSTRUCTION -> new Profile(c(.48f,.51f,.54f),c(.92f,.92f,.88f),c(.22f,.24f,.27f),c(.50f,.57f,.60f),.35f);
             case NEON -> new Profile(c(.29f,.34f,.45f),c(.76f,.86f,1.10f),c(.30f,.14f,.34f),c(.035f,.043f,.095f),.85f);
             case CARNIVAL -> new Profile(c(.33f,.31f,.42f),c(1.03f,.79f,.58f),c(.16f,.28f,.39f),c(.09f,.06f,.13f),.72f);
         };

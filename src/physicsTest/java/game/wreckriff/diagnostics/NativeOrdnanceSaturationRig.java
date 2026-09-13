@@ -12,7 +12,7 @@ import java.util.*;
 /** Staged native supply-and-fire fixture. Actual pickups and commands; no projectile, timer or rule overrides. */
 public final class NativeOrdnanceSaturationRig implements AutoCloseable {
     public static final float FIRING_PLATFORM_HEIGHT=6;
-    public final ArenaDefinition rosterArena=ArenaRegistry.load().definition("euphoria_park");
+    public final ArenaDefinition rosterArena=Configs.load("arena-euphoria-park",ArenaDefinition.class);
     public final CombatRules rules=Configs.load("combat",CombatRules.class);
     public final MatchSession session=new MatchSession(913,rosterArena,MatchSession.Mode.ARENA,rules);
     public final PhysicsWorld world=new PhysicsWorld(VehicleRules.load());

@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EnvironmentMaterialsTest {
+    @Test void capturedBrickAndTimberRetainMetreScaleInsteadOfBuildingScaleUvs() {
+        assertEquals(1,SurfaceMaterials.metresPerTile("brick"));assertEquals(1.5f,SurfaceMaterials.metresPerTile("wood"));
+        assertEquals(1.3f,SurfaceMaterials.metresPerTile("earth"));assertEquals(2,SurfaceMaterials.metresPerTile("grass"));
+    }
     @Test void naturalAndArchitecturalSurfacesUseTheirOwnLocalPhotographicMaterial() {
         var recipes=Map.of("grass","leafy_grass","earth","brown_mud","gravel","gravelly_sand","brick","red_brick_03","wood","wood_planks_grey");
         var materials=new SurfaceMaterials(PresentationTestAssets.shared());

@@ -42,7 +42,15 @@ public final class ArenaFactory {
         Node root=new Node(definition.metadata().title());
         root.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
         List<ArenaContent.StaticBody> bodies=new ArrayList<>();
+        Set<String> replaced=new HashSet<>();
+        for(var model:art.models())for(String geometry:model.collisionGeometryIds()) {
+            if(!replaced.add(geometry))throw new IllegalArgumentException("Repeated structural model replacement: "+geometry);
+            if(definition.boxes().stream().noneMatch(box->box.id().equals(geometry)))throw new IllegalArgumentException("Missing model proxy: "+geometry);
+            if(definition.surfaces().stream().anyMatch(surface->surface.geometryId().equals(geometry)))
+                throw new IllegalArgumentException("A drivable surface cannot be replaced by decorative model geometry: "+geometry);
+        }
         for (var part:definition.boxes()) {
+            if(replaced.contains(part.id()))continue;
             Vector3f half=part.size().vector().mult(.5f);
             Geometry visual=new Geometry(part.id(),SurfaceMesh.box(half.x,half.y,half.z,tileSize(part.material())));
             visual.setLocalTranslation(part.center().vector());
@@ -59,6 +67,7 @@ public final class ArenaFactory {
             // The same exact top vertices provide both ramp contacts and visible seam.
             bodies.add(new ArenaContent.StaticBody(ramp.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
         }
+        addModelCollisions(art,bodies);
         for(var surface:definition.meshes()) {
             List<Vector3f> vertices=new ArrayList<>();for(int index:surface.indices())vertices.add(surface.vertices().get(index).vector());
             Mesh mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
@@ -85,6 +94,28 @@ public final class ArenaFactory {
                 geometry.getMaterial().getParam("NormalMap")!=null && geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(geometry.getMesh());});
         return new ArenaContent(root,bodies,definition.spawns(),definition.pickups(),new NavGraph(definition));
+    }
+    private void addModelCollisions(ArenaArt.Scene art,List<ArenaContent.StaticBody> bodies) {
+        SurfaceMaterials.lightingDefinition(assets);
+        for(var instance:art.models()) {
+            if(instance.collisionGeometryIds().isEmpty())continue;
+            Node placement=new Node(instance.id());placement.setLocalTranslation(instance.position().vector());placement.setLocalScale(instance.size().vector());
+            placement.setLocalRotation(new Quaternion().fromAngles(instance.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)));
+            placement.attachChild(assets.loadModel(instance.asset()));placement.updateGeometricState();
+            List<Vector3f> triangles=new ArrayList<>();
+            placement.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
+                Vector3f a=new Vector3f(),b=new Vector3f(),c=new Vector3f();
+                for(int triangle=0;triangle<geometry.getMesh().getTriangleCount();triangle++) {
+                    geometry.getMesh().getTriangle(triangle,a,b,c);
+                    Collections.addAll(triangles,geometry.localToWorld(a,null),geometry.localToWorld(b,null),geometry.localToWorld(c,null));
+                }
+            }});
+            if(triangles.isEmpty())throw new IllegalArgumentException("Empty structural model collision: "+instance.id());
+            Mesh mesh=new Mesh();mesh.setBuffer(VertexBuffer.Type.Position,3,BufferUtils.createFloatBuffer(triangles.toArray(Vector3f[]::new)));
+            int[] indices=new int[triangles.size()];for(int i=0;i<indices.length;i++)indices[i]=i;
+            mesh.setBuffer(VertexBuffer.Type.Index,3,BufferUtils.createIntBuffer(indices));mesh.updateBound();
+            bodies.add(new ArenaContent.StaticBody("architecture-"+instance.id(),new MeshCollisionShape(mesh),Vector3f.ZERO,new Quaternion()));
+        }
     }
     public Material material(String name) {return materials.material(name);}
     private static String surfaceMaterial(ArenaDefinition.BoxPart part,ArenaDefinition.Theme theme) {

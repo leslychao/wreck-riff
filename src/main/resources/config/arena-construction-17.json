@@ -8796,7 +8796,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-west-0-1",
+      "id": "pit-slope-west-0-1",
       "from": 101,
       "to": 297,
       "width": 32,
@@ -8806,7 +8806,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-west-0-2",
+      "id": "pit-slope-west-0-2",
       "from": 297,
       "to": 102,
       "width": 32,
@@ -8816,7 +8816,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-east-0-1",
+      "id": "pit-slope-east-0-1",
       "from": 108,
       "to": 298,
       "width": 32,
@@ -8826,7 +8826,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-east-0-2",
+      "id": "pit-slope-east-0-2",
       "from": 298,
       "to": 136,
       "width": 32,
@@ -8836,7 +8836,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-south-0-1",
+      "id": "pit-slope-south-0-1",
       "from": 121,
       "to": 299,
       "width": 32,
@@ -8846,7 +8846,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-south-0-2",
+      "id": "pit-slope-south-0-2",
       "from": 299,
       "to": 109,
       "width": 32,
@@ -8856,7 +8856,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-north-0-1",
+      "id": "pit-slope-north-0-1",
       "from": 114,
       "to": 300,
       "width": 32,
@@ -8866,7 +8866,7 @@
       "bidirectional": true
     },
     {
-      "id": "pit-north-0-2",
+      "id": "pit-slope-north-0-2",
       "from": 300,
       "to": 122,
       "width": 32,
@@ -24232,8 +24232,8 @@
       ]
     },
     {
-      "id": "pit-west",
-      "title": "pit west",
+      "id": "pit-slope-west",
+      "title": "pit slope west",
       "width": 32,
       "geometryIds": [
         "pit-west-slope"
@@ -24245,8 +24245,8 @@
       ]
     },
     {
-      "id": "pit-east",
-      "title": "pit east",
+      "id": "pit-slope-east",
+      "title": "pit slope east",
       "width": 32,
       "geometryIds": [
         "pit-east-slope"
@@ -24258,8 +24258,8 @@
       ]
     },
     {
-      "id": "pit-south",
-      "title": "pit south",
+      "id": "pit-slope-south",
+      "title": "pit slope south",
       "width": 32,
       "geometryIds": [
         "pit-south-slope"
@@ -24271,8 +24271,8 @@
       ]
     },
     {
-      "id": "pit-north",
-      "title": "pit north",
+      "id": "pit-slope-north",
+      "title": "pit slope north",
       "width": 32,
       "geometryIds": [
         "pit-north-slope"

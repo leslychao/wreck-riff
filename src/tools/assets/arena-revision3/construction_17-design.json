@@ -1119,8 +1119,8 @@
       ]
     },
     {
-      "id": "pit-west",
-      "title": "pit west",
+      "id": "pit-slope-west",
+      "title": "pit slope west",
       "width": 32,
       "geometryIds": [
         "pit-west-slope"
@@ -1132,8 +1132,8 @@
       ]
     },
     {
-      "id": "pit-east",
-      "title": "pit east",
+      "id": "pit-slope-east",
+      "title": "pit slope east",
       "width": 32,
       "geometryIds": [
         "pit-east-slope"
@@ -1145,8 +1145,8 @@
       ]
     },
     {
-      "id": "pit-south",
-      "title": "pit south",
+      "id": "pit-slope-south",
+      "title": "pit slope south",
       "width": 32,
       "geometryIds": [
         "pit-south-slope"
@@ -1158,8 +1158,8 @@
       ]
     },
     {
-      "id": "pit-north",
-      "title": "pit north",
+      "id": "pit-slope-north",
+      "title": "pit slope north",
       "width": 32,
       "geometryIds": [
         "pit-north-slope"

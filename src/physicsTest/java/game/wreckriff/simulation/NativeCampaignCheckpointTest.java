@@ -13,11 +13,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class NativeCampaignCheckpointTest {
     private static final VehicleRules RULES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
-    private static final ArenaRegistry REGISTRY=ArenaRegistry.load();
+    private static ArenaRegistry registryFor(String arenaId) {
+        var catalogue=Configs.load("arenas",ArenaRegistry.Catalogue.class);
+        return new ArenaRegistry(new ArenaRegistry.Catalogue(catalogue.schemaVersion(),
+                catalogue.entries().stream().filter(entry->entry.id().equals(arenaId)).toList()));
+    }
 
     @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park"})
     void bossRetryRestoresAnActualRoadPoseAndResourcesIntoACleanNativeAttempt(String arenaId) {
-        var arena=REGISTRY.definition(arenaId);ProgressStore.Checkpoint checkpoint;
+        var registry=registryFor(arenaId);var arena=registry.definition(arenaId);ProgressStore.Checkpoint checkpoint;
         try(var original=new Rig(arena,null)) {
             original.runtime.skipIntro();
             for(int tick=0;tick<250;tick++)original.runtime.tick(Map.of(),false);
@@ -30,7 +34,7 @@ class NativeCampaignCheckpointTest {
             assertEquals(MatchSession.Phase.BOSS_ENTRY,original.session.phase);assertEquals(520,player.hp);
             Vector3f position=original.world.position(0);long generation=original.world.teleportGeneration(0);
             checkpoint=original.runtime.checkpoint(ProgressStore.CheckpointStage.BOSS);
-            MatchCheckpoint.validateReferences(REGISTRY,checkpoint);
+            MatchCheckpoint.validateReferences(registry,checkpoint);
             assertEquals(position,original.world.position(0));assertEquals(generation,original.world.teleportGeneration(0));
             assertEquals(MatchCheckpoint.player(player),checkpoint.player());
             assertEquals(2,player.weapon(WeaponType.CANNON).ammo,"A continuous boss entry preserves collected ammunition");
@@ -63,13 +67,13 @@ class NativeCampaignCheckpointTest {
     @ParameterizedTest @CsvSource({"construction_17,rivet","construction_17,grinder","construction_17,spark",
             "neon_zero,rivet","neon_zero,grinder","neon_zero,spark","euphoria_park,rivet","euphoria_park,grinder","euphoria_park,spark"})
     void migratedBossCheckpointHasClearNativeSupportForEveryChassis(String arenaId,String profileId) {
-        var arena=REGISTRY.definition(arenaId);
+        var registry=registryFor(arenaId);var arena=registry.definition(arenaId);
         var source=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),true,2,profileId);
         source.vehicle(0).hp=300;source.vehicle(0).turbo=37;
         var old=new ProgressStore.Checkpoint(arenaId,1,profileId,2,42,"normal",ProgressStore.CheckpointStage.BOSS,
                 MatchCheckpoint.player(source.vehicle(0)),new ProgressStore.SafePose(12,1.25,14,.2,"old-road","old-spawn"),
                 new ProgressStore.ArenaState(Map.of(),Map.of(),Map.of(),0,71),720);
-        var checkpoint=MatchCheckpoint.rebase(REGISTRY,old);
+        var checkpoint=MatchCheckpoint.rebase(registry,old);
         try(var restored=new Rig(arena,checkpoint)) {
             assertEquals(profileId,restored.session.vehicle(0).profileId);assertEquals(2,restored.session.vehicle(0).liveryId);
             assertEquals(1,restored.session.vehicles.size());assertEquals(checkpoint.player(),MatchCheckpoint.player(restored.session.vehicle(0)));

@@ -78,6 +78,15 @@ public final class ArenaModelVerifier {
                     var buffer=geometry.getMesh().getFloatBuffer(attribute);
                     if(buffer==null||buffer.limit()==0)throw new IllegalArgumentException("Missing architecture attribute "+attribute);
                     for(int i=0;i<buffer.limit();i++)if(!Float.isFinite(buffer.get(i)))throw new IllegalArgumentException("Non-finite architecture attribute "+attribute);
+                    if(attribute==VertexBuffer.Type.Normal)for(int i=0;i<buffer.limit();i+=3) {
+                        float length=buffer.get(i)*buffer.get(i)+buffer.get(i+1)*buffer.get(i+1)+buffer.get(i+2)*buffer.get(i+2);
+                        if(length<.95f||length>1.05f)throw new IllegalArgumentException("Architecture requires unit normals");
+                    }
+                    if(attribute==VertexBuffer.Type.TexCoord) {
+                        float low=Float.POSITIVE_INFINITY,high=Float.NEGATIVE_INFINITY;
+                        for(int i=0;i<buffer.limit();i++){low=Math.min(low,buffer.get(i));high=Math.max(high,buffer.get(i));}
+                        if(high-low<.00001f)throw new IllegalArgumentException("Architecture requires usable UV coordinates");
+                    }
                 }
                 String definition=geometry.getMaterial().getMaterialDef().getName();
                 if(!definition.equals("Phong Lighting")&&!definition.equals("Unshaded"))throw new IllegalArgumentException("Unsupported architecture material: "+definition);
