@@ -1,9 +1,11 @@
 param(
     [string]$JdkHome='C:\Users\vitalii\.jdks\ms-21.0.11',
+    [string]$ImageRoot='build/install/wreck-riff',
     [string]$OutputDirectory
 )
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$image=if([IO.Path]::IsPathRooted($ImageRoot)){$ImageRoot}else{Join-Path $root $ImageRoot}
 $output=if($OutputDirectory){[IO.Path]::GetFullPath($OutputDirectory)}else{Join-Path $root ('build/menu-review-matrix-'+[Guid]::NewGuid().ToString('N'))}
 if(Test-Path -LiteralPath $output){throw 'Use a new output directory to preserve prior evidence.'}
 . (Join-Path $root 'tools/release-evidence.ps1')
@@ -15,7 +17,7 @@ $matrix=@('640x480@1.5','3840x2160@1.5')
 foreach($resolution in @('640x480','1280x720','1920x1080','2560x1440','3840x1080','3840x2160')) {
     foreach($scale in @('0.8','1','1.5')) { $key="$resolution@$scale"; if($matrix -notcontains $key){$matrix+=$key} }
 }
-$jar=Join-Path $root 'build/install/wreck-riff/lib/wreck-riff-0.4.0.jar'
+$jar=Join-Path $image 'lib/wreck-riff-0.4.0.jar'
 $jarHash=(Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash.ToLowerInvariant()
 try {
     foreach($key in $matrix) {
@@ -24,7 +26,7 @@ try {
         $runRoot=Join-Path $output ($key.Replace('@','-scale'))
         [IO.Directory]::CreateDirectory($runRoot) | Out-Null
         $env:LOCALAPPDATA=Join-Path $runRoot 'user-data'
-        $arguments=@('-Xmx1024m','-cp',(Join-Path $root 'build/install/wreck-riff/lib/*'),'game.wreckriff.Main','--dev','--ui-review',"--resolution=$resolution","--ui-scale=$scale")
+        $arguments=@('-Xmx1024m','-cp',(Join-Path $image 'lib/*'),'game.wreckriff.Main','--dev','--ui-review',"--resolution=$resolution","--ui-scale=$scale")
         if($resolution -in @('640x480','1280x720')){$arguments+='--windowed'}
         $log=Join-Path $runRoot 'process.log'
         Write-Output "START $key"

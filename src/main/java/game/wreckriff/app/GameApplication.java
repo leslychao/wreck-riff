@@ -1044,7 +1044,9 @@ public final class GameApplication extends SimpleApplication {
             String action=rebinding;
             boolean conflict=store.settings().keys.entrySet().stream().anyMatch(e->!e.getKey().equals(action)&&e.getValue()==code);
             if(conflict) { notice("That key is already assigned. Choose another key."); return; }
-            store.settings().keys.put(action,code);store.saveSettings();rebinding=null;redraw();audio.ui(UiCue.CHANGE);return;
+            boolean changed=!Objects.equals(store.settings().keys.get(action),code);
+            if(changed){store.settings().keys.put(action,code);store.saveSettings();}
+            rebinding=null;redraw();if(changed)audio.ui(UiCue.CHANGE);return;
         }
         if(code==KeyInput.KEY_ESCAPE) uiAction("back");
         else if(code==KeyInput.KEY_UP)uiAction("up");else if(code==KeyInput.KEY_DOWN)uiAction("down");

@@ -22,6 +22,7 @@ Bloodmoon Ritual -> audio/music/euphoria_park-boss.wav
 https://creatorchords.com/music/bloodmoon-ritual/
 
 Changes: loudness normalization, activity trim, prepared cyclic loop, PCM conversion.
+Each final encoded loop is measured and compensated to -16 LUFS (+/-0.5 LU), peak ceiling0.84.
 Victory, defeat and draw contain edited excerpts from Riffs with CC0 metal impact.
 Original deterministic workshop ambience and mechanical UI cues: GenerateAudio.java.
 Author pages and original MP3 hashes retained in provenance.json and sources.json.

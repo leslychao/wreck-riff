@@ -42,6 +42,7 @@ public final class NativeMenuAudioReview extends SimpleApplication {
     }
 
     private static final UUID SESSION=new UUID(0,904);
+    private static final int RECORDING_FPS=30;
     private final Options options;
     private final CountDownLatch ended=new CountDownLatch(1);
     private final Map<String,Object> evidence=new LinkedHashMap<>();
@@ -83,9 +84,13 @@ public final class NativeMenuAudioReview extends SimpleApplication {
 
     @Override public void simpleInitApp() {
         if(context.getType()!=JmeContext.Type.Display||audioRenderer==null)throw new IllegalStateException("A real display window and audio device are required");
+        // SimpleApplication samples tpf before initializing attached states. Install the same
+        // timer now so the first recorded frame cannot consume the entire application startup.
+        setTimer(new VideoRecorderAppState.IsoTimer(RECORDING_FPS));
         setDisplayFps(false);setDisplayStatView(false);flyCam.setEnabled(false);inputManager.setCursorVisible(false);
         rules=VehicleRules.load();
         var lighting=SceneLighting.install(assetManager,rootNode,viewPort);lighting.setSamples(4);lighting.applyMenu(true);
+        lighting.initialize(renderManager);
         garage=new GaragePresentation(assetManager,rules);rootNode.attachChild(garage.node());
         for(VehicleDefinition definition:VehicleDefinition.values()) {
             garage.show(definition.id());cachedModels.put(definition.id(),vehicle());
@@ -98,7 +103,7 @@ public final class NativeMenuAudioReview extends SimpleApplication {
         audio=new AudioDirector(assetManager,audioRenderer,listener,rootNode);audio.setVolumes(.8f,.85f,.85f);
         menu.onFeedback(cue->{audio.ui(cue);event("ui-"+cue.name().toLowerCase(Locale.ROOT));if(audio.isPaused())uiDuringPause=true;});
         capture=new AudioCapture(options.output,()->seconds,options.seconds);audio.setCapture(capture);
-        stateManager.attach(new VideoRecorderAppState(options.output.resolve("review.avi").toFile(),.82f,30));
+        stateManager.attach(new VideoRecorderAppState(options.output.resolve("review.avi").toFile(),.82f,RECORDING_FPS));
         audio.startMenu();if(options.music)showMusic("ГЛАВНОЕ МЕНЮ");else showVehicle();
         baselineGeometry=geometryCount();
         evidence.put("startedUtc",Instant.now().toString());evidence.put("mode",options.music?"music":"profile");
@@ -107,6 +112,7 @@ public final class NativeMenuAudioReview extends SimpleApplication {
         evidence.put("audioEnabled",true);evidence.put("context",context.getType().name());
         evidence.put("audioEvidence","audio.wav is a reconstruction of actual AudioDirector sources using local PCM and an unpaused presentation clock; it is not microphone, loopback, native OpenAL/HRTF or device-output capture");
         evidence.put("timing","AVI and reconstructed audio use a 30 fps presentation timeline; wall-time is reported separately; this is not a performance benchmark");
+        evidence.put("recordingFps",RECORDING_FPS);evidence.put("expectedFrames",(int)Math.ceil(options.seconds*RECORDING_FPS));
         try(var input=assetManager.locateAsset(new com.jme3.asset.AssetKey<>("build-info.properties")).openStream()) {
             Properties properties=new Properties();properties.load(input);evidence.put("sourceSha256",properties.getProperty("sourceSha256"));
         } catch(Exception missing){throw new IllegalStateException("Cannot identify the current application build",missing);}
@@ -115,7 +121,8 @@ public final class NativeMenuAudioReview extends SimpleApplication {
 
     @Override public void simpleUpdate(float tpf) {
         if(finishRequested||audio==null)return;
-        seconds=Math.min(options.seconds,seconds+tpf);
+        require(Math.abs(tpf-1f/RECORDING_FPS)<.000001f,"Recorder must advance exactly one presentation frame, including startup");
+        seconds=Math.min(options.seconds,(frames+1)/(double)RECORDING_FPS);
         if(options.music)musicSequence();
         else if(stage==0&&seconds>=1) {menu.cycle(false);stage++;}
         else if(stage==1&&seconds>=2) {menu.focus("vehicle:choose");menu.activate();stage++;}
@@ -168,6 +175,7 @@ public final class NativeMenuAudioReview extends SimpleApplication {
             assertBounds((BoundingBox)model.getWorldBound());
         }
         if(seconds>=options.seconds) {
+            require(frames==(int)Math.ceil(options.seconds*RECORDING_FPS),"Recording skipped required presentation frames");
             if(options.music)require(stage==9&&pauseVerified&&uiDuringPause&&audio.gameplayVoiceCount()==0,"Music lifecycle or paused UI verification incomplete");
             else require(rotation>=Math.PI*2,"Vehicle did not complete its full 36-second rotation");
             finishRequested=true;stop();

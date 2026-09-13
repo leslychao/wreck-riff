@@ -6,7 +6,7 @@
   "licensePath": "licenses/assets/CC-BY-4.0.txt",
   "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
   "generator": "src/tools/import_menu_music.py",
-  "generatorSha256": "bac336bdffcd08e4b2b66ba8a164ee0cba752210964213618281d32e7a6028df",
+  "generatorSha256": "c7dc698ed5b4c30a6055a64c6d3e1cc0bb3a0103967dbf9ba78dac5c7f25ef78",
   "decoderVersion": "ffmpeg version 7.1-essentials_build-www.gyan.dev Copyright (c) 2000-2024 the FFmpeg developers",
   "numpyVersion": "2.3.5",
   "artisticStatus": "NEEDS_CREATIVE_REVIEW",
@@ -24,7 +24,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/riffs.html",
       "evidenceSha256": "b9afe163420b12fc97c3f92710f202701a321223d234a27c11bf982bad717b2b",
       "acquired": "2026-09-13",
-      "sha256": "110920493f7843d5989324763c35f779c50af4028dbc6c9d2405e2a61c1e761f",
+      "sha256": "c8adf91b73fcf52cfe08a59456de1e48b319ef449355d72705fe216d33d1f8a7",
       "frames": 11242800,
       "sampleRate": 48000,
       "bits": 16,
@@ -34,7 +34,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 0.9982860269135626,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-11.72",
         "input_tp": "0.56",
         "input_lra": "4.40",
@@ -46,7 +46,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-1.30"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -14.71,
+        "compensationDb": -1.2899999999999991,
+        "compensationGain": 0.8619855787057585,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -2.8,
+        "loudnessRangeLu": 3.7,
+        "measurementSha256": "c8adf91b73fcf52cfe08a59456de1e48b319ef449355d72705fe216d33d1f8a7"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/dead-air-yard.wav",
@@ -61,7 +74,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/metal-interlude.html",
       "evidenceSha256": "c8e0bf2ed1da9055be2e92878bebc781f2e426cae6c41bad1ff3490d63335a67",
       "acquired": "2026-09-13",
-      "sha256": "51559b433aedb21c43a5e121fa3177a124e29dfce8422501d12aa0a7697a30e3",
+      "sha256": "92227ebd1b285f818bc2843cac1510119e94686bf43be335f004f83735f321c3",
       "frames": 7162800,
       "sampleRate": 48000,
       "bits": 16,
@@ -71,7 +84,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 0.9972100232274207,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-13.90",
         "input_tp": "-0.02",
         "input_lra": "7.50",
@@ -83,7 +96,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-1.78"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -14.21,
+        "compensationDb": -1.7899999999999991,
+        "compensationGain": 0.8137668607787872,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -3.3,
+        "loudnessRangeLu": 4.5,
+        "measurementSha256": "92227ebd1b285f818bc2843cac1510119e94686bf43be335f004f83735f321c3"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/construction_17-normal.wav",
@@ -108,7 +134,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 0.9978851983810552,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-14.21",
         "input_tp": "-0.27",
         "input_lra": "1.40",
@@ -120,7 +146,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-0.02"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -16.0,
+        "compensationDb": 0.0,
+        "compensationGain": 1.0,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -1.5,
+        "loudnessRangeLu": 1.3,
+        "measurementSha256": "ac03bdbc311b8c819a93c6d889d223221dc562e65752e88789354f4c98c7cceb"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/construction_17-boss.wav",
@@ -135,7 +174,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/the-collapse.html",
       "evidenceSha256": "b61aea142d9c69c8543be3859d5ec8b6222d944c62c4752bdb75329a39df5a4e",
       "acquired": "2026-09-13",
-      "sha256": "9eb6da92f6849f0dd4aaf6669d69deb3995b5551697a0ce530a8fdeaa1e7aa76",
+      "sha256": "9d81f2e0feac5fc80e73162155b90a0c3bb242b89a9ea410d90f317f11bb44d7",
       "frames": 8914800,
       "sampleRate": 48000,
       "bits": 16,
@@ -145,7 +184,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 1.0,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-12.43",
         "input_tp": "-0.70",
         "input_lra": "5.40",
@@ -157,7 +196,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-1.28"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -14.7,
+        "compensationDb": -1.3000000000000007,
+        "compensationGain": 0.8609937521846006,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -3.74,
+        "loudnessRangeLu": 2.4,
+        "measurementSha256": "9d81f2e0feac5fc80e73162155b90a0c3bb242b89a9ea410d90f317f11bb44d7"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/neon_zero-normal.wav",
@@ -172,7 +224,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/circuits.html",
       "evidenceSha256": "116d1392ca52f8380c74375d167d2403752d029bd28c6dea294c068dce2eea4a",
       "acquired": "2026-09-13",
-      "sha256": "4e0625ad35e41e1e07739d54e7a35b5fc7eea9f787187deaed4f5499c8e515fc",
+      "sha256": "b0e0bf10ddf6e5d3a343bdcf4c5ade3e800f538947da5e81aacc89eba0633023",
       "frames": 16544400,
       "sampleRate": 48000,
       "bits": 16,
@@ -182,7 +234,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 0.9950511528486321,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-13.90",
         "input_tp": "0.27",
         "input_lra": "10.30",
@@ -194,7 +246,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-2.24"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -13.8,
+        "compensationDb": -2.1999999999999993,
+        "compensationGain": 0.7762471166286918,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -3.71,
+        "loudnessRangeLu": 5.2,
+        "measurementSha256": "b0e0bf10ddf6e5d3a343bdcf4c5ade3e800f538947da5e81aacc89eba0633023"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/neon_zero-boss.wav",
@@ -209,7 +274,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/chaotic.html",
       "evidenceSha256": "d9b0f6211290a769d15fe44cd6777f8753ccd8b20dcfecc8d58743924cf9f9ff",
       "acquired": "2026-09-13",
-      "sha256": "45d2a67a1655b063b6a0d86c1fac8a8d55b31d325a7aa868a61fa11d3a33724c",
+      "sha256": "1b4713a102fd9e2612a8bf1fb918d4bb572eb0694aec5133acbcdec743a020e4",
       "frames": 11487600,
       "sampleRate": 48000,
       "bits": 16,
@@ -219,7 +284,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 1.0,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-11.66",
         "input_tp": "-0.11",
         "input_lra": "7.10",
@@ -231,7 +296,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-1.41"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -14.61,
+        "compensationDb": -1.3900000000000006,
+        "compensationGain": 0.8521185113792298,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -2.91,
+        "loudnessRangeLu": 3.3,
+        "measurementSha256": "1b4713a102fd9e2612a8bf1fb918d4bb572eb0694aec5133acbcdec743a020e4"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/euphoria_park-normal.wav",
@@ -246,7 +324,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/hall-of-the-metal-king.html",
       "evidenceSha256": "ab65d8e49059e0d5b1832d8a977ba28a7d12a59c34ec6f4c25a647b7be6cd509",
       "acquired": "2026-09-13",
-      "sha256": "c0df4857f5ac441987328f7f4649328c9af74a2ac9e41b5d207b737db1ecb6b0",
+      "sha256": "6e0f4c14bdeb742e822336b49318bff6eece079d8d5d51a0e1645949b5274a20",
       "frames": 11418000,
       "sampleRate": 48000,
       "bits": 16,
@@ -256,7 +334,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 0.998765899782848,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-10.62",
         "input_tp": "0.29",
         "input_lra": "4.60",
@@ -268,7 +346,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-0.68"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -15.34,
+        "compensationDb": -0.6600000000000001,
+        "compensationGain": 0.9268298233793493,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -16.0,
+        "truePeakDbtp": -2.16,
+        "loudnessRangeLu": 4.4,
+        "measurementSha256": "6e0f4c14bdeb742e822336b49318bff6eece079d8d5d51a0e1645949b5274a20"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     },
     {
       "path": "audio/music/euphoria_park-boss.wav",
@@ -283,7 +374,7 @@
       "evidencePath": "src/tools/assets/audio/music/evidence/bloodmoon-ritual.html",
       "evidenceSha256": "d1b8521173423169bdb4409dbe8d96cfe7798e9775c6d7719ec3c447d57b65ac",
       "acquired": "2026-09-13",
-      "sha256": "7d4f0320ee843bcfedcea8f25e361799d168dcee943b35950f5b98142459e566",
+      "sha256": "96be8d079dd0381a5812a92c17b29b47ebce0b34db7b418691a2a1284c03884c",
       "frames": 12721200,
       "sampleRate": 48000,
       "bits": 16,
@@ -293,7 +384,7 @@
       "loopOverlapSeconds": 0.125,
       "boundaryDeclickMs": 3,
       "peakSafetyGain": 0.995254449296487,
-      "loudness": {
+      "sourceNormalization": {
         "input_i": "-11.58",
         "input_tp": "0.14",
         "input_lra": "8.00",
@@ -305,7 +396,20 @@
         "normalization_type": "dynamic",
         "target_offset": "-2.03"
       },
-      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; peak ceiling0.84; round to signed little-endian16bit; metadata removed"
+      "loudness": {
+        "targetIntegratedLufs": -16.0,
+        "toleranceLu": 0.5,
+        "measurementMethod": "FFmpeg loudnorm input analysis of final encoded WAV",
+        "preCompensationIntegratedLufs": -14.03,
+        "compensationDb": -1.9700000000000006,
+        "compensationGain": 0.7970764905902968,
+        "finalPeakSafetyGain": 1.0,
+        "integratedLufs": -15.99,
+        "truePeakDbtp": -3.48,
+        "loudnessRangeLu": 5.0,
+        "measurementSha256": "96be8d079dd0381a5812a92c17b29b47ebce0b34db7b418691a2a1284c03884c"
+      },
+      "transformation": "FFmpeg loudnorm I=-16 LUFS TP=-1.5 dBTP LRA=11; PCM48k stereo; 50ms musical activity trim; cyclic 125ms linear overlap; DC removal; 3ms de-click; measure encoded loop LUFS; compensate to -16 LUFS; peak ceiling0.84; round to signed little-endian16bit; independently remeasure final bytes; metadata removed"
     }
   ]
 }
