@@ -485,7 +485,7 @@ public final class GameApplication extends SimpleApplication {
                 renderMatch(loadingFramePrepared?0:Math.min(dt,0.1f));
             }
             else {
-                garage.update(Math.min(dt,.1f),cam,flow.screen()==Screen.RUNNING?0:menu.sceneLeftOcclusion(),
+                garage.update(dt,cam,flow.screen()==Screen.RUNNING?0:menu.sceneLeftOcclusion(),
                         flow.screen()==Screen.RUNNING?0:menu.sceneBottomOcclusion());
             }
             if(noticeTime>0)noticeTime-=dt;
