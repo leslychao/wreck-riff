@@ -9,6 +9,7 @@ import com.jme3.scene.Spatial;
 import com.jme3.scene.VertexBuffer;
 import com.jme3.util.mikktspace.MikktspaceTangentGenerator;
 import game.wreckriff.presentation.SurfaceMaterials;
+import game.wreckriff.simulation.ContactSurface;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.MessageDigest;
@@ -34,7 +35,8 @@ public final class PrepareArenaModels {
                     int begin=name.indexOf("surface:");
                     if(begin<0)throw new IllegalArgumentException("Model geometry requires surface:<material> name: "+name);
                     String surface=name.substring(begin+8).split("[^a-z-]",2)[0];
-                    geometry.setMaterial(materials.material(surface));surfaces.add(surface);
+                    if(ContactSurface.fromMaterial(surface)==ContactSurface.UNKNOWN)throw new IllegalArgumentException("Architecture contact material is not authored: "+surface);
+                    geometry.setMaterial(materials.material(surface));geometry.setUserData("surfaceMaterial",surface);surfaces.add(surface);
                     if(geometry.getMesh().getBuffer(VertexBuffer.Type.Normal)==null||geometry.getMesh().getBuffer(VertexBuffer.Type.TexCoord)==null)
                         throw new IllegalArgumentException("Normals and UVs required: "+name);
                     if(geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)MikktspaceTangentGenerator.generate(geometry);
@@ -59,6 +61,8 @@ public final class PrepareArenaModels {
         manifest.put("converter","src/tools/java/game/wreckriff/tools/PrepareArenaModels.java");
         manifest.put("converterSha256",hash(Path.of("src/tools/java/game/wreckriff/tools/PrepareArenaModels.java")));
         manifest.put("generator","src/tools/author_arena_models.py");manifest.put("generatorSha256",hash(Path.of("src/tools/author_arena_models.py")));
+        manifest.put("layoutGeneratorSha256",hash(Path.of("src/tools/author_campaign_arenas.py")));
+        manifest.put("supplyLayoutSha256",hash(Path.of("src/tools/assets/arena-revision3/supply-layout.json")));
         manifest.put("transformation","Local GLB geometry, authored UVs and normals; named surface materials replaced by shared lit Phong materials; tangent generation; jME binary export");
         manifest.put("artisticStatus","NEEDS_CREATIVE_REVIEW");manifest.put("assets",records);
         Files.writeString(output.resolve("provenance.json"),new GsonBuilder().setPrettyPrinting().create().toJson(manifest)+"\n",StandardCharsets.UTF_8);

@@ -56,7 +56,7 @@ public final class ArenaPresentation extends AbstractControl {
         private final Node node;
         private final MatchSession session;
         private final ArenaArt.Motion motion;
-        private final float period,offset;
+        private final float period,offset,radius;
         private final Vector3f origin;
         private final List<LitPart> lights=new ArrayList<>();
         private long lastTick=Long.MIN_VALUE;
@@ -64,7 +64,7 @@ public final class ArenaPresentation extends AbstractControl {
         private int lastBossMode;
         AnimatedDetail(Node node,MatchSession session,ArenaArt.Motion motion) {
             this.node=node;this.session=session;this.motion=motion;origin=node.getLocalTranslation().clone();
-            period=node.getUserData("artPeriod");offset=node.getUserData("artPhase");
+            period=node.getUserData("artPeriod");offset=node.getUserData("artPhase");radius=node.getUserData("artRadius");
             node.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
                 var color=geometry.getMaterial().getParam("Color");
                 if(color!=null)lights.add(new LitPart(geometry,((ColorRGBA)color.getValue()).clone(),geometry.getLocalScale().clone()));
@@ -78,6 +78,13 @@ public final class ArenaPresentation extends AbstractControl {
             switch(motion) {
                 case STATIC -> {}
                 case ROTATE_Z -> node.setLocalRotation(new Quaternion().fromAngleAxis(angle,Vector3f.UNIT_Z));
+                case ORBIT_Z -> {
+                    // Parts are authored at their initial suspension point. Move that point
+                    // around the wheel, keeping cabins upright; simulation ticks also freeze it on pause.
+                    float start=FastMath.TWO_PI*offset;
+                    node.setLocalTranslation(origin.x+radius*(FastMath.cos(angle)-FastMath.cos(start)),
+                            origin.y+radius*(FastMath.sin(angle)-FastMath.sin(start)),origin.z);
+                }
                 case SWAY_Z -> node.setLocalRotation(new Quaternion().fromAngleAxis(.075f*FastMath.sin(angle),Vector3f.UNIT_Z));
                 case STEAM -> {
                     node.setLocalTranslation(origin.x+cycle*.5f,origin.y+cycle*3.2f,origin.z);

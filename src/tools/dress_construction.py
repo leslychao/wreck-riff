@@ -6,7 +6,7 @@ lifting eyes, gratings and braces are surface details. Nothing is placed in a ro
 or its turning allowance; there is no random filler/building grid.
 """
 import math
-from author_campaign_arenas import vec
+from author_campaign_arenas import vec,inside
 
 
 class ConstructionDressing:
@@ -16,11 +16,13 @@ class ConstructionDressing:
         self.installed=[]
         self.skipped=[]
 
-    def clear(self, x, z, radius):
+    def clear(self, x, z, radius, pickup_clearance=7):
         # Equipment needs one level foundation. Reject the excavation slopes;
         # using the old grade there would leave the entire machine floating.
-        if 365<=x<=565 and 415<=z<=645:
-            if min(x-365,565-x,z-415,645-z)<radius:return False
+        floor=next(polygon for name,polygon,*_ in self.location.fixed if name=='pit-floor')
+        if inside((x,z),floor):
+            for a,b in zip(floor,floor[1:]+floor[:1]):
+                if abs((b[0]-a[0])*(z-a[1])-(b[1]-a[1])*(x-a[0]))/math.dist(a,b)<radius:return False
         elif 280-radius<x<650+radius and 330-radius<z<730+radius:
             return False
         # This is deliberately measured against every route, including shortcuts,
@@ -35,7 +37,7 @@ class ConstructionDressing:
         # Supply remains collectable and neither boss entrance becomes a trap.
         for item in self.scene.data['spawns']+self.scene.data['pickups']:
             p=item['position']
-            if math.hypot(x-p['x'],z-p['z'])<radius+7:return False
+            if math.hypot(x-p['x'],z-p['z'])<radius+pickup_clearance:return False
         for boss in self.scene.data['bosses']:
             for entrance in boss['entrances']:
                 p=entrance.get('position',entrance)
@@ -52,16 +54,16 @@ class ConstructionDressing:
                     and abs(math.sin(angle)*dx+math.cos(angle)*dz)<s['z']/2+radius+1.5:return False
         return True
 
-    @staticmethod
-    def height(x,z):
+    def height(self,x,z):
         # Authored excavation floor; all other selected workplaces are at grade.
-        if 365<=x<=565 and 415<=z<=645:return -14
+        floor=next(polygon for name,polygon,*_ in self.location.fixed if name=='pit-floor')
+        if inside((x,z),floor):return -14
         return 0
 
-    def place(self, name, candidates, footprint, builder, yaw=0):
+    def place(self, name, candidates, footprint, builder, yaw=0, pickup_clearance=7):
         radius=math.hypot(*footprint)/2
         for x,z in candidates:
-            if not self.clear(x,z,radius):continue
+            if not self.clear(x,z,radius,pickup_clearance):continue
             self.origin=(x,self.height(x,z),z);self.yaw=yaw;self.name=name
             self.scene.anchor='';self.scene.group=''
             builder();self.installed.append(dict(id=name,x=x,z=z,radius=radius))
@@ -215,6 +217,89 @@ class ConstructionDressing:
             self.beam('water-riser',(3,1.4,z),(3,3.8,z),.5,'steel')
             self.detail('valve-wheel',(3,4,z),(.9,.2,.9),'red')
 
+    def curing_yard(self):
+        # Three full production beds share a travelling gantry and reclaim main.
+        # Their open southern ends face the factory dispatch road.
+        for row,z in enumerate((-11,0,11)):
+            self.solid('curing-bed-'+str(row),(0,.6,z),(46,1.2,7))
+            for side in (-1,1):self.solid(f'bed-shutter-{row}-{side}',(0,1.55,z+side*3.5),(46,1.4,.4),'steel')
+            for x in (-15,-5,5,15):
+                self.solid(f'curing-panel-{row}-{x}',(x,1.65,z),(8.4,.9,5.7),'concrete')
+                for xx in (-2.5,2.5):self.detail('lifting-socket',(x+xx,2.15,z),(.4,.1,.4),'black')
+            self.detail('bed-number',(23.3,1.55,z),(.2,1,2),'yellow')
+        for x in (-24,24):
+            for z in (-15,15):
+                self.solid(f'gantry-foot-{x}-{z}',(x,.45,z),(2.5,.9,2.5))
+                self.solid(f'gantry-leg-{x}-{z}',(x,6.5,z),(.8,13,.8),'yellow')
+                self.beam('gantry-knee',(x,9,z),(x*.8,12.5,z),.4,'steel')
+        for z in (-15,15):self.solid('gantry-runway-'+str(z),(0,13,z),(49.5,1.2,1.1),'yellow')
+        self.solid('travelling-crosshead',(6,13,0),(1.2,1.2,31),'yellow')
+        self.solid('hoist',(6,11.6,0),(3,1.6,3),'blue');self.beam('hook-cable',(6,10.8,0),(6,4.3,0),.18,'steel')
+        self.scene.sign('dress-'+self.name+'-title','КАМЕРЫ ВЫДЕРЖКИ 01–03',self.position((0,11.5,-15.8)),self.yaw+180,34,2)
+
+    def reinforcement_yard(self):
+        # A shared rack line sorts reinforcement by length. The long loading
+        # front and overhead beam make one works yard, not unrelated objects.
+        for bay,x in enumerate((-24,-8,8,24)):
+            for z in (-10,10):
+                self.solid(f'rack-foot-{bay}-{z}',(x,.4,z),(11,.8,2),'concrete')
+                for side in (-1,1):self.solid(f'rack-upright-{bay}-{z}-{side}',(x+side*5,4,z),(.55,8,.55),'steel')
+                for y in (2,5,7):self.solid(f'rack-beam-{bay}-{z}-{y}',(x,y,z),(11,.5,.65),'blue')
+            for y in (2.4,5.4):
+                for offset in (-3,-1,1,3):
+                    self.beam('stored-rebar',(x+offset,y,-11),(x+offset,y,11),.24 if bay%2 else .38,'steel')
+                    self.beam('bundle-upper',(x+offset,y+.35,-10.5),(x+offset,y+.35,10.5),.22,'rust')
+            self.detail('bundle-label',(x,3,-11.6),(3,1.2,.18),'ivory')
+        for x in (-30,30):self.solid('loading-post-'+str(x),(x,5.7,-12),(1,11.4,1),'yellow')
+        self.solid('shared-loading-beam',(0,11.4,-12),(62,1.2,1.4),'yellow')
+        self.solid('loading-trolley',(5,10.5,-12),(3,1.4,2),'blue')
+        self.scene.sign('dress-'+self.name+'-title','АРМАТУРНЫЙ ДВОР',self.position((0,9.5,-12.8)),self.yaw+180,38,2.2)
+
+    def span_assembly_yard(self):
+        # The two long beam sets are assembled on transport stools, with an
+        # erection portal and bearing preparation inside the same work area.
+        for lane,z in enumerate((-8,8)):
+            for x in (-17,0,17):self.solid(f'transport-stool-{lane}-{x}',(x,.7,z),(3,1.4,8),'wood')
+            self.solid('beam-web-'+str(lane),(0,3,z),(44,3,1.4),'concrete')
+            for y in (1.7,4.5):self.solid(f'beam-flange-{lane}-{y}',(0,y,z),(44,.8,6),'concrete')
+            for x in (-17,17):self.detail('lifting-mark',(x,4.98,z),(1.2,.14,1.2),'yellow')
+        for x in (-23,23):
+            self.solid('portal-foot-'+str(x),(x,.5,0),(2,1,5))
+            self.solid('portal-leg-'+str(x),(x,7.5,0),(.9,15,.9),'steel')
+            self.beam('portal-brace',(x,11,0),(x*.8,15,0),.4,'steel')
+        self.solid('assembly-crosshead',(0,15,0),(48,1.4,1.4),'yellow')
+        self.solid('assembly-winch',(0,13.7,0),(3,1.2,3),'blue')
+        self.scene.sign('dress-'+self.name+'-title','СБОРКА ПРОЛЁТОВ',self.position((0,12, -.85)),self.yaw+180,36,2)
+
+    def bearing_delivery(self):
+        for i,x in enumerate((-8,0,8)):
+            self.solid('delivery-skid-'+str(i),(x,.4,0),(6,.8,12),'wood')
+            self.solid('bearing-block-'+str(i),(x,3,1),(5,5,8),'concrete')
+            self.solid('steel-bearing-'+str(i),(x,6,1),(4,1,6),'steel')
+            self.detail('rubber-bearing',(x,6.8,1),(3.7,.6,5.7),'rubber')
+            for z in (-2,3):self.detail('shipping-restraint',(x,7.2,z),(5.2,.2,.2),'yellow')
+
+    def foundation_phases(self):
+        # The three existing caps show different steps in one foundation pour.
+        # New cages stay within their existing concrete footprints.
+        for i,b in enumerate([b for b in self.scene.data['boxes'] if b['id'].startswith('pile-cap-')]):
+            c,s=b['center'],b['size'];self.origin=(c['x'],-14,c['z']);self.yaw=0;self.name='foundation-phase-'+str(i)
+            for x in (-s['x']/2+2,s['x']/2-2):
+                for z in (-s['z']/2+2,s['z']/2-2):
+                    self.solid(f'cage-upright-{x}-{z}',(x,6,z),(.3,8,.3),'steel')
+            for y in (4.5,6,7.5,9):
+                for z in (-s['z']/2+2,s['z']/2-2):self.beam('horizontal-cage',( -s['x']/2+2,y,z),(s['x']/2-2,y,z),.14,'rust')
+                for x in (-s['x']/2+2,s['x']/2-2):self.beam('cage-return',(x,y,-s['z']/2+2),(x,y,s['z']/2-2),.14,'steel')
+            self.installed.append(dict(id=self.name,x=c['x'],z=c['z'],radius=math.hypot(s['x'],s['z'])/2))
+        self.origin=(547,-14,596);self.yaw=0;self.name='excavation-reclaim-run'
+        for side in (-1,1):self.solid('channel-bank-'+str(side),(side*2,.4,0),(.65,.8,48),'concrete')
+        self.solid('settling-sump',(0,.55,22),(4,1.1,4),'steel')
+        for z in (20.8,21.6,22.4,23.2):self.detail('sump-grille',(0,1.16,z),(3.7,.12,.18),'black')
+        self.beam('pump-return',(-20,1.5,-28),(-20,1.5,-24),.55,'steel')
+        self.beam('collection-main',(-20,1.5,-24),(0,1.5,-24),.55,'steel')
+        self.beam('settling-main',(0,1.5,-24),(0,1.5,20),.55,'steel')
+        self.installed.append(dict(id=self.name,x=547,z=596,radius=25))
+
     def precast_beams(self):
         # Three manufactured bridge beams on transport sleepers, with lifting eyes.
         for j,z in enumerate((-4,4)):
@@ -334,6 +419,50 @@ class ConstructionDressing:
                 for xx in (-1.5,1.5):self.detail('pipe-retainer',(xx,y,0),(.2,1.6,1),'black')
                 self.installed.append(dict(id=self.name,x=x,z=z,radius=2.8))
 
+    def mixer_core(self):
+        # The existing 30 x 35 m process tower receives the three silo feeds.
+        # Its north face now discharges into a real supported batching hopper;
+        # a service gallery links that assembly back to the tower. Every large
+        # part is a canonical solid or the already prepared hopper mesh collider.
+        self.name='main-mixer';self.origin=(1120,0,547.5);self.yaw=0
+        self.scene.anchor='plant-mixer-core';self.scene.group=''
+        self.solid('hopper-foundation',(0,.5,22.5),(11,1,11))
+        self.tank('discharge-hopper',(0,1,22.5),5,14)
+        self.solid('transfer-hood',(0,13,18.5),(7,3,7),'blue')
+        self.solid('outlet-mouth',(0,2.4,27),(4.5,2.2,2),'steel')
+        self.solid('outlet-tray',(0,1.3,28.25),(4.5,.45,2.5),'steel')
+        for x in (-2.15,2.15):self.solid('outlet-cheek-'+str(x),(x,1.9,28.25),(.25,.8,2.5),'blue')
+        # Posts meet the ground and the gallery; brackets enter the tower face.
+        self.solid('service-gallery',(0,16.6,19),(32,.5,4),'steel')
+        for x in (-12,12):
+            self.solid('gallery-post-'+str(x),(x,8.25,19.8),(.6,16.5,.6),'steel')
+            self.solid('gallery-foot-'+str(x),(x,.2,19.8),(1.8,.4,1.8))
+            self.solid('gallery-bracket-'+str(x),(x,15.9,18.2),(1,1,3.4),'steel')
+        for x in range(-15,16,5):
+            self.solid('gallery-rail-post-'+str(x),(x,17.65,20.8),(.16,1.7,.16),'yellow')
+        self.solid('gallery-top-rail',(0,18.45,20.8),(31,.15,.15),'yellow')
+        self.solid('gallery-mid-rail',(0,17.7,20.8),(31,.15,.15),'yellow')
+        for side in (-1,1):
+            self.solid('gallery-side-rail-'+str(side),(side*15.4,18.45,19),(.15,.15,3.7),'yellow')
+        # The maintenance ladder and pressed panel seams are small surface
+        # details; they do not introduce broad invisible collision boxes.
+        self.scene.anchor='plant-mixer-core'
+        for x in (-15.8,-17):self.beam('ladder-side',(x,.4,16),(x,18.4,16),.16,'steel')
+        for rung in range(1,37):
+            y=rung*.5
+            self.beam('ladder-rung',(-17,y,16),(-15.8,y,16),.11,'steel')
+        for y in (4,8,12,16):
+            self.beam('ladder-stay',(-17,y,16),(-14.8,y,16),.12,'steel')
+        for x in (-12,-6,0,6,12):
+            self.detail('process-panel-rib',(x,10,17.75),(.2,11,.3),'blue')
+            self.detail('upper-panel-rib',(x,22,17.75),(.2,6,.3),'blue')
+        for x in (-7,7):
+            self.detail('inspection-cover',(x,20.5,17.8),(3.6,2.5,.45),'blue')
+            for xx in (-1.4,1.4):
+                for yy in (-.85,.85):self.detail('cover-fastener',(x+xx,20.5+yy,18.07),(.18,.18,.12),'steel')
+        self.scene.sign('mixer-process-title','СМЕСИТЕЛЬ 01',(1120,24,565.6),0,23,2.5)
+        self.installed.append(dict(id=self.name,x=1120,z=566,radius=18))
+
     def deck_guardrails(self):
         # Short, side-mounted erection guards leave the entire 34 m driving deck
         # open. Their brackets enter only the slab side below its driving top.
@@ -449,7 +578,28 @@ def dress(scene):
     for name,candidates,footprint,builder,yaw in foreground:
         d.place(name,candidates,footprint,builder,yaw)
     d.feed_supports()
+    d.mixer_core()
     d.deck_guardrails()
+    # Reviewed empty fields become specific parts of the production sequence.
+    # Their complete envelopes reserve both the road margin and pickup access.
+    for name,candidates,footprint,builder in [
+        ('dispatch-curing-yard',[(1225,848),(1245,850),(1260,845)],(52,34),d.curing_yard),
+        ('frame-reinforcement-yard',[(480,1150),(450,1145),(540,1150)],(64,30),d.reinforcement_yard),
+        ('interchange-span-yard',[(1530,1010),(1525,1000),(1530,1050)],(50,34),d.span_assembly_yard),
+        ('interchange-exit-bearings',[(1570,1155),(1570,1120),(1545,1180)],(24,18),d.bearing_delivery),
+        ('aggregate-screening-inlet',[(925,431),(931,431),(925,432)],(15,32),d.conveyor_drive),
+    ]:
+        assert d.place(name,candidates,footprint,builder,pickup_clearance=8),name
+        title,function,route={
+            'dispatch-curing-yard':('Камеры выдержки','Три формы и общий мостовой подъёмник для выдержки и выдачи панелей','Погрузочный двор у factory-dispatch'),
+            'frame-reinforcement-yard':('Арматурный двор','Сортировка стержней по длине и общая линия погрузки','Северный хозяйственный проезд за недостроем'),
+            'interchange-span-yard':('Сборка пролётов','Сборка двух балок на транспортных опорах под монтажным порталом','Восточная дорога обслуживания развязки'),
+            'interchange-exit-bearings':('Доставка опорных частей','Опорные блоки и упругие подушки в транспортной упаковке','Карман у северо-восточного съезда'),
+            'aggregate-screening-inlet':('Приём заполнителей','Грохот и транспортер в существующем открытом бункере','Служебный подъезд от складов к силосам'),
+        }[name]
+        x,_,z=d.origin;w,depth=footprint
+        scene.location.site(name,title,function,route,[x-w/2,x+w/2,z-depth/2,z+depth/2],'production-yard')
+    d.foundation_phases()
     # Lettering sits above the existing south wall surfaces, facing arrivals
     # from the warehouse/dispatch approach. No new billboard obscures a route.
     scene.anchor='plant-south-wing'

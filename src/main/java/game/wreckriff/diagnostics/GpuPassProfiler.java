@@ -12,11 +12,16 @@ public final class GpuPassProfiler implements CombatVfxFilter.Probe,AutoCloseabl
     private final Queries queries;
     private final int[] ids;
     private final String[] pending=new String[8];
+    private final boolean[] measured=new boolean[8];
     private final Map<String,FrameMetrics> passes=new LinkedHashMap<>();
+    private final Map<String,FrameMetrics> combatPasses=new LinkedHashMap<>();
     private int active=-1;
     private long skipped;
+    private long submitted,combatSubmitted,combatSkipped,discarded,combatDiscarded;
+    private boolean measuredCombat;
     private boolean closed;
     GpuPassProfiler(Queries queries){this.queries=queries;ids=queries.allocate(16);}
+    void measuredCombatFrame(boolean eligible){measuredCombat=eligible;}
     public static GpuPassProfiler create() {
         var caps=GL.getCapabilities();if(!caps.OpenGL33&&!caps.GL_ARB_timer_query)return null;
         return new GpuPassProfiler(new Queries() {
@@ -34,11 +39,11 @@ public final class GpuPassProfiler implements CombatVfxFilter.Probe,AutoCloseabl
         passes.computeIfAbsent(pass,key->new FrameMetrics());
         for(int i=0;i<pending.length;i++)if(pending[i]!=null&&queries.available(ids[i*2+1])&&queries.available(ids[i*2])) {
             long start=queries.nanos(ids[i*2]),end=queries.nanos(ids[i*2+1]);
-            if(end>=start)passes.get(pending[i]).add((end-start)/1_000_000_000.0);
+            if(end>=start){passes.get(pending[i]).add((end-start)/1_000_000_000.0);if(measured[i])combatPasses.computeIfAbsent(pending[i],key->new FrameMetrics()).add((end-start)/1_000_000_000.0);}
             pending[i]=null;
         }
-        for(int i=0;i<pending.length;i++)if(pending[i]==null){active=i;pending[i]=pass;queries.timestamp(ids[i*2]);return;}
-        skipped++;
+        for(int i=0;i<pending.length;i++)if(pending[i]==null){active=i;pending[i]=pass;measured[i]=measuredCombat;submitted++;if(measuredCombat)combatSubmitted++;queries.timestamp(ids[i*2]);return;}
+        skipped++;if(measuredCombat)combatSkipped++;
     }
     @Override public void end(String pass) {
         if(active<0)return;
@@ -47,12 +52,20 @@ public final class GpuPassProfiler implements CombatVfxFilter.Probe,AutoCloseabl
     }
     public Map<String,Object> snapshot() {
         var values=new LinkedHashMap<String,Object>();passes.forEach((key,value)->values.put(key,value.snapshot()));
-        return Map.of("status","SUPPORTED","measurement","Asynchronous GL timestamp pairs; scene color resolve and VFX draw included",
-                "queryPairs",8,"skippedSamples",skipped,"passes",values);
+        return Map.of("status","SUPPORTED","measurement","Asynchronous GL timestamp pairs: color resolve, Translucent queue and fullscreen composite only; excludes opaque/Transparent debris and lighting",
+                "scope","Whole diagnostic run, including loading, warmup, pause and Results","queryPairs",8,"skippedSamples",skipped,"passes",values,
+                "submittedSamples",submitted,"pendingSamples",pendingCount(false),"discardedSamples",discarded);
     }
+    Map<String,Object> measuredCombatSnapshot() {
+        var values=new LinkedHashMap<String,Object>();combatPasses.forEach((key,value)->values.put(key,value.snapshot()));
+        return Map.of("measurement","Origin-frame eligibility; color resolve + Translucent queue + fullscreen composite, not total VFX cost",
+                "passes",values,"submittedSamples",combatSubmitted,"pendingSamples",pendingCount(true),"discardedSamples",combatDiscarded,"skippedSamples",combatSkipped);
+    }
+    private long pendingCount(boolean combatOnly){long count=0;for(int i=0;i<pending.length;i++)if(pending[i]!=null&&i!=active&&(!combatOnly||measured[i]))count++;return count;}
     @Override public void close() {
         if(closed)return;
         if(active>=0)end(pending[active]);
+        discarded+=pendingCount(false);combatDiscarded+=pendingCount(true);Arrays.fill(pending,null);
         for(int id:ids)queries.delete(id);closed=true;
     }
 }

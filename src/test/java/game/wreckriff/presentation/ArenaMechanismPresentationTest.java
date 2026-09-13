@@ -8,6 +8,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ArenaMechanismPresentationTest {
     @Test void originalLoadArmAndServiceCarStayInsideTheirNativeEnvelopeWithFewBatches() {
         for(String arenaId:List.of("construction_17","euphoria_park","neon_zero")) {

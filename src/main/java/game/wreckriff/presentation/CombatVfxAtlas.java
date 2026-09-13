@@ -4,6 +4,8 @@ import com.google.gson.*;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.TextureKey;
 import com.jme3.material.Material;
+import com.jme3.renderer.Caps;
+import com.jme3.texture.Image;
 import com.jme3.texture.Texture;
 import com.jme3.texture.image.ColorSpace;
 import java.io.*;
@@ -38,13 +40,20 @@ public final class CombatVfxAtlas {
         }
         var textures=new LinkedHashMap<String,Texture>();
         for(String name:List.of("smoke","flame","blast","dust","auxiliary")) {
-            TextureKey key=new TextureKey("textures/vfx/"+name+".png",false);key.setGenerateMips(true);
+            boolean compressed=!name.equals("auxiliary");
+            TextureKey key=new TextureKey("textures/vfx/"+name+(compressed?".dds":".png"),false);key.setGenerateMips(!compressed);
             Texture texture=assets.loadTexture(key);
+            if(compressed&&(texture.getImage().getFormat()!=Image.Format.DXT5||texture.getImage().getWidth()!=2048||texture.getImage().getHeight()!=2048
+                    ||texture.getImage().getMipMapSizes()==null||texture.getImage().getMipMapSizes().length!=12))
+                throw new IllegalStateException("Missing prepared BC3 VFX mip chain: "+key.getName()+"; run explicit asset preparation before Gradle");
             texture.setMinFilter(Texture.MinFilter.Trilinear);texture.setMagFilter(Texture.MagFilter.Bilinear);
             texture.setWrap(Texture.WrapMode.EdgeClamp);texture.getImage().setColorSpace(ColorSpace.sRGB);
             textures.put(name,texture);
         }
         return new CombatVfxAtlas(definitions,textures);
+    }
+    public static void requireSupported(Set<Caps> caps) {
+        if(!caps.contains(Caps.TextureCompressionS3TC))throw new IllegalStateException("Wreck Riff requires native S3TC/BC3 texture compression for prepared combat VFX");
     }
     public Explosion explosion(String kind) {
         Explosion result=explosions.get(kind);
@@ -58,6 +67,7 @@ public final class CombatVfxAtlas {
         long bytes=0;
         for(Texture texture:textures.values()) {
             int width=texture.getImage().getWidth(),height=texture.getImage().getHeight();
+            if(texture.getImage().getFormat()==Image.Format.DXT5){bytes+=CombatVfxDds.mipBytes(width);continue;}
             do {bytes+=(long)width*height*4;width=Math.max(1,width/2);height=Math.max(1,height/2);}while(width>1||height>1);
             bytes+=4;
         }

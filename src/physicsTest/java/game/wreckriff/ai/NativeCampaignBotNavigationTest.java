@@ -16,11 +16,18 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Authored road colliders and the real shared driver. No transform correction during a route. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeCampaignBotNavigationTest {
     static final ArenaRegistry REGISTRY=ArenaRegistry.load();
     static final VehicleRules RULES=VehicleRules.load();
     static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
     static final Map<String,ArenaContent> CONTENT=new HashMap<>();
+    @org.junit.jupiter.api.AfterAll
+    static void releaseContent() {
+        // Rig borrowers share these scenes only for the lifetime of their test class.
+        CONTENT.clear();
+        NativeArenaAssets.MANAGER.clearCache();
+    }
     record ReviewRoute(String arenaId,String id,String kind,List<ArenaDefinition.Vec3> points) {}
     record ReviewRoutes(int schemaVersion,List<ReviewRoute> routes) {}
     static final List<ReviewRoute> REVIEW_ROUTES=reviewRoutes();
@@ -126,7 +133,17 @@ class NativeCampaignBotNavigationTest {
                 route.points().get(1).vector().subtract(start).setY(0).normalizeLocal(),targets)) {
             var camera=new Camera(1920,1080);var cameraRules=CameraRules.load();var chase=new ChaseCamera(camera,cameraRules);
             boolean arrived=false;int reached=0;var trace=new ArrayDeque<String>();
-            for(int tick=0;tick<7200&&!arrived;tick++) {
+            // The complete 1,778m homes inspection needs at least 86 seconds at
+            // Foreman's 20.6m/s cruise before its five turns. These two complete
+            // district circuits are not the separate 60-90s wall-clock benchmark.
+            // Preserve one continuous physics drive through every original point.
+            int budgetTicks=arenaId.equals("construction_17")&&kind.equals("district")
+                    &&(roofId.equals("homes")||roofId.equals("warehouses"))?14400:7200;
+            // Lake covers all three bridges, both directions of the curved span
+            // and its explicit turn: about 1,230m / 25 goals. Grinder's complete
+            // physical drive exceeds 60s even without a stop or recovery.
+            if(arenaId.equals("euphoria_park")&&kind.equals("district")&&roofId.equals("lake"))budgetTicks=10800;
+            for(int tick=0;tick<budgetTicks&&!arrived;tick++) {
                 rig.tick();var position=rig.world.position(rig.id);
                 if(tick%300==0) {
                     if(trace.size()==12)trace.removeFirst();
@@ -189,30 +206,40 @@ class NativeCampaignBotNavigationTest {
 
     static final class Rig implements AutoCloseable {
         final PhysicsWorld world=new PhysicsWorld(RULES);final MatchSession session;final ArenaSystems systems;
-        final BotController bots;final VehicleController driver;final int id;final List<GameEvent> events=new ArrayList<>();
-        final List<ArenaDefinition.Pickup> routeTargets;int waypointIndex;
+        BotController bots;final VehicleController driver;final int id;final List<GameEvent> events=new ArrayList<>();
+        final ArenaDefinition routingArena;final List<ArenaDefinition.Pickup> routeTargets;int waypointIndex,controllerWaypoint;
         game.wreckriff.input.VehicleCommand command;
         Rig(ArenaDefinition arena,int participant,boolean boss,Vector3f start,Vector3f direction) {
             this(arena,participant,boss,start,direction,null);
         }
         Rig(ArenaDefinition arena,int participant,boolean boss,Vector3f start,Vector3f direction,List<ArenaDefinition.Pickup> targets) {
-            routeTargets=targets;
+            routeTargets=targets;routingArena=arena;
             session=new MatchSession(73,arena,boss?MatchSession.Mode.BOSS_DUEL:
                     arena.bosses().isEmpty()?MatchSession.Mode.LEGACY:MatchSession.Mode.ARENA,COMBAT);
             id=boss?session.registerBoss(arena.bosses().getFirst()).id:participant;
             for(var state:session.vehicles)state.hp=state.id==id?state.maximumHp*.1f:0;
             session.phase=boss?MatchSession.Phase.BOSS_COMBAT:MatchSession.Phase.ARENA_COMBAT;
             var content=CONTENT.computeIfAbsent(arena.id(),key->new ArenaFactory(NativeArenaAssets.MANAGER).build(REGISTRY.definition(key)));
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             world.configureArena(arena);
             var profile=boss?VehicleProfile.boss(session.vehicle(id).profileId,RULES):VehicleProfile.player(session.vehicle(id).profileId,RULES);
             world.addVehicle(id,start.add(0,profile.roadOffset()+.3f,0),new Quaternion().fromAngleAxis((float)Math.atan2(direction.x,direction.z),Vector3f.UNIT_Y),profile);
             for(int tick=0;tick<360;tick++)world.step();
             driver=new VehicleController(world,session.vehicle(id),RULES,arena.bounds(),arena.metadata().recoveryCost());driver.recordSafePose(0);
-            systems=new ArenaSystems(session,arena);bots=new BotController(session,arena,new NavGraph(arena),AiRules.load(),
+            systems=new ArenaSystems(session,arena);bots=controllerForCurrentGoal();
+        }
+        private BotController controllerForCurrentGoal() {
+            var goalArena=routeTargets==null?routingArena:routingArena.withPickups(List.of(routeTargets.get(waypointIndex)));
+            controllerWaypoint=waypointIndex;
+            return new BotController(session,goalArena,new NavGraph(goalArena),AiRules.load(),
                     ()->routeTargets==null?systems.activePickups():List.of(routeTargets.get(waypointIndex)));
         }
         void tick() {
+            // This fixture measures consecutive physical drives, not persistent AI
+            // supply memory. Give the ordinary controller exactly one goal at a
+            // time: future hidden repair sockets otherwise become valid unknown
+            // supply candidates. Physics, momentum, driver, camera and clock never reset.
+            if(routeTargets!=null&&controllerWaypoint!=waypointIndex)bots=controllerForCurrentGoal();
             command=bots.commands(world).get(id).withoutAttacks();var recovery=driver.prepare(command,session.tick);
             assertFalse(recovery.recovered()||recovery.fatal(),"Native route used recovery: "+world.position(id)+" / "+bots.navigation(id));
             systems.beforePhysics(world,Map.of(id,driver));driver.drive(command);world.step();

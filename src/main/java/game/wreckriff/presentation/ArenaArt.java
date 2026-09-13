@@ -22,11 +22,12 @@ import java.util.*;
 
 /** Loads local authored scenery. Layout/randomisation belongs to the offline authoring source. */
 public final class ArenaArt {
-    public enum Motion { STATIC, ROTATE_Z, SWAY_Z, STEAM, PULSE, SCREEN }
+    public enum Motion { STATIC, ROTATE_Z, ORBIT_Z, SWAY_Z, STEAM, PULSE, SCREEN }
     public enum Shape { BOX, CYLINDER, SPHERE, PATCH }
-    public record Group(String id,ArenaDefinition.Vec3 position,Motion motion,float period,float phase) {
+    public record Group(String id,ArenaDefinition.Vec3 position,Motion motion,float period,float phase,float radius) {
         public Group {Objects.requireNonNull(position);Objects.requireNonNull(motion);
-            if(id==null||id.isBlank()||!Float.isFinite(period)||period<=0||!Float.isFinite(phase))throw new IllegalArgumentException("Invalid art group");}
+            if(id==null||id.isBlank()||!Float.isFinite(period)||period<=0||!Float.isFinite(phase)
+                    ||!Float.isFinite(radius)||radius<0||motion==Motion.ORBIT_Z&&radius<=0)throw new IllegalArgumentException("Invalid art group");}
     }
     public record Part(String id,String group,String anchor,Shape shape,String material,
             ArenaDefinition.Vec3 position,ArenaDefinition.Vec3 size,ArenaDefinition.Vec3 rotation) {
@@ -183,7 +184,10 @@ public final class ArenaArt {
                 visual.setQueueBucket(RenderQueue.Bucket.Transparent);visual.setShadowMode(RenderQueue.ShadowMode.Off);
             } else {
                 material=materials.material(part.material());
-                if(!part.group().isEmpty())material=material.clone();
+                if(!part.group().isEmpty()) {
+                    Motion motion=definitions.get(part.group()).motion();
+                    if(motion!=Motion.ROTATE_Z&&motion!=Motion.ORBIT_Z)material=material.clone();
+                }
                 if(part.material().startsWith("light-")||size.y()<.1f)visual.setShadowMode(RenderQueue.ShadowMode.Off);
             }
             visual.setMaterial(material);
@@ -212,7 +216,7 @@ public final class ArenaArt {
                 Node node=groups.computeIfAbsent(groupKey,ignored->{
                     Group group=definitions.get(part.group());Node motion=new Node("art-motion-"+group.id());
                     motion.setLocalTranslation(group.position().vector());motion.setUserData("artMotion",group.motion().name());
-                    motion.setUserData("artPeriod",group.period());motion.setUserData("artPhase",group.phase());
+                    motion.setUserData("artPeriod",group.period());motion.setUserData("artPhase",group.phase());motion.setUserData("artRadius",group.radius());
                     parent.attachChild(motion);return motion;
                 });node.attachChild(visual);
             }
@@ -224,6 +228,19 @@ public final class ArenaArt {
         for(var entry:anchorStatics.entrySet()) {
             Node statics=entry.getValue();statics.updateGeometricState();GeometryBatchFactory.optimize(statics,false);
             anchors.get(entry.getKey()).attachChild(statics);
+        }
+        for(Node group:groups.values()) {
+            Motion motion=Motion.valueOf(group.getUserData("artMotion"));
+            if(motion==Motion.ROTATE_Z||motion==Motion.ORBIT_Z) {
+                // Rigid assemblies retain their own motion/bounds, but each beam,
+                // window frame and cabin panel must not become a separate draw.
+                // jME bakes WORLD matrices and resets the optimized node. Build
+                // in the assembly's own space, then restore its authored pivot.
+                Node parent=group.getParent();Transform pose=group.getLocalTransform().clone();
+                group.removeFromParent();group.setLocalTransform(Transform.IDENTITY);
+                group.updateGeometricState();GeometryBatchFactory.optimize(group,false);
+                group.setLocalTransform(pose);parent.attachChild(group);
+            }
         }
         Map<String,Spatial> prototypes=new HashMap<>();
         SurfaceMaterials.lightingDefinition(assets);
@@ -246,7 +263,7 @@ public final class ArenaArt {
                 parent=groups.computeIfAbsent(groupKey,ignored->{
                     Group group=definitions.get(model.group());Node motion=new Node("art-motion-"+group.id());
                     motion.setLocalTranslation(group.position().vector());motion.setUserData("artMotion",group.motion().name());
-                    motion.setUserData("artPeriod",group.period());motion.setUserData("artPhase",group.phase());owner.attachChild(motion);return motion;
+                    motion.setUserData("artPeriod",group.period());motion.setUserData("artPhase",group.phase());motion.setUserData("artRadius",group.radius());owner.attachChild(motion);return motion;
                 });
             }
             parent.attachChild(instance);

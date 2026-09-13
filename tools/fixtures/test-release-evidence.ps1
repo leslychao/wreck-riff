@@ -8,7 +8,22 @@ $work=Join-Path $root ('build/release-tool-fixtures/'+[Guid]::NewGuid().ToString
 $script:checks=0
 function Check([bool]$Condition,[string]$Name) {if(!$Condition){throw "Fixture failed: $Name"};$script:checks++}
 function Reject([scriptblock]$Action,[string]$Name) {$rejected=$false;try {& $Action} catch {$rejected=$true};Check $rejected $Name}
-function Clone($Value){return $Value | ConvertTo-Json -Depth 30 | ConvertFrom-Json}
+function Clone($Value){
+    $json=$Value | ConvertTo-Json -Depth 30
+    # PowerShell 7.5 otherwise silently changes ISO strings to DateTime during a
+    # clone, letting unrelated process-identity failures mask a broken gate.
+    if((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind')){return ConvertFrom-Json -InputObject $json -DateKind String}
+    return ConvertFrom-Json -InputObject $json
+}
+$hashFixture=Join-Path $work 'hash [literal].bin'
+[IO.File]::WriteAllBytes($hashFixture,[Text.Encoding]::ASCII.GetBytes('abc'))
+& {
+    function Get-FileHash {throw 'Simulated unavailable PowerShell file-hash command'}
+    Check ((Get-ReleaseSha256 $hashFixture) -ceq 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad') 'release SHA-256 works without command autoload and treats brackets literally'
+}
+$exclusiveHash=[IO.File]::Open($hashFixture,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
+try {Check ($exclusiveHash.Length -eq 3) 'hashing releases its file handle'} finally {$exclusiveHash.Dispose()}
+Reject {Get-ReleaseSha256 (Join-Path $work 'missing-hash.bin')} 'missing hash input is rejected'
 $nativeFixture=Join-Path $work 'native stderr fixture.cmd'
 [IO.File]::WriteAllText($nativeFixture,"@echo off`r`necho stdout-before`r`necho INFO: ordinary native stderr 1>&2`r`necho stdout-after`r`nexit /b %1`r`n",[Text.UTF8Encoding]::new($false))
 $nativeLog=Join-Path $work 'native-success.log'
@@ -22,6 +37,27 @@ Check ($null -ne $nativeFailure -and $nativeFailure.Exception.Data['exitCode'] -
 $nativeText=[IO.File]::ReadAllText($nativeLog)
 Check ($nativeText.Contains('ordinary native stderr') -and $nativeText.Contains('stdout-after')) 'native failure preserves complete stderr and stdout log'
 Check ($ErrorActionPreference -eq 'Stop') 'native failure restores caller error handling'
+$peakChildScript=Join-Path $work 'peak-child.ps1';$peakReady=Join-Path $work 'peak-ready';$peakRelease=Join-Path $work 'peak-release'
+[IO.File]::WriteAllText($peakChildScript,@'
+param([string]$Ready,[string]$Release)
+[byte[]]$bytes=New-Object byte[] (32MB)
+for($i=0;$i -lt $bytes.Length;$i+=4096){$bytes[$i]=42}
+[IO.File]::WriteAllText($Ready,'ready')
+$deadline=[DateTime]::UtcNow.AddSeconds(15)
+while(!(Test-Path -LiteralPath $Release) -and [DateTime]::UtcNow -lt $deadline){Start-Sleep -Milliseconds 50}
+'@,[Text.UTF8Encoding]::new($false))
+$peakChild=Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList @('-NoProfile','-File',$peakChildScript,$peakReady,$peakRelease) -WindowStyle Hidden -PassThru
+try {
+    $peakHandle=$peakChild.Handle;$deadline=[DateTime]::UtcNow.AddSeconds(15)
+    while(!(Test-Path -LiteralPath $peakReady) -and !$peakChild.HasExited -and [DateTime]::UtcNow -lt $deadline){Start-Sleep -Milliseconds 50}
+    Check (Test-Path -LiteralPath $peakReady) 'owned headless memory fixture allocated and touched its pages'
+    $livePeak=Get-ReleaseProcessPeakWorkingSet $peakHandle
+    Check ($livePeak -ge 32MB) 'native sampler observes allocated process working-set peak'
+    [IO.File]::WriteAllText($peakRelease,'exit')
+    Check ($peakChild.WaitForExit(15000) -and $peakChild.ExitCode -eq 0) 'owned memory fixture exits normally'
+    Check ((Get-ReleaseProcessPeakWorkingSet $peakHandle) -ge $livePeak) 'retained process handle preserves OS peak after exit'
+} finally {if(!$peakChild.HasExited){$peakChild.Kill();$null=$peakChild.WaitForExit(15000)}}
+Reject {Get-ReleaseProcessPeakWorkingSet ([IntPtr]::Zero)} 'unavailable final OS counter cannot be silently treated as zero'
 $unicodeName=([char]0x041f).ToString()+[char]0x0440+[char]0x043e+[char]0x0432+[char]0x0435+[char]0x0440+[char]0x043a+[char]0x0430
 $unicodePath=Join-Path $work "$unicodeName final ZIP/nested/$unicodeName.json"
 Write-ReleaseJson $unicodePath ([ordered]@{name=$unicodeName;nested=@{path=$unicodePath;captures=@(@{path=$unicodePath;label=$unicodeName})}})
@@ -183,15 +219,42 @@ foreach($crash in @('Exception in thread "decoder" java.lang.IllegalStateExcepti
     [IO.File]::WriteAllText($processLog,'')
 }
 $at=[DateTime]::UtcNow;$processAt=$at.AddSeconds(-1).ToString('o')
-$samples=@(0..1801 | ForEach-Object {[pscustomobject]@{seconds=$_;observedAtUtc=$at.AddSeconds($_).ToString('o');workingSetBytes=1000000;handles=100}})
-$memory=[pscustomobject]@{pid=123;processExited=$true;processStartTimeUtc=$processAt;samples=$samples;peakWorkingSetBytes=1000000}
+$samples=@(0..1801 | ForEach-Object {[pscustomobject]@{seconds=$_+1;observedAtUtc=$at.AddSeconds($_).ToString('o');workingSetBytes=1000000;peakWorkingSetBytes=1000000;handles=100}})
+$memory=[pscustomobject]@{pid=123;processExited=$true;processStartTimeUtc=$processAt;samples=$samples;peakWorkingSetBytes=1000000;finalPeakWorkingSetBytes=1000000;finalPeakObservedAfterExit=$true}
 $report=[pscustomobject]@{status='PASS';gamePid=123;processStartTimeUtc=$processAt}
 $diagnostic=[pscustomobject]@{status='BENCHMARK_MEASURED';mode='benchmark';arenaId='construction_17';pid=123;releaseEligible=$true;
-    width=1920;height=1080;msaaSamples=4;vsync=$false;audioEnabled=$true;windowVisible=$true;autoIconify=$true;detailedProfiling=$false;invalidBenchmarkWindowObserved=$false;
+    width=1920;height=1080;msaaSamples=4;vsync=$false;audioEnabled=$true;windowVisible=$true;autoIconify=$true;detailedProfiling=$false;videoRecording=$false;requestedRenderFps=0;invalidBenchmarkWindowObserved=$false;
     requestedSeconds=600;warmupActiveSeconds=30;measuredActiveSeconds=600;undrawableSeconds=0;
     activeCombatFrames=[pscustomobject]@{sampleSeconds=600;frames=36000;p95FrameMs=16;p99FrameMs=20;maxFrameMs=80;framesOver100ms=0};
     phaseMetrics=[pscustomobject]@{droppedSimulationSeconds=0};measuredCoverage=[pscustomobject]@{arenaCombatSeconds=300;bossCombatSeconds=300;maximumEffects=1;maximumLaunchingVehicles=1}}
 Assert-ReleaseBenchmark $report $diagnostic $memory 'construction_17';$script:checks++
+$profileEnvironment=Clone $diagnostic;$profileEnvironment.detailedProfiling=$true
+Assert-ReleaseCombatEnvironment $profileEnvironment $true;$script:checks++
+Reject {Assert-ReleaseCombatEnvironment $diagnostic $true} 'explicit short profile must actually enable its profiler'
+$profileEnvironment.videoRecording=$true
+Reject {Assert-ReleaseCombatEnvironment $profileEnvironment $true} 'profiling permission does not permit video in performance evidence'
+$validPeak=Clone $memory;foreach($sample in $validPeak.samples){$sample.peakWorkingSetBytes=1200000};$validPeak.peakWorkingSetBytes=1300000;$validPeak.finalPeakWorkingSetBytes=1300000
+Assert-ReleaseBenchmark $report $diagnostic $validPeak 'construction_17';$script:checks++
+$invalid=Clone $memory;foreach($sample in $invalid.samples){$sample.peakWorkingSetBytes=2GB};$invalid.peakWorkingSetBytes=2GB
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'loading peak before the first sample exceeds the budget despite low current RSS'
+$invalid=Clone $memory;foreach($sample in $invalid.samples | Select-Object -Skip 500){$sample.peakWorkingSetBytes=2GB};$invalid.peakWorkingSetBytes=2GB
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'OS peak catches a transient spike between current working-set samples'
+$invalid=Clone $memory;$invalid.samples[500].PSObject.Properties.Remove('peakWorkingSetBytes')
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'working-set snapshots alone do not establish process peak'
+$invalid=Clone $memory;$invalid.samples[500].peakWorkingSetBytes=999999
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'process peak cannot decrease or be below current RSS'
+$invalid=Clone $memory;$invalid.finalPeakWorkingSetBytes=2GB;$invalid.peakWorkingSetBytes=2GB
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'spike after the last live sample is caught by the post-exit OS peak'
+$invalid=Clone $memory;$invalid.finalPeakObservedAfterExit=$false
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'missing post-exit peak is not a memory PASS'
+$invalid=Clone $memory;$invalid.samples[0].seconds=0
+Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'sample time is relative to actual process start, not sampler start'
+$invalid=Clone $diagnostic;$invalid.videoRecording=$true
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'recording cannot supply a release benchmark'
+$invalid=Clone $diagnostic;$invalid.detailedProfiling=$true
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'profile cannot supply a release benchmark'
+$invalid=Clone $diagnostic;$invalid.requestedRenderFps=60
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'capped frame pacing cannot supply a release benchmark'
 $invalid=Clone $diagnostic;$invalid.autoIconify=$false
 Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'final benchmark cannot disable automatic iconification'
 $invalid=Clone $diagnostic;$invalid.autoIconify='true'
@@ -206,6 +269,8 @@ $invalid=Clone $diagnostic;$invalid.phaseMetrics.droppedSimulationSeconds=.001
 Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'interrupted benchmark cannot hide dropped simulation time'
 $invalid=Clone $diagnostic;$invalid.measuredActiveSeconds=599
 Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'short measured run'
+$invalid=Clone $diagnostic;$invalid.requestedSeconds=900
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} '600 active seconds do not satisfy a requested 900-second run'
 $invalid=Clone $diagnostic;$invalid.measuredCoverage.bossCombatSeconds=0
 Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'missing boss coverage'
 $invalid=Clone $diagnostic;$invalid.activeCombatFrames.p95FrameMs=$null
@@ -220,8 +285,10 @@ $invalid=Clone $memory;$invalid.samples=@($invalid.samples | Where-Object {$_.se
 Reject {Assert-ReleaseBenchmark $report $diagnostic $invalid 'construction_17'} 'memory sampling gap'
 $arenaIds=@('dead-air-yard','construction_17','neon_zero','euphoria_park')
 $loadedModes=@('dead-air-yard/LEGACY')+@($arenaIds | Where-Object {$_ -ne 'dead-air-yard'} | ForEach-Object {"$_/ARENA";"$_/BOSS_DUEL"})
-$snapshots=@(0..14 | ForEach-Object {
-    $index=$_;$seconds=10+$index*100;$pair=$loadedModes[[Math]::Min($index,$loadedModes.Count-1)].Split('/')
+$snapshots=@(0..30 | ForEach-Object {
+    $index=$_;$seconds=10+$index*50;$visit=[int][Math]::Floor($index/3);$arena=$arenaIds[$visit%4]
+    $mode=if($arena -eq 'dead-air-yard'){'LEGACY'}elseif(([int][Math]::Floor($visit/4))%2 -eq 0){'ARENA'}else{'BOSS_DUEL'}
+    $pair=@($arena,$mode)
     foreach($stage in @('LOAD','UNLOAD')) {
         [pscustomobject]@{stage=$stage;elapsedSeconds=$seconds;observedAtEpochMillis=([DateTimeOffset]$at.AddSeconds($seconds)).ToUnixTimeMilliseconds();
             arenaId=$pair[0];mode=$pair[1];phase='ARENA_COMBAT';profileId='rivet';topology='fixture';
@@ -231,28 +298,56 @@ $snapshots=@(0..14 | ForEach-Object {
     }
 })
 $soak=[pscustomobject]@{pid=123;status='SOAK_MEASURED';mode='soak';requestedSeconds=1800;
-    soakCoverage=[pscustomobject]@{measuredSeconds=1800;mapChanges=10;retries=20;arenaIds=$arenaIds;loadedModes=$loadedModes;resourcesWarmed=$true;coverageComplete=$true};
-    resourceChecks=[pscustomobject]@{status='PASS';errors=@();unloadComparisons=(@($snapshots | Where-Object {$_.stage -eq 'UNLOAD'}).Count-$loadedModes.Count);minimumUnloadComparisons=3};resourceSnapshots=$snapshots}
+    width=1920;height=1080;msaaSamples=4;vsync=$false;audioEnabled=$true;windowVisible=$true;autoIconify=$true;detailedProfiling=$false;videoRecording=$false;requestedRenderFps=0;undrawableSeconds=0;
+    phaseMetrics=[pscustomobject]@{droppedSimulationSeconds=0};
+    soakCoverage=[pscustomobject]@{measuredSeconds=1800;mapChanges=10;retries=20;completedLoads=31;arenaIds=$arenaIds;loadedModes=$loadedModes;resourcesWarmed=$true;coverageComplete=$true};
+    resourceChecks=[pscustomobject]@{status='PASS';errors=@();unloadComparisons=9;minimumUnloadComparisons=3};resourceSnapshots=$snapshots}
 Assert-ReleaseSoak $report $soak $memory;$script:checks++
+$invalid=Clone $soak;$invalid.width=1280
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'soak must exercise the required framebuffer'
+$invalid=Clone $soak;$invalid.detailedProfiling=$true
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'profile cannot supply a release soak'
+$invalid=Clone $soak;$invalid.videoRecording=$true
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'recording cannot supply a release soak'
+$invalid=Clone $soak;$invalid.phaseMetrics.droppedSimulationSeconds=.001
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'soak must not lose simulation time'
+$invalid=Clone $soak;$invalid.soakCoverage.mapChanges=9
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'nine actual map changes are insufficient'
+$invalid=Clone $soak;$invalid.soakCoverage.measuredSeconds=1799
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'short elapsed soak cannot be accepted'
+$invalid=Clone $soak;$invalid.requestedSeconds=2400
+Reject {Assert-ReleaseSoak $report $invalid $memory} '1800 seconds do not satisfy a requested 2400-second soak'
+$invalid=Clone $soak;$invalid.soakCoverage.retries=21
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'claimed Retry count must equal completed reconstructions'
+$invalid=Clone $soak;$invalid.soakCoverage.mapChanges=11
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'claimed map changes must equal actual load transitions'
+$invalid=Clone $soak;$invalid.soakCoverage.completedLoads=32
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'claimed completed loads must equal LOAD observations'
+$invalid=Clone $soak;$invalid.resourceSnapshots[1].arenaId='construction_17'
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'UNLOAD must identify its corresponding LOAD'
+$invalid=Clone $soak;$invalid.resourceSnapshots[2].stage='UNLOAD'
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'duplicate UNLOAD cannot supply reconstruction evidence'
+$invalid=Clone $soak;$invalid.resourceSnapshots=@($invalid.resourceSnapshots | Select-Object -SkipLast 1)
+Reject {Assert-ReleaseSoak $report $invalid $memory} 'final loaded match must be unloaded and measured'
 $invalid=Clone $soak;$invalid.soakCoverage.arenaIds=@($arenaIds | Where-Object {$_ -ne 'euphoria_park'})
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'soak must cover every current map'
 $invalid=Clone $soak;$invalid.soakCoverage.arenaIds+=@('historical-map')
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'historical extra map cannot be presented as current soak coverage'
 $invalid=Clone $soak;$invalid.soakCoverage.retries=19
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'nineteen Retry is insufficient'
-$invalid=Clone $memory;$invalid.samples[1411].handles=117
+$invalid=Clone $memory;$invalid.samples[1511].handles=117
 Reject {Assert-ReleaseSoak $report $soak $invalid} 'post-unload handle growth'
 $invalid=Clone $soak;$invalid.resourceSnapshots[3].directBufferBytes=$null
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'unavailable native metric'
 $invalid=Clone $soak;$invalid.resourceChecks.status='FAIL'
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'failed resource comparison'
-$invalid=Clone $soak;$invalid.resourceSnapshots[29].bodies=1
+$invalid=Clone $soak;$invalid.resourceSnapshots[61].bodies=1
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'forged PASS cannot hide retained body'
-$invalid=Clone $soak;$invalid.resourceSnapshots[29].directBufferBytes=8MB
+$invalid=Clone $soak;$invalid.resourceSnapshots[61].directBufferBytes=8MB
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'forged PASS cannot hide growing native memory'
-$invalid=Clone $soak;$invalid.resourceSnapshots[29].persistedRevision=0
+$invalid=Clone $soak;$invalid.resourceSnapshots[61].persistedRevision=0
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'forged PASS cannot hide unflushed progress'
-$invalid=Clone $soak;$invalid.resourceSnapshots[29].textures=-1
+$invalid=Clone $soak;$invalid.resourceSnapshots[61].textures=-1
 Reject {Assert-ReleaseSoak $report $invalid $memory} 'missing GPU texture observation'
 $candidateReports=Join-Path $work 'candidate-reports'
 Reject {& (Join-Path $PSScriptRoot '../test-windows-release.ps1') -ZipPath $zipPath -ReportsDirectory $candidateReports *> (Join-Path $work 'candidate-gate.log')} 'missing release checks cannot approve candidate'
@@ -409,7 +504,7 @@ foreach($mutation in @('manifest-dimensions','observed-dimensions','scale','wind
 }
 Write-ReleaseJson $uiManifestPath $uiManifest
 $uiEvidence=Get-ReleaseUiReviewEvidence $uiManifestPath $uiDiagnostic $uiRequest;$script:checks++
-foreach($scriptPath in @('tools/release-evidence.ps1','tools/prepare-windows-release.ps1','tools/package-windows.ps1','tools/test-windows-package.ps1','tools/fixtures/test-release-evidence.ps1')) {
+foreach($scriptPath in @('tools/release-evidence.ps1','tools/prepare-windows-release.ps1','tools/package-windows.ps1','tools/test-windows-package.ps1','tools/test-windows-benchmark.ps1','tools/test-windows-release.ps1','tools/test-local-world.ps1','tools/fixtures/test-release-evidence.ps1')) {
     $tokens=$null;$parseErrors=$null
     $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root $scriptPath),[ref]$tokens,[ref]$parseErrors)
     Check ($parseErrors.Count -eq 0) "PowerShell parser: $scriptPath"

@@ -58,4 +58,21 @@ class AuthoredWorldGeometryTest(unittest.TestCase):
                 self.assertTrue(set(road['geometryIds'])<=meshes)
                 self.assertTrue(set(road['navNodeIds'])<=nodes)
 
+    def test_open_tunnel_cuttings_have_full_height_retaining_faces_along_both_sides(self):
+        data=json.loads((OUT/'arena-neon-zero.json').read_text(encoding='utf-8'))
+        solids={box['id']:box for box in data['boxes']}
+        for end,lo,hi in [('south',400,540),('north',820,960)]:
+            for side,x,inside in [('west',1162,1163),('east',1218,1217)]:
+                wall=solids[f'tunnel-{end}-{side}-retaining'];c,s=wall['center'],wall['size']
+                self.assertTrue(wall['collision'])
+                self.assertEqual(-90,wall['yawDegrees'])
+                self.assertAlmostEqual(x,c['x'])
+                self.assertAlmostEqual(lo,c['z']-s['x']/2)
+                self.assertAlmostEqual(hi,c['z']+s['x']/2)
+                self.assertAlmostEqual(-12,c['y']-s['y']/2)
+                self.assertGreaterEqual(c['y']+s['y']/2,0)
+                self.assertAlmostEqual(inside,c['x']+(s['z']/2 if side=='west' else -s['z']/2))
+                # Wall is a vertical solid outside the complete 54m road.
+                self.assertEqual(2,s['z'])
+
 if __name__=='__main__':unittest.main()

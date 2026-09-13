@@ -34,8 +34,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "778fc203e68ddeee5fd42214f199a3d43498f46cda75a60dc9286074d81c9fff",
-      "sha256": "6bbbd810a7a98bee9b0d66d112d287206e5471a50a5d1a7be63d0dc0cc9652e4",
-      "transformation": "Roughness linear -> RGB Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K"
+      "sha256": "056eca61fcc4855430259b0306cc4f63a92279b502e034a8a5895294accd2444",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/cracked_concrete/diffuse.png",
@@ -70,8 +70,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "ef4ff5122e36a70f69ce9f34a36eed646848992194f303da1f9614d8f1ea7491",
-      "sha256": "5dd56edeaecc4995467294151628db6f9bba0051698760457820c0d237995a9e",
-      "transformation": "Roughness linear -> RGB Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K"
+      "sha256": "021ffae0aa2a548f0d69f202a8e212fcb59dff32767b42fbec1fa7bf60c6ce89",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/metal_plate_02/diffuse.png",
@@ -106,8 +106,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "0d094534e567315d41e5e67be3987992f65d0bbfaf9713c372edbbd547efc21f",
-      "sha256": "90922e37c81ae04cc8ff299956e982d41ee13163a98e5abcae2fc983b2522d95",
-      "transformation": "Roughness linear -> RGB Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K"
+      "sha256": "1b193a90d38b130c61a8df6d15f10f944b1fee8750f7e952ed56d8dbef595545",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/blue_metal_plate/diffuse.png",
@@ -142,8 +142,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "5f6a97dafe6d6d81f7511e9eaa029a73edbc5206e5f1943a14fa9e86a1a35f18",
-      "sha256": "5dd56edeaecc4995467294151628db6f9bba0051698760457820c0d237995a9e",
-      "transformation": "Roughness linear -> RGB Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K"
+      "sha256": "021ffae0aa2a548f0d69f202a8e212fcb59dff32767b42fbec1fa7bf60c6ce89",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/rusty_metal_03/diffuse.png",
@@ -178,8 +178,8 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-09",
       "sourceSha256": "8349c9b696401a873f3aba03af78bfc3b4744839ef75fd240f36e3a9f08f69bc",
-      "sha256": "5dd56edeaecc4995467294151628db6f9bba0051698760457820c0d237995a9e",
-      "transformation": "Roughness linear -> RGB Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K"
+      "sha256": "021ffae0aa2a548f0d69f202a8e212fcb59dff32767b42fbec1fa7bf60c6ce89",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/vehicle/paint.png",
@@ -230,18 +230,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/leafy_grass/specular.png",
-      "sourcePath": "src/tools/assets/materials/leafy_grass/rough.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/leafy_grass/leafy_grass_rough_2k.png",
-      "author": "Charlotte Baglioni / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "71d2c187fd8cb7182c8877710431af23257904fb167c38218ed0abf21c2e73b6",
-      "sha256": "efa83e8a0f4ef2263543b564f2382d6504e9ee9f7b46a8247910da028108aa74",
-      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/brown_mud/diffuse.png",
       "sourcePath": "src/tools/assets/materials/brown_mud/diff.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brown_mud/brown_mud_diff_2k.png",
@@ -264,18 +252,6 @@
       "sourceSha256": "06f04240c8aad947bb37acd118763e92736f57c8edaf27e95fe8185d32bbbabd",
       "sha256": "1e407c4622c059f0335424944140bf49de85db9e823077185c3272b2bc7d4ab6",
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
-    },
-    {
-      "path": "textures/materials/brown_mud/specular.png",
-      "sourcePath": "src/tools/assets/materials/brown_mud/rough.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brown_mud/brown_mud_rough_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "7b3586a50c725b5231004da7784248f8768b00b407e104203921ed35b6d3c75a",
-      "sha256": "7d192909483908ee1bdc11e6d4f9176792da178691b6a2cd5df34cc1eff55935",
-      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/gravelly_sand/diffuse.png",
@@ -302,18 +278,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/gravelly_sand/specular.png",
-      "sourcePath": "src/tools/assets/materials/gravelly_sand/rough.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/gravelly_sand/gravelly_sand_rough_2k.png",
-      "author": "Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "0eb2c0a19c9bb58335fd5e621517bae022466faa1134ad57156a309d0759bf23",
-      "sha256": "f4fd4caabe5e263b3c8e6bd2637d687500b467c9ca3368bc49dede6c1c970e45",
-      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/red_brick_03/diffuse.png",
       "sourcePath": "src/tools/assets/materials/red_brick_03/diff.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/red_brick_03/red_brick_03_diff_2k.png",
@@ -336,18 +300,6 @@
       "sourceSha256": "f27cdea3ee64e775e48654de6ec154d1a48082ae1a5b7007fd111ae2b6a50e22",
       "sha256": "8cd434c8fc6f6a6d49e3a4fd02b58788ebc1097c84fdedc43b85970e5f0794b0",
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
-    },
-    {
-      "path": "textures/materials/red_brick_03/specular.png",
-      "sourcePath": "src/tools/assets/materials/red_brick_03/rough.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/red_brick_03/red_brick_03_rough_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "585bf1e154ba1fac9582dab7794f19622440fe974e6a55a94dfdf21c8370942f",
-      "sha256": "f4fd4caabe5e263b3c8e6bd2637d687500b467c9ca3368bc49dede6c1c970e45",
-      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/wood_planks_grey/diffuse.png",
@@ -374,18 +326,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/wood_planks_grey/specular.png",
-      "sourcePath": "src/tools/assets/materials/wood_planks_grey/rough.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/wood_planks_grey/wood_planks_grey_rough_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "0e76025babe056bfdcd750a8f186df92d359fa804273fceb0f23d4884b9f5520",
-      "sha256": "f4fd4caabe5e263b3c8e6bd2637d687500b467c9ca3368bc49dede6c1c970e45",
-      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/concrete_wall_009/diffuse.png",
       "sourcePath": "src/tools/assets/materials/concrete_wall_009/diff.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_diff_2k.png",
@@ -410,6 +350,114 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
+      "path": "textures/materials/asphalt_pit_lane/diffuse.png",
+      "sourcePath": "src/tools/assets/materials/asphalt_pit_lane/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_pit_lane/asphalt_pit_lane_diff_2k.png",
+      "author": "Dimitrios Savva / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "c7980477ec24b13aeabea2cc72b3ac5c7d17b9268a1dea64715ed318c5dfe402",
+      "sha256": "e818592dd275a75e77a737e137c78c9a31b25ae0fb127097e76d7525d21ae99e",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/asphalt_pit_lane/normal.png",
+      "sourcePath": "src/tools/assets/materials/asphalt_pit_lane/nor_gl.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_pit_lane/asphalt_pit_lane_nor_gl_2k.png",
+      "author": "Dimitrios Savva / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "ebaa3bea1d204218d9243c0cab7e0b3061ff5195d95c471b228b6e0528ad52bb",
+      "sha256": "5542851d118725d8b21a9c84eb75dd4bd7524e12a7af53e41ffa5f5ba73f83aa",
+      "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/dirt/diffuse.png",
+      "sourcePath": "src/tools/assets/materials/dirt/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/dirt/dirt_diff_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "f0fee6965209d08fd073067c9c61cefc815fecdede90070b361e3f8c47c87801",
+      "sha256": "0e3a32024f011cb4fb1376bf80a4a779f7e180e744e23fca6dc9910849ffe2e9",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/dirt/normal.png",
+      "sourcePath": "src/tools/assets/materials/dirt/nor_gl.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/dirt/dirt_nor_gl_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "d269f7e4c8f113474735c1d9e346f48272dcb5c2cba72c3976b0181a0867d7aa",
+      "sha256": "81a578d2476a9e1898aa686145bdf0af99542a664b98cbc455a82fda370f8bf1",
+      "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/grass_ground/diffuse.png",
+      "sourcePath": "src/tools/assets/materials/grass_ground/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/grass_ground/grass_ground_diff_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "711341bcef8c1e7317a70e6bb39e1e63878e3946e26c93b78e3835f26bd26620",
+      "sha256": "cab43a9da3be0d59274752f7cf65ec34723f6dd0166b5a523c6093ca57f1f1cc",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/grass_ground/normal.png",
+      "sourcePath": "src/tools/assets/materials/grass_ground/nor_gl.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/grass_ground/grass_ground_nor_gl_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "d215b1ef91e7fddaef060064b3a9219551bdec51c64a14deed8aa7ce0e68d012",
+      "sha256": "9dd8c17735dd8bbaec6297239b46094b5590f9216696fe998e323e2a38547346",
+      "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/dirt/specular.png",
+      "sourcePath": "src/tools/assets/materials/dirt/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/dirt/dirt_rough_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "620354e281625391002fba6e9bcb1123859b434370f7ed6f046f4e8cb107f6f8",
+      "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/grass_ground/specular.png",
+      "sourcePath": "src/tools/assets/materials/grass_ground/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/grass_ground/grass_ground_rough_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "4bb2ecca7bca7aa8a84a8b4fc604abad633e7d1b73c0bf62c3279a2f28554da2",
+      "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/asphalt_pit_lane/specular.png",
+      "sourcePath": "src/tools/assets/materials/asphalt_pit_lane/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_pit_lane/asphalt_pit_lane_rough_2k.png",
+      "author": "Dimitrios Savva / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "9916139b6107d6090fa2dca8684d71e26e562fb0e1874559fdb9d41ca41609a7",
+      "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
       "path": "textures/materials/concrete_wall_009/specular.png",
       "sourcePath": "src/tools/assets/materials/concrete_wall_009/rough.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_rough_2k.png",
@@ -418,8 +466,68 @@
       "licensePath": "licenses/assets/CC0-1.0.txt",
       "acquired": "2026-09-13",
       "sourceSha256": "f540b0f23b968763d2a1d150b1938f7a89c587db26c3a35be20a092bca8a97cc",
-      "sha256": "3a8150fbbd889dc472be19a1ab688c1ccc7d13e4e6d1df0699fef08db85661b6",
-      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
+      "sha256": "997961add7b3e971f8c78176609161a14c2922618f0601083abc74f2a248037f",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/leafy_grass/specular.png",
+      "sourcePath": "src/tools/assets/materials/leafy_grass/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/leafy_grass/leafy_grass_rough_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "71d2c187fd8cb7182c8877710431af23257904fb167c38218ed0abf21c2e73b6",
+      "sha256": "6f8c1c5455ecab5b2e69f51ac23b74fb1bedb6e92c5b7a033521d16153e53e02",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/brown_mud/specular.png",
+      "sourcePath": "src/tools/assets/materials/brown_mud/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brown_mud/brown_mud_rough_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "7b3586a50c725b5231004da7784248f8768b00b407e104203921ed35b6d3c75a",
+      "sha256": "9ea629ef4014d3aead7713670d6705666e893a19c11b658671756142f569ab3d",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/gravelly_sand/specular.png",
+      "sourcePath": "src/tools/assets/materials/gravelly_sand/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/gravelly_sand/gravelly_sand_rough_2k.png",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "0eb2c0a19c9bb58335fd5e621517bae022466faa1134ad57156a309d0759bf23",
+      "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/red_brick_03/specular.png",
+      "sourcePath": "src/tools/assets/materials/red_brick_03/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/red_brick_03/red_brick_03_rough_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "585bf1e154ba1fac9582dab7794f19622440fe974e6a55a94dfdf21c8370942f",
+      "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/wood_planks_grey/specular.png",
+      "sourcePath": "src/tools/assets/materials/wood_planks_grey/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/wood_planks_grey/wood_planks_grey_rough_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "0e76025babe056bfdcd750a8f186df92d359fa804273fceb0f23d4884b9f5520",
+      "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
+      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     }
   ]
 }

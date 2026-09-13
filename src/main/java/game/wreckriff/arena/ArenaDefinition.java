@@ -44,6 +44,12 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
     public record BoxPart(String id, Vec3 center, Vec3 size, String material, boolean collision,float yawDegrees) {
         public BoxPart(String id,Vec3 center,Vec3 size,String material,boolean collision) {this(id,center,size,material,collision,0);}
         public BoxPart {text(id,"box");text(material,"material");Objects.requireNonNull(center);Objects.requireNonNull(size);require(Float.isFinite(yawDegrees),"Invalid box yaw");}
+        /** Authored visible finish, shared by rendering and physical contact presentation. */
+        public String surfaceMaterial(Theme theme) {
+            if(theme==Theme.NEON&&material.equals("rust"))return "dark-concrete";
+            if(theme==Theme.CARNIVAL&&material.equals("red"))return "faded-red";
+            return material;
+        }
         public Quaternion rotation(){return new Quaternion().fromAngleAxis(yawDegrees*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y);}
         /** Conservative world-space broadphase bounds; exact narrowphase still uses the oriented collider. */
         public Vector3f worldHalfExtents() {
@@ -78,6 +84,14 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
             }
         }
         public String materialAtTriangle(int triangle) {return triangleMaterials.isEmpty()?material:triangleMaterials.get(triangle);}
+        /** Bottom and exterior triangles follow the authored top in the native collision mesh. */
+        public String structureMaterial() {
+            return switch(material){
+                case "cast-concrete","park-paving","road-surface","road-wet"->"cast-concrete";
+                case "wood","steel","rust","purple","faded-red","blue"->material;
+                default->"concrete";
+            };
+        }
         private int triangleAt(float x,float z) {
             for(int i=0;i<indices.size();i+=3) {
                 Vec3 a=vertices.get(indices.get(i)),b=vertices.get(indices.get(i+1)),c=vertices.get(indices.get(i+2));

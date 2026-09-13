@@ -11,13 +11,14 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Executes the entire staging script on the real arena. Real-window capture is still a separate requirement. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeVehicleShowcaseTest {
     @Test void allThreeSpecialsProduceRealRuntimeDamageAndNativeMovement() {
         var arena=ArenaRegistry.load().definition("dead-air-yard");var rules=VehicleRules.load();
         var session=new MatchSession(42,arena,MatchSession.Mode.LEGACY,Configs.load("combat",CombatRules.class));
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             var spawns=arena.shuffledSpawns(42);
             for(var state:session.vehicles) {
                 var spawn=spawns.get(state.id);var profile=VehicleDefinition.forId(state.profileId).profile(rules);

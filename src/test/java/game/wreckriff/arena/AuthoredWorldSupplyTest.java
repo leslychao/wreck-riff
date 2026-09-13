@@ -48,7 +48,10 @@ class AuthoredWorldSupplyTest {
             var arena=ArenaRegistry.load().definition(id);assertEquals(3,arena.layoutRevision());
             assertEquals(arena.roads().size(),arena.roads().stream().map(ArenaDefinition.Road::id).distinct().count());
             assertFalse(arena.roads().isEmpty());
-            assertTrue(arena.boxes().stream().noneMatch(b->b.id().contains("-block-")),"Anonymous filler grids must not re-enter the authored layouts");
+            // Bearing blocks support the authored interchange; the retired filler used theme/row/column ids.
+            var filler=arena.boxes().stream().map(ArenaDefinition.BoxPart::id)
+                    .filter(boxId->boxId.matches("(?:construction|neon|carnival)-block-\\d+-\\d+")).toList();
+            assertTrue(filler.isEmpty(),"Anonymous filler grids must not re-enter the authored layouts: "+filler);
             for(var district:arena.districts())assertTrue(district.boundary().size()>=4);
         }
     }

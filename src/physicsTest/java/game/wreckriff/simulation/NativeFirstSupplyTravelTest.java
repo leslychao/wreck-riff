@@ -13,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Actual first-ammo collection times from each authored spawn, with the shared native driver. */
 class NativeFirstSupplyTravelTest {
+    @org.junit.jupiter.api.AfterAll
+    static void releaseContent() { NativeCampaignBotNavigationTest.releaseContent(); }
+
     private static final Set<ArenaDefinition.PickupType> OFFENSIVE=Set.of(ArenaDefinition.PickupType.HOMING_AMMO,
             ArenaDefinition.PickupType.POWER_AMMO,ArenaDefinition.PickupType.CANNON_AMMO);
     private record Candidate(ArenaDefinition.Pickup pickup,float metres) {}

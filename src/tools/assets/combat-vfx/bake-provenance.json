@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "origin": "ORIGINAL_PROJECT_CONTENT",
+  "generator": "src/tools/author_combat_vfx.py",
+  "generatorSha256": "00ae6a328622404f1c2b376401b42cde1a61333834c401401209ad347cf47505",
+  "tool": "4.5.9 LTS",
+  "sourceScene": "src/tools/assets/combat-vfx/combat-volumes.blend",
+  "sourceSceneSha256": "008371847f4b2f7c54d12145c34a44ca1331ba94d7f77df126e781ee7360bb39",
+  "licensePermission": "Original Wreck Riff project content; redistribution with the game permitted",
+  "externalImages": false,
+  "artisticStatus": "NEEDS_CREATIVE_REVIEW",
+  "assets": [
+    {
+      "path": "src/tools/assets/combat-vfx/smoke.png",
+      "sha256": "4e6ed00ac844a8caca20c5936bd296ff1f5b8b9d4e7f31c0073611dd367d0462",
+      "bytes": 4684623
+    },
+    {
+      "path": "src/tools/assets/combat-vfx/flame.png",
+      "sha256": "f5243b0ca721c6c847db4e3b7337b7279f7abb7dff02e18d244d6ce8f07191cc",
+      "bytes": 4920285
+    },
+    {
+      "path": "src/tools/assets/combat-vfx/blast.png",
+      "sha256": "0462de4841273aaee71527e552af16af7828e57da9b62978f1ecb6b14b7fa8ec",
+      "bytes": 4683795
+    },
+    {
+      "path": "src/tools/assets/combat-vfx/dust.png",
+      "sha256": "28bad8459239f528a8f829e142608829eec83c52ce0c34762cc6830aecd89e17",
+      "bytes": 3430193
+    },
+    {
+      "path": "src/main/resources/textures/vfx/auxiliary.png",
+      "sha256": "4d1193627d2c2f18be56dd4e1619d42a93603b8fe93ef7b59669ef9f6bad1f00",
+      "bytes": 532487
+    },
+    {
+      "path": "src/main/resources/vfx/recipes.json",
+      "sha256": "1c1ec6d2816c7242e4179b885a5615248fa03bc7e10731e25824598967877bf4",
+      "bytes": 1525
+    }
+  ]
+}

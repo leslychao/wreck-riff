@@ -7,6 +7,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class BossTelegraphVisualTest {
     @Test void allThreeBossesHaveContinuousAmberToWarmPreparationOnTheirExistingLightsAtMinimumEffects() {
         for(var profile:VehicleProfile.bosses(VehicleRules.load())) {

@@ -20,6 +20,7 @@ public final class CombatVfxFilter extends Filter {
     private Texture2D color;
     private Texture depth;
     private Probe probe;
+    private Probe activeProbe;
     public CombatVfxFilter() {super("CombatVfx");setEnabled(false);}
     public void setProbe(Probe probe) {this.probe=probe;}
     public void bind(CombatVisuals next) {
@@ -45,7 +46,7 @@ public final class CombatVfxFilter extends Filter {
     }
     @Override protected Material getMaterial() {return material;}
     @Override protected void postFrame(RenderManager rm,ViewPort view,FrameBuffer previous,FrameBuffer scene) {
-        if(probe!=null)probe.begin("combat-vfx-composite");
+        if(probe!=null){probe.begin("combat-vfx-composite");activeProbe=probe;}
         try {
             Renderer renderer=rm.getRenderer();
             // Color-only blit resolves an MSAA input. Scene depth is never attached to our target.
@@ -53,9 +54,13 @@ public final class CombatVfxFilter extends Filter {
             renderer.setFrameBuffer(composite);rm.setCamera(view.getCamera(),false);
             if(visuals!=null)visuals.prepareSoftCamera(view.getCamera());
             view.getQueue().renderQueue(RenderQueue.Bucket.Translucent,rm,view.getCamera());
-        } finally {if(probe!=null)probe.end("combat-vfx-composite");}
+        } catch(RuntimeException|Error failure){endProbeIfActive();throw failure;}
     }
+    @Override protected void postFilter(Renderer renderer,FrameBuffer buffer) {endProbeIfActive();}
+    /** Also called by the owning FPP's finally if its fullscreen composite throws. */
+    void endProbeIfActive() {if(activeProbe!=null){Probe pending=activeProbe;activeProbe=null;pending.end("combat-vfx-composite");}}
     @Override protected void cleanUpFilter(Renderer renderer) {
+        endProbeIfActive();
         if(manager!=null)manager.setHandleTranslucentBucket(true);
         if(visuals!=null)visuals.bindSoftDepth(null);
         depth=null;manager=null;releaseTarget();

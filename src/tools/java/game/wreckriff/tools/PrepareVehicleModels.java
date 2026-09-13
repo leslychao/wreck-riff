@@ -8,12 +8,15 @@ import com.jme3.math.*;
 import com.jme3.scene.*;
 import com.jme3.util.mikktspace.MikktspaceTangentGenerator;
 import game.wreckriff.presentation.VehicleMaterials;
+import game.wreckriff.presentation.VehicleDiffuseDds;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 /** Explicit offline Blender mesh bundle -> immutable jME stage banks. Never invoked by a normal build. */
 public final class PrepareVehicleModels {
@@ -23,12 +26,20 @@ public final class PrepareVehicleModels {
     public static void main(String[] args) throws Exception {
         if(args.length!=2)throw new IllegalArgumentException("source vehicle directory and resource directory required");
         Path source=Path.of(args[0]),resources=Path.of(args[1]);
+        Path diffuseManifest=resources.resolve("textures/vehicles/diffuse-provenance.json");
+        var compression=JsonParser.parseString(Files.readString(diffuseManifest)).getAsJsonObject();
+        if(!hash(Path.of(compression.get("converter").getAsString())).equals(compression.get("converterSha256").getAsString()))throw new IOException("Stale vehicle diffuse preparation recipe");
+        var diffuseIds=new HashSet<>(List.of("rivet","grinder","spark","boss_foreman","boss_prefect","boss_emcee","shared"));
+        for(var item:compression.getAsJsonArray("textures")){var entry=item.getAsJsonObject();Path runtime=resources.resolve(entry.get("runtime").getAsString());String id=runtime.getParent().getFileName().toString();
+            if(!diffuseIds.remove(id)||!hash(runtime).equals(entry.get("runtimeSha256").getAsString())||!hash(Path.of(entry.get("source").getAsString())).equals(entry.get("sourceSha256").getAsString()))throw new IOException("Stale or duplicate prepared vehicle diffuse: "+runtime);
+            VehicleDiffuseDds.read(Files.readAllBytes(runtime),id.equals("shared")?1024:2048);}
+        if(!diffuseIds.isEmpty())throw new IOException("Missing prepared vehicle diffuse "+diffuseIds);
         var manager=new DesktopAssetManager(true);manager.registerLocator(resources.toAbsolutePath().toString(),FileLocator.class);
         List<Map<String,Object>> records=new ArrayList<>();
         Path shared=resources.resolve("textures/vehicles/shared");Files.createDirectories(shared);
         JsonObject sharedSource=JsonParser.parseString(Files.readString(source.resolve("shared/source.json"))).getAsJsonObject();
         if(!hash(Path.of(GENERATOR)).equals(sharedSource.get("generatorSha256").getAsString()))throw new IOException("Shared vehicle texture recipe is stale");
-        for(var entry:sharedSource.getAsJsonObject("exports").entrySet()){Path file=source.resolve("shared/"+entry.getKey());if(!hash(file).equals(entry.getValue().getAsString()))throw new IOException("Shared vehicle texture was edited outside the prepared source pipeline: "+file);Files.copy(file,shared.resolve(entry.getKey()),StandardCopyOption.REPLACE_EXISTING);}
+        for(var entry:sharedSource.getAsJsonObject("exports").entrySet()){Path file=source.resolve("shared/"+entry.getKey());if(!hash(file).equals(entry.getValue().getAsString()))throw new IOException("Shared vehicle texture was edited outside the prepared source pipeline: "+file);if(!entry.getKey().equals("metal-diffuse.png"))publishTexture(file,shared.resolve(entry.getKey()));}
         for(String id:List.of("rivet","grinder","spark","boss_foreman","boss_prefect","boss_emcee")) {
             Path input=source.resolve(id);JsonObject data;
             JsonObject bake=JsonParser.parseString(Files.readString(input.resolve("source.json"))).getAsJsonObject();
@@ -42,7 +53,7 @@ public final class PrepareVehicleModels {
                 data=JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject();
             }
             Path textures=resources.resolve("textures/vehicles/"+id);Files.createDirectories(textures);
-            for(String texture:MAPS)Files.copy(input.resolve(texture+".png"),textures.resolve(texture+".png"),StandardCopyOption.REPLACE_EXISTING);
+            for(String texture:MAPS)if(!texture.equals("diffuse"))publishTexture(input.resolve(texture+".png"),textures.resolve(texture+".png"));
             Node bank=new Node(id+"-asset-bank");List<Integer> counts=new ArrayList<>();
             var sparse=new JsonObject();sparse.addProperty("schemaVersion",1);sparse.add("lods",new JsonArray());
             for(int lod=0;lod<3;lod++) {
@@ -69,9 +80,9 @@ public final class PrepareVehicleModels {
             Path output=resources.resolve("models/vehicles/"+id);Files.createDirectories(output);
             bank.setUserData("profileId",id);bank.setUserData("assetOrigin","ORIGINAL_BLENDER_CONTENT");bank.updateGeometricState();
             Path prepared=output.resolve("vehicle.j3o.prepared");BinaryExporter.getInstance().save(bank,prepared.toFile());
-            Files.move(prepared,output.resolve("vehicle.j3o"),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
+            movePrepared(prepared,output.resolve("vehicle.j3o"));
             try(var zip=new java.util.zip.GZIPOutputStream(Files.newOutputStream(output.resolve("regions.json.gz.prepared")))) {zip.write(sparse.toString().getBytes(StandardCharsets.UTF_8));}
-            Files.move(output.resolve("regions.json.gz.prepared"),output.resolve("regions.json.gz"),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
+            movePrepared(output.resolve("regions.json.gz.prepared"),output.resolve("regions.json.gz"));
             var record=new LinkedHashMap<String,Object>();record.put("id",id);record.put("stages",5);record.put("regions",8);record.put("lodTriangles",counts);
             record.put("model","models/vehicles/"+id+"/vehicle.j3o");record.put("modelSha256",hash(output.resolve("vehicle.j3o")));
             record.put("regional","models/vehicles/"+id+"/regions.json.gz");record.put("regionalSha256",hash(output.resolve("regions.json.gz")));
@@ -79,16 +90,49 @@ public final class PrepareVehicleModels {
             record.put("sourceGlb","src/tools/assets/vehicles/"+id+"/source.glb");record.put("sourceGlbSha256",hash(input.resolve("source.glb")));
             record.put("meshBundle","src/tools/assets/vehicles/"+id+"/mesh.json.gz");record.put("meshBundleSha256",hash(input.resolve("mesh.json.gz")));
             record.put("sourceManifest","src/tools/assets/vehicles/"+id+"/source.json");record.put("sourceManifestSha256",hash(input.resolve("source.json")));
-            var textureRecords=new LinkedHashMap<String,String>();for(String map:MAPS)textureRecords.put("textures/vehicles/"+id+"/"+map+".png",hash(textures.resolve(map+".png")));
-            record.put("textures",textureRecords);records.add(record);System.out.println("Prepared vehicle "+id+" "+counts);
+            var textureRecords=new LinkedHashMap<String,String>();for(String map:MAPS){String name=map+(map.equals("diffuse")?".dds":".png");textureRecords.put("textures/vehicles/"+id+"/"+name,hash(textures.resolve(name)));}
+            record.put("textures",textureRecords);var textureFormats=new LinkedHashMap<String,String>();for(String path:textureRecords.keySet())textureFormats.put(path,textureFormat(Path.of(path)));record.put("textureFormats",textureFormats);records.add(record);System.out.println("Prepared vehicle "+id+" "+counts);
         }
         var manifest=new LinkedHashMap<String,Object>();manifest.put("damageAtlas","textures/vehicles/shared/damage-atlas.png");manifest.put("damageAtlasSha256",hash(shared.resolve("damage-atlas.png")));manifest.put("sharedSource","src/tools/assets/vehicles/shared/source.json");manifest.put("sharedSourceSha256",hash(source.resolve("shared/source.json")));
-        var sharedTextures=new LinkedHashMap<String,String>();for(String name:List.of("metal-diffuse.png","metal-normal.png","metal-specular.png"))sharedTextures.put("textures/vehicles/shared/"+name,hash(shared.resolve(name)));manifest.put("sharedTextures",sharedTextures);manifest.put("schemaVersion",1);manifest.put("origin","ORIGINAL_BLENDER_CONTENT");
+        var sharedTextures=new LinkedHashMap<String,String>();for(String name:List.of("metal-diffuse.dds","metal-normal.png","metal-specular.png"))sharedTextures.put("textures/vehicles/shared/"+name,hash(shared.resolve(name)));manifest.put("sharedTextures",sharedTextures);var sharedFormats=new LinkedHashMap<String,String>();for(String path:sharedTextures.keySet())sharedFormats.put(path,textureFormat(Path.of(path)));manifest.put("sharedTextureFormats",sharedFormats);manifest.put("schemaVersion",1);manifest.put("origin","ORIGINAL_BLENDER_CONTENT");
+        manifest.put("diffuseCompression","textures/vehicles/diffuse-provenance.json");manifest.put("diffuseCompressionSha256",hash(diffuseManifest));
         manifest.put("generator",GENERATOR);manifest.put("generatorSha256",hash(Path.of(GENERATOR)));manifest.put("converter",CONVERTER);manifest.put("converterSha256",hash(Path.of(CONVERTER)));
         manifest.put("blenderVersion","4.5.9 LTS");manifest.put("licensePermission","Original Wreck Riff models and procedural texture recipes; no external geometry or bitmap sources.");
         manifest.put("coordinateSystem","metres, +Y up, +Z forward, +X right; immutable profile sockets");manifest.put("uv","Shared nonoverlapping packed canonical UV islands; lower LOD triangle projection transferred offline; 512 ownership map clips brush footprints to their part");
-        manifest.put("textureContract","Paint diffuse/normal 2048; specular and metal diffuse/normal/specular 1024, RGB(A)8; diffuse sRGB, normal/specular linear");manifest.put("sourceAuthority","Saved Blender scene with three LODs, five HP poses, eight regional shape keys; --reexport PROFILE writes GLB and canonical topology companion from edited scene");manifest.put("artisticStatus","NEEDS_CREATIVE_REVIEW");manifest.put("profiles",records);
-        Files.writeString(resources.resolve("models/vehicles/provenance.json"),new GsonBuilder().setPrettyPrinting().create().toJson(manifest)+"\n",StandardCharsets.UTF_8);
+        manifest.put("textureContract","Paint diffuse/normal 2048; specular and metal maps 1024. Diffuse BC7_UNORM_SRGB with complete CPU-prepared mips and one offline Y flip; DX10 selects GL sRGB directly (Image/Material Linear). Normal RGB8 and specular L8 preserve every original sample; ownership/atlas RGBA8. Editable RGBA sources retained, no resize.");manifest.put("sourceAuthority","Saved Blender scene with three LODs, five HP poses, eight regional shape keys; --reexport PROFILE writes GLB and canonical topology companion from edited scene");manifest.put("artisticStatus","NEEDS_CREATIVE_REVIEW");manifest.put("profiles",records);
+        Path provenance=resources.resolve("models/vehicles/provenance.json");Path temporary=provenance.resolveSibling("provenance.json.prepared");
+        Files.writeString(temporary,new GsonBuilder().setPrettyPrinting().create().toJson(manifest)+"\n",StandardCharsets.UTF_8);
+        movePrepared(temporary,provenance);
+        manager.clearCache();
+        for(String id:List.of("rivet","grinder","spark","boss_foreman","boss_prefect","boss_emcee","shared")){String name=id.equals("shared")?"metal-diffuse.png":"diffuse.png";Path old=resources.resolve("textures/vehicles/"+id+"/"+name);if(Files.exists(old)){requirePreservedDiffuse(source.resolve(id+"/"+name),old);Files.delete(old);}}
+    }
+    private static void publish(Path source,Path target)throws IOException {Path temporary=target.resolveSibling(target.getFileName()+".prepared");Files.copy(source,temporary,StandardCopyOption.REPLACE_EXISTING);movePrepared(temporary,target);}
+    private static String textureFormat(Path path){String name=path.getFileName().toString();return name.endsWith(".dds")?"BC7_UNORM_SRGB":name.endsWith("specular.png")?"L8":name.endsWith("normal.png")?"RGB8":"RGBA8";}
+    private static void requirePreservedDiffuse(Path source,Path old)throws IOException {var a=ImageIO.read(source.toFile());var b=ImageIO.read(old.toFile());if(a==null||b==null||a.getWidth()!=b.getWidth()||a.getHeight()!=b.getHeight())throw new IOException("Cannot retire unpreserved diffuse "+old);for(int y=0;y<a.getHeight();y++)for(int x=0;x<a.getWidth();x++)if(a.getRGB(x,y)!=b.getRGB(x,y))throw new IOException("Runtime diffuse was edited outside source: "+old);}
+    static void publishTexture(Path source,Path target)throws IOException {
+        String format=textureFormat(target);if(format.equals("RGBA8")){publish(source,target);return;}
+        BufferedImage original=ImageIO.read(source.toFile());if(original==null)throw new IOException("Cannot decode vehicle texture "+source);
+        boolean scalar=format.equals("L8");BufferedImage prepared=new BufferedImage(original.getWidth(),original.getHeight(),scalar?BufferedImage.TYPE_BYTE_GRAY:BufferedImage.TYPE_3BYTE_BGR);
+        int[] row=new int[original.getWidth()];
+        for(int y=0;y<original.getHeight();y++) {
+            original.getRGB(0,y,row.length,1,row,0,row.length);
+            for(int x=0;x<row.length;x++) {int pixel=row[x];if((pixel>>>24)!=255)throw new IOException("Cannot remove meaningful alpha from "+source);
+                if(scalar){int value=pixel&255;if((pixel>>>8&255)!=value||(pixel>>>16&255)!=value)throw new IOException("Cannot collapse colored specular channels in "+source);row[x]=value;}}
+            // Write raw scalar samples: setRGB on TYPE_BYTE_GRAY would apply AWT's gray color-space transfer.
+            if(scalar)prepared.getRaster().setSamples(0,y,row.length,1,0,row);else prepared.setRGB(0,y,row.length,1,row,0,row.length);
+        }
+        Path temporary=target.resolveSibling(target.getFileName()+".prepared");if(!ImageIO.write(prepared,"png",temporary.toFile()))throw new IOException("PNG writer unavailable");movePrepared(temporary,target);
+    }
+    private static void movePrepared(Path temporary,Path target)throws IOException {
+        // Windows thumbnailers and asset readers can briefly hold a sharing lock after a bake.
+        // Keep the previous complete output until replacement succeeds; never truncate it.
+        for(int attempt=0;;attempt++)try {
+            Files.move(temporary,target,StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);return;
+        } catch(FileSystemException error) {
+            if(error instanceof AtomicMoveNotSupportedException||attempt==6)throw error;
+            try {Thread.sleep(100L*(attempt+1));}
+            catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IOException("Interrupted publishing "+target,interrupted);}
+        }
     }
     private static float[] floats(JsonArray data) {float[] result=new float[data.size()];for(int i=0;i<result.length;i++)result[i]=data.get(i).getAsFloat();return result;}
     private static Mesh mesh(float[] points,float[] uv) {

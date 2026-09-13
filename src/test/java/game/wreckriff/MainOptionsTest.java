@@ -4,6 +4,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MainOptionsTest {
+    @org.junit.jupiter.api.Test void movingVideoIsAnExplicitShortDiagnosticAndCannotEnterReleaseBenchmark() {
+        assertDoesNotThrow(()->Main.Options.parse(new String[]{"--dev","--benchmark-seconds=60","--combat-video-seconds=20"}));
+        for(String[] args:new String[][]{{"--combat-video-seconds=20"},{"--dev","--combat-video-seconds=20"},
+                {"--dev","--benchmark-seconds=600","--combat-video-seconds=20"},
+                {"--dev","--benchmark-seconds=60","--combat-video-seconds=31"}})
+            assertThrows(IllegalArgumentException.class,()->Main.Options.parse(args));
+    }
     @Test void combatGraphicsMatrixUsesExplicitDevOnlyFrameAndMsaaSettings() {
         for(int fps:new int[]{30,60,120})for(int samples:new int[]{0,2,4,8}) {
             var options=Main.Options.parse(new String[]{"--dev","--showcase","--render-fps="+fps,"--msaa="+samples});

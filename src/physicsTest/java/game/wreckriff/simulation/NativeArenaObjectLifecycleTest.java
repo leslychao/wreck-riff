@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArenaObjectLifecycleTest {
     private static final VehicleRules RULES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
@@ -18,7 +19,7 @@ class NativeArenaObjectLifecycleTest {
 
     @Test void realRamDestroysTwentyFiveHpPanelAndOpensItsRouteInTheSameTransaction() {
         var arena=REGISTRY.definition("construction_17");
-        var object=arena.destructibles().stream().filter(o->o.id().equals("short-cut")).findFirst().orElseThrow();
+        var object=arena.destructibles().stream().filter(o->o.id().equals("warehouse-service-gate")).findFirst().orElseThrow();
         assertEquals(25,object.maximumHp());
         var box=box(arena,object);Vector3f center=box.center().vector();
         try(var rig=new Rig(arena,null,center.add(-8,-1.5f,0),FastMath.HALF_PI)) {
@@ -143,7 +144,7 @@ class NativeArenaObjectLifecycleTest {
             session=new MatchSession(42,arena,MatchSession.Mode.ARENA,COMBAT,UUID.randomUUID(),true,0);
             session.phase=MatchSession.Phase.ARENA_COMBAT;
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);graph=content.graph();
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             if(state!=null)ArenaSystems.restoreGeometry(state,world,graph,arena);
             world.configureArena(arena);
             var profile=VehicleDefinition.RIVET.profile(RULES);

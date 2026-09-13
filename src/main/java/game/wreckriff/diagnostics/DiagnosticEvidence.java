@@ -12,6 +12,7 @@ public final class DiagnosticEvidence {
     private final FrameMetrics frames=new FrameMetrics();
     private final PhaseMetrics phaseMetrics=new PhaseMetrics();
     private final boolean benchmark;
+    private final int requestedSeconds;
     private SoakSchedule soak;
     private ResourceRetention resources;
     private double warmupActiveSeconds;
@@ -23,6 +24,7 @@ public final class DiagnosticEvidence {
     private final List<String> errors=new ArrayList<>();
     public DiagnosticEvidence(boolean benchmark,int duration) {
         this.benchmark=benchmark;
+        requestedSeconds=duration;
         data.put("schemaVersion",2);data.put("mode",benchmark?"benchmark":"graphics-smoke");
         data.put("pid",ProcessHandle.current().pid());data.put("requestedSeconds",duration);
         data.put("os",System.getProperty("os.name")+" "+System.getProperty("os.version"));
@@ -53,12 +55,16 @@ public final class DiagnosticEvidence {
         if(!benchmark||!sample.drawable()||!sample.phase().combat())return;
         // The boundary frame belongs wholly to warmup: no slow first frame can be partly discarded.
         if(warmupActiveSeconds<BenchmarkGate.WARMUP_ACTIVE_SECONDS)warmupActiveSeconds+=sample.seconds();
-        else {
+        else if(measuresCombatFrame(sample)) {
             frames.add(sample.seconds());
             if(sample.phase()==FrameSample.Phase.ARENA_COMBAT)measuredArenaSeconds+=sample.seconds();else measuredBossSeconds+=sample.seconds();
             measuredMaximumEffects=Math.max(measuredMaximumEffects,sample.effects());
             measuredMaximumLaunching=Math.max(measuredMaximumLaunching,sample.launchingVehicles());
         }
+    }
+    /** Eligibility for the upcoming render; the previous completed frame has already advanced warmup. */
+    public synchronized boolean measuresCombatFrame(FrameSample sample) {
+        return benchmark&&sample.drawable()&&sample.phase().combat()&&warmupActiveSeconds>=BenchmarkGate.WARMUP_ACTIVE_SECONDS&&frames.seconds()<requestedSeconds;
     }
     public double measuredActiveSeconds() {return frames.seconds();}
     public double warmedActiveSeconds() {return warmupActiveSeconds;}

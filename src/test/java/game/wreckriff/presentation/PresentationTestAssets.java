@@ -2,10 +2,13 @@ package game.wreckriff.presentation;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.DesktopAssetManager;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
-/** Mirror the application's one asset manager: decode each immutable 2K image once per test JVM. */
-final class PresentationTestAssets {
+/** One decoder owner, with the completed test scene's cache released after each class. */
+final class PresentationTestAssets implements AfterAllCallback {
     private static final AssetManager ASSETS=new DesktopAssetManager(true);
-    private PresentationTestAssets() { }
+    PresentationTestAssets() { }
     static AssetManager shared() {return ASSETS;}
+    @Override public void afterAll(ExtensionContext context) {ASSETS.clearCache();}
 }

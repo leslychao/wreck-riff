@@ -6,7 +6,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SoakScheduleTest {
-    private final List<String> arenas=List.of("dead-air-yard","construction_17","neon_zero","euphoria_park","ash_necropolis","doomsday_arena");
+    private final List<String> arenas=List.of("dead-air-yard","construction_17","neon_zero","euphoria_park");
     private void loaded(SoakSchedule schedule,SoakSchedule.Selection selection) {
         schedule.loaded(selection,UUID.randomUUID(),selection.arenaId(),selection.mode(),selection.profileId());
     }
@@ -19,12 +19,30 @@ class SoakScheduleTest {
             loaded(schedule,selection);
         }
         assertEquals(24,schedule.retries());assertEquals(11,schedule.evidence().get("mapChanges"));
-        assertTrue(schedule.resourcesWarmed());assertEquals(6,((List<?>)schedule.evidence().get("arenaIds")).size());
+        assertTrue(schedule.resourcesWarmed());assertEquals(4,((List<?>)schedule.evidence().get("arenaIds")).size());
+        assertEquals(Set.of("dead-air-yard/LEGACY","construction_17/ARENA","construction_17/BOSS_DUEL",
+                "neon_zero/ARENA","neon_zero/BOSS_DUEL","euphoria_park/ARENA","euphoria_park/BOSS_DUEL"),
+                new HashSet<>((List<?>)schedule.evidence().get("loadedModes")));
         assertFalse(schedule.coverageComplete());
         schedule.frame(new FrameSample(1,1,"construction_17",FrameSample.Phase.ARENA_COMBAT,1800,7,50,3,4,12,1,false,0));
         assertEquals(0,schedule.measuredSeconds());
         schedule.frame(new FrameSample(2,2,"construction_17",FrameSample.Phase.ARENA_COMBAT,1800,7,50,3,4,12,1,true,0));
         assertTrue(schedule.coverageComplete());
+    }
+    @Test void thirtyMinutesCannotCompensateForMissingActualTenthMapChange() {
+        var schedule=new SoakSchedule(arenas,"dead-air-yard");var selection=schedule.first();
+        for(int load=0;load<30;load++) {
+            if(load>0)selection=schedule.next();
+            loaded(schedule,selection);
+        }
+        schedule.frame(new FrameSample(1,1,"dead-air-yard",FrameSample.Phase.ARENA_COMBAT,1800,7,50,0,0,0,0,true,0));
+        assertEquals(20,schedule.retries());assertEquals(9,schedule.evidence().get("mapChanges"));
+        assertFalse(schedule.coverageComplete());
+        selection=schedule.next();assertFalse(selection.retry());
+        assertFalse(schedule.coverageComplete(),"An attempted transition does not count as a reconstructed match");
+        loaded(schedule,selection);
+        assertTrue(schedule.coverageComplete());assertEquals(31,schedule.evidence().get("completedLoads"));
+        assertEquals(10,schedule.evidence().get("mapChanges"));
     }
     @Test void retryRequestsDoNotCountUntilAFreshRequestedRuntimeHasActuallyLoaded() {
         var schedule=new SoakSchedule(arenas,"neon_zero");var first=schedule.first();UUID session=UUID.randomUUID();

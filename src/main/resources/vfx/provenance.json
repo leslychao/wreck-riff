@@ -1,34 +1,34 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "origin": "ORIGINAL_PROJECT_CONTENT",
   "generator": "src/tools/author_combat_vfx.py",
-  "generatorSha256": "e2efd315346f02af6e1d208a4505c0757d42a02545384fb24e19850c04f132d3",
+  "generatorSha256": "00ae6a328622404f1c2b376401b42cde1a61333834c401401209ad347cf47505",
   "tool": "4.5.9 LTS",
   "sourceScene": "src/tools/assets/combat-vfx/combat-volumes.blend",
-  "sourceSceneSha256": "a7eab8705cbbd76a30ce143474de8d53fc14c43d6464bf5d9c22e0164166ef21",
+  "sourceSceneSha256": "008371847f4b2f7c54d12145c34a44ca1331ba94d7f77df126e781ee7360bb39",
   "licensePermission": "Original Wreck Riff project content; redistribution with the game permitted",
   "externalImages": false,
   "artisticStatus": "NEEDS_CREATIVE_REVIEW",
   "assets": [
     {
-      "path": "textures/vfx/smoke.png",
-      "sha256": "4e6ed00ac844a8caca20c5936bd296ff1f5b8b9d4e7f31c0073611dd367d0462",
-      "bytes": 4684623
+      "path": "textures/vfx/smoke.dds",
+      "sha256": "a78a43ae7c444e4284ef95844548a7a512d109023237c7321532a4ce8ad636f8",
+      "bytes": 5592560
     },
     {
-      "path": "textures/vfx/flame.png",
-      "sha256": "f5243b0ca721c6c847db4e3b7337b7279f7abb7dff02e18d244d6ce8f07191cc",
-      "bytes": 4920285
+      "path": "textures/vfx/flame.dds",
+      "sha256": "332dcb2e08204b02bf956e4cb6df1b8b59a11135a57af6e7812caf63037da5ff",
+      "bytes": 5592560
     },
     {
-      "path": "textures/vfx/blast.png",
-      "sha256": "0462de4841273aaee71527e552af16af7828e57da9b62978f1ecb6b14b7fa8ec",
-      "bytes": 4683795
+      "path": "textures/vfx/blast.dds",
+      "sha256": "af8f91bc84155f8a3daeaa1d4fed10685cb8aec146e877117e98f73ef349244e",
+      "bytes": 5592560
     },
     {
-      "path": "textures/vfx/dust.png",
-      "sha256": "28bad8459239f528a8f829e142608829eec83c52ce0c34762cc6830aecd89e17",
-      "bytes": 3430193
+      "path": "textures/vfx/dust.dds",
+      "sha256": "8a7d51196008f399fd1019660365013c7d6229ad73fcceb08dcdc5d065c9acae",
+      "bytes": 5592560
     },
     {
       "path": "textures/vfx/auxiliary.png",
@@ -37,8 +37,103 @@
     },
     {
       "path": "vfx/recipes.json",
-      "sha256": "e9b6e93fa8f696bf7ee6f223600df87000d49046bd0dbd95612288d6ad5c57da",
-      "bytes": 1625
+      "sha256": "1c1ec6d2816c7242e4179b885a5615248fa03bc7e10731e25824598967877bf4",
+      "bytes": 1525
     }
-  ]
+  ],
+  "bakeManifest": "src/tools/assets/combat-vfx/bake-provenance.json",
+  "bakeManifestSha256": "d46fd67888702372f886ca2dd20e633848dcbdbd7c6dff229d7395c6b8683c00",
+  "compression": {
+    "converter": "src/tools/java/game/wreckriff/tools/PrepareCombatVfx.java",
+    "converterSha256": "d5f85d985add8133637576cdf428e30a3769c253f90e2220a0c57d0ed8486c41",
+    "tool": "Microsoft DirectXTex may2026",
+    "toolSha256": "dcfdec10244e02cf5037fba089c55fb7e1326b1c8181742d77d15fa5cb5eef06",
+    "toolUrl": "https://github.com/microsoft/DirectXTex/releases/download/may2026/texconv.exe",
+    "license": "licenses/DirectXTex-MIT.txt",
+    "licenseSha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+    "arguments": [
+      "-nologo",
+      "-f",
+      "BC3_UNORM_SRGB",
+      "-srgb",
+      "-dx9",
+      "-m",
+      "0",
+      "-nogpu",
+      "-if",
+      "BOX",
+      "-sepalpha",
+      "-y"
+    ],
+    "format": "legacy DDS DXT5 / BC3, straight alpha, sRGB RGB, linear alpha",
+    "flipY": false,
+    "offlineMipLevels": 12,
+    "payloadBytesPerAtlas": 5592432,
+    "quality": {
+      "smoke": {
+        "pixels": 4194304,
+        "visiblePixelsAlphaAtLeast8": 1988987,
+        "alphaRmse8bit": 1.1692679333668567,
+        "alphaMax8bit": 14,
+        "visibleRgbRmse8bit": 5.3404122402625935,
+        "visibleRgbMax8bit": 49,
+        "linearCompositeOver18PercentGreyRmse": 0.005237438559712318,
+        "baseMipGutterNonzeroAlphaPixels": 0,
+        "status": "PASS",
+        "sourceSha256": "4e6ed00ac844a8caca20c5936bd296ff1f5b8b9d4e7f31c0073611dd367d0462",
+        "runtimeSha256": "a78a43ae7c444e4284ef95844548a7a512d109023237c7321532a4ce8ad636f8",
+        "repeatSha256": "a78a43ae7c444e4284ef95844548a7a512d109023237c7321532a4ce8ad636f8",
+        "source": "src/tools/assets/combat-vfx/smoke.png",
+        "runtime": "textures/vfx/smoke.dds"
+      },
+      "flame": {
+        "pixels": 4194304,
+        "visiblePixelsAlphaAtLeast8": 1155391,
+        "alphaRmse8bit": 1.0084349609948282,
+        "alphaMax8bit": 13,
+        "visibleRgbRmse8bit": 7.486304426704221,
+        "visibleRgbMax8bit": 121,
+        "linearCompositeOver18PercentGreyRmse": 0.008593556219324323,
+        "baseMipGutterNonzeroAlphaPixels": 0,
+        "status": "PASS",
+        "sourceSha256": "f5243b0ca721c6c847db4e3b7337b7279f7abb7dff02e18d244d6ce8f07191cc",
+        "runtimeSha256": "332dcb2e08204b02bf956e4cb6df1b8b59a11135a57af6e7812caf63037da5ff",
+        "repeatSha256": "332dcb2e08204b02bf956e4cb6df1b8b59a11135a57af6e7812caf63037da5ff",
+        "source": "src/tools/assets/combat-vfx/flame.png",
+        "runtime": "textures/vfx/flame.dds"
+      },
+      "blast": {
+        "pixels": 4194304,
+        "visiblePixelsAlphaAtLeast8": 1397955,
+        "alphaRmse8bit": 1.0502509725448583,
+        "alphaMax8bit": 14,
+        "visibleRgbRmse8bit": 5.842812545229871,
+        "visibleRgbMax8bit": 121,
+        "linearCompositeOver18PercentGreyRmse": 0.007059745910928492,
+        "baseMipGutterNonzeroAlphaPixels": 0,
+        "status": "PASS",
+        "sourceSha256": "0462de4841273aaee71527e552af16af7828e57da9b62978f1ecb6b14b7fa8ec",
+        "runtimeSha256": "af8f91bc84155f8a3daeaa1d4fed10685cb8aec146e877117e98f73ef349244e",
+        "repeatSha256": "af8f91bc84155f8a3daeaa1d4fed10685cb8aec146e877117e98f73ef349244e",
+        "source": "src/tools/assets/combat-vfx/blast.png",
+        "runtime": "textures/vfx/blast.dds"
+      },
+      "dust": {
+        "pixels": 4194304,
+        "visiblePixelsAlphaAtLeast8": 1225253,
+        "alphaRmse8bit": 1.0230053870319367,
+        "alphaMax8bit": 14,
+        "visibleRgbRmse8bit": 6.077848803854021,
+        "visibleRgbMax8bit": 47,
+        "linearCompositeOver18PercentGreyRmse": 0.0036801116835079033,
+        "baseMipGutterNonzeroAlphaPixels": 0,
+        "status": "PASS",
+        "sourceSha256": "28bad8459239f528a8f829e142608829eec83c52ce0c34762cc6830aecd89e17",
+        "runtimeSha256": "8a7d51196008f399fd1019660365013c7d6229ad73fcceb08dcdc5d065c9acae",
+        "repeatSha256": "8a7d51196008f399fd1019660365013c7d6229ad73fcceb08dcdc5d065c9acae",
+        "source": "src/tools/assets/combat-vfx/dust.png",
+        "runtime": "textures/vfx/dust.dds"
+      }
+    }
+  }
 }

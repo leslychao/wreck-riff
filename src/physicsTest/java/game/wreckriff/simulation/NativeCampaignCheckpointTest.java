@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeCampaignCheckpointTest {
     private static final VehicleRules RULES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
@@ -17,6 +18,64 @@ class NativeCampaignCheckpointTest {
         var catalogue=Configs.load("arenas",ArenaRegistry.Catalogue.class);
         return new ArenaRegistry(new ArenaRegistry.Catalogue(catalogue.schemaVersion(),
                 catalogue.entries().stream().filter(entry->entry.id().equals(arenaId)).toList()));
+    }
+
+    @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park"})
+    void liveBossEntryAndSpawnPreserveCollectedAmmoAndTheConsumedSocketDeadline(String arenaId) {
+        var arena=registryFor(arenaId).definition(arenaId);
+        try(var rig=new Rig(arena,null)) {
+            var player=rig.session.vehicle(0);
+            assertTrue(rig.session.vehicles.stream().allMatch(v->v.weapons().stream().allMatch(slot->slot.ammo==0)));
+            var start=rig.world.position(0);
+            var socket=arena.pickups().stream().filter(p->p.type()==ArenaDefinition.PickupType.POWER_AMMO&&p.position().y()==0)
+                    .min(Comparator.comparingDouble(p->p.position().vector().distanceSquared(start))).orElseThrow();
+            // Position only the fixture's physical car at a real authored socket.
+            // The runtime must perform collection, phase transitions and boss creation itself.
+            rig.world.teleport(0,socket.position().vector().add(0,rig.world.profile(0).roadOffset(),0),rig.world.rotation(0));
+            rig.runtime.skipIntro();var events=new ArrayList<GameEvent>();GameEvent receipt=null;
+            for(int tick=0;tick<120&&receipt==null;tick++) {
+                var batch=rig.runtime.tick(Map.of(),false);events.addAll(batch);
+                receipt=batch.stream().filter(e->e.type()==GameEvent.Type.PICKUP&&e.subjectId()==0&&socket.id().equals(e.objectId()))
+                        .findFirst().orElse(null);
+            }
+            assertNotNull(receipt,"The actual native collection pipeline must grant the authored Power pickup");
+            assertEquals(2,player.weapon(WeaponType.POWER).ammo);assertEquals(2,receipt.value());
+            long deadline=receipt.simulationTick()+socket.respawnTicks();
+            var ammunition=new EnumMap<WeaponType,Integer>(WeaponType.class);
+            for(var type:WeaponType.values())ammunition.put(type,player.weapon(type).ammo);
+            assertLiveSupply(rig,socket.id(),deadline,ammunition);
+            long generation=rig.world.teleportGeneration(0);UUID sessionId=rig.session.sessionId;
+            for(var rival:rig.session.vehicles)if(!rival.player)
+                rig.runtime.combat().queueDamage(rival.id,0,100000,"fixture",90000+rival.id);
+            events.addAll(rig.runtime.tick(Map.of(),false));
+            assertEquals(0,rig.session.normalRivalsAlive());assertEquals(MatchSession.Phase.BOSS_ENTRY,rig.session.phase);
+            assertEquals(-1,rig.session.bossParticipantId,"The transition precedes the next tick's boss registration");
+            assertLiveSupply(rig,socket.id(),deadline,ammunition);
+            for(int tick=0;tick<3*MatchSession.TICKS_PER_SECOND&&rig.session.bossParticipantId<0;tick++) {
+                events.addAll(rig.runtime.tick(Map.of(),false));
+                assertLiveSupply(rig,socket.id(),deadline,ammunition);
+                assertEquals(MatchSession.Phase.BOSS_ENTRY,rig.session.phase);
+            }
+            assertTrue(rig.session.bossParticipantId>=0,"The live match must physically spawn its boss");
+            var boss=rig.session.vehicle(rig.session.bossParticipantId);
+            assertTrue(boss.weapons().stream().allMatch(slot->slot.ammo==0),()->"Only the newly created boss starts empty: pose="
+                    +rig.world.position(boss.id)+", pickups="+events.stream().filter(e->e.type()==GameEvent.Type.PICKUP&&e.subjectId()==boss.id).toList());
+            for(int tick=0;tick<=3*MatchSession.TICKS_PER_SECOND&&rig.session.phase==MatchSession.Phase.BOSS_ENTRY;tick++) {
+                events.addAll(rig.runtime.tick(Map.of(),false));
+                assertLiveSupply(rig,socket.id(),deadline,ammunition);
+            }
+            assertEquals(MatchSession.Phase.BOSS_COMBAT,rig.session.phase);
+            assertEquals(sessionId,rig.session.sessionId);assertEquals(generation,rig.world.teleportGeneration(0));
+            assertEquals(1,events.stream().filter(e->e.type()==GameEvent.Type.PICKUP&&socket.id().equals(e.objectId())).count(),
+                    "Standing at the consumed socket cannot produce another grant when the boss appears");
+        }
+    }
+    private static void assertLiveSupply(Rig rig,String socketId,long deadline,Map<WeaponType,Integer> ammunition) {
+        for(var type:WeaponType.values())assertEquals(ammunition.get(type).intValue(),rig.session.vehicle(0).weapon(type).ammo,type.id());
+        assertTrue(deadline>rig.session.tick,"This scenario finishes before the ordinary respawn deadline");
+        assertFalse(rig.runtime.arenaSystems().active(socketId));
+        assertEquals(deadline-rig.session.tick,rig.runtime.arenaSystems().snapshot().pickups().get(socketId).respawnTicks(),
+                "The same absolute respawn deadline must survive transition, registration and boss intro");
     }
 
     @ParameterizedTest @ValueSource(strings={"construction_17","neon_zero","euphoria_park"})
@@ -132,7 +191,7 @@ class NativeCampaignCheckpointTest {
             session=new MatchSession(42,arena,MatchSession.Mode.CAMPAIGN,COMBAT,UUID.randomUUID(),checkpoint!=null&&checkpoint.stage()==ProgressStore.CheckpointStage.BOSS,
                     checkpoint==null?0:checkpoint.liveryId(),checkpoint==null?"rivet":checkpoint.profileId());
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             if(checkpoint!=null)ArenaSystems.restoreGeometry(checkpoint.arena(),world,content.graph(),arena);
             world.configureArena(arena);
             for(var state:session.vehicles) {

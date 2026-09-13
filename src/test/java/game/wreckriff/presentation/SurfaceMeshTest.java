@@ -15,8 +15,8 @@ class SurfaceMeshTest {
         for(String parameter:new String[]{"DiffuseMap","NormalMap","SpecularMap"}) {
             var texture=(com.jme3.texture.Texture)material.getParam(parameter).getValue();
             assertEquals(2048,texture.getImage().getWidth());assertEquals(2048,texture.getImage().getHeight());
-            assertEquals(parameter.equals("DiffuseMap")?com.jme3.texture.image.ColorSpace.sRGB:
-                    com.jme3.texture.image.ColorSpace.Linear,texture.getImage().getColorSpace());
+            assertEquals(com.jme3.texture.image.ColorSpace.Linear,texture.getImage().getColorSpace());
+            if(parameter.equals("DiffuseMap"))assertEquals(com.jme3.texture.Image.Format.BC7_UNORM_SRGB,texture.getImage().getFormat());
             assertEquals(com.jme3.texture.Texture.MinFilter.Trilinear,texture.getMinFilter());
             assertEquals(8,texture.getAnisotropicFilter());
         }

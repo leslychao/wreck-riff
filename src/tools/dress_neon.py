@@ -228,73 +228,222 @@ class City:
         self.installed[-1]['frontageYaw']=yaw
 
 
+def _building_use(identity):
+    # The author already names the site and its wings. Use that purpose instead
+    # of deriving another arbitrary pattern from position or a random seed.
+    if identity.startswith(('courtyard-', 'east-apartments', 'garden-court', 'north-hotel')):
+        return 'residential'
+    if identity.startswith(('technical-', 'transit-depot', 'market-cold-store',
+                            'western-substation', 'delivery-centre', 'residential-service')):
+        return 'service'
+    if identity.startswith(('market-corner', 'passage-shop', 'southern-frontage', 'arts-workshops')):
+        return 'retail'
+    if identity.startswith(('school', 'west-clinic', 'civic-archive')):
+        return 'civic'
+    return 'business'
+
+
+class Frontage:
+    """Shallow, attached architectural joinery on an existing solid wall.
+
+    Coordinates are along the wall and above its base. Closed windows and doors
+    keep the building's collision envelope; none suggest a new vehicle opening.
+    All skins stand clear of the wall (no coplanar faces), by at most 0.44 metres.
+    """
+    def __init__(self, scene, name, center, width, height, yaw, base=0):
+        self.scene,self.name,self.center=scene,name,center
+        self.width,self.height,self.yaw,self.base=width,height,yaw,base
+
+    def detail(self, label, along, y, span, tall, material, depth=.12, thick=.16):
+        angle=math.radians(self.yaw);x,z=self.center
+        self.scene.part(self.name+'-'+label,
+            (x+math.cos(angle)*along+math.sin(angle)*depth,self.base+y,
+             z-math.sin(angle)*along+math.cos(angle)*depth),
+            (span,tall,thick),material,rotation=(0,self.yaw,0))
+
+    def window(self, label, x, y, width, height, lit=False, detailed=True):
+        if detailed:self.detail(label+'-reveal',x,y,width+.5,height+.45,'ivory',.13,.22)
+        self.detail(label+'-pane',x,y,width,height,'light-amber' if lit else 'glass',.29,.1)
+
+    def shutters(self, width, height, count, label='loading', detailed=True):
+        for index in range(count):
+            x=(index-(count-1)/2)*min(width+7,self.width/count)
+            self.detail(label+'-frame',x,height/2+.25,width+.9,height+.5,'dark-concrete',.14,.24)
+            self.detail(label+'-closed-door',x,height/2+.25,width,height,'steel',.31,.14)
+            if detailed:
+                for y in range(1,int(height)):
+                    self.detail(label+'-door-rib',x,y+.25,width-.4,.09,'black',.415,.05)
+
+    def compose(self, use, variant=0, distant=False):
+        w,h=self.width,self.height
+        self.detail(use+'-base',0,.6,w-1,1.2,'dark-concrete',.13,.24)
+        self.detail(use+'-crown',0,h-.4,w-1,.7,'ivory' if use in ('residential','civic') else 'steel',.17,.28)
+        if use=='service':
+            # Depots have a loading elevation; end walls carry extraction plant.
+            # No ground-level retail glazing on transformer or cold-store walls.
+            self.shutters(min(10,w*.22),min(7,h*.55),min(3,max(1,int(w/35))),detailed=not distant)
+            for x in (-w*.32,w*.32):
+                self.detail('service-vent-case',x,h*.78,min(10,w*.18),min(3,h*.18),'black',.16,.26)
+                if not distant:
+                    for row in (-1,0,1):self.detail('service-louvre',x,h*.78+row*.55,min(10,w*.18)-.5,.22,'steel',.35,.16)
+            if variant%2==0:
+                self.detail('service-access-door',w*.4,1.65,2,3.3,'blue',.18,.24)
+            return
+        if use=='business':
+            # Tall glazed groups, structural cores, and a separate lobby. The
+            # mechanical storey interrupts the curtain wall instead of creating
+            # an uninterrupted stripe around every floor of every building.
+            columns=max(2,min(7,int(w/15)));pitch=(w-8)/columns
+            bottom=8 if h>=22 else 2
+            rows=max(1,min(6 if distant else 10,round((h-bottom-3)/10)))
+            pitch_y=(h-bottom-2)/rows
+            for col in range(columns):
+                x=-w/2+4+(col+.5)*pitch
+                if col==columns//2 and h>40:
+                    self.detail('business-service-core',x,(h+bottom)/2,pitch*.48,h-bottom,'steel',.12,.2)
+                    continue
+                for row in range(rows):
+                    if h>65 and row==rows//2:continue
+                    y=bottom+(row+.5)*pitch_y
+                    self.window('business-glazed-group',x,y,pitch*.76,pitch_y*.81,
+                                lit=False,detailed=not distant and y<18)
+            if h>=22:
+                self.window('business-lobby',-w*.17,3.7,min(18,w*.3),5.8,detailed=not distant)
+                self.detail('business-lobby-divider',-w*.17,3.7,.35,5.8,'steel',.36,.15)
+            return
+        # Housing has solid party walls and pairs of windows separated by a
+        # stair bay. Civic buildings have taller reading/classroom openings.
+        civic=use=='civic';retail=use=='retail'
+        ground=7 if retail else 5 if civic else 2.8
+        columns=max(2,min(7 if distant else 12,int(w/(13 if civic else 11))))
+        pitch=(w-6)/columns;rows=max(0,min(8 if distant else 17,int((h-ground-1)/(5.4 if civic else 4.4))))
+        pitch_y=(h-ground-1)/max(1,rows)
+        for col in range(columns):
+            x=-w/2+3+(col+.5)*pitch
+            if col==columns//2 and not civic:
+                self.detail('residential-stair-spandrel',x,(h+ground)/2,pitch*.55,h-ground,'ivory',.11,.18)
+            for row in range(rows):
+                y=ground+(row+.45)*pitch_y
+                if civic:
+                    self.window('civic-reading-bay',x,y,pitch*.58,min(4.3,pitch_y*.7),detailed=not distant and y<18)
+                elif col==columns//2:
+                    self.window('residential-stair-window',x,y,1.5,min(2.6,pitch_y*.58),detailed=not distant and y<18)
+                else:
+                    # Pairs share a wall bay; masonry remains visible between
+                    # both rooms, neighbouring apartments and successive floors.
+                    for side in (-1,1):
+                        self.window('residential-room',x+side*pitch*.19,y,pitch*.26,min(2.7,pitch_y*.62),
+                                    lit=(col*5+row*3+variant)%19==0 and side==1,detailed=not distant and y<18)
+        if retail:
+            count=max(1,min(4,int(w/20)))
+            for col in range(count):
+                x=(col-(count-1)/2)*(w-8)/count
+                self.window('retail-display',x-1.6,2.7,min(9,(w-10)/count*.6),4.3,detailed=not distant)
+                self.detail('retail-door',x+min(5,(w-10)/count*.32),2,2,4,'steel',.25,.2)
+                self.detail('retail-fascia',x,5.65,min(15,(w-8)/count-2),.9,'ivory',.17,.2)
+        elif civic:
+            self.detail('civic-public-entrance',0,2.1,3.4,4.2,'steel',.22,.2)
+        else:
+            self.detail('residential-entrance',w*.12,1.6,2.2,3.2,'steel',.22,.2)
+
+
 def _street_faces(scene):
-    # East/west faces used to be entirely blank even on occupied office blocks.
-    # Continuous floor bands and deeper ground-floor shopfronts identify the building.
-    for building in list(scene.data['boxes']):
-        c,s=building['center'],building['size'];w,h,d=s['x'],s['y'],s['z']
-        if not building['collision'] or min(w,d)<24 or h<8 or 'roof' in building['id'] or building['id'].startswith(('edge-','dress-')):continue
-        scene.anchor=building['id'];base=c['y']-h/2
-        for side in (-1,1):
-            x=c['x']+side*(w/2+.24)
-            for floor in range(max(1,min(32,int(h/4.5)))):
-                yy=base+3+floor*4.5
-                scene.part('city-side-glazing',(x,yy,c['z']),(.32,2.1,d-3),'glass')
-                for col in range(max(2,min(16,int(d/8)))):
-                    zz=c['z']-d/2+4+col*(d-8)/max(1,min(16,int(d/8))-1)
-                    scene.part('city-window-mullion',(x+side*.2,yy,zz),(.2,2.45,.22),'steel')
-                    if (floor*3+col)%9==0:scene.part('city-side-occupied',(x+side*.26,yy,zz+1.6),(.13,1.5,2.8),'light-amber')
-            scene.part('city-plinth',(x,base+.5,c['z']),(.55,1,d),'dark-concrete')
-            scene.part('city-eaves',(x,c['y']+h/2,c['z']),(.65,.5,d+.7),'steel')
-        # Retail windows and entrance pilasters face the public street, while
-        # existing loading shutters remain on the delivery side.
-        if h<40:
-            for side in (-1,1):
-                z=c['z']+side*(d/2+.45)
-                for col in range(max(2,min(12,int(w/12)))):
-                    xx=c['x']-w/2+6+col*(w-12)/max(1,min(12,int(w/12))-1)
-                    scene.part('city-shopfront',(xx,base+2.25,z),(7,3.5,.5),'glass')
-                    scene.part('city-shopfront-cap',(xx,base+4.25,z+side*.2),(7.4,.35,.5),'steel')
-        scene.anchor=''
+    buildings=[b for b in scene.data['boxes'] if b['collision'] and b['size']['y']>=8
+               and (min(b['size']['x'],b['size']['z'])>=24 or b['id'] in ('technical-west','technical-south')) and 'roof' not in b['id']
+               and not b['id'].startswith(('edge-','dress-'))]
+    # common() predates purpose-specific facades. Replace its windows, rather
+    # than layering a second architectural language on top of the same wall.
+    anchors={b['id'] for b in buildings}
+    replaced=('architectural-window-','occupied-window-','street-address-','parapet-coping-')
+    scene.parts[:]=[p for p in scene.parts if not (p['anchor'] in anchors and p['id'].startswith(replaced))]
+    for building in buildings:
+        c,s=building['center'],building['size'];w,h,d=s['x'],s['y'],s['z'];base=c['y']-h/2
+        scene.anchor=building['id'];use=_building_use(building['id'])
+        for axis,side,yaw in (('z',1,0),('x',1,90),('z',-1,180),('x',-1,-90)):
+            width=d if axis=='x' else w
+            if width<24:continue
+            offset=(side*w/2,0) if axis=='x' else (0,side*d/2)
+            angle=math.radians(building['yawDegrees'])
+            center=(c['x']+math.cos(angle)*offset[0]+math.sin(angle)*offset[1],
+                    c['z']-math.sin(angle)*offset[0]+math.cos(angle)*offset[1])
+            front=Frontage(scene,'front-'+building['id']+'-'+axis+str(side),center,width,h,yaw+building['yawDegrees'],base)
+            front.compose(use,variant=0 if side==1 else 1)
+    scene.anchor=''
 
 
 def _city_backdrop(scene):
-    # Continue the occupied city at its physical boundary. These are facades on
-    # existing buildings, not extra collision boxes or a second street layout.
-    def face(name,x,z,width,height,axis,sign,base=0):
-        def detail(label,along,y,span,tall,depth,material):
-            position=(x+along,y,z+sign*depth) if axis=='z' else (x+sign*depth,y,z+along)
-            size=(span,tall,.32) if axis=='z' else (.32,tall,span)
-            scene.part(name+'-'+label,position,size,material)
-        floors=max(1,int((height-3)/4.8))
-        for floor in range(floors):
-            y=base+3.2+floor*4.8
-            detail('window-band',0,y,width-5,2.3,.35,'glass')
-            for bay in range(max(2,int(width/14))):
-                along=-width/2+7+bay*14
-                if (bay+floor*3)%11==0:detail('occupied-office',along,y,6,1.7,.57,'light-amber')
-        # Deep vertical piers and a continuous crown keep the mass readable at LOD distance.
-        for bay in range(max(2,int(width/25))+1):
-            along=-width/2+2+bay*(width-4)/max(2,int(width/25))
-            detail('masonry-pier',along,base+height/2,.7,height,.68,'steel')
-        detail('cornice',0,base+height,width,.7,.8,'steel')
-        detail('ground-plinth',0,base+.8,width,1.6,.7,'dark-concrete')
+    # Neighbourhoods continue beyond each boundary, with different massing
+    # sections on the existing buildings. At distance the broad masonry/core
+    # divisions survive; hundreds of luminous slits are not a skyline treatment.
+    def face(name,center,width,height,yaw,use,base=0,distant=False):
+        front=Frontage(scene,name,center,width,height,yaw,base)
+        if distant:
+            count=max(2,math.ceil(width/85));pitch=width/count
+            for section in range(count):
+                along=-width/2+(section+.5)*pitch
+                front.detail('section-pier',along-pitch/2+1,height/2,2,height,'cast-concrete',.14,.24)
+                angle=math.radians(yaw)
+                subcenter=(center[0]+math.cos(angle)*along,center[1]-math.sin(angle)*along)
+                # A single real service core belongs to the entire large mass;
+                # the remaining wings retain the building's common purpose.
+                section_use='service' if section==count//2 else use
+                Frontage(scene,name+'-wing-'+str(section),subcenter,pitch-4,height,yaw,base).compose(section_use,section,distant=True)
+        else:front.compose(use,variant=int(center[0]+center[1])%5,distant=True)
     for building in scene.data['boxes']:
         if not building['id'].startswith('edge-'):continue
-        side=int(building['id'].split('-')[1]);c,s=building['center'],building['size'];scene.anchor=building['id']
-        if side<2:
-            sign=1 if side==0 else -1
-            face('boundary-front',c['x']+sign*s['x']/2,c['z'],s['z'],s['y'],'x',sign)
-        else:
-            sign=1 if side==2 else -1
-            face('boundary-front',c['x'],c['z']+sign*s['z']/2,s['x'],s['y'],'z',sign)
-    for building in list(scene.parts):
-        if not building['id'].startswith('city-continuation-'):continue
+        side,start=map(int,building['id'].split('-')[1:]);c,s=building['center'],building['size']
+        scene.anchor=building['id'];axis='x' if side<2 else 'z';sign=1 if side in (0,2) else -1
+        center=(c['x']+sign*s['x']/2,c['z']) if axis=='x' else (c['x'],c['z']+sign*s['z']/2)
+        # West: homes, clinic, financial centre. East: logistics behind parking,
+        # apartments behind the gardens, railway operations behind transport.
+        if side==0:use='residential' if start<650 else 'civic' if start<850 else 'business'
+        elif side==1:use='service' if start<600 or start>=1050 else 'residential'
+        elif side==2:use='residential' if start<750 else 'business' if start<1100 else 'service'
+        else:use='civic' if start<700 else 'business' if start<1300 else 'service'
+        face('boundary-'+building['id'],center,s['z'] if axis=='x' else s['x'],s['y'],
+             (90*sign if axis=='x' else 0 if sign==1 else 180),use)
+    masses=[p for p in scene.parts if p['id'].startswith('city-continuation-')]
+    for building in masses:
         c,s=building['position'],building['size'];scene.anchor='exterior'
-        sign=1 if c['z']<700 else -1
-        face('distant-city',c['x'],c['z']+sign*s['z']/2,s['x'],s['y'],'z',sign)
-        sign=1 if c['x']<900 else -1
-        face('distant-city',c['x']+sign*s['x']/2,c['z'],s['z'],s['y'],'x',sign)
+        use='residential' if c['x']<0 and c['z']<700 or c['z']<0 else 'service' if c['x']>1800 and c['z']<700 else 'business' if c['y']>45 else 'civic'
+        for axis in ('x','z'):
+            sign=1 if c[axis]<(900 if axis=='x' else 700) else -1
+            center=(c['x']+sign*s['x']/2,c['z']) if axis=='x' else (c['x'],c['z']+sign*s['z']/2)
+            face('backdrop-'+building['id']+'-'+axis,center,s['z'] if axis=='x' else s['x'],s['y'],
+                 (90*sign if axis=='x' else 0 if sign==1 else 180),use,c['y']-s['y']/2,True)
+    scene.anchor=''
+
+
+def _express_parapets(scene):
+    # A closed concrete edge on the diagonal deck, with exactly the same mesh
+    # shown and collided. Its inner face touches the OUTSIDE of the complete
+    # 34 m roadway. Raised sides are not extra driving surfaces or road overlays.
+    path=next(p for p in scene.location.paths if p['id']=='express-diagonal')
+    a,b=(scene.location.points[n] for n in path['names'])
+    dx,dz=b[0]-a[0],b[2]-a[2];length=math.hypot(dx,dz)
+    nx,nz=dz/length,-dx/length;half=path['width']/2
+    if abs(a[1]-b[1])>.001:raise ValueError('Diagonal parapets require the authored level deck')
+    # Trim the ends before the ramp junctions. This keeps the complete width of
+    # both the deck and the turning transition through each neighbouring ramp.
+    margin=12;ux,uz=dx/length,dz/length
+    for side in (-1,1):
+        polygon=ccw([(a[0]+ux*margin+nx*offset*side,a[2]+uz*margin+nz*offset*side)
+                     for offset in (half,half+.7)]+
+                    [(b[0]-ux*margin+nx*offset*side,b[2]-uz*margin+nz*offset*side)
+                     for offset in (half+.7,half)])
+        vertices,indices,_=_faces([polygon],a[1]+1.35,'cast-concrete')
+        identity='neon-express-parapet-'+str(side)
+        scene.data['meshes'].append(dict(id=identity,vertices=vertices,indices=indices,
+            material='cast-concrete',collision=True,triangleMaterials=[],thickness=2.55))
+        # The lower 1.2 m joins the existing deck's side over its full depth,
+        # instead of balancing the parapet on a single unattached edge line.
+        # Reflective caps sit directly on the crown, within the wall footprint.
+        scene.anchor=identity
+        for number in range(1,int((length-2*margin)/35)+1):
+            t=margin+number*35
+            scene.part('express-edge-reflector',(a[0]+ux*t+nx*(half+.35)*side,a[1]+1.39,
+                       a[2]+uz*t+nz*(half+.35)*side),(.5,.08,.65),'ivory',
+                       rotation=(0,math.degrees(math.atan2(dx,dz)),0))
     scene.anchor=''
 
 
@@ -309,6 +458,10 @@ def _foreground(city):
         ('gallery-coffee',[(893,712),(902,700),(906,720)],'cafe'),
         ('atrium-directory',[(875,825),(875,810),(825,830)],'directory'),
         ('gallery-north-garden',[(805,835),(788,851),(900,850)],'garden'),
+        # The exterior market route approaches the corner shop from the south,
+        # independently of the indoor gallery. Its street directory belongs to
+        # that shop forecourt; it does not create another isolated retail hut.
+        ('market-street-directory',[(650,575),(640,575),(665,552)],'directory'),
         ('court-laundry-pickup',[(425,365),(440,368),(425,335)],'news'),
         ('court-garden',[(480,430),(510,450),(470,445)],'garden'),
         ('court-mail-directory',[(595,430),(610,425),(630,415)],'directory'),
@@ -336,7 +489,7 @@ def _foreground(city):
 
 def dress(scene):
     _sidewalks(scene);city=City(scene)
-    _street_faces(scene);_city_backdrop(scene);_foreground(city)
+    _street_faces(scene);_city_backdrop(scene);_express_parapets(scene);_foreground(city)
     for row in [('meridian-square',505,1165,15,6),('exchange-square',740,1115,12,6),
                 ('archive-garden',285,1240,18,7),('clinic-forecourt',115,620,13,6),
                 ('court-a',363,353,13,5),('court-b',510,380,13,5),('court-c',310,492,12,6),
@@ -347,23 +500,25 @@ def dress(scene):
                 ('transport-stop',1350,1190),('parking-stop',1730,405)]:city.shelter(*row)
     city.parking_sign('parking-west',1360,310);city.parking_sign('parking-east',1720,305)
     city.service_yard('traction-substation',1140,1200);city.service_yard('distribution-yard',1250,250)
-    # Entrances, rain canopies and loading doors belong to existing buildings.
-    # They keep a visible public front and a separate service side.
+    # Rain canopies belong to the actual public entrances. Doors themselves
+    # are part of each purpose-specific facade, not another generic glass layer.
     prefixes=('market-corner','southern-frontage','arts-workshops','west-clinic','north-hotel','delivery-centre')
     for building in list(scene.data['boxes']):
         if not building['id'].startswith(prefixes):continue
         c,s=building['center'],building['size'];scene.anchor=building['id']
         x,z=c['x'],c['z']-s['z']/2
+        use=_building_use(building['id'])
+        if use=='residential':x-=s['x']*.12
+        elif use=='retail':
+            count=max(1,min(4,int(s['x']/20)))
+            # Match the actual south-facing shop door, whose local +X points
+            # west. In an even row the entrance is not at the building centre.
+            along=(count//2-(count-1)/2)*(s['x']-8)/count+min(5,(s['x']-10)/count*.32)
+            x-=along
         width=min(18,s['x']*.65)
         # The canopy is a real obstruction above head height, outside the driving corridor.
         if city.clear(x,z-2.7,math.hypot(width,5)/2,ignore=(building['id'],)):
             city.solid(building['id']+'-entrance-canopy',(x,5.8,z-2.7),(width,.45,5),'steel')
-        scene.anchor=building['id']
-        scene.part('entry-doors',(x,2.2,z-.18),(min(6,s['x']*.45),4.4,.28),'glass')
-        scene.part('entry-lintel',(x,4.75,z-.35),(min(8,s['x']*.5),.45,.7),'light-cyan')
-        back=c['z']+s['z']/2
-        scene.part('service-shutter',(x,2.6,back+.18),(min(8,s['x']*.45),5.2,.28),'steel')
-        for sign in (-1,1):scene.part('service-corner-guard',(x+sign*4,1.4,back+.4),(.4,2.8,.5),'yellow')
     # The destination is attached to the existing structure, not a floating HUD label.
     for name,text,position,size,yaw,anchor in [
         ('gallery-name','ZERO / ГАЛЕРЕЯ',(825,9,674),(42,3,.5),180,'shopping-passage-roof'),

@@ -1715,7 +1715,9 @@
     },
     "totalAmmunition": 96,
     "spawns": 11,
-    "startAccess": [
+    "placementSource": "src/tools/assets/arena-revision3/supply-layout.json",
+    "baselineDefinitionSha256": "05b1425d04323e602dddfb6ed7c9e9906591851ec82b65a99b32b7a4de580a49",
+    "verifiedBaselineAccess": [
       {
         "spawnId": 0,
         "pickups": [

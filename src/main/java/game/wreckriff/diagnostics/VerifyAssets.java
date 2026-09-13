@@ -42,7 +42,7 @@ public final class VerifyAssets {
             String licensePath, String acquired, String sourceSha256, String sha256, String transformation) {}
     private record TextureIndex(int schemaVersion, List<TextureSource> assets) {}
     private static final Set<String> MATERIALS = Set.of("asphalt_02", "cracked_concrete", "metal_plate_02", "blue_metal_plate", "rusty_metal_03",
-            "leafy_grass", "brown_mud", "gravelly_sand", "red_brick_03", "wood_planks_grey", "concrete_wall_009");
+            "leafy_grass", "brown_mud", "gravelly_sand", "red_brick_03", "wood_planks_grey", "concrete_wall_009", "asphalt_pit_lane", "dirt", "grass_ground");
     private static final Map<String,String> ASSET_LICENSE_HASHES = Map.of(
             "CC-BY-4.0.txt", "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
             "CC0-1.0.txt", "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
@@ -99,6 +99,11 @@ public final class VerifyAssets {
         attempt(errors, "arena art", () -> verifyArenaArt(assets));
         attempt(errors, "font", () -> verifyFont(assets));
         attempt(errors, "licensed textures", () -> verifyTextures(assets));
+        attempt(errors, "compressed environment colour maps", () -> {
+            // Runtime texture identities already belong to the licensed texture register.
+            for(Asset asset:EnvironmentDiffuseAssetsVerifier.verify())if(!asset.path.endsWith("/diffuse.dds"))assets.add(asset);
+        });
+        attempt(errors, "environment Phong definition", () -> verifyEnvironmentLighting(assets));
         attempt(errors, "arena menu previews", () -> verifyArenaPreviews(assets));
         attempt(errors, "retired campaign resources", () -> {
             for(String path:List.of("config/arena-ash-necropolis.json","config/arena-doomsday.json",
@@ -197,8 +202,8 @@ public final class VerifyAssets {
                 license = "licenses/assets/CC-BY-4.0.txt";
                 attribution = "CREDIT_TITLE_AUTHOR_SOURCE_LICENSE_AND_MODIFICATIONS";
             } else if (Set.of("recorded-sound-effect", "sfx-provenance").contains(asset.category)) {
-                author = "Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney; rubberduck; processing by Wreck Riff tooling";
-                permission = "CC0-1.0; recording sources and transformations in audio/sfx-sources.json and audio/sfx-provenance.json";
+                author = "Recorded creators identified in packaged audio provenance manifests; processing by Wreck Riff tooling";
+                permission = "CC0-1.0; recording sources and transformations in packaged audio provenance manifests";
                 license = "licenses/assets/CC0-1.0.txt";
                 attribution = "NOT_REQUIRED_BY_CC0; SOURCE_RETAINED";
             } else if (Set.of("bitmap-font", "font-atlas", "font-provenance").contains(asset.category)) {
@@ -207,9 +212,9 @@ public final class VerifyAssets {
                 license = "licenses/assets/Roboto-OFL.txt";
                 attribution = "RETAIN_COPYRIGHT_AND_OFL_NOTICE";
             } else if (asset.category.equals("licensed-texture")) {
-                author = asset.source.contains("cracked_concrete") ? "Dimitrios Savva / Poly Haven"
+                author = asset.source.contains("cracked_concrete") || asset.source.contains("asphalt_pit_lane") ? "Dimitrios Savva / Poly Haven"
                         : asset.source.contains("rusty_metal_03") ? "Amal Kumar / Poly Haven"
-                        : asset.source.contains("leafy_grass") || asset.source.contains("concrete_wall_009") ? "Charlotte Baglioni / Poly Haven"
+                        : asset.source.contains("leafy_grass") || asset.source.contains("concrete_wall_009") || asset.source.contains("/dirt/") || asset.source.contains("grass_ground") ? "Charlotte Baglioni / Poly Haven"
                         : asset.source.contains("gravelly_sand") ? "Poly Haven" : "Rob Tuytel / Poly Haven";
                 permission = "CC0-1.0; source and per-file transformations retained in licenses/asset-provenance.json";
                 license = "licenses/assets/CC0-1.0.txt";
@@ -265,6 +270,7 @@ public final class VerifyAssets {
                 throw new IOException("Superseded runtime audio is still packaged: "+retired);
         }
         Map<String,String> recorded = verifyRecordedEffects(config,assets);
+        recorded.putAll(AmbientAssetsVerifier.verify(config,assets));
         Map<String,String> pickups = verifyPickupEffects(config,assets);
         Map<String,String> specials = verifySpecialEffects(config,assets);
         Map<String,String> authored=new HashMap<>(pickups);authored.putAll(specials);
@@ -944,7 +950,7 @@ public final class VerifyAssets {
         TextureIndex index = Configs.gson().fromJson(tree, TextureIndex.class);
         Set<String> required = new TreeSet<>();
         for (String material : MATERIALS) for (String map : List.of("diffuse", "normal", "specular"))
-            required.add("textures/materials/" + material + "/" + map + ".png");
+            required.add("textures/materials/" + material + "/" + map + (map.equals("diffuse")&&!material.equals("leafy_grass")?".dds":".png"));
         required.addAll(List.of("textures/vehicle/paint.png", "textures/vehicle/rubber.png"));
         Set<String> found = new HashSet<>();
         if (index.schemaVersion != 1) throw new IOException("Unexpected texture provenance schema");
@@ -959,11 +965,37 @@ public final class VerifyAssets {
             byte[] bytes = resource(source.path);
             if (!hash(bytes).equals(source.sha256) || !hash(Files.readAllBytes(Path.of(source.sourcePath))).equals(source.sourceSha256))
                 throw new IOException("Texture source/output checksum mismatch: " + source.path);
-            verifyTextureBytes(bytes, source.path.endsWith("/normal.png"));
+            if(source.path.endsWith(".dds"))game.wreckriff.presentation.EnvironmentDiffuseDds.read(bytes);
+            else verifyTextureBytes(bytes, source.path.endsWith("/normal.png"));
+            if(source.path.endsWith("/specular.png"))verifySpecularTextureBytes(bytes,
+                    Files.readAllBytes(Path.of(source.sourcePath)),Path.of(source.path).getParent().getFileName().toString());
             assets.add(asset(source.path, "licensed-texture", bytes, source.sourceUrl + "; " + source.transformation, "LICENSED_BYTES_VERIFIED"));
         }
         if (!found.equals(required)) throw new IOException("Required 2K material map missing");
         assets.add(asset("licenses/asset-provenance.json", "asset-provenance", evidence, "src/tools/import_assets.py", "VERIFIED"));
+    }
+
+    static void verifyEnvironmentLighting(List<Asset> assets)throws Exception {
+        String path="materials/EnvironmentLighting.j3md",manifestPath="materials/environment-lighting-provenance.json";
+        byte[] manifest=resource(manifestPath);var evidence=JsonParser.parseString(new String(manifest,StandardCharsets.UTF_8)).getAsJsonObject();
+        String sourcePath="src/tools/assets/environment-lighting/Lighting.j3md";
+        String generator="src/tools/java/game/wreckriff/tools/PrepareEnvironmentLighting.java",license="licenses/jme-BSD3.txt";
+        if(!evidence.get("engineVersion").getAsString().equals("3.8.1-stable")||!evidence.get("path").getAsString().equals(path)
+                ||!evidence.get("sourcePath").getAsString().equals(sourcePath)||!evidence.get("generator").getAsString().equals(generator)
+                ||!evidence.get("license").getAsString().equals(license))throw new IOException("Unknown environment Phong provenance");
+        byte[] source=Files.readAllBytes(Path.of(sourcePath)),output=resource(path);
+        if(!Arrays.equals(source,resource("Common/MatDefs/Light/Lighting.j3md"))
+                ||!hash(source).equals(evidence.get("sourceSha256").getAsString())||!hash(output).equals(evidence.get("sha256").getAsString())
+                ||!hash(Files.readAllBytes(Path.of(generator))).equals(evidence.get("generatorSha256").getAsString())
+                ||!hash(resource(license)).equals(evidence.get("licenseSha256").getAsString()))throw new IOException("Environment Phong source or output changed after preparation");
+        String expected="// Derived from jMonkeyEngine 3.8.1-stable; BSD-3-Clause, licenses/jme-BSD3.txt.\n"
+                +new String(source,StandardCharsets.UTF_8).replace("\r\n","\n")
+                .replace("Texture2D DiffuseMap\n","Texture2D DiffuseMap -LINEAR\n")
+                .replace("Texture2D SpecularMap\n","Texture2D SpecularMap -LINEAR\n");
+        if(!Arrays.equals(output,expected.getBytes(StandardCharsets.UTF_8)))throw new IOException("Unexpected changes to pinned environment Phong techniques");
+        assets.add(asset(path,"engine-derived-material",output,sourcePath,"PINNED_TRANSFORM_VERIFIED"));
+        assets.add(asset(manifestPath,"material-provenance",manifest,generator,"VERIFIED"));
+        assets.add(asset(sourcePath,"historical-source",source,"org.jmonkeyengine:jme3-core:3.8.1-stable; BSD-3-Clause","SOURCE_PRESENT"));
     }
 
     static void verifyTextureBytes(byte[] bytes, boolean normalMap) throws IOException {
@@ -975,6 +1007,41 @@ public final class VerifyAssets {
             float nx = ((rgb >> 16) & 255) / 127.5f - 1, ny = ((rgb >> 8) & 255) / 127.5f - 1, nz = (rgb & 255) / 127.5f - 1;
             float length = nx * nx + ny * ny + nz * nz;
             if (length < .75f || length > 1.25f || nz < -.01f) throw new IOException("Invalid tangent-space normal map");
+        }
+    }
+
+    /** Raw scalar samples: do not use BufferedImage.getRGB on a grayscale data map. */
+    static void verifySpecularTextureBytes(byte[] bytes,byte[] roughness,String material) throws IOException {
+        if(!MATERIALS.contains(material)||bytes.length<33||bytes[24]!=8||bytes[25]!=0)
+            throw new IOException("Specular data must be an L8 PNG: "+material);
+        int position=8;boolean ended=false;
+        while(position<bytes.length) {
+            if(bytes.length-position<12)throw new IOException("Truncated scalar PNG");
+            long size=Integer.toUnsignedLong(ByteBuffer.wrap(bytes,position,4).getInt());
+            if(size>bytes.length-position-12)throw new IOException("Invalid scalar PNG chunk size");
+            String type=new String(bytes,position+4,4,StandardCharsets.US_ASCII);
+            if(Set.of("gAMA","sRGB","iCCP","cHRM","cICP","sBIT","tRNS").contains(type))throw new IOException("Colour metadata on linear scalar PNG: "+type);
+            CRC32 crc=new CRC32();crc.update(bytes,position+4,4+(int)size);
+            if(crc.getValue()!=Integer.toUnsignedLong(ByteBuffer.wrap(bytes,position+8+(int)size,4).getInt()))throw new IOException("Invalid scalar PNG CRC");
+            position+=12+(int)size;
+            if(type.equals("IEND")){ended=true;if(position!=bytes.length)throw new IOException("Trailing scalar PNG bytes");}
+        }
+        if(!ended)throw new IOException("Missing scalar PNG end");
+        var output=ImageIO.read(new ByteArrayInputStream(bytes));var source=ImageIO.read(new ByteArrayInputStream(roughness));
+        if(output==null||source==null||output.getWidth()!=2048||output.getHeight()!=2048||source.getWidth()!=2048||source.getHeight()!=2048)
+            throw new IOException("Scalar source and output must be 2K");
+        boolean original=Set.of("asphalt_02","cracked_concrete","metal_plate_02","blue_metal_plate","rusty_metal_03").contains(material);
+        float base=original?.025f:.02f,maximum=Set.of("metal_plate_02","blue_metal_plate").contains(material)?.70f:original?.22f:.12f;
+        int[] expected=new int[256];for(int value=0;value<256;value++){float delta=1-value/255f;expected[value]=(int)Math.rint(255f*(base+maximum*(delta*delta)));}
+        var input=source.getRaster();var scalar=output.getRaster();int bands=input.getNumBands();
+        if(bands!=1&&bands!=3)throw new IOException("Unexpected roughness source channels");
+        int shift=Math.max(0,input.getSampleModel().getSampleSize(0)-8);
+        for(int y=0;y<2048;y++)for(int x=0;x<2048;x++) {
+            // Preserve the established Pillow convert('L') transfer, including
+            // clipping I;16 samples above 255. Changing that is an art change.
+            int value=bands==1?Math.min(255,input.getSample(x,y,0)):
+                    ((input.getSample(x,y,0)>>>shift)*19595+(input.getSample(x,y,1)>>>shift)*38470+(input.getSample(x,y,2)>>>shift)*7471+32768)>>16;
+            if(scalar.getSample(x,y,0)!=expected[value])throw new IOException("Specular scalar sample changed: "+material+" at "+x+","+y);
         }
     }
 

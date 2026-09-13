@@ -16,7 +16,67 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Exercises the real jME post-processing lifecycle without claiming an OpenGL frame. */
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class SceneLightingTest {
+    @Test void unchangedReshapeKeepsItsAllocatedSceneAndOffAxisProjection() {
+        try(var fixture=new Fixture();var visuals=new CombatVisuals(PresentationTestAssets.shared(),fixture.root,new SoftWorld())) {
+            fixture.lighting.bindCombatVisuals(visuals);fixture.initialize();
+            Camera camera=fixture.viewport.getCamera();camera.setFrustum(.1f,100,-.06f,.04f,.03f,-.03f);
+            var projection=camera.getProjectionMatrix().clone();
+            var scene=fixture.viewport.getOutputFrameBuffer();var depth=fixture.post.getDepthTexture();
+            for(int i=0;i<4;i++)fixture.post.reshape(fixture.viewport,64,64);
+            assertSame(scene,fixture.viewport.getOutputFrameBuffer(),"A same-size native callback must not allocate a new scene target");
+            assertSame(depth,fixture.post.getDepthTexture());assertEquals(projection,camera.getProjectionMatrix());
+        }
+    }
+    @Test void resizedTargetsAreExplicitlyReleasedWithoutGcWhileCameraRoutingAndShadowsSurvive()throws Exception {
+        for(int samples:new int[]{0,4})for(boolean bloomEnabled:new boolean[]{false,true}) {
+            var renderer=new NullRenderer(){@Override public java.util.EnumSet<com.jme3.renderer.Caps> getCaps(){return java.util.EnumSet.of(com.jme3.renderer.Caps.OpenGL32,com.jme3.renderer.Caps.FrameBufferMultisample);}};
+            var manager=new RenderManager(renderer);var root=new Node();var viewport=new ViewPort("resize-native-objects",new Camera(64,64));
+            var output=new FrameBuffer(64,64,1);viewport.setOutputFrameBuffer(output);
+            var lighting=SceneLighting.install(PresentationTestAssets.shared(),root,viewport);lighting.setSamples(samples);lighting.apply(Theme.NEON,bloomEnabled);
+            try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),root,new SoftWorld())) {
+                lighting.bindCombatVisuals(visuals);lighting.initialize(manager);
+                var post=(FilterPostProcessor)viewport.getProcessors().stream().filter(FilterPostProcessor.class::isInstance).findFirst().orElseThrow();
+                var oldBuffers=new java.util.ArrayList<FrameBuffer>();oldBuffers.add(viewport.getOutputFrameBuffer());
+                for(var filter:post.getFilterList()) {
+                    oldBuffers.add(passTarget(readField(filter,"defaultPass")));
+                    if(filter instanceof BloomFilter) {
+                        oldBuffers.add(passTarget(readField(filter,"preGlowPass")));
+                        for(Object pass:(java.util.List<?>)readField(filter,"postRenderPasses"))oldBuffers.add(passTarget(pass));
+                    } else oldBuffers.add((FrameBuffer)readField(filter,"composite"));
+                }
+                var nativeObjects=new com.jme3.util.NativeObjectManager();var objects=new java.util.ArrayList<com.jme3.util.NativeObject>();
+                for(FrameBuffer buffer:oldBuffers) {
+                    objects.add(buffer);
+                    for(int i=-1;i<buffer.getNumColorTargets();i++) {
+                        var attachment=i<0?buffer.getDepthTarget():buffer.getColorTarget(i);
+                        if(attachment!=null&&attachment.getTexture()!=null)objects.add(attachment.getTexture().getImage());
+                    }
+                }
+                int nextNativeId=1;for(var object:objects){object.setId(nextNativeId++);nativeObjects.registerObject(object);}
+                Object shadows=viewport.getProcessors().getFirst();var shadowTargets=((FrameBuffer[])readField(shadows,"shadowFB")).clone();
+                var camera=viewport.getCamera();camera.resize(96,80,true);camera.setViewPort(.1f,.9f,.15f,.95f);camera.setFrustum(.1f,150,-.07f,.03f,.025f,-.025f);
+                var projection=camera.getProjectionMatrix().clone();post.reshape(viewport,96,80);
+                int[] deleted={0};nativeObjects.deleteUnused(new NullRenderer(){
+                    @Override public void deleteFrameBuffer(FrameBuffer buffer){deleted[0]++;buffer.resetObject();}
+                    @Override public void deleteImage(com.jme3.texture.Image image){deleted[0]++;image.resetObject();}
+                });
+                assertEquals(objects.size(),deleted[0],"Every replaced FPP attachment must enter native disposal without relying on GC");
+                assertEquals(projection,camera.getProjectionMatrix());assertEquals(96,camera.getWidth());assertEquals(80,camera.getHeight());
+                assertEquals(.1f,camera.getViewPortLeft());assertEquals(.15f,camera.getViewPortBottom());
+                assertEquals(Math.max(1,samples),visuals.statistics().get("sceneDepthSamples"));
+                assertEquals(bloomEnabled,post.getFilter(BloomFilter.class).isEnabled());
+                assertArrayEquals(shadowTargets,(FrameBuffer[])readField(shadows,"shadowFB"));
+                lighting.bindCombatVisuals(null);lighting.apply(Theme.NEON,false);post.preFrame(0);assertSame(output,viewport.getOutputFrameBuffer());
+            }finally{for(var processor:viewport.getProcessors())if(processor.isInitialized())processor.cleanup();output.dispose();}
+        }
+    }
+    private static FrameBuffer passTarget(Object pass)throws Exception{return (FrameBuffer)readField(pass,"renderFrameBuffer");}
+    private static Object readField(Object target,String name)throws Exception {
+        for(Class<?> type=target.getClass();type!=null;type=type.getSuperclass())try{var field=type.getDeclaredField(name);field.setAccessible(true);return field.get(target);}catch(NoSuchFieldException ignored){}
+        throw new NoSuchFieldException(name);
+    }
     @Test void liveMsaaChangesRecreateTheActualDepthSamplesWithOneProcessor() {
         var root=new Node();var viewport=new ViewPort("msaa",new Camera(64,64));
         var manager=new RenderManager(new NullRenderer(){@Override public java.util.EnumSet<com.jme3.renderer.Caps> getCaps(){return java.util.EnumSet.of(com.jme3.renderer.Caps.OpenGL32,com.jme3.renderer.Caps.FrameBufferMultisample);}});

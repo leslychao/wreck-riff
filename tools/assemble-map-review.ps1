@@ -9,16 +9,26 @@ if(@($evidence.captures.path | Select-Object -Unique).Count -ne 75){throw 'Every
 $titles=@{construction_17='МЕГАСТРОЙ-17';neon_zero='НЕОН-РАЙОН ZERO';euphoria_park='ЛУНАПАРК ЭЙФОРИЯ'}
 $names=@{pit='Котлован';homes='Кварталы';plant='Бетонный завод';warehouses='Склады';interchange='Развязка';business='Деловой центр';market='Торговые улицы';transport='Транспортный узел';parking='Паркинг';entrance='Входная площадь';fair='Ярмарка';lake='Озеро и остров';rides='Аттракционы';circus='Цирк';backstage='Служебная территория';'unfinished-apartments'='Недострой';'concrete-plant'='Производственный корпус';warehouse='Сквозной склад';'shopping-passage'='Торговый пассаж';'technical-complex'='Технический комплекс';'parking-ground-floor'='Проезд паркинга';'ride-pavilion'='Павильон аттракционов';'repair-depot'='Ремонтное депо'}
 function Escape-Html([string]$value){[Net.WebUtility]::HtmlEncode($value)}
+$routeSignatures=@{}
+$imageHashes=[Collections.Generic.HashSet[string]]::new()
 $cards=foreach($route in $evidence.routes){
     $shots=@($evidence.captures | Where-Object {$_.arenaId -eq $route.arenaId -and $_.route -eq $route.id -and $_.kind -eq $route.kind} | Sort-Object shot)
     if($shots.Count -ne 3){throw "Incomplete route $($route.arenaId)/$($route.kind)/$($route.id)"}
+    $shotHashes=[Collections.Generic.List[string]]::new()
     $images=foreach($shot in $shots){
         if($shot.path -notmatch '^[a-z0-9_-]+\.png$'){throw 'Unexpected capture filename.'}
         $file=Get-Item -LiteralPath (Join-Path $reviewRoot $shot.path)
         if($file.Length -eq 0){throw "Empty screenshot $($shot.path)"}
+        $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+        $shotHashes.Add($hash)
+        [void]$imageHashes.Add($hash)
         $label=@('Подъезд','Игровая зона / поворот','Выезд')[$shot.shot-1]
         '<figure><a href="'+(Escape-Html $shot.path)+'"><img loading="lazy" src="'+(Escape-Html $shot.path)+'" alt="'+$label+'"></a><figcaption>'+$label+'</figcaption></figure>'
     }
+    $signature=$shotHashes -join ':'
+    $routeName="$($route.arenaId)/$($route.kind)/$($route.id)"
+    if($routeSignatures.ContainsKey($signature)){throw "Duplicate three-view inspection: $routeName repeats $($routeSignatures[$signature]). Inspect the district and interior separately."}
+    $routeSignatures[$signature]=$routeName
     $kind=if($route.kind -eq 'district'){'Район'}else{'Интерьер'}
     '<section data-arena="'+$route.arenaId+'" data-kind="'+$route.kind+'"><p class="eyebrow">'+$titles[$route.arenaId]+' · '+$kind+'</p><h2>'+$names[$route.id]+'</h2><div class="shots">'+($images -join '')+'</div></section>'
 }
@@ -32,12 +42,12 @@ $html=@'
 <p class="eyebrow">WRECK RIFF · РЕВИЗИЯ ПЛАНИРОВОК 3</p><h1>Три места для автомобильного боя</h1>
 <p class="intro">16 районов и девять сквозных интерьеров. Кадры сняты в настоящем окне при движении камеры вдоль авторских маршрутов. Нажмите изображение, чтобы открыть полный размер.</p>
 <p class="intro">Этот обзор помогает оценить назначение сооружений, читаемость дороги, ориентиры и пространство внутри зданий. Статичные кадры не подтверждают отсутствие мерцания во времени, удобство управления или производительность. Художественная приёмка владельцем остаётся отдельной.</p>
-<p class="meta">Исходная сборка: {{IDENTITY}} · <a href="review.json">Данные съёмки</a></p>
+<p class="meta">Исходная сборка: {{IDENTITY}} · {{UNIQUE}} различных изображений · <a href="review.json">Данные съёмки</a></p>
 <div class="filters"><select id="arena" aria-label="Карта"><option value="">Все карты</option><option value="construction_17">МЕГАСТРОЙ-17</option><option value="neon_zero">НЕОН-РАЙОН ZERO</option><option value="euphoria_park">ЛУНАПАРК ЭЙФОРИЯ</option></select><select id="kind" aria-label="Вид участка"><option value="">Районы и интерьеры</option><option value="district">Районы</option><option value="interior">Интерьеры</option></select></div>
 {{CARDS}}
 <script>const arena=document.getElementById('arena'),kind=document.getElementById('kind');function filter(){document.querySelectorAll('section').forEach(s=>s.hidden=(arena.value&&s.dataset.arena!==arena.value)||(kind.value&&s.dataset.kind!==kind.value))}arena.addEventListener('change',filter);kind.addEventListener('change',filter);</script></html>
 '@
-$html=$html.Replace('{{IDENTITY}}',$identity).Replace('{{CARDS}}',($cards -join "`n"))
+$html=$html.Replace('{{IDENTITY}}',$identity).Replace('{{UNIQUE}}',[string]$imageHashes.Count).Replace('{{CARDS}}',($cards -join "`n"))
 $destination=Join-Path $reviewRoot 'index.html'
 [IO.File]::WriteAllText($destination,$html,[Text.UTF8Encoding]::new($false))
 Write-Output $destination

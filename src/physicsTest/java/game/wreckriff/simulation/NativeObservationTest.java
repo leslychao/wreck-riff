@@ -16,6 +16,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** HUD/AI observations must not change Bullet's wheel or suspension state. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeObservationTest {
     private record Sample(Vector3f position, Quaternion rotation, Vector3f velocity) {}
     private record Run(List<VehicleCommand> commands, List<Sample> samples) {}
@@ -45,7 +46,7 @@ class NativeObservationTest {
         List<Sample> samples = new ArrayList<>();
         try (PhysicsWorld world = new PhysicsWorld(rules)) {
             ArenaContent arena = new ArenaFactory(game.wreckriff.arena.NativeArenaAssets.MANAGER).build(definition);
-            for (var body : arena.bodies()) world.addStatic(body.shape(), body.position(), body.rotation());
+            for (var body : arena.bodies()) world.addStatic(body);
             world.addVehicle(0, new Vector3f(54, 0.8f, -46), new Quaternion());
             for (int tick = 0; tick < 240; tick++) world.step();
             assertEquals(4, world.wheelContacts(0));

@@ -1,48 +1,57 @@
-param([Parameter(Mandatory=$true)][string]$Ffmpeg)
+param(
+    [Parameter(Mandatory=$true)][string]$Ffmpeg,
+    [Parameter(Mandatory=$true)][string]$ReportPath,
+    [Parameter(Mandatory=$true)][string]$OutputDirectory
+)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'release-evidence.ps1')
 $projectRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$report=Get-Content (Join-Path $projectRoot 'build/reports/showcase.json') -Raw | ConvertFrom-Json
-if($report.status -ne 'PASS') {throw 'A successful current showcase is required'}
-$buildInfo=ConvertFrom-StringData (Get-Content (Join-Path $projectRoot 'build/generated-resources/build-info.properties') -Raw)
-if($report.sourceSha256 -ne $buildInfo.sourceSha256) {throw 'Showcase does not match the current build'}
-$source=[IO.Path]::GetFullPath($report.artifactDirectory)
-$destination=Join-Path $projectRoot 'build/distributions/WreckRiff-0.4.0-demo'
+. (Join-Path $PSScriptRoot 'showcase-media.ps1')
+$report=Read-ReleaseJson $ReportPath
+if($report.status -ne 'TECHNICAL_PASS_REQUIRES_VISUAL_REVIEW') {throw 'A complete immutable-package showcase is required'}
+$sourceReport=Get-ReleaseArtifact $ReportPath
+$identity=Get-ReleasePackageIdentity $report.zipPath
+Assert-ReleaseIdentity $report $identity
+$verified=Resolve-ShowcaseArtifacts $report
+$destination=[IO.Path]::GetFullPath($OutputDirectory)
+$allowed=[IO.Path]::GetFullPath((Join-Path $projectRoot 'build'))+[IO.Path]::DirectorySeparatorChar
+if(!$destination.StartsWith($allowed,[StringComparison]::OrdinalIgnoreCase)){throw 'Showcase export must stay inside workspace build/'}
 if(Test-Path -LiteralPath $destination) {throw 'Preserve the earlier demo before exporting a new one'}
 [IO.Directory]::CreateDirectory($destination)|Out-Null
-Copy-Item -LiteralPath (Join-Path $source 'captures') -Destination $destination -Recurse -Force
-foreach($name in @('audio-events.json','AUDIO_README.txt','diagnostic-result.json')) {Copy-Item -LiteralPath (Join-Path $source $name) -Destination $destination -Force}
-$movie=Join-Path $destination 'WreckRiff-0.4.0-demo.mp4'
-& $Ffmpeg -hide_banner -y -i (Join-Path $source 'showcase.avi') -i (Join-Path $source 'audio.wav') `
-    -map 0:v:0 -map 1:a:0 -c:v libx264 -preset fast -crf 19 -pix_fmt yuv420p `
-    -c:a aac -b:a 192k -shortest -movflags +faststart $movie
-if($LASTEXITCODE -ne 0) {throw 'Video encoding failed'}
-$shots=@(
-    @('hp-100','Целый кузов / 100%'),@('hp-75','Лёгкие повреждения / 75%'),
-    @('hp-50','Повреждённые панели / 50%'),@('hp-25','Критическое состояние / 25%'),
-    @('hp-0','Обугленный кузов / 0%'),@('hp-repaired','После ремонта / 100%'),
-    @('machine-gun','Пулемёт'),@('power-hit','Power / отбрасывание'),
-    @('freeze','Freeze'),@('shield','Щит'),@('napalm','Напалм / помощь броску'),
-    @('ballistic-warning','Баллистика / предупреждение'),@('ballistic-hit','Баллистика / накрытие'),
-    @('cannon-hit','Ядро / боковой удар'),@('cannon-ricochet','Ядро / рикошеты'),
-    @('cannon-lethal','Смертельный удар / физический остов'),@('wreck-removed','Остов удалён через три секунды'))
+[IO.Directory]::CreateDirectory((Join-Path $destination 'captures'))|Out-Null
+$media=[ordered]@{schemaVersion=2;status='FAIL';sourceShowcase=$sourceReport;zipSha256=$report.zipSha256;
+    sourceSha256=$report.sourceSha256;mainJarSha256=$report.mainJarSha256;renderFps=$report.renderFps;
+    msaaSamples=$report.msaaSamples;glow=$report.glow;performance='NOT_MEASURED';feelApproval='PENDING_OWNER';audio=$report.audio}
+try {
+    $copies=@()
+    foreach($label in Get-ShowcaseCaptureLabels){$copy=Copy-ShowcaseArtifact $verified.captures[$label] (Join-Path $destination ('captures/'+$label+'.png'));$copy.label=$label;$copies+=$copy}
+    foreach($name in @('audio-events.json','AUDIO_README.txt','diagnostic-result.json')){$copies+=Copy-ShowcaseArtifact $verified.artifacts[$name] (Join-Path $destination $name)}
+    $media.copiedShowcase=Copy-ShowcaseArtifact $sourceReport (Join-Path $destination 'showcase-verification.json')
+    $media.copies=$copies
+    $decodePrefix=Join-Path $destination 'decode'
+    $sourceVideo=Test-ShowcaseVideo $Ffmpeg $verified.artifacts['showcase.avi'].path $report.renderFps ($decodePrefix+'-avi')
+    $sourceAudio=Test-ShowcaseAudio $Ffmpeg $verified.artifacts['audio.wav'].path $report.renderFps ($decodePrefix+'-wav') $true
+    $movie=Join-Path $destination 'WreckRiff-0.4.0-demo.mp4'
+    Invoke-ShowcaseFfmpeg $Ffmpeg @('-hide_banner','-nostdin','-xerror','-y','-threads','2','-i',$verified.artifacts['showcase.avi'].path,
+        '-i',$verified.artifacts['audio.wav'].path,'-map','0:v:0','-map','1:a:0','-c:v','libx264','-threads','4','-preset','fast',
+        '-crf','19','-pix_fmt','yuv420p','-fps_mode','passthrough','-c:a','aac','-b:a','192k','-shortest','-movflags','+faststart',$movie) (Join-Path $destination 'encode') 180
+    $outputVideo=Test-ShowcaseVideo $Ffmpeg $movie $report.renderFps ($decodePrefix+'-mp4-video') $sourceVideo.frames
+    $outputAudio=Test-ShowcaseAudio $Ffmpeg $movie $report.renderFps ($decodePrefix+'-mp4-audio')
+    foreach($entry in @($report.captures)+@($report.artifacts)+@($sourceReport)){Assert-ReleaseArtifact $entry}
+    if((Get-ReleaseSha256 $report.zipPath) -ne $identity.zipSha256){throw 'Showcase ZIP changed during export'}
+    $media.sourceVideo=$sourceVideo;$media.sourceAudio=$sourceAudio;$media.outputVideo=$outputVideo;$media.outputAudio=$outputAudio
+$shots=Read-ReleaseJson (Join-Path $PSScriptRoot 'showcase-captions-ru.json')
 $cards=foreach($shot in $shots) {
-    $file=Get-ChildItem (Join-Path $destination 'captures') -Filter "WreckRiff-0.4.0-$($shot[0])-*.png" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if(!$file) {throw "Missing capture $($shot[0])"}
-    '<figure><a href="captures/'+$file.Name+'"><img loading="lazy" src="captures/'+$file.Name+'" alt="'+$shot[1]+'"></a><figcaption>'+$shot[1]+'</figcaption></figure>'
+    if(!$verified.captures.ContainsKey($shot[0])){throw "Missing verified capture $($shot[0])"}
+    $name=$shot[0]+'.png'
+    '<figure><a href="captures/'+$name+'"><img loading="lazy" src="captures/'+$name+'" alt="'+$shot[1]+'"></a><figcaption>'+$shot[1]+'</figcaption></figure>'
 }
-$html=@'
-<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Wreck Riff 0.4 — демонстрация</title><style>
-body{margin:0;background:#14191c;color:#e6e5dc;font:17px/1.6 system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:32px}
-h1{font-size:36px;margin:0;color:#ffbc72}p{max-width:1000px}video{display:block;width:100%;border-radius:8px;background:#050708}
-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:20px}figure{margin:0;background:#20282d;border:1px solid #3a4246;border-radius:8px;overflow:hidden}
-img{display:block;width:100%}figcaption{padding:12px 18px;color:#ffca91}code{word-break:break-all}a{color:#ffca91}
-@media(max-width:520px){main{padding:16px}section{grid-template-columns:1fr}h1{font-size:28px}}</style><main>
-<h1>Wreck Riff 0.4</h1><p>Настоящие кадры игры: повреждения кузова, тяжёлые попадания, напалм, баллистика, ядро, Freeze и щит.</p>
-<video controls preload="metadata" src="WreckRiff-0.4.0-demo.mp4"></video>
-<p>Первые 12 секунд — подписанная галерея предустановленных долей HP. Нулевая стадия здесь показана без уничтожения тестовой цели. Между последующими сценами позиции и HP подготовлены заново; все выстрелы, попадания и финальное уничтожение проходят обычную симуляцию. Дорожка собрана из фактически запущенных игровых семплов и параметров, с текущей музыкой. Это не точная запись OpenAL/HRTF. Окончательную оценку ощущений даёт владелец.</p>
-'@
+$html=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'showcase-template.html') -Raw -Encoding UTF8
 $html+='<p>Source SHA-256: <code>'+[Net.WebUtility]::HtmlEncode($report.sourceSha256)+'</code></p><section>'+($cards -join "`n")+'</section></main></html>'
 [IO.File]::WriteAllText((Join-Path $destination 'index.html'),$html,[Text.UTF8Encoding]::new($false))
-Get-FileHash -LiteralPath $movie -Algorithm SHA256 | Format-List
+    $media.video=Get-ReleaseArtifact $movie
+    $media.index=Get-ReleaseArtifact (Join-Path $destination 'index.html')
+    $media.status='DECODED_EXPORT_REQUIRES_VISUAL_REVIEW'
+} catch {$media.failure=$_.Exception.Message;throw}
+finally {Write-ReleaseJson (Join-Path $destination 'media.json') $media}
 Write-Output "Showcase export: $destination"

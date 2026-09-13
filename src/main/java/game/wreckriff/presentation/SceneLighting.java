@@ -53,10 +53,36 @@ public final class SceneLighting {
     private static final class GlowPostProcessor extends FilterPostProcessor {
         private Camera camera;
         private RenderManager manager;
+        private boolean targetsReady;
+        private int targetWidth,targetHeight;
+        private float viewportLeft,viewportRight,viewportBottom,viewportTop;
         GlowPostProcessor(AssetManager assets) {super(assets);}
         @Override public void initialize(RenderManager renderManager,ViewPort viewport) {
             manager=renderManager;camera=viewport.getCamera();super.initialize(renderManager,viewport);
         }
+        @Override public void reshape(ViewPort viewport,int width,int height) {
+            Camera current=viewport.getCamera();
+            if(targetsReady) {
+                if(targetWidth==width&&targetHeight==height
+                        &&viewportLeft==current.getViewPortLeft()&&viewportRight==current.getViewPortRight()
+                        &&viewportBottom==current.getViewPortBottom()&&viewportTop==current.getViewPortTop())return;
+                // jME 3.8.1 reshape replaces scene/default/bloom targets without
+                // disposing their uploaded storage. Retire this generation through
+                // its normal owner before reinitializing; shadows belong elsewhere.
+                if(current.getWidth()!=width||current.getHeight()!=height)current.resize(width,height,true);
+                Camera requested=current.clone();
+                cleanup();current.copyFrom(requested);
+                // cleanup clears FPP's viewport. initialize restores it and invokes
+                // the first-allocation branch below, retaining the same filter list.
+                super.initialize(manager,viewport);current.copyFrom(requested);
+                return;
+            }
+            super.reshape(viewport,width,height);
+            targetsReady=true;targetWidth=width;targetHeight=height;
+            viewportLeft=current.getViewPortLeft();viewportRight=current.getViewPortRight();
+            viewportBottom=current.getViewPortBottom();viewportTop=current.getViewPortTop();
+        }
+        @Override public void cleanup() {try{super.cleanup();}finally{targetsReady=false;}}
         @Override public void preFrame(float tpf) {
             float near=camera.getFrustumNear(),far=camera.getFrustumFar(),left=camera.getFrustumLeft(),right=camera.getFrustumRight();
             float top=camera.getFrustumTop(),bottom=camera.getFrustumBottom();int width=camera.getWidth(),height=camera.getHeight();
@@ -67,6 +93,13 @@ public final class SceneLighting {
             if(camera.getWidth()==width&&camera.getHeight()==height
                     &&(camera.getFrustumLeft()!=left||camera.getFrustumRight()!=right))
                 camera.setFrustum(near,far,left,right,top,bottom);
+        }
+        @Override public void postFrame(com.jme3.texture.FrameBuffer output) {
+            try {super.postFrame(output);}
+            finally {
+                CombatVfxFilter filter=getFilter(CombatVfxFilter.class);
+                if(filter!=null)filter.endProbeIfActive();
+            }
         }
         void setGlowEnabled(BloomFilter bloom,boolean enabled) {
             // Before initialize(), Filter.setEnabled only changes its own flag: jME has not

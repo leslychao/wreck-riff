@@ -8,12 +8,12 @@ import java.nio.file.Path;
 public final class Main {
     public record Options(boolean dev,long seed,boolean fixedSeed,boolean noAudio,boolean aiPlayer,int smokeSeconds,Path configDir,int benchmarkSeconds,boolean showcase,
                           String arenaId,boolean artShowcase,int resolutionHeight,boolean noGlow,boolean profile,boolean vehicleShowcase,int soakSeconds,
-                          boolean uiReview,int resolutionWidth,boolean windowed,float uiScale,int renderFps,int msaa) {
+                          boolean uiReview,int resolutionWidth,boolean windowed,float uiScale,int renderFps,int msaa,int combatVideoSeconds) {
         public boolean automated() { return smokeSeconds>0 || benchmarkSeconds>0 || soakSeconds>0 || showcase || artShowcase || vehicleShowcase || uiReview; }
         public boolean cameraTour() {return smokeSeconds>0;}
         public static Options parse(String[] args) {
             boolean dev=false,fixed=false,mute=false,ai=false,showcase=false,art=false,noGlow=false,arenaSpecified=false,profile=false,vehicles=false,review=false,windowed=false;
-            long seed=System.nanoTime();int smoke=0,benchmark=0,soak=0,resolution=0,width=0,renderFps=0,msaa=-1;float scale=0;Path config=null;String arena="dead-air-yard";
+            long seed=System.nanoTime();int smoke=0,benchmark=0,soak=0,resolution=0,width=0,renderFps=0,msaa=-1,video=0;float scale=0;Path config=null;String arena="dead-air-yard";
             for(String arg:args) {
                 if(arg.equals("--dev")) dev=true;
                 else if(arg.startsWith("--seed=")) { seed=Long.parseLong(arg.substring(7)); fixed=true; }
@@ -30,6 +30,10 @@ public final class Main {
                 }
                 else if(arg.equals("--no-glow")) noGlow=true;
                 else if(arg.equals("--profile"))profile=true;
+                else if(arg.startsWith("--combat-video-seconds=")) {
+                    video=Integer.parseInt(arg.substring(23));
+                    if(video<10||video>30)throw new IllegalArgumentException("Combat video must be 10..30 seconds");
+                }
                 else if(arg.startsWith("--render-fps=")) {
                     renderFps=Integer.parseInt(arg.substring(13));
                     if(renderFps!=30&&renderFps!=60&&renderFps!=120)throw new IllegalArgumentException("Diagnostic render FPS must be 30, 60 or 120");
@@ -58,14 +62,15 @@ public final class Main {
             }
             if(!dev && (fixed||mute||ai||smoke>0||benchmark>0||soak>0||showcase||art||vehicles||review||windowed||scale>0||arenaSpecified||resolution>0||noGlow||profile||config!=null||renderFps>0||msaa>=0)) throw new IllegalArgumentException("Diagnostic options require --dev");
             if(benchmark>=600&&(renderFps>0||msaa>=0&&msaa!=4))throw new IllegalArgumentException("Release benchmark requires unlimited FPS and MSAA4");
+            if(video>0&&(!dev||benchmark!=60))throw new IllegalArgumentException("Combat video requires an explicit --dev --benchmark-seconds=60 review; recording cannot enter release benchmarks");
             if((smoke>0?1:0)+(benchmark>0?1:0)+(soak>0?1:0)+(showcase?1:0)+(art?1:0)+(vehicles?1:0)+(review?1:0)>1) throw new IllegalArgumentException("Choose one diagnostic mode");
             if(showcase&&!arena.equals("dead-air-yard"))throw new IllegalArgumentException("Combat showcase uses dead-air-yard; use --art-showcase for other arenas");
             if(vehicles&&!arena.equals("dead-air-yard"))throw new IllegalArgumentException("Vehicle showcase uses dead-air-yard");
-            return new Options(dev,seed,fixed,mute,ai,smoke,config,benchmark,showcase,arena,art,resolution,noGlow,profile,vehicles,soak,review,width,windowed,scale,renderFps,msaa);
+            return new Options(dev,seed,fixed,mute,ai,smoke,config,benchmark,showcase,arena,art,resolution,noGlow,profile,vehicles,soak,review,width,windowed,scale,renderFps,msaa,video);
         }
     }
     public static void main(String[] args) {
-        if(args.length==1&&args[0].equals("--help")) { System.out.println("Wreck Riff: --dev [--seed=<long>] [--no-audio] [--ai-player] [--arena=<stable-id>] [--resolution=640x480|720p|1280x720|1080p|1920x1080|2560x1440|3440x1440|3840x1080|3840x2160] [--windowed] [--ui-scale=.8..1.5] [--no-glow] [--profile] [--msaa=0|2|4|8] [--render-fps=30|60|120] [--smoke-seconds=1..3600 | --benchmark-seconds=1..3600 | --soak-seconds=1..3600 | --showcase | --art-showcase | --vehicle-showcase | --ui-review] [--config-dir=<path>]"); return; }
+        if(args.length==1&&args[0].equals("--help")) { System.out.println("Wreck Riff: --dev [--seed=<long>] [--no-audio] [--ai-player] [--arena=<stable-id>] [--resolution=640x480|720p|1280x720|1080p|1920x1080|2560x1440|3440x1440|3840x1080|3840x2160] [--windowed] [--ui-scale=.8..1.5] [--no-glow] [--profile] [--combat-video-seconds=10..30 (requires benchmark-seconds=60)] [--msaa=0|2|4|8] [--render-fps=30|60|120] [--smoke-seconds=1..3600 | --benchmark-seconds=1..3600 | --soak-seconds=1..3600 | --showcase | --art-showcase | --vehicle-showcase | --ui-review] [--config-dir=<path>]"); return; }
         try {
             Options options=Options.parse(args);
             com.jme3.system.JmeSystem.setSystemDelegate(new game.wreckriff.audio.DesktopAudioSystem());

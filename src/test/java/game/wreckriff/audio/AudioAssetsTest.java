@@ -61,6 +61,7 @@ class AudioAssetsTest {
                 assertEquals(1,header.channels(),effect); assertEquals(16,header.bits()); assertEquals(48000,header.rate());
                 if(resultFrames.containsKey(effect))
                     assertEquals(resultFrames.get(effect)/48_000.0,header.seconds(),1.0/48_000,effect+" result duration");
+                else if(ArenaAmbience.CUES.contains(effect))assertTrue(header.seconds()>2&&header.seconds()<12,effect);
                 else assertTrue(header.seconds()>=.1f && header.seconds()<=3,effect);
                 byte[] pcm=input.readNBytes((int)header.dataBytes());
                 assertEquals(header.dataBytes(),pcm.length,effect);

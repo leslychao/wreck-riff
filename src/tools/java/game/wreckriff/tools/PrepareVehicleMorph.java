@@ -31,6 +31,10 @@ public final class PrepareVehicleMorph {
             if(source.runtime.equals("VehicleMorph.glsllib"))code=correctMorph(code);
             else {
                 code=code.replace("Common/ShaderLib/MorphAnim.glsllib","materials/VehicleMorph.glsllib");
+                if(source.runtime.equals("VehicleNormal.vert"))code=code.replace("#import \"Common/ShaderLib/Skinning.glsllib\"","#import \"Common/ShaderLib/Skinning.glsllib\"\n#import \"materials/VehicleMorph.glsllib\"")
+                        .replace("   #ifdef NUM_BONES","   #ifdef NUM_MORPH_TARGETS\n       Morph_Compute(modelSpacePos, modelSpaceNormals);\n   #endif\n   #ifdef NUM_BONES");
+                if(source.runtime.equals("VehiclePostShadow.vert"))code=code.replace("   #ifdef NUM_MORPH_TARGETS\n       Morph_Compute(modelSpacePos);\n   #endif","   #ifndef BACKFACE_SHADOWS\n       vec3 modelSpaceNormal = inNormal;\n   #endif\n   #ifdef NUM_MORPH_TARGETS\n       #ifndef BACKFACE_SHADOWS\n           Morph_Compute(modelSpacePos, modelSpaceNormal);\n       #else\n           Morph_Compute(modelSpacePos);\n       #endif\n   #endif")
+                        .replace("TransformWorld(vec4(inNormal,0.0))","TransformWorld(vec4(modelSpaceNormal,0.0))");
                 if(source.runtime.endsWith(".j3md"))for(Source vertex:SOURCES)if(vertex.runtime.endsWith(".vert"))code=code.replace(vertex.upstream,"materials/"+vertex.runtime);
             }
             code="// Derived from jMonkeyEngine 3.8.1-stable, BSD-3-Clause. See licenses/jme-BSD3.txt.\n"+code;
@@ -43,7 +47,7 @@ public final class PrepareVehicleMorph {
         var provenance=new LinkedHashMap<String,Object>();provenance.put("engineVersion","3.8.1-stable");provenance.put("license","licenses/jme-BSD3.txt");
         provenance.put("licenseSha256",hash(Files.readAllBytes(root.resolve("src/main/resources/licenses/jme-BSD3.txt"))));
         provenance.put("generator","src/tools/java/game/wreckriff/tools/PrepareVehicleMorph.java");provenance.put("generatorSha256",hash(Files.readAllBytes(root.resolve("src/tools/java/game/wreckriff/tools/PrepareVehicleMorph.java"))));
-        provenance.put("changes",List.of("One normal-weight declaration across all tangent target branches","Normal-only overload forwards the real normal with three source buffers","Vehicle vertex and unshaded techniques import a unique project-owned path"));
+        provenance.put("changes",List.of("One normal-weight declaration across all tangent target branches","Normal-only overload forwards the real normal with three source buffers","Vehicle vertex and unshaded techniques import a unique project-owned path","Normal prepass and shadow-facing normals follow the deformed surface"));
         provenance.put("files",entries);write(root.resolve("src/main/resources/materials/vehicle-morph-provenance.json"),(new GsonBuilder().setPrettyPrinting().create().toJson(provenance)+"\n").getBytes(StandardCharsets.UTF_8));
         System.out.println("Prepared eight vehicle morph shader resources from pinned jMonkeyEngine 3.8.1; no network or engine override.");
     }

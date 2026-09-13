@@ -692,9 +692,9 @@
       "id": "additional-ballistic_ammo-22",
       "type": "BALLISTIC_AMMO",
       "position": {
-        "x": 55.0,
+        "x": 52.0,
         "y": 0.0,
-        "z": 35.0
+        "z": 46.0
       },
       "respawnTicks": 3000
     },

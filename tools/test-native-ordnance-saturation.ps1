@@ -7,6 +7,7 @@ param(
     [string]$JdkHome='C:\Users\vitalii\.jdks\ms-21.0.11'
 )
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'release-evidence.ps1')
 $workspace = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($ReportDirectory)) {
     $runName = (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0,8)
@@ -31,14 +32,14 @@ $jarHash=(Get-FileHash -LiteralPath $mainJar -Algorithm SHA256).Hash
 $stdout=Join-Path $ReportDirectory 'execution.log'
 $stderr=Join-Path $ReportDirectory 'stderr.log'
 $samples=[Collections.Generic.List[object]]::new()
-$process=$null;$processStart=$null;$started=[DateTime]::UtcNow;$peak=0;$nextProgress=60
+$process=$null;$processHandle=[IntPtr]::Zero;$processStart=$null;$started=[DateTime]::UtcNow;$peak=0;$nextProgress=60
 try {
     # Windows paths cannot contain a double quote; quote each path argument so spaces
     # remain inside its argument. No shell or command-string evaluation is involved.
     $arguments=@('-Xms128m','-Xmx768m','-cp',('"'+$classpath+'"'),'game.wreckriff.diagnostics.NativeOrdnanceSaturationReview')
     $arguments+=@($reviewArgs | ForEach-Object {'"'+$_+'"'})
     $process=Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $workspace -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    $null=$process.Handle;$processStart=$process.StartTime.ToUniversalTime()
+    $processHandle=$process.Handle;$processStart=$process.StartTime.ToUniversalTime()
     while(!$process.HasExited) {
         $process.Refresh();if($process.HasExited){break}
         $elapsed=([DateTime]::UtcNow-$started).TotalSeconds
@@ -52,7 +53,13 @@ try {
     if($process.ExitCode -ne 0){throw "Native ordnance saturation exited with code $($process.ExitCode); inspect $stderr"}
 } finally {
     if($process -and !$process.HasExited){$process.Kill();$process.WaitForExit()}
-    $memory=[ordered]@{pid=$(if($process){$process.Id}else{0});processStartTimeUtc=$(if($processStart){$processStart.ToString('o')}else{''});counter='Windows process WorkingSet64 and PeakWorkingSet64 sampled each second';peakWorkingSetBytes=$peak;limitBytes=1.5GB;status=$(if($peak -gt 0 -and $peak -le 1.5GB){'PASS'}else{'FAIL'});mainJar=$mainJar;mainJarSha256=$jarHash;applicationJarUnchanged=((Get-FileHash -LiteralPath $mainJar -Algorithm SHA256).Hash -eq $jarHash);samples=$samples.ToArray()}
+    $finalPeak=0;$finalPeakObserved=$false
+    if($processHandle -ne [IntPtr]::Zero -and $process.HasExited) {
+        $finalPeak=Get-ReleaseProcessPeakWorkingSet $processHandle
+        $finalPeakObserved=$true
+        $peak=[Math]::Max($peak,$finalPeak)
+    }
+    $memory=[ordered]@{pid=$(if($process){$process.Id}else{0});processStartTimeUtc=$(if($processStart){$processStart.ToString('o')}else{''});counter='Windows lifetime PeakWorkingSetSize with final post-exit handle query; current working set sampled each second';peakWorkingSetBytes=$peak;finalPeakWorkingSetBytes=$finalPeak;finalPeakObservedAfterExit=$finalPeakObserved;limitBytes=1.5GB;status=$(if($finalPeakObserved -and $peak -gt 0 -and $peak -le 1.5GB){'PASS'}else{'FAIL'});mainJar=$mainJar;mainJarSha256=$jarHash;applicationJarUnchanged=((Get-FileHash -LiteralPath $mainJar -Algorithm SHA256).Hash -eq $jarHash);samples=$samples.ToArray()}
     [IO.File]::WriteAllText((Join-Path $ReportDirectory 'memory.json'),($memory|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
 }
 if(!$memory.applicationJarUnchanged){throw 'Application JAR changed during native saturation review.'}

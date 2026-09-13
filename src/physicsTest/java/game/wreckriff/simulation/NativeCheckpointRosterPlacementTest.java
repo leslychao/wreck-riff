@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeCheckpointRosterPlacementTest {
     private static final VehicleRules VEHICLES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
@@ -34,7 +35,7 @@ class NativeCheckpointRosterPlacementTest {
                 // Construct native shapes only after this test's PhysicsWorld loads Libbulletjme.
                 if(content==null)content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
                 world.configureArena(arena);
-                for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+                for(var body:content.bodies())world.addStatic(body);
                 var spawns=arena.shuffledSpawns(seed);var starts=new HashMap<Integer,Vector3f>();
                 for(var state:session.vehicles) {
                     var profile=VehicleDefinition.forId(state.profileId).profile(VEHICLES);

@@ -3,7 +3,8 @@
 One immutable indexed topology per LOD, five full damage poses and eight sparse
 regional deltas. Blender files retain editable meshes/shape keys. No network.
 """
-import argparse, gzip, hashlib, json, math, sys
+import argparse, errno, gzip, hashlib, json, math, os, sys, tempfile, time
+from contextlib import contextmanager
 from pathlib import Path
 import bpy
 import numpy as np
@@ -20,6 +21,37 @@ COLORS = {'rivet':(.30,.34,.37),'grinder':(.68,.52,.19),'spark':(.55,.76,.08),
           'boss_foreman':(.84,.51,.08),'boss_prefect':(.16,.25,.35),'boss_emcee':(.49,.12,.36)}
 
 def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
+
+@contextmanager
+def atomic_output(path):
+    """Publish complete local exports; a mapped old file remains valid until replacement."""
+    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
+    descriptor,name=tempfile.mkstemp(prefix='.'+path.stem+'-',suffix=path.suffix,dir=path.parent)
+    os.close(descriptor);temporary=Path(name)
+    try:
+        yield temporary
+        if not temporary.is_file() or temporary.stat().st_size==0:
+            raise OSError('Exporter did not produce a nonempty '+path.name)
+        for attempt in range(6):
+            try:
+                os.replace(temporary,path)
+                break
+            except OSError as error:
+                sharing=error.errno in (errno.EACCES,errno.EBUSY,errno.EPERM) or getattr(error,'winerror',None) in (5,32,33,1224)
+                if not sharing or attempt==5:raise
+                time.sleep((.1,.2,.4,.8,1.0)[attempt])
+    finally:
+        temporary.unlink(missing_ok=True)
+
+def write_mesh_bundle(out,bundle):
+    with atomic_output(out/'mesh.json.gz') as temporary:
+        with temporary.open('wb') as raw:
+            # Random temporary filenames must not enter the reproducible gzip header.
+            with gzip.GzipFile(filename='',fileobj=raw,mode='wb',mtime=0) as compressed:
+                compressed.write(json.dumps(bundle,separators=(',',':')).encode())
+
+def require_finished(result,label):
+    if 'FINISHED' not in result:raise RuntimeError(label+' was cancelled')
 
 class Author:
     def __init__(self, profile, lod):
@@ -251,20 +283,31 @@ def make_textures(profile,out):
         image=bpy.data.images.new(name,width=width,height=height,alpha=True,float_buffer=False)
         if 'diffuse' not in name:image.colorspace_settings.name='Non-Color'
         rgba=np.ones((height,width,4),np.float32);rgba[:,:,:3]=pixels
-        image.pixels.foreach_set(rgba.ravel());image.file_format='PNG';image.filepath_raw=str(out/name);image.save();bpy.data.images.remove(image)
+        try:
+            image.pixels.foreach_set(rgba.ravel());image.file_format='PNG'
+            with atomic_output(out/name) as temporary:
+                image.filepath_raw=str(temporary);image.save()
+        finally:bpy.data.images.remove(image)
     save('diffuse.png',rgb);save('normal.png',normal*.5+.5);save('specular.png',np.repeat(spec[::2,::2,None],3,axis=2))
 
 def export_glb(out):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in bpy.context.scene.objects:
         if ob.type=='MESH' and ob.get('lod')==0:ob.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=str(out/'source.glb'),export_format='GLB',use_selection=True,export_animations=False,export_morph=True,export_materials='NONE')
+    with atomic_output(out/'source.glb') as temporary:
+        require_finished(bpy.ops.export_scene.gltf(filepath=str(temporary),export_format='GLB',use_selection=True,export_animations=False,export_morph=True,export_materials='NONE'),'GLB export')
+
+def save_blend(out):
+    bpy.context.preferences.filepaths.save_version=0
+    with atomic_output(out/'source.blend') as temporary:
+        require_finished(bpy.ops.wm.save_as_mainfile(filepath=str(temporary),compress=True,copy=True),'Blender source save')
 
 def source_record(profile,out,lodcounts,mode):
     record={'id':profile,'authoringMode':mode,'generatorSha256':sha(Path(__file__)),
             'exports':{name:sha(out/name) for name in ('source.blend','source.glb','mesh.json.gz','diffuse.png','normal.png','specular.png','damage-ownership.png')},
             'lodTriangles':lodcounts,'sourceBlendSha256':sha(out/'source.blend'),'sourceGlbSha256':sha(out/'source.glb'),'meshSha256':sha(out/'mesh.json.gz')}
-    (out/'source.json').write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
+    with atomic_output(out/'source.json') as temporary:
+        temporary.write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
 
 def scene_bundle(profile):
     bundle={'schemaVersion':1,'profile':profile,'regions':list(REGIONS),'lods':[]};counts=[]
@@ -322,7 +365,11 @@ def pack_canonical_uv():
 def save_rgba(path,pixels,linear=True):
     h,w=pixels.shape[:2];image=bpy.data.images.new(path.name,width=w,height=h,alpha=True,float_buffer=False)
     if linear:image.colorspace_settings.name='Non-Color'
-    image.pixels.foreach_set(pixels.astype(np.float32).ravel());image.file_format='PNG';image.filepath_raw=str(path);image.save();bpy.data.images.remove(image)
+    try:
+        image.pixels.foreach_set(pixels.astype(np.float32).ravel());image.file_format='PNG'
+        with atomic_output(path) as temporary:
+            image.filepath_raw=str(temporary);image.save()
+    finally:bpy.data.images.remove(image)
 
 def ownership(bundle,out):
     # Per-pixel island identity prevents a brush footprint from spilling onto another packed part.
@@ -371,7 +418,7 @@ def reexport(profile):
     # Read the actual saved scene; do not regenerate or silently replace artist edits.
     out=OUT/profile;bpy.ops.wm.open_mainfile(filepath=str(out/'source.blend'))
     bundle,counts=scene_bundle(profile);ownership(bundle,out)
-    with gzip.GzipFile(filename=str(out/'mesh.json.gz'),mode='wb',mtime=0) as f:f.write(json.dumps(bundle,separators=(',',':')).encode())
+    write_mesh_bundle(out,bundle)
     export_glb(out);source_record(profile,out,counts,'saved-blender-edit');print('REEXPORTED',profile,counts,flush=True)
 
 def export(profile):
@@ -418,9 +465,9 @@ def export(profile):
                 ob['profile']=profile;ob['runtimePart']=name;ob['lod']=lod;ob.hide_render=lod>0
         bundle['lods'].append(records);lodcounts.append(triangles)
     pack_canonical_uv();bundle,lodcounts=scene_bundle(profile);ownership(bundle,out)
-    with gzip.GzipFile(filename=str(out/'mesh.json.gz'),mode='wb',mtime=0) as f:f.write(json.dumps(bundle,separators=(',',':')).encode())
+    write_mesh_bundle(out,bundle)
     # The editable source retains topology, UVs and all five damage poses.
-    bpy.ops.wm.save_as_mainfile(filepath=str(out/'source.blend'),compress=True)
+    save_blend(out)
     export_glb(out)
     make_textures(profile,out)
     source_record(profile,out,lodcounts,'original-recipe');print('VEHICLE',profile,lodcounts,flush=True)
@@ -436,7 +483,8 @@ def make_metal_textures():
     for name,pixels in (('metal-diffuse.png',rgb),('metal-normal.png',normal*.5+.5),('metal-specular.png',np.repeat(spec[:,:,None],3,axis=2))):
         rgba=np.ones((size,size,4),np.float32);rgba[:,:,:3]=pixels;save_rgba(shared/name,rgba,linear='diffuse' not in name)
     record={'generatorSha256':sha(Path(__file__)),'exports':{name:sha(shared/name) for name in ('damage-atlas.png','metal-diffuse.png','metal-normal.png','metal-specular.png')}}
-    (shared/'source.json').write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
+    with atomic_output(shared/'source.json') as temporary:
+        temporary.write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
 
 if __name__=='__main__':
     args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []

@@ -18,8 +18,9 @@ import java.util.Map;
 public final class SurfaceMaterials {
     /** The same key and sampler configuration is used by staged decoding and material construction. */
     public record TextureUse(String parameter,String path,boolean color) {
-        public TextureKey key() {TextureKey key=new TextureKey(path,true);key.setGenerateMips(true);return key;}
+        public TextureKey key() {boolean prepared=path.endsWith(".dds");TextureKey key=new TextureKey(path,!prepared);key.setGenerateMips(!prepared);return key;}
         public Texture load(AssetManager assets) {
+            if(path.endsWith(".dds"))return EnvironmentDiffuseDds.load(assets,path);
             Texture texture=assets.loadTexture(key());texture.setWrap(Texture.WrapMode.Repeat);
             texture.setMinFilter(Texture.MinFilter.Trilinear);texture.setMagFilter(Texture.MagFilter.Bilinear);
             texture.setAnisotropicFilter(8);texture.getImage().setColorSpace(color?ColorSpace.sRGB:ColorSpace.Linear);
@@ -34,10 +35,13 @@ public final class SurfaceMaterials {
     public static float metresPerTile(String name) {
         return switch(name) {
             case "cast-concrete", "park-paving" -> 1.8f;
+            case "road-surface", "road-wet" -> 2;
             case "brick" -> 1;
-            case "earth", "district-earth" -> 1.3f;
+            case "earth" -> 1.3f;
+            case "district-earth" -> 2;
+            case "grass", "park-ground", "district-garden" -> 2.51f;
             case "wood" -> 1.5f;
-            case "asphalt", "concrete", "road-surface", "road-wet", "road-patch" -> 4;
+            case "asphalt", "concrete", "road-patch" -> 4;
             case "rust", "blue", "steel", "black" -> 3;
             default -> 2;
         };
@@ -59,9 +63,12 @@ public final class SurfaceMaterials {
             case "rust" -> texturedRecipe("rusty_metal_03",new ColorRGBA(.76f,.65f,.53f,1),18,.32f);
             case "steel" -> texturedRecipe("metal_plate_02",new ColorRGBA(.68f,.73f,.78f,1),38,.5f);
             case "blue" -> texturedRecipe("blue_metal_plate",new ColorRGBA(.54f,.65f,.76f,1),24,.35f);
-            case "earth", "district-earth" -> texturedRecipe("brown_mud",new ColorRGBA(.82f,.77f,.69f,1),3,.035f);
+            // Trampled ridges remain local; repeating them over an entire kilometre
+            // produces aligned stripes at grazing angles even with correct mipmaps.
+            case "earth" -> texturedRecipe("brown_mud",new ColorRGBA(.82f,.77f,.69f,1),3,.035f);
+            case "district-earth" -> texturedRecipe("dirt",new ColorRGBA(.82f,.77f,.69f,1),3,.035f);
             case "gravel", "road-shoulder" -> texturedRecipe("gravelly_sand",new ColorRGBA(.76f,.73f,.67f,1),3,.04f);
-            case "grass", "park-ground", "district-garden" -> texturedRecipe("leafy_grass",new ColorRGBA(.80f,.87f,.74f,1),3,.025f);
+            case "grass", "park-ground", "district-garden" -> texturedRecipe("grass_ground",new ColorRGBA(.80f,.87f,.74f,1),3,.025f);
             case "park-leaf" -> texturedRecipe("leafy_grass",new ColorRGBA(.44f,.61f,.31f,1),3,.025f);
             case "brick" -> texturedRecipe("red_brick_03",new ColorRGBA(.82f,.79f,.75f,1),5,.05f);
             case "wood" -> texturedRecipe("wood_planks_grey",new ColorRGBA(.79f,.70f,.58f,1),8,.08f);
@@ -74,13 +81,12 @@ public final class SurfaceMaterials {
             case "repair" -> paintRecipe(new ColorRGBA(.17f,.8f,.24f,1));
             case "ivory" -> paintRecipe(new ColorRGBA(.84f,.82f,.7f,1));
             case "black" -> texturedRecipe("metal_plate_02",new ColorRGBA(.09f,.10f,.12f,1),16,.22f);
-            // Fresh tar uses the same local grain as the road. Untextured .15 linear grey
-            // becomes a conspicuously bright plate after gamma correction in the real renderer.
+            // Local worn repair patches retain the preserved cracked source.
             case "road-patch" -> texturedRecipe("asphalt_02",new ColorRGBA(.19f,.20f,.21f,1),3,.018f);
-            case "road-wet" -> texturedRecipe("asphalt_02",new ColorRGBA(.13f,.18f,.22f,1),88,.44f);
-            // The source already contains dark asphalt. A near-black multiplier erased
-            // road grain even under the construction site's overcast daylight.
-            case "road-surface" -> texturedRecipe("asphalt_02",new ColorRGBA(.30f,.31f,.33f,1),5,.07f);
+            case "road-wet" -> texturedRecipe("asphalt_pit_lane",new ColorRGBA(.26f,.43f,.59f,1),88,.44f);
+            // A two-metre photographed aggregate avoids repeating a large fracture on
+            // every road tile. The tint keeps the established mean linear road luminance.
+            case "road-surface" -> texturedRecipe("asphalt_pit_lane",new ColorRGBA(.60f,.72f,.86f,1),5,.07f);
             case "road-marking" -> new Recipe(new ColorRGBA(.70f,.65f,.46f,1),3,.025f,false,List.of());
             case "district-slate" -> texturedRecipe("cracked_concrete",new ColorRGBA(.32f,.39f,.47f,1),7,.08f);
             case "district-warm" -> texturedRecipe("cracked_concrete",new ColorRGBA(.58f,.44f,.29f,1),6,.055f);
@@ -116,7 +122,7 @@ public final class SurfaceMaterials {
     }
     private static Recipe texturedRecipe(String source,ColorRGBA tint,float shininess,float specular) {
         String path="textures/materials/"+source+"/";
-        return new Recipe(tint,shininess,specular,false,List.of(new TextureUse("DiffuseMap",path+"diffuse.png",true),
+        return new Recipe(tint,shininess,specular,false,List.of(new TextureUse("DiffuseMap",path+(path.contains("/leafy_grass/")?"diffuse.png":"diffuse.dds"),true),
                 new TextureUse("NormalMap",path+"normal.png",false),new TextureUse("SpecularMap",path+"specular.png",false)));
     }
     private Material create(Recipe recipe) {
@@ -124,12 +130,18 @@ public final class SurfaceMaterials {
             Material result=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");
             result.setColor("Color",recipe.color);result.setColor("GlowColor",recipe.color.mult(.55f));return result;
         }
-        Material result=lit(assets,recipe.color,recipe.shininess,recipe.specular);
+        boolean compressed=recipe.textures.stream().anyMatch(texture->texture.parameter.equals("DiffuseMap")&&texture.path.endsWith(".dds"));
+        Material result=lit(assets,recipe.color,recipe.shininess,recipe.specular,compressed);
         for(TextureUse texture:recipe.textures)result.setTexture(texture.parameter,texture.load(assets));
         return result;
     }
     public static Material lit(AssetManager assets,ColorRGBA color,float shininess,float specular) {
-        Material result=new Material(lightingDefinition(assets));
+        return lit(assets,color,shininess,specular,false);
+    }
+    private static Material lit(AssetManager assets,ColorRGBA color,float shininess,float specular,boolean compressed) {
+        // The explicit BC7 sRGB image format performs GPU decoding itself. Keep its
+        // parameter declaration separate from ordinary sRGB PNG paint/rubber maps.
+        Material result=compressed?new Material(assets,"materials/EnvironmentLighting.j3md"):new Material(lightingDefinition(assets));
         result.setFloat("NormalType",1); // Bundled maps use the OpenGL (+Y), not Phong's default DirectX convention.
         result.setBoolean("UseMaterialColors",true);result.setColor("Diffuse",color);
         result.setColor("Ambient",color);result.setColor("Specular",new ColorRGBA(specular,specular,specular,1));

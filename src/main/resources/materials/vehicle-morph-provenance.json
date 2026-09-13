@@ -3,11 +3,12 @@
   "license": "licenses/jme-BSD3.txt",
   "licenseSha256": "fe47d99c352ce1cc69005f7d47cfd5f3c23700599946c196c03af04dce97dddb",
   "generator": "src/tools/java/game/wreckriff/tools/PrepareVehicleMorph.java",
-  "generatorSha256": "ccdaeaf4fb3bc34179eeb2a9b7e0c845ad6d3a4ad503bcca5bb370fc5d8d3f87",
+  "generatorSha256": "e42442a4eb68738f541b1e9d9919a4b2442cbd03336f7d9b8221bef0a9d80e3e",
   "changes": [
     "One normal-weight declaration across all tangent target branches",
     "Normal-only overload forwards the real normal with three source buffers",
-    "Vehicle vertex and unshaded techniques import a unique project-owned path"
+    "Vehicle vertex and unshaded techniques import a unique project-owned path",
+    "Normal prepass and shadow-facing normals follow the deformed surface"
   ],
   "files": [
     {
@@ -40,14 +41,14 @@
     },
     {
       "path": "materials/VehiclePostShadow.vert",
-      "sha256": "ec93e7b63c685f307fa7784984cda739b2d775801592f2ae87706b98fb6e3796",
+      "sha256": "619b8ff0400b676b58efa50511263f1e533ed908b5539a9700cb2eb0ff67edeb",
       "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehiclePostShadow.vert",
       "sourceSha256": "e410788b5bf8a668d6326bcea7540170f8605cf47034e87cfc316588f5a63599",
       "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Shadow/PostShadow.vert"
     },
     {
       "path": "materials/VehicleNormal.vert",
-      "sha256": "037488857be81f77aea7cf9ae710802a5cbfd09b49f1aed6f3449be727eaaf9d",
+      "sha256": "4a6d66ffbe791fa043e597497797d6ad4dc7dad87728cef19df82cfa58e468ee",
       "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleNormal.vert",
       "sourceSha256": "4e61a0e3a1644212e0aaebd9450315fd7d9b9819f1612c74ccbdb95ed14bdf19",
       "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-effects/src/main/resources/Common/MatDefs/SSAO/normal.vert"

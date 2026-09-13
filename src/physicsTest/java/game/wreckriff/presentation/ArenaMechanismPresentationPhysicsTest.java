@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class ArenaMechanismPresentationPhysicsTest {
     @ParameterizedTest @ValueSource(strings={"construction_17","euphoria_park","neon_zero"})
     void presentationFollowsActualNativeWarningAndActivePosesWithoutOwningAnyCollider(String arenaId) {

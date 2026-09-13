@@ -17,11 +17,15 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Full native colliders, four raycast wheels, the shipped roads, and the real fixed-step accumulator. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeLaunchPlatformsTest {
     private static final VehicleRules RULES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
     private static final ArenaRegistry REGISTRY=ArenaRegistry.load();
     private static final Map<String,ArenaContent> CONTENT=new HashMap<>();
+
+    @org.junit.jupiter.api.AfterAll
+    static void releaseContent() { CONTENT.clear(); }
 
     static Stream<Arguments> launches() {
         List<Arguments> rows=new ArrayList<>();
@@ -201,7 +205,7 @@ class NativeLaunchPlatformsTest {
             session=new MatchSession(42,arena,boss?MatchSession.Mode.BOSS_DUEL:MatchSession.Mode.ARENA,COMBAT,UUID.randomUUID(),false,0,profileId);
             focus=boss?session.registerBoss(arena.bosses().getFirst()).id:0;
             ArenaContent content=CONTENT.computeIfAbsent(arena.id(),key->new ArenaFactory(NativeArenaAssets.MANAGER).build(arena));
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             world.configureArena(arena);systems=new ArenaSystems(session,arena);
         }
         void place(int id,int padIndex,float speed,float angle) {
@@ -263,7 +267,12 @@ class NativeLaunchPlatformsTest {
                     "The collider must actually fly above both road endpoints");
             assertTrue(world.rotation(id).mult(Vector3f.UNIT_Y).y>.75f,"Correct wheel-side landing");
             assertFalse(drivers.get(id).launchActive());
-            assertEquals(pad.landingSurfaceId(),world.roadContext(id).surfaceId());
+            // A chassis can straddle the painted island road and its adjacent
+            // plaza. Both are real support at the same authored destination;
+            // the wheel-selected ID must not depend on one mesh's name.
+            var supportedSurface=arena.surfaces().stream()
+                    .filter(s->s.id().equals(world.roadContext(id).surfaceId())).findFirst().orElseThrow();
+            assertEquals(landingSurface.level(),supportedSurface.level());
             assertEquals(landingSurface.level(),world.roadContext(id).level());
             assertEquals(0,world.teleportGeneration(id));assertEquals(baseBodies,world.bodyCount());
         }

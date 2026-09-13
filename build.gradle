@@ -74,7 +74,7 @@ tasks.register('prepareArenaModels', JavaExec) {
 tasks.register('authorVehicleModels', Exec) {
     description = 'Explicit offline Blender preparation of vehicle sources; never part of an ordinary build'
     commandLine providers.gradleProperty('blenderExecutable').getOrElse(file('build/tools/blender-4.5.9-windows-x64/blender.exe').absolutePath),
-            '--background', '--python', file('src/tools/author_vehicle_models.py').absolutePath
+            '--background', '--python-exit-code', '1', '--python', file('src/tools/author_vehicle_models.py').absolutePath
 }
 tasks.register('prepareVehicleModels', JavaExec) {
     description = 'Convert prepared local vehicle sources to runtime assets without Blender or network'
@@ -83,10 +83,51 @@ tasks.register('prepareVehicleModels', JavaExec) {
     mainClass = 'game.wreckriff.tools.PrepareVehicleModels'
     args file('src/tools/assets/vehicles').absolutePath, file('src/main/resources').absolutePath
 }
+
+tasks.register('prepareVehicleDiffuse', JavaExec) {
+    description = 'Explicit offline encoding of prepared vehicle paint with the pinned DirectXTex tool'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareVehicleDiffuse'
+    args rootDir.absolutePath,
+            providers.gradleProperty('texconvExecutable').getOrElse(file('build/asset-tooling/DirectXTex/texconv.exe').absolutePath)
+}
+tasks.register('prepareVehicleMorph', JavaExec) {
+    description = 'Explicit offline preparation of vehicle shaders from the locked jME dependencies'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareVehicleMorph'
+    args rootDir.absolutePath
+}
 tasks.register('authorCombatVfx', Exec) {
     description = 'Explicit offline Blender bake of combat flipbooks; never part of an ordinary build'
     commandLine providers.gradleProperty('blenderExecutable').getOrElse(file('build/tools/blender-4.5.9-windows-x64/blender.exe').absolutePath),
-            '--background', '--python', file('src/tools/author_combat_vfx.py').absolutePath
+            '--background', '--python-exit-code', '1', '--python', file('src/tools/author_combat_vfx.py').absolutePath
+}
+
+tasks.register('prepareCombatVfx', JavaExec) {
+    description = 'Explicit offline encoding of prepared combat flipbooks with the pinned DirectXTex tool'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareCombatVfx'
+    args rootDir.absolutePath,
+            providers.gradleProperty('texconvExecutable').getOrElse(file('build/asset-tooling/DirectXTex/texconv.exe').absolutePath)
+}
+
+tasks.register('prepareEnvironmentDiffuse', JavaExec) {
+    description = 'Explicit offline BC7 encoding of the local environment colour maps; never part of a build'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareEnvironmentDiffuse'
+    args rootDir.absolutePath,
+            providers.gradleProperty('texconvExecutable').getOrElse(file('build/asset-tooling/DirectXTex/texconv.exe').absolutePath)
+}
+tasks.register('prepareEnvironmentLighting', JavaExec) {
+    description = 'Explicit offline extraction of the pinned environment Phong definition'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareEnvironmentLighting'
+    args rootDir.absolutePath
 }
 
 tasks.register('vehicleDamageReview', JavaExec) {
@@ -199,6 +240,12 @@ tasks.named('processResources') {
             include 'config/arena-ash-necropolis.json', 'config/arena-doomsday.json'
             include 'config/arena-art-ash-necropolis.json', 'config/arena-art-doomsday.json'
             include 'textures/ui/arenas/ash_necropolis.png', 'textures/ui/arenas/doomsday_arena.png'
+            include 'textures/vehicles/*/metal-*.png'
+            include 'textures/vehicles/*/diffuse.png'
+            include 'textures/vfx/smoke.png', 'textures/vfx/flame.png', 'textures/vfx/blast.png', 'textures/vfx/dust.png'
+            include 'textures/materials/*/diffuse.png'
+            exclude 'textures/materials/leafy_grass/diffuse.png'
+            exclude 'textures/vehicles/shared/metal-normal.png', 'textures/vehicles/shared/metal-specular.png'
         }
     }
 }

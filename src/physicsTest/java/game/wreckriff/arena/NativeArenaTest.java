@@ -21,6 +21,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Native wheel/mesh interaction and real command-driven route acceptance. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArenaTest {
     private static final VehicleCommand GAS=new VehicleCommand(1,0,0,false,false,false,false,null,0,false,false,AbilityId.NONE);
     private final ArenaDefinition definition=ArenaDefinition.load();
@@ -29,7 +30,7 @@ class NativeArenaTest {
     private PhysicsWorld arenaWorld() {
         PhysicsWorld world=new PhysicsWorld(vehicleRules);
         ArenaContent content=new ArenaFactory(NativeArenaAssets.MANAGER).build(definition);
-        for (var body:content.bodies()) world.addStatic(body.shape(),body.position(),body.rotation());
+        for (var body:content.bodies()) world.addStatic(body);
         return world;
     }
     private void settle(PhysicsWorld world) { for (int i=0;i<240;i++) world.step(); }

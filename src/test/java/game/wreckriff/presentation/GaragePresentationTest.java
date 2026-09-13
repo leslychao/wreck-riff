@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class GaragePresentationTest {
     @Test void carouselKeepsOneRealLitVehicleAndReusesEveryProfile() {
         try(var garage=new GaragePresentation(PresentationTestAssets.shared(),VehicleRules.load())) {

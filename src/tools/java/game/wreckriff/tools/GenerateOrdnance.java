@@ -63,7 +63,7 @@ public final class GenerateOrdnance {
         manifest.put("externalImages",false);manifest.put("fontSource",FONT_SOURCE);manifest.put("fontSourceSha256",hash(Files.readAllBytes(Path.of(FONT_SOURCE))));
         manifest.put("fontLicense","OFL-1.1");manifest.put("fontLicensePath","licenses/assets/Roboto-OFL.txt");
         manifest.put("artisticStatus","NEEDS_CREATIVE_REVIEW");manifest.put("atlasSize",SIZE);
-        manifest.put("transformation","Authored lathed shells, solid fins, panel bands, sensors and fasteners; Freeze has an exposed faceted ice core, cooling cage and technical fins in both detail levels; deterministic UV atlases with metal/paint/rubber/optics, marking, edge wear and tangent-space normal/specular data; jME binary export.");
+        manifest.put("transformation","Authored lathed shells, solid fins, panel bands, sensors and fasteners; Freeze has an exposed faceted ice core, cooling cage and technical fins in both detail levels; deterministic UV atlases with metal/paint/rubber/optics, marking, edge wear and tangent-space normal/specular data; finished equal-RGB specular samples stored losslessly as linear L8 after painting, without colour conversion; jME binary export.");
         manifest.put("assets",records);Files.writeString(output.resolve("models/ordnance/provenance.json"),new GsonBuilder().setPrettyPrinting().create().toJson(manifest)+"\n",StandardCharsets.UTF_8);
         System.out.println("Exported eight original ordnance models and six 2048x2048 texture maps.");
     }
@@ -310,11 +310,28 @@ public final class GenerateOrdnance {
             float ny=(height.getRaster().getSample(x,down,0)-height.getRaster().getSample(x,up,0))*.045f;
             Vector3f v=new Vector3f(nx,ny,1).normalizeLocal();normal.setRGB(x,y,new Color(channel((v.x*.5+.5)*255),channel((v.y*.5+.5)*255),channel((v.z*.5+.5)*255)).getRGB());
         }
+        // Graphics2D paints the original RGB atlas first. Copy raw samples afterwards: drawing
+        // into a grey image would apply a colour-space conversion and change the highlights.
+        spec=scalarSpecular(spec);
         for(String channel:List.of("diffuse","normal","specular")) {
             BufferedImage image=switch(channel){case "diffuse"->color;case "normal"->normal;default->spec;};
             String path="textures/ordnance/"+atlas+"-"+channel+".png";ImageIO.write(image,"png",output.resolve(path).toFile());
-            record(path,"texture",Map.of("atlas",atlas,"channel",channel,"width",SIZE,"height",SIZE,"normalConvention","OpenGL +Y"));
+            record(path,"texture",Map.of("atlas",atlas,"channel",channel,"width",SIZE,"height",SIZE,"normalConvention","OpenGL +Y",
+                    "encoding",channel.equals("specular")?"L8":"RGB8","colorSpace",channel.equals("diffuse")?"sRGB":"Linear"));
         }
+    }
+    private static BufferedImage scalarSpecular(BufferedImage painted) {
+        var scalar=new BufferedImage(painted.getWidth(),painted.getHeight(),BufferedImage.TYPE_BYTE_GRAY);
+        int[] row=new int[painted.getWidth()];
+        for(int y=0;y<painted.getHeight();y++) {
+            for(int x=0;x<row.length;x++) {
+                int rgb=painted.getRGB(x,y),r=(rgb>>>16)&255,g=(rgb>>>8)&255,b=rgb&255;
+                if(r!=g||r!=b)throw new IllegalArgumentException("Ordnance specular must have equal RGB channels at "+x+","+y);
+                row[x]=r;
+            }
+            scalar.getRaster().setSamples(0,y,row.length,1,0,row);
+        }
+        return scalar;
     }
     private static int channel(double value){return (int)Math.clamp(Math.round(value),0,255);}
     private void record(String path,String category,Map<String,Object> extra)throws Exception {

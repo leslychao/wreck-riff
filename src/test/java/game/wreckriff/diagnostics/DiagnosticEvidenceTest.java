@@ -6,6 +6,24 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DiagnosticEvidenceTest {
+    @Test void profilerEligibilitySharesTheWholeBoundaryFrameAndExcludesOtherPhases() {
+        var evidence=new DiagnosticEvidence(true,600);
+        var combat=frame(FrameSample.Phase.ARENA_COMBAT,29.9);
+        assertFalse(evidence.measuresCombatFrame(combat));evidence.frame(combat);
+        var boundary=frame(FrameSample.Phase.ARENA_COMBAT,.2);
+        assertFalse(evidence.measuresCombatFrame(boundary));evidence.frame(boundary);
+        for(var phase:FrameSample.Phase.values())assertEquals(phase.combat(),evidence.measuresCombatFrame(frame(phase,0)));
+        assertFalse(evidence.measuresCombatFrame(new FrameSample(8,121,"construction_17",FrameSample.Phase.ARENA_COMBAT,0,7,44,0,0,0,0,false,0)));
+        assertFalse(new DiagnosticEvidence(false,600).measuresCombatFrame(combat));
+        assertEquals(0,evidence.measuredActiveSeconds());evidence.frame(frame(FrameSample.Phase.ARENA_COMBAT,.01));assertEquals(.01,evidence.measuredActiveSeconds());
+    }
+    @Test void frameThatRequestsShutdownCannotStartAnotherMeasuredGpuSample() {
+        var evidence=new DiagnosticEvidence(true,1);evidence.frame(frame(FrameSample.Phase.ARENA_COMBAT,30));
+        assertTrue(evidence.measuresCombatFrame(frame(FrameSample.Phase.ARENA_COMBAT,1.1)));
+        evidence.frame(frame(FrameSample.Phase.ARENA_COMBAT,1.1));
+        assertFalse(evidence.measuresCombatFrame(frame(FrameSample.Phase.ARENA_COMBAT,0)));
+        evidence.frame(frame(FrameSample.Phase.ARENA_COMBAT,.01));assertEquals(1.1,evidence.measuredActiveSeconds());
+    }
     private FrameSample frame(FrameSample.Phase phase,double seconds) {return new FrameSample(7,120,"construction_17",phase,seconds,7,44,8,9,50,1,true,0);}
     @Test void menuLoadingIntroEntryAndResultsNeverAdvanceActiveWarmupOrMeasurements() {
         var evidence=new DiagnosticEvidence(true,600);

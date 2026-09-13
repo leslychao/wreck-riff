@@ -3,10 +3,20 @@ package game.wreckriff.presentation;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class CombatVfxAtlasTest {
     @Test void authoredAtlasHasBoundedResidentCostAndAllWeaponRecipes() {
         var atlas=CombatVfxAtlas.load(PresentationTestAssets.shared());
-        assertTrue(atlas.residentBytes()<128L*1024*1024);
+        assertEquals(27_962_132L,atlas.residentBytes());
+        var material=new com.jme3.material.Material(PresentationTestAssets.shared(),"materials/CombatParticles.j3md");atlas.bind(material);
+        for(String family:new String[]{"Smoke","Flame","Blast","Dust"}) {
+            var texture=material.getTextureParam(family+"Atlas").getTextureValue();
+            assertTrue(texture.getKey().getName().endsWith(".dds"));
+            assertEquals(com.jme3.texture.Image.Format.DXT5,texture.getImage().getFormat());
+            assertEquals(12,texture.getImage().getMipMapSizes().length);
+            assertEquals(5_592_432,texture.getImage().getData(0).remaining());
+            assertEquals(com.jme3.texture.image.ColorSpace.sRGB,texture.getImage().getColorSpace());
+        }
         for(String kind:new String[]{"homing","power","napalm","cannon","mine","ballistic","destroyed","special-bomb"}) {
             var recipe=atlas.explosion(kind);
             assertTrue(recipe.smokeSeconds()>recipe.flameSeconds());

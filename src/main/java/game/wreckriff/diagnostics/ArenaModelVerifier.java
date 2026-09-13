@@ -19,7 +19,8 @@ public final class ArenaModelVerifier {
     private static final String MANIFEST="models/arenas/provenance.json";
     private ArenaModelVerifier() { }
     public static List<VerifyAssets.Asset> verify()throws Exception {
-        return verify(new DesktopAssetManager(true));
+        var manager=new DesktopAssetManager(true);
+        try{return verify(manager);}finally{manager.clearCache();}
     }
     public static List<VerifyAssets.Asset> verify(com.jme3.asset.AssetManager manager)throws Exception {
         List<VerifyAssets.Asset> result=new ArrayList<>();byte[] manifest=resource(MANIFEST);
@@ -32,6 +33,11 @@ public final class ArenaModelVerifier {
             byte[] bytes=Files.readAllBytes(Path.of(expectedSource));
             if(!hash(bytes).equals(evidence.get(field+"Sha256").getAsString()))throw new IOException("Architecture recipe changed after export");
             result.add(asset(expectedSource,"procedural-source",bytes,"Offline architecture authoring and conversion"));
+        }
+        for(var input:Map.of("layoutGeneratorSha256","src/tools/author_campaign_arenas.py","supplyLayoutSha256","src/tools/assets/arena-revision3/supply-layout.json").entrySet()) {
+            byte[] bytes=Files.readAllBytes(Path.of(input.getValue()));
+            if(!evidence.has(input.getKey())||!hash(bytes).equals(evidence.get(input.getKey()).getAsString()))throw new IOException("Architecture layout input changed after export: "+input.getValue());
+            result.add(asset(input.getValue(),"procedural-source",bytes,"Canonical layout and fixed supply placement input"));
         }
         Set<String> required=new TreeSet<>();List<ArenaArt.ModelInstance> instances=new ArrayList<>();var registry=ArenaRegistry.load();
         for(var entry:registry.entries()) {
@@ -77,6 +83,9 @@ public final class ArenaModelVerifier {
         int[] triangles={0};model.depthFirstTraversal(spatial->{
             if(spatial.getNumControls()!=0)throw new IllegalArgumentException("Authored model contains a runtime control");
             if(spatial instanceof Geometry geometry) {
+                String surface=geometry.getUserData("surfaceMaterial");
+                if(game.wreckriff.simulation.ContactSurface.fromMaterial(surface)==game.wreckriff.simulation.ContactSurface.UNKNOWN)
+                    throw new IllegalArgumentException("Missing prepared architecture surface metadata: "+geometry.getName());
                 for(var attribute:List.of(VertexBuffer.Type.Position,VertexBuffer.Type.Normal,VertexBuffer.Type.TexCoord,VertexBuffer.Type.Tangent)) {
                     var buffer=geometry.getMesh().getFloatBuffer(attribute);
                     if(buffer==null||buffer.limit()==0)throw new IllegalArgumentException("Missing architecture attribute "+attribute);

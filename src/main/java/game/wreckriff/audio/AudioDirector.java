@@ -10,7 +10,7 @@ import java.util.*;
 
 /** One render-thread audio owner. Never creates a device, never uses untracked playInstance voices. */
 public final class AudioDirector implements AutoCloseable {
-    private enum Group { ENGINE, WEAPON, THREAT, UI, MENU_UI }
+    private enum Group { ENGINE, WEAPON, THREAT, UI, MENU_UI, AMBIENT }
     private static final int MENU_UI_SOURCES=2;
     private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder","napalm","napalm-fire","fire");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
@@ -60,6 +60,7 @@ public final class AudioDirector implements AutoCloseable {
     private boolean closed, paused, matchActive, warningWasActive;
     private float master = 1, musicVolume = 1, sfxVolume = 1, duck, lowHpClock;
     private UUID sessionId;
+    private ArenaAmbience ambience;
 
     public AudioDirector(AssetManager assets, AudioRenderer renderer, Listener listener, Node parent) {
         this(assets, renderer, listener, parent, AudioConfig.load());
@@ -145,6 +146,13 @@ public final class AudioDirector implements AutoCloseable {
 
     public void startMatch(UUID nextSessionId,String normalAsset,String intenseAsset) {
         prepareMatch(nextSessionId,normalAsset,intenseAsset);startPreparedMatch();
+    }
+
+    /** Loading-only binding. Retry receives a fresh plan; an unrelated session cannot attach sounds. */
+    public void prepareAmbience(UUID sourceSessionId,game.wreckriff.arena.ArenaDefinition arena) {
+        if(closed||!matchPrepared||!Objects.equals(sessionId,sourceSessionId))
+            throw new IllegalStateException("Ambience requires the prepared match session");
+        ambience=new ArenaAmbience(Objects.requireNonNull(arena));
     }
 
     /** Idempotent phase input. Reversing a fade keeps the same pair and musical timeline. */
@@ -247,7 +255,7 @@ public final class AudioDirector implements AutoCloseable {
         if(leavingMenu)stopMenu();
         warningWasActive=false; lowHpClock=0; duck=0;bossBlend=0;bossTarget=0;
         nextTake.clear(); acceptedEvents.clear();
-        motion.clear();bossWarnings.clear();
+        motion.clear();bossWarnings.clear();ambience=null;
     }
 
     public void update(MatchSession session, WorldQuery world, float dt) {
@@ -295,7 +303,18 @@ public final class AudioDirector implements AutoCloseable {
                 shot("low-hp",Group.THREAT,100,null,.65f,1); lowHpClock=3;
             }
         }
+        if(ambience!=null) {
+            if(listener!=null&&session.outcome==MatchSession.Outcome.NONE)ambience.update(this,listener.getLocation(),dt);
+            else ambience.stop(this);
+        }
         applyVolumes();
+    }
+
+    void ambientLoop(String key,String cue,Vector3f position,float gain,float pitch,boolean mayStart) {
+        if(closed||renderer==null||paused||!matchActive)return;
+        if(!ArenaAmbience.CUES.contains(cue))throw new IllegalArgumentException("Unknown ambient cue");
+        if(gain>0&&!mayStart&&!loops.containsKey(key))return;
+        loop(key,cue,Group.AMBIENT,3,position,Vector3f.ZERO,gain,pitch);
     }
 
     /** Arena owner supplies phase and actual zone position; audio never runs another hazard clock. */
@@ -605,6 +624,7 @@ public final class AudioDirector implements AutoCloseable {
         float group=switch(voice.group) {
             case ENGINE -> config.engineGain(); case WEAPON -> config.weaponsGain();
             case THREAT -> config.threatsGain(); case UI, MENU_UI -> config.interfaceGain();
+            case AMBIENT -> config.engineGain()*.28f;
         };
         return master*config.masterHeadroom()*sfxVolume*group*voice.gain;
     }

@@ -12,6 +12,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Real exported models and clock-driven presentation; this does not certify an OpenGL frame. */
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class PickupPresentationTest {
     @Test void powerWarheadNarrowsAtTheUpperTipInsteadOfLookingLikeAnInvertedCone() {
         Spatial model=PresentationTestAssets.shared().loadModel(PickupStyle.POWER.model());model.updateGeometricState();

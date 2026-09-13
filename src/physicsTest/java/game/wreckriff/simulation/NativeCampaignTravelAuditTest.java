@@ -13,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Measured isolated AI drives, not a claim about first contact with moving combatants. */
 class NativeCampaignTravelAuditTest {
+    @org.junit.jupiter.api.AfterAll
+    static void releaseContent() { NativeCampaignBotNavigationTest.releaseContent(); }
+
     private static final Path REPORT=Path.of("build","reports","campaign-travel-audit.json");
     private static final int LIMIT_TICKS=90*MatchSession.TICKS_PER_SECOND;
     private record Scenario(String kind,String targetId,Vector3f start,Vector3f goal,Vector3f forward,float routeMeters) {}

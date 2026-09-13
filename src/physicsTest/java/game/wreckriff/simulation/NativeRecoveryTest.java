@@ -33,6 +33,9 @@ class NativeRecoveryTest {
             ArenaDefinition arena=ArenaDefinition.load();
             try(MatchRuntime runtime=new MatchRuntime(session,world,arena,new NavGraph(arena),rules)) {
                 for(int i=0;i<120;i++)runtime.tick(Map.of(),false);
+                assertEquals(0,session.vehicle(0).weapon(WeaponType.CANNON).ammo);
+                // This is a Cannon impulse/recovery fixture, after the ordinary empty start.
+                session.vehicle(0).weapon(WeaponType.CANNON).ammo=1;
                 VehicleCommand cannon=new VehicleCommand(0,0,0,false,false,false,true,WeaponType.CANNON,0,false,false,AbilityId.NONE);
                 runtime.tick(Map.of(0,cannon),false);
                 boolean cannonHit=false,crossed=false,directBlocked=false,intervened=false,recovered=false,fatal=false;Vector3f emergencyPose=null;

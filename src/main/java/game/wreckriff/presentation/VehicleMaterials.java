@@ -22,7 +22,8 @@ public final class VehicleMaterials {
             String parameter=switch(type){case "diffuse"->"DiffuseMap";case "normal"->"NormalMap";default->"SpecularMap";};
             if(glass)continue;
             String prefix=paint?"":"metal-";
-            material.setTexture(parameter,new SurfaceMaterials.TextureUse(parameter,"textures/vehicles/"+(paint?profile:"shared")+"/"+prefix+type+".png",type.equals("diffuse")).load(assets));
+            String path="textures/vehicles/"+(paint?profile:"shared")+"/"+prefix+type;
+            material.setTexture(parameter,type.equals("diffuse")?VehicleDiffuseDds.load(assets,path+".dds"):new SurfaceMaterials.TextureUse(parameter,path+".png",false).load(assets));
         }
         material.setFloat("Heat",0);material.setFloat("Damage",0);material.setFloat("Glass",glass?1:0);return material;
     }

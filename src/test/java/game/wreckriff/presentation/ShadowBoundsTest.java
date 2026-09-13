@@ -10,6 +10,7 @@ import game.wreckriff.arena.ArenaDefinition;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ShadowBoundsTest {
     @Test void damageStagesAndArenaReceiverBoundsStayFiniteAcrossThreeShadowCascades() {
         var assets=PresentationTestAssets.shared();Node scene=new Node("shadow-test");

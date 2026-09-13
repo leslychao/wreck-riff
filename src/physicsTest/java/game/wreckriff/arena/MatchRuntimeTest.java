@@ -13,6 +13,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Ten complete combats using the same MatchRuntime.tick called by GameApplication. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class MatchRuntimeTest {
     private record DriverResult(int id,float hp,int recoveries,long aliveTicks,long maximumStationaryTicks,
             float damageDealt,int eliminations,float x,float y,float z) {}
@@ -115,7 +116,7 @@ class MatchRuntimeTest {
             MatchSession session=new MatchSession(seed,360);
             PhysicsWorld world=new PhysicsWorld(vehicleRules);
             ArenaContent content=new ArenaFactory(assets).build(arena);
-            for (var body:content.bodies()) world.addStatic(body.shape(),body.position(),body.rotation());
+            for (var body:content.bodies()) world.addStatic(body);
             List<ArenaDefinition.Spawn> spawns=arena.shuffledSpawns(seed);
             for (var vehicle:session.vehicles) {
                 var spawn=spawns.get(vehicle.id);

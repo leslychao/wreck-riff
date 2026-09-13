@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NativeOrdnanceSaturationTest {
     @Test void ordinaryNativeCommandsReachBothCapsRenderEveryStateAndPauseWithoutSpendingAmmoOrTime() {
         var assets=new DesktopAssetManager(true);Node scene=new Node();
+        try {
         for(int retry=0;retry<2;retry++)try(var rig=new NativeOrdnanceSaturationRig();var visuals=new CombatVisuals(assets,scene,rig.world)) {
             int nativeBodies=rig.world.bodyCount();
             assertTrue(rig.emptyAtStart());assertTrue(rig.session.vehicles.stream().allMatch(v->v.weapons().stream().allMatch(slot->slot.ammo==0)));
@@ -34,6 +35,11 @@ class NativeOrdnanceSaturationTest {
             assertTrue(rig.session.vehicles.stream().allMatch(v->v.hp==v.maximumHp),"The firing lanes must remain independent and clear");
         }
         assertNull(scene.getChild("ordnance-models"),"Retry must detach the previous presentation root");
+        } finally {
+            // This private decoder is not owned by NativeArenaAssets. jME's
+            // worker-thread loaders can retain it after the fixture returns.
+            assets.clearCache();
+        }
     }
     static void render(NativeOrdnanceSaturationRig rig,CombatVisuals visuals,float dt) {
         visuals.update(rig.combat.projectiles(),rig.combat.mines(),rig.combat.fireZones(),rig.combat.ballisticWarnings(),rig.session,dt);

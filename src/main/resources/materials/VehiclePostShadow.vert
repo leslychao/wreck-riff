@@ -54,8 +54,15 @@ const mat4 biasMat = mat4(0.5, 0.0, 0.0, 0.0,
 void main(){
    vec4 modelSpacePos = vec4(inPosition, 1.0);
 
+   #ifndef BACKFACE_SHADOWS
+       vec3 modelSpaceNormal = inNormal;
+   #endif
    #ifdef NUM_MORPH_TARGETS
-       Morph_Compute(modelSpacePos);
+       #ifndef BACKFACE_SHADOWS
+           Morph_Compute(modelSpacePos, modelSpaceNormal);
+       #else
+           Morph_Compute(modelSpacePos);
+       #endif
    #endif
 
    #ifdef NUM_BONES
@@ -94,7 +101,7 @@ void main(){
     #endif
 
     #ifndef BACKFACE_SHADOWS
-        vec3 normal = normalize(TransformWorld(vec4(inNormal,0.0))).xyz;
+        vec3 normal = normalize(TransformWorld(vec4(modelSpaceNormal,0.0))).xyz;
         #ifdef POINTLIGHT
             lightDir = worldPos.xyz - m_LightPos;
         #else

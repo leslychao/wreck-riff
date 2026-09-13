@@ -9,12 +9,13 @@ import game.wreckriff.vehicle.VehicleController;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArenaDrivingTest {
     @Test void excavationGravelChangesAllFourWheelCoefficientsAndLeavingItRestoresGrip() {
         var arena=ArenaRegistry.load().definition("construction_17");var rules=VehicleRules.load();
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            content.bodies().forEach(body->world.addStatic(body.id(),body.shape(),body.position(),body.rotation()));world.configureArena(arena);
+            content.bodies().forEach(body->world.addStatic(body));world.configureArena(arena);
             var session=new MatchSession(42,arena,MatchSession.Mode.BOSS_DUEL,Configs.load("combat",CombatRules.class));
             var gravel=arena.surfaces().stream().filter(s->s.id().equals("pit-floor")).findFirst().orElseThrow();
             assertEquals(.8f,gravel.grip(),"Excavation gravel must retain its authored lower grip");

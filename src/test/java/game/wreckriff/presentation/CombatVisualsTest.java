@@ -9,7 +9,55 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class CombatVisualsTest {
+    @Test void criticalSmokeRechecksItsEnvelopeWhenInheritedSpeedOutgrowsTheCachedRadius() {
+        Node scene=new Node();MatchSession session=new MatchSession(1,180);session.vehicle(0).hp=session.vehicle(0).maximumHp*.25f;
+        float[] speed={0};int[] captures={0};WorldQuery delegate=world();
+        WorldQuery wall=(WorldQuery)java.lang.reflect.Proxy.newProxyInstance(WorldQuery.class.getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->{
+            if(method.getName().equals("velocity"))return new Vector3f(0,0,speed[0]);
+            if(method.getName().equals("staticSweep")) {
+                captures[0]++;Vector3f a=(Vector3f)args[0],b=(Vector3f)args[1];
+                if(a.z<6&&b.z>=6){float t=(6-a.z)/(b.z-a.z);return new WorldQuery.Hit(-1,a.clone().interpolateLocal(b,t),Vector3f.UNIT_Z.negate(),t,"wall");}
+                return null;
+            }
+            return method.invoke(delegate,args);
+        });
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,wall)) {
+            visuals.update(List.of(),List.of(),List.of(),List.of(),session,.1f);assertEquals(6,captures[0]);
+            speed[0]=46;visuals.update(List.of(),List.of(),List.of(),List.of(),session,.1f);
+            assertEquals(12,captures[0],"Acceleration must invalidate an envelope that no longer covers the complete emitted travel");
+            assertTrue((Integer)visuals.statistics().get("burstSurfaceQueriesLastFrame")<=CombatVisuals.BURST_SURFACE_QUERY_LIMIT);
+            session.vehicle(0).hp=session.vehicle(0).maximumHp;
+            for(int frame=0;frame<11;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),session,.1f);
+            Mesh smoke=batch(scene,"particles-and-tracers").getMesh();assertTrue(smoke.getVertexCount()>0);
+            for(int vertex=0;vertex<smoke.getVertexCount();vertex+=6)assertTrue(point(smoke.getFloatBuffer(VertexBuffer.Type.Position),vertex).z<=6,
+                    "A wall beyond the former 3.5m capture must contain the fast emitted billow");
+            assertEquals(12,captures[0],"Particles themselves never add collision queries");
+        }
+    }
+    @Test void settledFragmentsKeepTheirContactPoseWithoutFurtherGravityRotationOrSweeps() {
+        Node scene=new Node();int[] hits={0};WorldQuery delegate=world();
+        WorldQuery corridor=(WorldQuery)java.lang.reflect.Proxy.newProxyInstance(WorldQuery.class.getClassLoader(),new Class<?>[]{WorldQuery.class},(proxy,method,args)->{
+            if(method.getName().equals("staticSweep")) {
+                Vector3f a=(Vector3f)args[0],b=(Vector3f)args[1];hits[0]++;
+                return new WorldQuery.Hit(-1,a.clone().interpolateLocal(b,.5f),hits[0]==1?Vector3f.UNIT_Y:Vector3f.UNIT_Y.negate(),.5f);
+            }
+            return method.invoke(delegate,args);
+        });
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,corridor)) {
+            visuals.detachPanel(new Vector3f(0,1,0),Quaternion.IDENTITY,new Vector3f(0,-20,0),new Vector3f(.05f,.025f,.06f),ContactSurface.METAL,0);
+            for(int frame=0;frame<2;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.016f);
+            assertEquals(2,hits[0]);float[] pose=floats(batch(scene,"impact-fragments").getMesh(),VertexBuffer.Type.Position);
+            for(int frame=0;frame<8;frame++) {
+                visuals.update(List.of(),List.of(),List.of(),List.of(),null,.016f);
+                assertArrayEquals(pose,floats(batch(scene,"impact-fragments").getMesh(),VertexBuffer.Type.Position),"A settled panel must fade at its contact pose");
+            }
+            assertEquals(2,hits[0]);
+            for(int frame=0;frame<8;frame++)visuals.update(List.of(),List.of(),List.of(),List.of(),null,.016f);
+            assertEquals(0,visuals.effectCount());
+        }
+    }
     @Test void trackedTracerFollowsTheCurrentDeformedContactAndInterpolatedVehiclePose() {
         Node scene=new Node(),vehicle=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),0);
         vehicle.setLocalTranslation(5,1,0);scene.attachChild(vehicle);scene.updateGeometricState();
@@ -282,7 +330,8 @@ class CombatVisualsTest {
             for(Vector3f look:List.of(new Vector3f(0,2,20),new Vector3f(0,2,-20))) {
                 camera.lookAt(look,Vector3f.UNIT_Y);
                 scene.updateGeometricState();
-                geometry.getControl(AbstractControl.class).render(null,new ViewPort("test-camera",camera));
+                var renderer=new com.jme3.system.NullRenderer(){@Override public java.util.EnumSet<com.jme3.renderer.Caps> getCaps(){return java.util.EnumSet.of(com.jme3.renderer.Caps.TextureCompressionS3TC);}};
+                geometry.getControl(AbstractControl.class).render(new com.jme3.renderer.RenderManager(renderer),new ViewPort("test-camera",camera));
                 var positions=(java.nio.FloatBuffer)geometry.getMesh().getBuffer(VertexBuffer.Type.Position).getData();
                 float previous=Float.POSITIVE_INFINITY;
                 for(int vertex=0;vertex<geometry.getMesh().getVertexCount();vertex+=6) {
@@ -378,7 +427,7 @@ class CombatVisualsTest {
             visuals.acceptPresented(List.of(hit,shield));assertEquals(0,visuals.effectCount(),"Duplicate delivery after expiry must not restart an old effect");
         }
     }
-    @Test void destroyingTargetCancelsPendingContactsButPreservesLaunchedTracerAndMuzzleFlash() {
+    @Test void rawContactsNeverAutoRenderAndLaunchedTracerSurvivesTargetDestruction() {
         Node scene=new Node(),baselineScene=new Node();
         try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());
             CombatVisuals baseline=new CombatVisuals(PresentationTestAssets.shared(),baselineScene,world())) {
@@ -395,30 +444,21 @@ class CombatVisualsTest {
                 visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);baseline.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
                 if(frame<4)assertEquals(1,visuals.tracerSegments().size(),"Target death must not erase the launched tracer");
                 assertSameEffects(scene,baselineScene);
-                assertEquals(baseline.effectCount(),visuals.effectCount(),"Dead targets may not receive late sparks or shield flares");
+                assertEquals(baseline.effectCount(),visuals.effectCount(),"Raw contacts must wait for delivery by the owning timeline");
             }
         }
     }
-    @Test void contactsAfterDeathInSameOrLaterBatchStayCancelledButOtherTargetsStillReceiveHits() {
-        Node scene=new Node(),baselineScene=new Node();
-        try(CombatVisuals visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());
-            CombatVisuals baseline=new CombatVisuals(PresentationTestAssets.shared(),baselineScene,world())) {
-            Vector3f start=new Vector3f(0,1,0),end=new Vector3f(0,1,36);
-            var death=new GameEvent(GameEvent.Type.DESTROYED,10,1,0,end,"power",0);var launch=shot(1,0,start,end);
-            var hit=new GameEvent(GameEvent.Type.IMPACT,1,1,0,end,"machine-gun",8,start,Vector3f.UNIT_Z);
-            var shield=new GameEvent(GameEvent.Type.SHIELD_HIT,1,1,0,end,"machine-gun",8,start,Vector3f.UNIT_Z);
-            visuals.accept(List.of(death,launch,hit,shield));baseline.accept(List.of(death,launch));
-            visuals.acceptPresented(List.of(hit,shield));
-            // A new event ID after death must also be rejected; deduplication alone is insufficient.
-            var later=shot(2,0,start,end);visuals.accept(List.of(later,new GameEvent(GameEvent.Type.IMPACT,2,1,0,end,"machine-gun",8,start,Vector3f.UNIT_Z),
-                    new GameEvent(GameEvent.Type.SHIELD_HIT,2,1,0,end,"machine-gun",8,start,Vector3f.UNIT_Z)));baseline.accept(List.of(later));
-            var validLaunch=shot(3,1,start,end);var validHit=new GameEvent(GameEvent.Type.IMPACT,3,2,1,end,"machine-gun",8,start,Vector3f.UNIT_Z);
-            visuals.accept(List.of(validLaunch,validHit));baseline.accept(List.of(validLaunch,validHit));
-            visuals.acceptPresented(List.of(validHit));baseline.acceptPresented(List.of(validHit));
-            for(int frame=0;frame<4;frame++) {
-                visuals.update(List.of(),List.of(),List.of(),List.of(),null,.1f);baseline.update(List.of(),List.of(),List.of(),List.of(),null,.1f);
-                assertSameEffects(scene,baselineScene);assertEquals(baseline.effectCount(),visuals.effectCount());
-            }
+    @Test void alreadyDueCannonContactSurvivesRawDestructionBeforeTimelineDelivery() {
+        Node scene=new Node();UUID session=UUID.randomUUID();
+        var impact=new GameEvent(GameEvent.Type.IMPACT,91,1,0,new Vector3f(0,1,5),"cannon",80,Vector3f.ZERO,Vector3f.UNIT_Z)
+                .atTick(120,0).inSession(session).withContact(ContactSurface.METAL,null);
+        var death=new GameEvent(GameEvent.Type.DESTROYED,92,1,0,new Vector3f(0,1,5),"cannon",0).atTick(120,1).inSession(session);
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());var timeline=new ContactPresentationTimeline(session)) {
+            // Exact application order: simulation dispatch, then the interpolated render drain.
+            var raw=List.of(impact,death);timeline.accept(raw,1);visuals.accept(raw);
+            var due=timeline.advanceTo(1);assertEquals(raw,due);int before=visuals.effectCount();
+            visuals.acceptPresented(due);assertTrue(visuals.effectCount()>before,"The owning timeline kept the lethal contact before destruction");
+            int after=visuals.effectCount();visuals.acceptPresented(due);assertEquals(after,visuals.effectCount(),"Duplicate delivery still cannot replay the contact");
         }
     }
     private static void assertSameEffects(Node actual,Node expected) {

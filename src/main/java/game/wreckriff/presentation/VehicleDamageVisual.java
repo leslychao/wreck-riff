@@ -24,23 +24,28 @@ final class VehicleDamageVisual extends AbstractControl {
     private static final class Part {
         final VehicleModelData.Part source;final Geometry geometry,canonical;final int lod;
         final float[] base,from,to,fromNormal,toNormal,fromTangent,toTangent;
-        final boolean deforms;final MorphTarget previous=new MorphTarget("previous"),next=new MorphTarget("next");
-        final FloatBuffer[] previousBuffers=new FloatBuffer[3],nextBuffers=new FloatBuffer[3];
-        final List<Geometry> overlays=new ArrayList<>();final BitSet dirtyTriangles=new BitSet();
-        float elapsed=1,duration=DAMAGE_SECONDS;int composedStage=-1;final float[] composedRegions=new float[8],fromRegions=new float[8],fromStages={1,0,0,0,0};
+        final boolean deforms,lamp;final MorphTarget previous,next;
+        final FloatBuffer[] previousBuffers,nextBuffers;
+        final List<Geometry> overlays=new ArrayList<>();final BitSet dirtyTriangles;
+        float elapsed=1,duration=DAMAGE_SECONDS;int composedStage=-1;final float[] composedRegions,fromRegions,fromStages;
         Part(VehicleModelData.Part source,Geometry geometry,int lod) {
-            this.source=source;this.geometry=geometry;this.lod=lod;base=positions(source.stages()[0]);from=base.clone();to=base.clone();
-            fromNormal=read3(source.stages()[0],VertexBuffer.Type.Normal);toNormal=fromNormal.clone();fromTangent=read3(source.stages()[0],VertexBuffer.Type.Tangent);toTangent=fromTangent.clone();
+            this.source=source;this.geometry=geometry;this.lod=lod;
             deforms=Arrays.stream(source.regions()).anyMatch(r->r.indices().length>0);
-            Mesh mesh=source.stages()[0].clone();geometry.setMesh(mesh);
+            lamp=source.name().equals("headlights")||source.name().equals("taillights");
+            if(deforms){base=positions(source.stages()[0]);from=base.clone();to=base.clone();
+                fromNormal=read3(source.stages()[0],VertexBuffer.Type.Normal);toNormal=fromNormal.clone();fromTangent=read3(source.stages()[0],VertexBuffer.Type.Tangent);toTangent=fromTangent.clone();
+                previous=new MorphTarget("previous");next=new MorphTarget("next");previousBuffers=new FloatBuffer[3];nextBuffers=new FloatBuffer[3];dirtyTriangles=new BitSet();composedRegions=new float[8];fromRegions=new float[8];fromStages=new float[]{1,0,0,0,0};
+            }else{base=from=to=fromNormal=toNormal=fromTangent=toTangent=null;previous=next=null;previousBuffers=nextBuffers=null;dirtyTriangles=null;composedRegions=fromRegions=fromStages=null;}
+            // Fixed receivers/bolts/rollers only move their Spatial transform. Lamps alone need an owned Color buffer.
+            Mesh mesh=deforms||lamp?source.stages()[0].clone():source.stages()[0];geometry.setMesh(mesh);
             if(deforms){mesh.addMorphTarget(previous);mesh.addMorphTarget(next);
                 VertexBuffer.Type[] types={VertexBuffer.Type.Position,VertexBuffer.Type.Normal,VertexBuffer.Type.Tangent};
                 for(int i=0;i<3;i++){previousBuffers[i]=BufferUtils.createFloatBuffer(base.length);nextBuffers[i]=BufferUtils.createFloatBuffer(base.length);previous.setBuffer(types[i],previousBuffers[i]);next.setBuffer(types[i],nextBuffers[i]);}
                 // The initial identity targets are already settled, matching elapsed >= duration.
                 geometry.setMorphState(new float[]{0,1});
             }
-            if(source.name().equals("headlights")||source.name().equals("taillights")){float[] colors=new float[base.length/3*4];Arrays.fill(colors,1);mesh.setBuffer(VertexBuffer.Type.Color,4,colors);}
-            BoundingBox bound=(BoundingBox)source.stages()[0].getBound().clone();if(deforms){bound.setXExtent(bound.getXExtent()+MAX_DENT);bound.setYExtent(bound.getYExtent()+MAX_DENT);bound.setZExtent(bound.getZExtent()+MAX_DENT);}mesh.setBound(bound);
+            if(lamp){float[] colors=new float[mesh.getVertexCount()*4];Arrays.fill(colors,1);mesh.setBuffer(VertexBuffer.Type.Color,4,colors);}
+            if(deforms){BoundingBox bound=(BoundingBox)source.stages()[0].getBound().clone();bound.setXExtent(bound.getXExtent()+MAX_DENT);bound.setYExtent(bound.getYExtent()+MAX_DENT);bound.setZExtent(bound.getZExtent()+MAX_DENT);mesh.setBound(bound);}
             canonical=lod==0?new Geometry(source.name(),source.stages()[0]):null;if(canonical!=null){canonical.updateGeometricState();source.stages()[0].createCollisionData();}
         }
         boolean needsCompose(int stage,float[] regions){if(!deforms)return false;if(composedStage!=stage)return true;for(int i=0;i<8;i++)if(composedRegions[i]!=regions[i]&&source.regions()[i].indices().length>0)return true;return false;}
@@ -67,11 +72,11 @@ final class VehicleDamageVisual extends AbstractControl {
                 for(int i=0;i<from.length;i++){from[i]+=pos.get(i)*weight;fromNormal[i]+=norm.get(i)*weight;fromTangent[i]+=tangent.get(i/3*4+i%3)*weight;}}
             displace(from,fromNormal,fromTangent,fromRegions);upload(previousBuffers,from,fromNormal,fromTangent);dirtyGpu();elapsed=active.elapsed;duration=active.duration;
         }
-        void close(){Set<java.nio.Buffer> bound=Collections.newSetFromMap(new IdentityHashMap<>());
-            for(VertexBuffer vb:geometry.getMesh().getBufferList()){var type=vb.getBufferType();boolean morph=type.ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&type.ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal();boolean lamp=type==VertexBuffer.Type.Color&&(source.name().equals("headlights")||source.name().equals("taillights"));if((morph||lamp)&&vb.getId()>=0){bound.add(vb.getData());vb.dispose();}}
+        void close(){if(!deforms&&!lamp)return;Set<java.nio.Buffer> bound=Collections.newSetFromMap(new IdentityHashMap<>());
+            for(VertexBuffer vb:geometry.getMesh().getBufferList()){var type=vb.getBufferType();boolean morph=type.ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&type.ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal();if((morph||lamp&&type==VertexBuffer.Type.Color)&&vb.getId()>=0){bound.add(vb.getData());vb.dispose();}}
             // Registered VertexBuffers release their own native data via the renderer; only never-bound targets need direct release here.
-            for(FloatBuffer buffer:previousBuffers)if(buffer!=null&&bound.add(buffer))BufferUtils.destroyDirectBuffer(buffer);for(FloatBuffer buffer:nextBuffers)if(buffer!=null&&bound.add(buffer))BufferUtils.destroyDirectBuffer(buffer);
-            var color=geometry.getMesh().getBuffer(VertexBuffer.Type.Color);if(color!=null&&(source.name().equals("headlights")||source.name().equals("taillights"))&&bound.add(color.getData()))BufferUtils.destroyDirectBuffer(color.getData());
+            if(deforms){for(FloatBuffer buffer:previousBuffers)if(buffer!=null&&bound.add(buffer))BufferUtils.destroyDirectBuffer(buffer);for(FloatBuffer buffer:nextBuffers)if(buffer!=null&&bound.add(buffer))BufferUtils.destroyDirectBuffer(buffer);}
+            var color=geometry.getMesh().getBuffer(VertexBuffer.Type.Color);if(lamp&&color!=null&&bound.add(color.getData()))BufferUtils.destroyDirectBuffer(color.getData());
         }
         private void upload(FloatBuffer[] buffers,float[] point,float[] normal,float[] tangent) {
             var baseN=source.stages()[0].getFloatBuffer(VertexBuffer.Type.Normal);var baseT=source.stages()[0].getFloatBuffer(VertexBuffer.Type.Tangent);
@@ -149,7 +154,7 @@ final class VehicleDamageVisual extends AbstractControl {
     private void tryDetach(){if(stage<2)return;for(int region=0;region<8;region++)if(regions[region]>=.65f&&regionNormals[region]!=null){String panel=region==2?PANELS.get(0):region==3?PANELS.get(1):region<2||region==7?PANELS.get(2):region==4||region==5?PANELS.get(3):null;
             if(panel!=null&&detached.add(panel))for(Part part:parts)if(part.lod==2&&part.source.name().equals(panel)){Mesh mesh=part.source.stages()[stage];BoundingBox box=(BoundingBox)mesh.getBound();pending.add(new VehicleVisual.DetachedPanel(panel,box.getCenter().clone(),new Quaternion(),new Vector3f(box.getXExtent(),box.getYExtent(),box.getZExtent()),regionNormals[region].mult(2.5f).addLocal(0,1.5f,0),VehicleModelData.centeredPanel(mesh)));break;}updateDetached();}
     }
-    private int region(Vector3f p){if(p.y>profile.height()*.68f)return 6;float z=p.z/profile.length();if(z>.24f)return p.x<0?0:1;if(z<-.24f)return p.x<0?4:5;return p.x<0?2:3;}
+    private int region(Vector3f p){if(p.y>profile.height()*.68f)return 6;float z=p.z/profile.length();if(Math.abs(p.x)<profile.width()*.24f&&z>.12f&&z<.40f)return 7;if(z>.24f)return p.x<0?0:1;if(z<-.24f)return p.x<0?4:5;return p.x<0?2:3;}
     private void transition(float seconds) {
         pendingDuration=seconds;
     }
@@ -165,7 +170,8 @@ final class VehicleDamageVisual extends AbstractControl {
         var material=part.geometry.getMaterial();if(material.getMaterialDef().getMaterialParam("Damage")!=null)material.setFloat("Damage",stage/4f);
         if(part.source.name().equals("headlights")||part.source.name().equals("taillights")){
             VertexBuffer buffer=part.geometry.getMesh().getBuffer(VertexBuffer.Type.Color);FloatBuffer colors=(FloatBuffer)buffer.getData();int end=part.source.name().equals("taillights")?2:0;
-            for(int vertex=0;vertex<part.base.length/3;vertex++){float energy=lampDamage[end+(part.base[vertex*3]<0?0:1)],light=stage==4?.015f:Math.max(.015f,1-energy*1.4f);int index=vertex*4;colors.put(index,light);colors.put(index+1,light);colors.put(index+2,light);colors.put(index+3,1);}buffer.setUpdateNeeded();
+            FloatBuffer positions=part.source.stages()[0].getFloatBuffer(VertexBuffer.Type.Position);
+            for(int vertex=0;vertex<positions.limit()/3;vertex++){float energy=lampDamage[end+(positions.get(vertex*3)<0?0:1)],light=stage==4?.015f:Math.max(.015f,1-energy*1.4f);int index=vertex*4;colors.put(index,light);colors.put(index+1,light);colors.put(index+2,light);colors.put(index+3,1);}buffer.setUpdateNeeded();
         }
     }
     void advance(float dt,Camera camera) {
@@ -204,7 +210,7 @@ final class VehicleDamageVisual extends AbstractControl {
         return event.withContact(surface,new VehicleContact(point,normal));
     }
     private static void posedVertex(Part canonical,Part active,int vertex,float blend,Vector3f result){
-        int i=vertex*3;if(!active.deforms){result.set(canonical.base[i],canonical.base[i+1],canonical.base[i+2]);return;}
+        int i=vertex*3;if(!active.deforms){FloatBuffer positions=canonical.source.stages()[0].getFloatBuffer(VertexBuffer.Type.Position);result.set(positions.get(i),positions.get(i+1),positions.get(i+2));return;}
         if(canonical==active){result.set(active.from[i]+(active.to[i]-active.from[i])*blend,active.from[i+1]+(active.to[i+1]-active.from[i+1])*blend,active.from[i+2]+(active.to[i+2]-active.from[i+2])*blend);return;}
         float fx=0,fy=0,fz=0;for(int stage=0;stage<5;stage++)if(active.fromStages[stage]>0){var position=canonical.source.stages()[stage].getFloatBuffer(VertexBuffer.Type.Position);float weight=active.fromStages[stage];fx+=position.get(i)*weight;fy+=position.get(i+1)*weight;fz+=position.get(i+2)*weight;}
         var target=canonical.source.stages()[Math.max(0,active.composedStage)].getFloatBuffer(VertexBuffer.Type.Position);float tx=target.get(i),ty=target.get(i+1),tz=target.get(i+2);

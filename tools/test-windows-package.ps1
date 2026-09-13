@@ -57,7 +57,7 @@ try {
     if(!$result.installationWriteDenied){throw 'Extracted installation directory still allows writes.'}
     $arguments=@();$diagnosticMode='normal'
     if($Mode -eq 'Smoke') {$arguments=@('--dev','--seed=42','--ai-player',"--smoke-seconds=$Seconds");$diagnosticMode='graphics-smoke'}
-    elseif($Mode -eq 'Soak') {$arguments=@('--dev','--seed=42','--ai-player',"--soak-seconds=$Seconds");$diagnosticMode='soak'}
+    elseif($Mode -eq 'Soak') {$arguments=@('--dev','--seed=42','--ai-player','--resolution=1080p','--msaa=4',"--soak-seconds=$Seconds");$diagnosticMode='soak'}
     elseif($Mode -eq 'UiReview') {
         $scaleArgument=$UiScale.ToString('R',[Globalization.CultureInfo]::InvariantCulture)
         $arguments=@('--dev','--seed=42','--ui-review',"--resolution=$($uiRequest.width)x$($uiRequest.height)","--ui-scale=$scaleArgument");$diagnosticMode='ui-review'

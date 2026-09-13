@@ -37,12 +37,20 @@ class BotControllerTest {
     @Test void reactionIsNotInstantAndPureDecisionsRepeatForTheSeed() {
         MatchSession a=new MatchSession(987,360),b=new MatchSession(987,360); TestWorld world=new TestWorld();
         world.positions[0]=new Vector3f(0,.8f,-45); world.positions[1]=new Vector3f(0,.8f,-15);
-        BotController first=new BotController(a,arena,rules),second=new BotController(b,arena,rules);
+        // This stationary decision double cannot finish a reversing manoeuvre.
+        // Keep its supply route ahead, so the test measures gun reaction while
+        // seeking with an empty arsenal, independently of authored Yard sockets.
+        var reactionArena=arena.withPickups(List.of(new ArenaDefinition.Pickup("reaction-front-supply",
+                ArenaDefinition.PickupType.POWER_AMMO,new ArenaDefinition.Vec3(0,0,-25),3000)));
+        BotController first=new BotController(a,reactionArena,rules),second=new BotController(b,reactionArena,rules);
         boolean fired=false;
         for (int tick=0;tick<72;tick++) {
             a.tick=tick;b.tick=tick;
             Map<Integer,VehicleCommand> ca=first.commands(world),cb=second.commands(world);
             assertEquals(ca,cb);
+            assertEquals(BotController.State.SEEK_PICKUP,first.state(0));
+            assertTrue(a.vehicle(0).weapons().stream().allMatch(slot->slot.ammo==0));
+            assertEquals(0,ca.get(0).brakeReverse());
             if (tick<rules.reactionMinTicks()) assertFalse(ca.get(0).machineGun());
             fired|=ca.get(0).machineGun();
         }

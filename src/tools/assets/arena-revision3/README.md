@@ -24,19 +24,43 @@ site passports, actual district polygons, road/surface/nav links and supply dist
    subtraction therefore cannot accumulate holes or duplicate IDs across runs.
    JSON and design outputs are published through atomic sibling-file replacement.
 
-   The final pass includes `dress_construction.py`, `dress_neon.py` and
-   `dress_carnival.py`. Their named foreground installations have specific public,
+   The final pass includes `dress_construction.py`, `dress_neon.py`,
+   `dress_parking.py` and `dress_carnival.py`. Their named foreground installations have specific public,
    production or repair functions and retain the verified road envelopes. Carnival
    shopfronts face their nearest approach; circus sectors have stepped supporting
    terraces, the ride core has a drive mechanism, and the depot has open workbenches.
    `test_construction_foreground.py` and `test_carnival_foreground.py` check solid
    footprints against every full driving corridor plus four metres, supply/spawn
    preservation and the presence of foreground near the actual review routes.
+   Structural lintels may span a route only above its eight-metre vehicle/camera
+   clearance. Roof columns, tent poles and machinery foundations remain real solids.
+
+   Parking bay paint replaces exactly partitioned floor triangles, without decals
+   or stacked pavement. Open tunnel ramp cuttings have continuous retaining walls.
+   Public park paths use the locally vendored calm `park-paving` material; freshly
+   cast frames and piers use `cast-concrete` with matching 1.8-metre UV capture scale
+   in the canonical geometry and exported models. Trees retain their original
+   six-metre footprint while using closed lobed crowns, branches and a simpler LOD.
 
 The model generator owns each hero roof's vertices; the same placed high-detail mesh
 is the rendered roof and its static collision shape. Named box proxies retain useful
 authoring dimensions but have `collision:false`; they are omitted from the renderer.
 Ground and raised road surfaces use the canonical indexed triangles independently.
+The final [structural audit](STRUCTURAL_AUDIT.md) records the nine ceiling systems,
+three lake bridges, parking floor shells and interchange bearings, together with
+the geometry-based regression checks that cover their connections.
+
+The published driving-camera review exposed bare production fields and a flat
+industrial horizon in construction. The final scene therefore adds five specific
+production areas: connected curing beds, reinforcement storage, span assembly,
+bearing delivery and the aggregate screening inlet. Their source passports record
+their function and service approach. Existing pit foundations show successive cage
+and pouring stages beside a connected reclaim channel. New production areas leave
+the whole road envelope plus four metres and eight metres around pickup sockets.
+The industrial continuation beyond the unchanged physical boundary has separate
+panel, power, rolling, assembly and curing buildings with loading fronts, grounded
+pipe galleries, window bays and stepped roof monitors. It replaces the former
+three plain wall blocks without changing roads, support surfaces or combat starts.
 
 ## Distinct interiors
 

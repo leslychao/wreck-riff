@@ -33,7 +33,7 @@ MaterialDef Phong Lighting {
         Float Shininess : 1
 
         // Diffuse map
-        Texture2D DiffuseMap
+        Texture2D DiffuseMap -LINEAR
 
         // Normal map
         Texture2D NormalMap -LINEAR

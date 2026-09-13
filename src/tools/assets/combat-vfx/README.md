@@ -8,7 +8,9 @@ is preserved only as source history under `history/`.
 Rebuild explicitly, outside Gradle, using the locally installed Blender 4.5.9:
 
 ```powershell
-& build/tools/blender-4.5.9-windows-x64/blender.exe --background --factory-startup --python src/tools/author_combat_vfx.py
+& build/tools/blender-4.5.9-windows-x64/blender.exe --background --python-exit-code 1 --python src/tools/author_combat_vfx.py
+# Microsoft JDK 21, after installing the pinned local texconv described below:
+./gradlew.bat --offline prepareCombatVfx
 ```
 
 The CPU Cycles recipe bakes four 2048×2048 RGBA atlases (smoke, flame, blast,
@@ -17,20 +19,64 @@ blast contains three coherent 21-frame variants and one unused tile.
 Each 256px tile contains 240px of
 rendered volume and an 8px transparent gutter. Frame zero is bottom left;
 OpenGL UV increases right and up. The auxiliary 1024px atlas contains original
-flash/spark silhouettes. RGB is sRGB; alpha is linear coverage. Runtime loads
-the finished PNGs with mipmaps and trilinear minification. Explicit gradients cap
+flash/spark silhouettes. RGB is sRGB; alpha is linear coverage. The four lossless PNGs remain here as editable bake sources. Runtime loads only
+legacy DDS DXT5/BC3 with twelve offline mip levels; the 1K auxiliary remains PNG
+with generated mips. All use trilinear minification, explicit sRGB image colour
+space and TextureKey flipY=false. jME 3.8.1 uploads native sRGB DXT5 (GL0x8c4f);
+the render path fails clearly if S3TC is unavailable. Explicit gradients cap
 atlas filtering at mip 3, where the transparent gutter remains one pixel wide.
 Builds perform no bake
-or network access. Total calculated RGBA8 mip residency is 95,070,884 bytes
-(90.67 MiB), below the 128 MiB atlas budget. This is not driver VRAM telemetry.
+or network access. Total calculated mip residency is 27,962,132 bytes (26.67 MiB), below the
+unchanged 128 MiB atlas budget. The previous RGBA8 set occupied 95,070,884 bytes
+(90.67 MiB). Four full DDS payloads retain 22,369,728 CPU bytes instead of
+67,108,864 base RGBA bytes. These are format payload calculations, not RSS or
+driver VRAM telemetry.
 
 `vfx/recipes.json` is generated with the atlases. It specifies dimensions, frame
 count, layout, and explosion scale, flash/flame/smoke duration and emission counts.
-`vfx/provenance.json` records SHA-256 of every exported asset, the generator and
-editable scene. `CombatVfxAssetsVerifier` checks hashes, complete asset membership,
-alpha, tile gutters, dimensions and memory. Missing files and Git LFS pointers
+`bake-provenance.json` here records the source PNGs, recipe and editable scene.
+Runtime `vfx/provenance.json` links that exact bake to the encoder source, settings,
+tool SHA, MIT license, all runtime assets, decoded quality metrics and repeated
+compressed hashes. `CombatVfxAssetsVerifier` checks hashes, complete asset membership,
+decoded BC3 alpha, zero-alpha tile gutters, all twelve mip payloads, dimensions,
+source/encoder evidence and memory. Verification does not run the encoder. Missing files and Git LFS pointers
 fail before packaging. Updating the authoring recipe requires rebaking the whole
 set so provenance stays reproducible. No LFS service is needed for this set.
+
+
+Explicit compression requires the official Microsoft DirectXTex **may2026**
+`texconv.exe` in `build/asset-tooling/DirectXTex/` (or `-PtexconvExecutable=...`).
+Download is a separate preparation step, never a Gradle dependency:
+
+- Binary: https://github.com/microsoft/DirectXTex/releases/download/may2026/texconv.exe
+- Required SHA256: `dcfdec10244e02cf5037fba089c55fb7e1326b1c8181742d77d15fa5cb5eef06`
+- MIT source license: https://raw.githubusercontent.com/microsoft/DirectXTex/may2026/LICENSE
+- Redistributed notice: `src/main/resources/licenses/DirectXTex-MIT.txt`
+- Pinned command: `-nologo -f BC3_UNORM_SRGB -srgb -dx9 -m 0 -nogpu -if BOX -sepalpha -y`.
+
+Legacy DXT5 is intentional: this jME DDSLoader does not support DX10 BC3 sRGB
+metadata. The legacy texture is explicitly marked sRGB on load, so RGB is decoded
+once and alpha stays linear. Offline Y flip is unnecessary for the existing VFX
+coordinates; native A/B verifies orientation and subframe interpolation.
+BC7 CPU encoding was rejected for this artwork: its measured alpha maximum error
+was 124/255 versus 13–14/255 with BC3, and it introduced nonzero gutters. Both use
+8 bits per pixel. These are compression choices, not a change to the renderer.
+
+The converter runs CPU encoding twice for every atlas and rejects differing DDS
+SHA256. Before publishing anything, it decodes each base mip and checks alpha
+RMSE <=1.5/255, maximum <=20/255, visible RGB RMSE <=8/255, linear composite over
+18% grey RMSE <=0.009 and exactly zero alpha in source and decoded gutters. The
+current set measured alpha RMSE 1.008–1.169/255 and maximum 13–14/255. Native
+comparison remains necessary: numerical limits do not prove artistic approval.
+Temporary outputs stay in a unique build directory; complete files are published
+atomically with bounded Windows replacement retries and provenance last. The old
+runtime PNGs are removed only after their exact bytes have been preserved here.
+
+PNG, JSON and Blender exports first write a unique temporary file in the same
+directory, preserving its format suffix. Only a nonempty finished export replaces
+the previous file. Sharing conflicts receive at most six attempts and 1.5 seconds
+of total backoff; failure preserves the previous destination. Provenance publishes
+last, so verification rejects a mixed set after an interrupted multi-file bake.
 
 World units are metres, +Y up and vehicle +Z forward. The volume bake is camera
 space artwork; `CombatVisuals` owns world-space positions, velocities and sizes.
@@ -80,7 +126,12 @@ If the capture budget is exhausted, particles stay at the known origin and fade
 within 0.13 seconds. Environment pose/incarnation stamps are read once per named
 surface per frame. A removed or moved boundary retires its old gas particles in
 place within 0.13 seconds, without additional sweeps. Critical smoke caches are
-refreshed after movement, invalidation, or 0.5 seconds. FireSurface topology caching
+refreshed after movement, invalidation, inherited-speed growth, or 0.5 seconds.
+Their radius covers the actual socket offset, spawn jitter, inherited vehicle
+velocity, maximum rise over the full lifetime, and sprite extent. Settled fragments
+keep their final contact pose while fading, without further motion or queries.
+The VFX GPU timestamp interval includes resolve, particles and the final fullscreen
+composite; exceptions close its pending interval as well. FireSurface topology caching
 is separate and is unchanged by particle animation.
 
 This is a bounded local plane estimate for bursts and critical smoke, not full

@@ -2,8 +2,9 @@ package game.wreckriff.arena;
 
 import com.jme3.asset.DesktopAssetManager;
 
-/** Match fixtures share the process asset cache exactly as real retries do. */
-public final class NativeArenaAssets {
+/** One decoder across native fixtures; completed classes release their scene cache. */
+public final class NativeArenaAssets implements org.junit.jupiter.api.extension.AfterAllCallback {
     public static final DesktopAssetManager MANAGER=new DesktopAssetManager(true);
-    private NativeArenaAssets() {}
+    public NativeArenaAssets() {}
+    @Override public void afterAll(org.junit.jupiter.api.extension.ExtensionContext context) {MANAGER.clearCache();}
 }

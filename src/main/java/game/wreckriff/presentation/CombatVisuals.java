@@ -33,6 +33,7 @@ public final class CombatVisuals implements AutoCloseable {
     private static final ColorRGBA SCORCH=new ColorRGBA(.085f,.060f,.038f,1);
     private static final int FIELD_VERTEX_LIMIT=20000, CACHED_FIRE_POINT_LIMIT=FIELD_VERTEX_LIMIT/6;
     private static final float SMOKE_RADIUS_LIMIT=.55f, FLASH_RADIUS_LIMIT=2.4f;
+    private static final float CRITICAL_SMOKE_LIFE=1.5f,SMOKE_EMITTER_JITTER=.129f,SMOKE_RISE_SPEED=1.779f,SMOKE_CACHE_MARGIN=.75f;
     private static final float[] SPRITE_UV={0,0,1,0,1,1,0,0,1,1,0,1};
     private static final class Particle {
         final Vector3f position=new Vector3f(),velocity=new Vector3f();
@@ -62,7 +63,7 @@ public final class CombatVisuals implements AutoCloseable {
     }
     private static final class Shard {
         final Vector3f position,velocity;final Quaternion rotation;final float life,size;final ColorRGBA color;final int priority;float age;
-        Vector3f halfExtents;Mesh preparedMesh;int bounces;
+        Vector3f halfExtents;Mesh preparedMesh;int bounces;boolean settled;
         Shard(Vector3f position,Vector3f velocity,Quaternion rotation,float life,float size,ColorRGBA color,int priority) {
             this.position=position.clone();this.velocity=velocity;this.rotation=rotation;this.life=life;this.size=size;
             this.color=color;this.priority=priority;
@@ -136,7 +137,6 @@ public final class CombatVisuals implements AutoCloseable {
     private final Vector3f sortEye=new Vector3f(),sortForward=new Vector3f();
     private final Comparator<Particle> particleOrder=(a,b)->Float.compare(depth(b),depth(a));
     private final LinkedHashMap<Long,GunShot> shots=new LinkedHashMap<>();
-    private final Set<Integer> destroyedTargets=new HashSet<>();
     private record EventKey(GameEvent.Type type,long id,int subject) {}
     private final LinkedHashSet<EventKey> recentEvents=new LinkedHashSet<>();
     private final LinkedHashSet<EventKey> presentedEvents=new LinkedHashSet<>();
@@ -154,7 +154,7 @@ public final class CombatVisuals implements AutoCloseable {
     }
     private final Map<Long,TrailHead> trailHeads=new HashMap<>();
     private static final class Emitter {
-        float previousTurbo=100,smokeClock,turboClock,envelopeClock;
+        float previousTurbo=100,smokeClock,turboClock,envelopeClock,envelopeRadius;
         final Vector3f envelopeOrigin=new Vector3f();VfxSurfaceEnvelope envelope;
     }
     private final Map<Integer,Emitter> emitters=new HashMap<>();
@@ -211,6 +211,7 @@ public final class CombatVisuals implements AutoCloseable {
         particleBatch.geometry.addControl(new AbstractControl() {
             @Override protected void controlUpdate(float dt) { }
             @Override protected void controlRender(RenderManager manager,ViewPort view) {
+                CombatVfxAtlas.requireSupported(manager.getRenderer().getCaps());
                 // A transparent mesh is sorted as one object by jME, so order its sprites here.
                 // This uses the actual render camera, including rear view, without owning a camera.
                 if(!closed)renderParticles(view.getCamera());
@@ -232,11 +233,8 @@ public final class CombatVisuals implements AutoCloseable {
             if(recentEvents.size()>EVENT_HISTORY_LIMIT)recentEvents.remove(recentEvents.iterator().next());
             fresh.add(event);
         }
-        // Death cancels pending target contacts, including contacts delivered later in this batch.
-        // Launched tracers and muzzle flashes still finish independently of the target/shooter lifecycle.
-        for(GameEvent event:fresh)if(event.type()==GameEvent.Type.DESTROYED) {
-            destroyedTargets.add(event.subjectId());
-        }
+        // The timeline alone cancels future contacts. Already-due contacts may arrive
+        // after this raw destruction batch and must still finish before the wreck.
         // Match IMPACT to SHOT even if their transport order changes inside a drained event batch.
         for(GameEvent event:fresh)if(event.type()==GameEvent.Type.SHOT&&"machine-gun".equals(event.kind())&&!shots.containsKey(event.eventId())) {
             if(shots.size()>=SHOT_LIMIT)shots.remove(shots.keySet().iterator().next());
@@ -285,7 +283,6 @@ public final class CombatVisuals implements AutoCloseable {
         if(closed)return;
         for(GameEvent event:events) {
             if(event.type()!=GameEvent.Type.IMPACT&&event.type()!=GameEvent.Type.SHIELD_HIT)continue;
-            if(destroyedTargets.contains(event.subjectId()))continue;
             if(!presentedEvents.add(new EventKey(event.type(),event.eventId(),event.subjectId())))continue;
             if(presentedEvents.size()>EVENT_HISTORY_LIMIT)presentedEvents.remove(presentedEvents.iterator().next());
             GunShot shot=shots.get(event.eventId());
@@ -445,7 +442,7 @@ public final class CombatVisuals implements AutoCloseable {
         int tracerQueries=0;
         for(Iterator<GunShot> it=shots.values().iterator();it.hasNext();) {
             GunShot shot=it.next();shot.age=(float)Math.max(0,presentationTime-shot.born);
-            if(shot.contactEvent!=null&&!destroyedTargets.contains(shot.target)) {
+            if(shot.contactEvent!=null) {
                 Node target=vehicleModels.get(shot.target);
                 // Keep the original canonical event. The vehicle owner resolves its
                 // barycentric anchor against the two currently displayed morph targets.
@@ -469,6 +466,7 @@ public final class CombatVisuals implements AutoCloseable {
         int shardIndex=0,start=shards.isEmpty()?0:debrisQueryCursor%shards.size();
         for(Iterator<Shard> it=shards.iterator();it.hasNext();) {
             Shard shard=it.next();shard.age+=dt;if(shard.age>=shard.life){it.remove();continue;}
+            if(shard.settled)continue;
             shard.velocity.y-=9.81f*dt;
             Vector3f next=shard.position.add(shard.velocity.mult(dt));
             int rank=(shardIndex++-start+shards.size())%Math.max(1,shards.size());
@@ -482,7 +480,7 @@ public final class CombatVisuals implements AutoCloseable {
                     float into=shard.velocity.dot(normal);
                     if(into<0)shard.velocity.subtractLocal(normal.mult(1.22f*into)).multLocal(.48f);
                     shard.bounces++;
-                    if(shard.velocity.lengthSquared()<.3f||shard.bounces>=2){shard.age=shard.life-.2f;shard.velocity.set(0,0,0);}
+                    if(shard.velocity.lengthSquared()<.3f||shard.bounces>=2){shard.age=shard.life-.2f;shard.velocity.set(0,0,0);shard.settled=true;}
                 }
             } else if(nearby&&shard.bounces<2) {
                 // Never advance an unchecked fragment through a wall. Secondary
@@ -529,19 +527,27 @@ public final class CombatVisuals implements AutoCloseable {
             int id=vehicle.id;Emitter emitter=emitters.computeIfAbsent(id,key->new Emitter());emitter.smokeClock-=dt;emitter.turboClock-=dt;
             if(vehicle.alive() && vehicle.hp/vehicle.maximumHp<=.25f) {
                 emitter.envelopeClock-=dt;Vector3f position=world.position(id);
-                if(emitter.envelope==null||emitter.envelope.invalidated()||emitter.envelopeClock<=0||emitter.envelopeOrigin.distanceSquared(position)>.75f*.75f) {
-                    emitter.envelope=captureEnvelope(position.add(0,.7f,0),null,3.5f);emitter.envelopeOrigin.set(position);emitter.envelopeClock=.5f;
+                var profile=world.profile(id);Quaternion pose=world.rotation(id);
+                Vector3f captureOrigin=position.add(0,.7f,0);
+                Vector3f bonnet=position.add(pose.mult(new Vector3f(0,
+                        profile.id().equals("rivet")?.72f:profile.id().equals("grinder")?profile.hullBounds().maxY()+.12f:profile.hullBounds().maxY()*.6f,
+                        profile.length()*.228f)));
+                Vector3f inherited=world.velocity(id).mult(.18f);
+                // The sphere includes the actual socket offset, local spawn jitter,
+                // inherited translation, maximum rise and the complete sprite extent.
+                float travel=(inherited.length()+SMOKE_RISE_SPEED)*CRITICAL_SMOKE_LIFE+SMOKE_EMITTER_JITTER+SMOKE_RADIUS_LIMIT;
+                float requiredRadius=bonnet.distance(emitter.envelopeOrigin)+travel;
+                if(emitter.envelope==null||emitter.envelope.invalidated()||emitter.envelopeClock<=0||
+                        emitter.envelopeOrigin.distanceSquared(captureOrigin)>SMOKE_CACHE_MARGIN*SMOKE_CACHE_MARGIN||requiredRadius>emitter.envelopeRadius) {
+                    emitter.envelopeRadius=bonnet.distance(captureOrigin)+travel+SMOKE_CACHE_MARGIN;
+                    emitter.envelope=captureEnvelope(captureOrigin,null,emitter.envelopeRadius);emitter.envelopeOrigin.set(captureOrigin);emitter.envelopeClock=.5f;
                 }
                 emissionEnvelope=emitter.envelope;
                 // Accumulate emitter time so the plume has the same density at 30/60/120 render FPS.
                 for(int emitted=0;emitter.smokeClock<=0&&emitted<2;emitted++,emitter.smokeClock+=.10f) {
-                    var profile=world.profile(id);
-                    Vector3f bonnet=world.position(id).add(world.rotation(id).mult(new Vector3f(
-                            (visualRandom.nextFloat()-.5f)*.20f,profile.id().equals("rivet")?.72f:profile.id().equals("grinder")?
-                                    profile.hullBounds().maxY()+.12f:profile.hullBounds().maxY()*.6f,
-                            profile.length()*.228f+(visualRandom.nextFloat()-.5f)*.16f)));
+                    Vector3f spawn=bonnet.add(pose.mult(new Vector3f((visualRandom.nextFloat()-.5f)*.20f,0,(visualRandom.nextFloat()-.5f)*.16f)));
                     Vector3f rise=new Vector3f(.24f+(visualRandom.nextFloat()-.5f)*.5f,1.35f+visualRandom.nextFloat()*.35f,(visualRandom.nextFloat()-.5f)*.35f);
-                    emit(bonnet,rise.addLocal(world.velocity(id).mult(.18f)),CRITICAL_SMOKE,1.5f,.19f,.35f,0);
+                    emit(spawn,rise.addLocal(inherited),CRITICAL_SMOKE,CRITICAL_SMOKE_LIFE,.19f,.35f,0);
                 }
             } else {emitter.smokeClock=0;emitter.envelope=null;}
             emissionEnvelope=null;
@@ -759,10 +765,10 @@ public final class CombatVisuals implements AutoCloseable {
         values.put("lights",activeLights());values.put("peakLights",peakLights);values.put("lightLimit",lights.length);
         values.put("debrisQueriesLastFrame",debrisQueries);values.put("debrisQueryLimit",DEBRIS_QUERY_LIMIT);values.put("tracerQueryLimit",TRACER_QUERY_LIMIT);
         values.put("burstSurfaceQueriesLastFrame",burstSurfaceQueriesLastFrame);values.put("peakBurstSurfaceQueries",peakBurstSurfaceQueries);values.put("burstSurfaceQueryLimit",BURST_SURFACE_QUERY_LIMIT);
-        values.put("effectBatches",4);values.put("atlasRgbaMipBytes",atlas.residentBytes());values.put("atlasBudgetBytes",128L*1024*1024);
+        values.put("effectBatches",4);values.put("atlasTextureMipBytes",atlas.residentBytes());values.put("atlasBudgetBytes",128L*1024*1024);
         var depth=particleBatch.geometry.getMaterial().getTextureParam("SceneDepth");
         values.put("sceneDepthSamples",depth==null?0:depth.getTextureValue().getImage().getMultiSamples());
-        values.put("atlasMemoryMeasurement","Calculated RGBA8 including complete mip chains; not driver VRAM telemetry");return values;
+        values.put("atlasMemoryMeasurement","Calculated four native BC3 mip chains plus auxiliary RGBA8 mips; not driver VRAM telemetry");return values;
     }
     private void renderParticles(Camera camera) {
         int count=particles.size();for(int i=0;i<count;i++)sortedParticles[i]=particles.get(i);
@@ -907,7 +913,7 @@ public final class CombatVisuals implements AutoCloseable {
     int cachedFirePointCount(){return cachedFirePoints;}
     public int projectileCount(){return ordnance.projectileCount();}
     @Override public void close(){if(closed)return;closed=true;ordnance.close();root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
-        particles.clear();freeParticles.clear();Arrays.fill(sortedParticles,null);shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();presentedEvents.clear();trailHeads.clear();
+        particles.clear();freeParticles.clear();Arrays.fill(sortedParticles,null);shots.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();presentedEvents.clear();trailHeads.clear();
         fireSurfaces.clear();cachedFirePoints=0;emitters.clear();gunShotCount.clear();surfaceRevisions.clear();emissionEnvelope=null;
         for(Batch batch:new Batch[]{particleBatch,sparkBatch,fragmentBatch,fieldBatch})batch.close();root.detachAllChildren();
         projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();fireExposures=List.of();vehicleModels=Map.of();}

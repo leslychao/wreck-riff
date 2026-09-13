@@ -7,8 +7,12 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import sys
+import time
+import uuid
+from contextlib import contextmanager
 
 import bpy
 import numpy as np
@@ -25,13 +29,46 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+@contextmanager
+def atomic_output(path):
+    """Publish only a complete file, preserving the prior resource on any failure."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.stem}.{uuid.uuid4().hex}.tmp{path.suffix}")
+    try:
+        yield temporary
+        if not temporary.is_file() or temporary.stat().st_size == 0:
+            raise OSError(f"Export is missing or empty: {temporary}")
+        for attempt in range(6):
+            try:
+                os.replace(temporary, path)
+                break
+            except OSError as error:
+                # Windows readers can briefly retain mapped images/export files.
+                # Never retry unrelated errors or remove the previous destination.
+                busy = error.errno in (13, 16, 22) or getattr(error, "winerror", None) in (5, 32, 33, 1224)
+                if not busy or attempt == 5:
+                    raise
+                time.sleep(.1 * (attempt + 1))
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def write_json(path, value):
+    with atomic_output(path) as temporary:
+        temporary.write_text(json.dumps(value, indent=2)+"\n", encoding="utf-8", newline="\n")
+
+
 def save_pixels(path, pixels):
-    image = bpy.data.images.new(path.stem, pixels.shape[1], pixels.shape[0], alpha=True)
-    image.pixels.foreach_set(np.ascontiguousarray(pixels, dtype=np.float32).ravel())
-    image.filepath_raw = str(path)
-    image.file_format = "PNG"
-    image.save()
-    bpy.data.images.remove(image)
+    with atomic_output(path) as temporary:
+        image = bpy.data.images.new(path.stem, pixels.shape[1], pixels.shape[0], alpha=True)
+        try:
+            image.pixels.foreach_set(np.ascontiguousarray(pixels, dtype=np.float32).ravel())
+            image.filepath_raw = str(temporary)
+            image.file_format = "PNG"
+            image.save()
+        finally:
+            bpy.data.images.remove(image)
 
 
 def node(nodes, kind, **values):
@@ -175,8 +212,10 @@ def bake_family(family, setup):
         # save/load the render output explicitly before atlas assembly.
         scratch = ROOT / "build/combat-graphics-work/vfx-bake" / f"{family}-{frame:02}.png"
         scratch.parent.mkdir(parents=True, exist_ok=True)
-        scene.render.filepath = str(scratch)
-        bpy.ops.render.render(write_still=True)
+        with atomic_output(scratch) as temporary:
+            scene.render.filepath = str(temporary)
+            if "FINISHED" not in bpy.ops.render.render(write_still=True):
+                raise RuntimeError(f"Blender frame render did not finish: {scratch}")
         rendered = bpy.data.images.load(str(scratch), check_existing=False)
         pixels = np.empty(interior * interior * 4, dtype=np.float32)
         rendered.pixels.foreach_get(pixels)
@@ -194,7 +233,9 @@ def bake_family(family, setup):
         atlas[y:y + tile, x:x + tile] = padded
         bpy.data.images.remove(rendered)
         print(f"VFX {family} {frame + 1}/{FRAMES}", flush=True)
-    target = OUT / "textures/vfx" / f"{family}.png"
+    # Lossless editable bake is source content. Explicit CPU compression publishes
+    # the runtime DDS afterwards; normal builds never run either authoring step.
+    target = SOURCE / f"{family}.png"
     save_pixels(target, atlas)
     return target
 
@@ -224,7 +265,9 @@ def main():
     (OUT / "vfx").mkdir(parents=True, exist_ok=True)
     SOURCE.mkdir(parents=True, exist_ok=True)
     setup = volume_scene()
-    bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE / "combat-volumes.blend"))
+    with atomic_output(SOURCE / "combat-volumes.blend") as temporary:
+        if "FINISHED" not in bpy.ops.wm.save_as_mainfile(filepath=str(temporary), copy=True):
+            raise RuntimeError("Blender source scene save did not finish")
     textures = [bake_family(name, setup) for name in ("smoke", "flame", "blast", "dust")]
     textures.append(auxiliary())
     recipes = {
@@ -248,7 +291,7 @@ def main():
         "bake": "Cycles procedural 3D density and emission; 12 samples; original animated noise, no external images"
     }
     recipe_path = OUT / "vfx/recipes.json"
-    recipe_path.write_text(json.dumps(recipes, indent=2)+"\n", encoding="utf-8")
+    write_json(recipe_path, recipes)
     source = Path(__file__).resolve()
     provenance = {
         "schemaVersion": 1, "origin": "ORIGINAL_PROJECT_CONTENT", "generator": str(source.relative_to(ROOT)).replace("\\", "/"),
@@ -257,9 +300,11 @@ def main():
         "sourceSceneSha256": digest(SOURCE / "combat-volumes.blend"),
         "licensePermission": "Original Wreck Riff project content; redistribution with the game permitted",
         "externalImages": False, "artisticStatus": "NEEDS_CREATIVE_REVIEW",
-        "assets": [{"path": str(p.relative_to(OUT)).replace("\\", "/"), "sha256": digest(p), "bytes": p.stat().st_size} for p in textures+[recipe_path]]
+        "assets": [{"path": str(p.relative_to(ROOT)).replace("\\", "/"), "sha256": digest(p), "bytes": p.stat().st_size} for p in textures+[recipe_path]]
     }
-    (OUT / "vfx/provenance.json").write_text(json.dumps(provenance, indent=2)+"\n", encoding="utf-8")
+    # The manifest is the final publication marker. A failed preceding write
+    # leaves old provenance, so preparation/verification cannot accept a mixed set.
+    write_json(SOURCE / "bake-provenance.json", provenance)
 
 
 if __name__ == "__main__":

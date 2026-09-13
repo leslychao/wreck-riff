@@ -1,0 +1,16 @@
+{
+  "engineVersion": "3.8.1-stable",
+  "path": "materials/EnvironmentLighting.j3md",
+  "sha256": "ff4d31fbc0b323ad308a767c421f914ec7d20b4a73191e8287ba666a7e014e0b",
+  "sourcePath": "src/tools/assets/environment-lighting/Lighting.j3md",
+  "sourceSha256": "a9a12180195087a5c2d66d18fb7add1da20f160d63e911073bee81169c6436d4",
+  "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Light/Lighting.j3md",
+  "license": "licenses/jme-BSD3.txt",
+  "licenseSha256": "fe47d99c352ce1cc69005f7d47cfd5f3c23700599946c196c03af04dce97dddb",
+  "generator": "src/tools/java/game/wreckriff/tools/PrepareEnvironmentLighting.java",
+  "generatorSha256": "88bffa1bb50229398ad7c82d09a09c87ae0e3aae2a16be7fedd95160b677f96a",
+  "changes": [
+    "Explicit BC7_UNORM_SRGB diffuse bypasses duplicate colour-space conversion",
+    "Scalar specular remains linear"
+  ]
+}

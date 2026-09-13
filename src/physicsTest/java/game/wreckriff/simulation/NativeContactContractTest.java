@@ -9,9 +9,37 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeContactContractTest {
+    @Test void explicitTriangleMappingIsImmutableBoundedByNativeShapeAndReleasedWithItsBody() {
+        var mesh=new com.jme3.scene.Mesh();mesh.setBuffer(com.jme3.scene.VertexBuffer.Type.Position,3,new float[]{0,0,0,0,0,4,4,0,0});
+        mesh.setBuffer(com.jme3.scene.VertexBuffer.Type.Index,3,new int[]{0,1,2});mesh.updateBound();
+        var world=new PhysicsWorld(VehicleRules.load());
+        try(world) {
+            var shape=new com.jme3.bullet.collision.shapes.MeshCollisionShape(mesh);
+            var input=new java.util.ArrayList<>(java.util.List.of(ContactSurface.WOOD));
+            var body=new game.wreckriff.arena.ArenaContent.StaticBody("explicit",shape,Vector3f.ZERO,new Quaternion(),input);input.set(0,ContactSurface.METAL);
+            assertEquals(java.util.List.of(ContactSurface.WOOD),body.triangleSurfaces());
+            assertThrows(UnsupportedOperationException.class,()->body.triangleSurfaces().set(0,ContactSurface.METAL));
+            world.addStatic(body);assertEquals(1,world.explicitContactMappingCount());
+            var from=new Vector3f(1,2,1);var to=new Vector3f(1,-2,1);
+            assertEquals(ContactSurface.WOOD,world.ray(from,to,-1).surface());
+            assertEquals(ContactSurface.WOOD,world.staticSweep(from,to,.1f).surface());
+            assertThrows(IllegalArgumentException.class,()->world.addStatic(new game.wreckriff.arena.ArenaContent.StaticBody("invalid",shape,Vector3f.ZERO,new Quaternion(),
+                    java.util.List.of(ContactSurface.WOOD,ContactSurface.METAL))));
+            assertFalse(world.containsArenaBody("invalid"));assertEquals(1,world.explicitContactMappingCount());
+            world.removeStatic("explicit");assertEquals(0,world.explicitContactMappingCount());
+            world.addStatic("explicit",shape,Vector3f.ZERO,new Quaternion());assertEquals(ContactSurface.UNKNOWN,world.ray(from,to,-1).surface());
+            world.removeStatic("explicit");world.addStatic(body);
+        }
+        assertEquals(0,world.explicitContactMappingCount());
+    }
     @Test void neonRustProxyReportsItsConcreteSurfaceFinishInNativeRayAndSweep() {
-        var arena=game.wreckriff.config.Configs.load("arena-neon-zero",ArenaDefinition.class);
-        var box=arena.boxes().stream().filter(part->part.material().equals("rust")).findFirst().orElseThrow();
+        var source=ArenaDefinition.load();var metadata=source.metadata();
+        var neon=new ArenaDefinition.Metadata(metadata.title(),ArenaDefinition.Theme.NEON,metadata.normalEnemies(),metadata.durationSeconds(),
+                metadata.recoveryCost(),metadata.introduction(),metadata.music(),metadata.bossMusic());
+        var arena=new ArenaDefinition(source.schemaVersion(),source.id(),neon,source.bounds(),source.boxes(),source.ramps(),source.spawns(),source.pickups(),
+                source.hazards(),source.nodes(),source.edges(),source.surfaces(),source.launchPads(),source.drops(),source.destructibles(),source.secrets(),
+                source.barriers(),source.bosses(),source.layoutRevision(),source.meshes(),source.districts(),source.roads());
+        var box=source.boxes().stream().filter(part->part.material().equals("rust")).findFirst().orElseThrow();
         try(var world=new PhysicsWorld(VehicleRules.load())) {
             world.configureArena(arena);world.addStatic(box.id(),new BoxCollisionShape(new Vector3f(2,.5f,2)),new Vector3f(0,-.5f,0),new Quaternion());
             var ray=world.ray(new Vector3f(0,2,0),new Vector3f(0,-2,0),-1);

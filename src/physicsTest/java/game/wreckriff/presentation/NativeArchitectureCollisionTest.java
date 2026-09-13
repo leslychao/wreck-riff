@@ -7,12 +7,14 @@ import com.jme3.scene.*;
 import game.wreckriff.arena.*;
 import game.wreckriff.config.VehicleRules;
 import game.wreckriff.simulation.PhysicsWorld;
+import game.wreckriff.simulation.ContactSurface;
 import java.util.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Compares Bullet contact to actual visible high-detail triangles, not to an invisible roof proxy. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArchitectureCollisionTest {
     private static final DesktopAssetManager ASSETS=NativeArenaAssets.MANAGER;
     @org.junit.jupiter.api.BeforeAll static void loadNativeShapes() {
@@ -33,7 +35,7 @@ class NativeArchitectureCollisionTest {
             List<Geometry> geometries=new ArrayList<>();visible.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry)geometries.add(geometry);});
             int checked=0;
             try(var world=new PhysicsWorld(VehicleRules.load())) {
-                world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+                world.addStatic(body);
                 for(var geometry:geometries)for(int triangle=0;triangle<geometry.getMesh().getTriangleCount();triangle+=Math.max(1,geometry.getMesh().getTriangleCount()/4)) {
                     Vector3f a=new Vector3f(),b=new Vector3f(),c=new Vector3f();geometry.getMesh().getTriangle(triangle,a,b,c);
                     a=geometry.localToWorld(a,null);b=geometry.localToWorld(b,null);c=geometry.localToWorld(c,null);
@@ -43,6 +45,13 @@ class NativeArchitectureCollisionTest {
                     assertTrue(expected.size()>0,"Fixture ray must hit visible architecture");
                     var actual=world.ray(from,to,-1);assertNotNull(actual,"Native collider missing for "+instance.id());
                     assertEquals(body.id(),actual.objectId());
+                    String authoredFinish=expected.getClosestCollision().getGeometry().getUserData("surfaceMaterial");
+                    assertNotNull(authoredFinish,"Exported architecture must carry explicit surface metadata");
+                    ContactSurface surface=ContactSurface.fromMaterial(authoredFinish);
+                    assertNotEquals(ContactSurface.UNKNOWN,surface);assertEquals(surface,actual.surface(),
+                            "Surface differs: "+instance.id()+" / "+geometry.getName()+" triangle "+triangle
+                                    +" / visible "+expected.getClosestCollision().getGeometry().getName()
+                                    +" at "+expected.getClosestCollision().getContactPoint()+" / Bullet "+actual.point());
                     assertTrue(actual.point().distance(expected.getClosestCollision().getContactPoint())<.02f,
                             "Native roof differs from visible triangles: "+instance.id()+" / "+geometry.getName());
                     checked++;

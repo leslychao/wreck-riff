@@ -84,6 +84,7 @@ public final class NativeOrdnanceSaturationReview extends SimpleApplication {
     }
     @Override public void simpleInitApp() {
         long initializationStarted=System.nanoTime();
+        assetManager.registerLoader(RawPngLoader.class,"png");
         if(context.getType()!=JmeContext.Type.Display||audioRenderer==null)throw new IllegalStateException("A real window and audio device are required");
         if(performanceSeconds>0) {
             long window=GLFW.glfwGetCurrentContext();

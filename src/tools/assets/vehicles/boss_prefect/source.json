@@ -1,11 +1,11 @@
 {
   "id": "boss_prefect",
   "authoringMode": "original-recipe",
-  "generatorSha256": "73f0c67cb15823b0a5afcf43e29d720652c0c5bd2553594d2cdaf743bd85c93f",
+  "generatorSha256": "383a0b9644486c6fb4e5fdf3f1a8c7846d62e3100dabc04118f1a12a7f23c174",
   "exports": {
-    "source.blend": "d84d7c349e7bd740920cd673db6e68d8dbd85ee6cb1ed1f6c7aa10e249cb93c0",
+    "source.blend": "9c68ead179ff79c8d151c7a36e300addc33c57bb2674917468ac27659be5ca83",
     "source.glb": "7a341231b91b262f7a0b3822f97b007693196c722723e7d5a37804e8ce7b2e2d",
-    "mesh.json.gz": "747532280b8dae67c629aaae1c2d19c2986dc8e797140bb402957a43a9058897",
+    "mesh.json.gz": "d71439b0f6d829d0104569954eae477d7d57f5f845d9732c115cf4ed4f4abdcf",
     "diffuse.png": "733a5e9120728e87414d99369428f60d23311e08a7b0866663549cfce0b0df0d",
     "normal.png": "5bff9c2a7c311c24e17cba639e2d547cd04fa6156a50b958b0abfc47067186e7",
     "specular.png": "7becd1fd6b533db9b6629470904ad63e285d6e8d6cf4f03fef83137f4fb35105",
@@ -16,7 +16,7 @@
     7252,
     1692
   ],
-  "sourceBlendSha256": "d84d7c349e7bd740920cd673db6e68d8dbd85ee6cb1ed1f6c7aa10e249cb93c0",
+  "sourceBlendSha256": "9c68ead179ff79c8d151c7a36e300addc33c57bb2674917468ac27659be5ca83",
   "sourceGlbSha256": "7a341231b91b262f7a0b3822f97b007693196c722723e7d5a37804e8ce7b2e2d",
-  "meshSha256": "747532280b8dae67c629aaae1c2d19c2986dc8e797140bb402957a43a9058897"
+  "meshSha256": "d71439b0f6d829d0104569954eae477d7d57f5f845d9732c115cf4ed4f4abdcf"
 }

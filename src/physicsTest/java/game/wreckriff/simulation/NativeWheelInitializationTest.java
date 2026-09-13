@@ -21,6 +21,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Uses raw native angles: VehicleWheel's presentation quaternion masks NaNs. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeWheelInitializationTest {
     private record Sample(Vector3f position, Quaternion rotation, Vector3f velocity) {}
     private record Drive(List<Sample> samples, boolean injected) {}
@@ -129,7 +130,7 @@ class NativeWheelInitializationTest {
     private PhysicsWorld arenaWorld(VehicleRules rules) {
         PhysicsWorld world = new PhysicsWorld(rules);
         var content = new ArenaFactory(game.wreckriff.arena.NativeArenaAssets.MANAGER).build(ArenaDefinition.load());
-        for (var body : content.bodies()) world.addStatic(body.shape(), body.position(), body.rotation());
+        for (var body : content.bodies()) world.addStatic(body);
         return world;
     }
 

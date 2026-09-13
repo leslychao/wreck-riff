@@ -79,6 +79,19 @@
       "kind": "through-interior"
     },
     {
+      "id": "comet-coaster",
+      "title": "КОМЕТА",
+      "function": "Стальной аттракцион с подъёмом, возвратной петлёй, тормозным участком и посадкой",
+      "route": "Посадочная станция на востоке; обслуживание со стороны существующей южной дороги; автомобильные пересечения проходят под высокими пролётами",
+      "bounds": [
+        1160,
+        1460,
+        247,
+        383
+      ],
+      "kind": "landmark"
+    },
+    {
       "id": "entry-garden",
       "title": "entry-garden",
       "function": "Озеленённый участок с группами деревьев",
@@ -401,9 +414,15 @@
         333,
         334,
         335,
+        336,
         337,
         338,
-        339
+        339,
+        341,
+        342,
+        343,
+        344,
+        345
       ],
       "boundary": [
         {
@@ -528,7 +547,7 @@
         285,
         286,
         287,
-        336
+        340
       ],
       "boundary": [
         {
@@ -696,9 +715,9 @@
         270,
         326,
         327,
-        340,
-        341,
-        342
+        346,
+        347,
+        348
       ],
       "boundary": [
         {
@@ -1487,16 +1506,28 @@
     {
       "id": "east-lake-bridge",
       "title": "east lake bridge",
-      "width": 26,
+      "width": 34,
       "geometryIds": [
-        "road-east-lake-bridge-0"
+        "road-east-lake-bridge-0",
+        "road-east-lake-bridge-1",
+        "road-east-lake-bridge-2",
+        "road-east-lake-bridge-3",
+        "road-east-lake-bridge-4",
+        "road-east-lake-bridge-5",
+        "road-east-lake-bridge-6",
+        "road-east-lake-bridge-7",
+        "east-bridge-turning-apron"
       ],
       "navNodeIds": [
         296,
         332,
         333,
         334,
-        335
+        335,
+        336,
+        337,
+        338,
+        339
       ]
     },
     {
@@ -1507,9 +1538,25 @@
         "road-east-bridge-fall-0"
       ],
       "navNodeIds": [
-        335,
-        336,
+        339,
+        340,
         204
+      ]
+    },
+    {
+      "id": "east-abutment-turn",
+      "title": "east abutment turn",
+      "width": 12,
+      "geometryIds": [
+        "road-east-lake-bridge-7",
+        "east-bridge-turning-apron",
+        "road-east-lake-bridge-6"
+      ],
+      "navNodeIds": [
+        339,
+        341,
+        342,
+        338
       ]
     },
     {
@@ -1521,10 +1568,10 @@
       ],
       "navNodeIds": [
         301,
-        337,
-        338,
-        339,
-        340
+        343,
+        344,
+        345,
+        346
       ]
     },
     {
@@ -1535,9 +1582,9 @@
         "road-north-bridge-fall-0"
       ],
       "navNodeIds": [
-        340,
-        341,
-        342,
+        346,
+        347,
+        348,
         265
       ]
     },
@@ -1565,7 +1612,9 @@
     },
     "totalAmmunition": 120,
     "spawns": 13,
-    "startAccess": [
+    "placementSource": "src/tools/assets/arena-revision3/supply-layout.json",
+    "baselineDefinitionSha256": "b39e3e7f05749914622b4ac939a43b32f8cf9eb28b2c88f98b80a37055963bf4",
+    "verifiedBaselineAccess": [
       {
         "spawnId": 0,
         "pickups": [

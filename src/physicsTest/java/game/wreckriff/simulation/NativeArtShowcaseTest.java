@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Verifies scripted drives against the real roads. It does not substitute for the required real-window capture. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArtShowcaseTest {
     private static final ArenaRegistry REGISTRY=ArenaRegistry.load();
     static Stream<String> arenas() { return REGISTRY.entries().stream().map(ArenaRegistry.Entry::id); }
@@ -26,7 +27,7 @@ class NativeArtShowcaseTest {
                 Configs.load("combat",CombatRules.class));
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             for(var pickup:arena.pickups()) {
                 var surface=pickup.position().vector();var support=world.support(surface.add(0,2,0),4);
                 assertNotNull(support,"Existing pickup must have a real road underneath: "+arena.id()+"/"+pickup.id());

@@ -110,6 +110,31 @@ class BotSupplyRoutingTest {
         }
     }
 
+    @Test void armedPrefectCanPlanFromUnsampledSidewalkAndParkingSupportWithoutChangingFloors() {
+        var arena=Configs.load("arena-neon-zero",ArenaDefinition.class).withPickups(List.of());
+        for(var entry:Map.of("dress-neon-sidewalk-59-1",0f,"parking-first-floor",8f,"parking-roof-deck",16f).entrySet()) {
+            var graph=new NavGraph(arena);var support=arena.surfaces().stream().filter(s->s.id().equals(entry.getKey())).findFirst().orElseThrow();
+            assertTrue(graph.nodes().stream().noneMatch(n->n.surfaceId().equals(support.id())),"Fixture must reproduce physical support without graph samples");
+            var session=new MatchSession(73,arena,MatchSession.Mode.BOSS_DUEL,COMBAT);
+            var boss=session.registerBoss(arena.bosses().getFirst());session.phase=MatchSession.Phase.BOSS_COMBAT;
+            boss.weapon(WeaponType.HOMING).ammo=3;
+            var world=new SupplyWorld(arena);world.profiles.put(boss.id,VehicleProfile.boss(boss.profileId,VEHICLES));
+            var start=graph.position(graph.nearest(new Vector3f(1570,entry.getValue(),320)));
+            var target=graph.nodes().stream().filter(n->Math.abs(n.position().y()-entry.getValue())<.2f)
+                    .map(n->n.position().vector()).filter(p->p.distance(start)>35&&p.distance(start)<75).findFirst().orElseThrow();
+            world.place(boss.id,start);world.place(0,target);
+            world.rotations.put(boss.id,new Quaternion().lookAt(target.subtract(start),Vector3f.UNIT_Y));
+            world.contexts.put(boss.id,new RoadContext(support.id(),support.level(),support.grip(),RoadContext.Motion.ROAD,"","",support.level()));
+            assertEquals(support.level(),world.roadContext(0).level(),"The slab and the target's road at the same height must agree on floor level");
+            var bots=new BotController(session,arena,graph,AiRules.load());
+            assertDoesNotThrow(()->bots.commands(world),support.id());
+            assertEquals(BotController.State.ATTACK,bots.state(boss.id),support.id());
+            var destination=bots.metrics(boss.id).destination();assertNotNull(destination,support.id());
+            assertEquals(entry.getValue(),destination.y,.2f,"Combat position must stay on the supported floor");
+            assertEquals(0,destination.distance(graph.position(graph.nearest(destination))),.01f,"The combat position is an authored road sample");
+        }
+    }
+
     @Test void anInternalRoadMeshSeamDoesNotTurnACommittedIslandRouteBackTowardAnotherStreet() {
         var source=Configs.load("arena-euphoria-park",ArenaDefinition.class);var graph=new NavGraph(source);
         int start=graph.nearest(new Vector3f(750,3,650));
@@ -169,6 +194,7 @@ class BotSupplyRoutingTest {
     private static final class SupplyWorld implements WorldQuery {
         final ArenaDefinition arena;final Map<Integer,Vector3f> positions=new HashMap<>();final Map<Integer,VehicleProfile> profiles=new HashMap<>();
         final Map<Integer,Quaternion> rotations=new HashMap<>();
+        final Map<Integer,RoadContext> contexts=new HashMap<>();
         SupplyWorld(ArenaDefinition arena){this.arena=arena;}
         float offset(int id){return arena.bosses().isEmpty()?.45f:profile(id).roadOffset();}
         void place(int id,Vector3f road){positions.put(id,road.add(0,offset(id),0));}
@@ -177,6 +203,7 @@ class BotSupplyRoutingTest {
         public Quaternion rotation(int id){return rotations.getOrDefault(id,new Quaternion()).clone();}
         public VehicleProfile profile(int id){return profiles.getOrDefault(id,VehicleProfile.rivet());}
         public RoadContext roadContext(int id){
+            if(contexts.containsKey(id))return contexts.get(id);
             var point=position(id).add(0,-offset(id),0);var surface=arena.surfaceAt(point,0,.2f).orElseThrow();
             return new RoadContext(surface.id(),surface.level(),surface.grip(),RoadContext.Motion.ROAD,"","",surface.level());
         }

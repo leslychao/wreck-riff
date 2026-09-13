@@ -25,4 +25,8 @@ class VehicleRegionalDataTest {
         assertThrows(IOException.class,()->VehicleModelData.readRegions(new StringReader("{\"schemaVersion\":1,\"lods\":[{}]}"),COUNTS));
         assertThrows(IOException.class,()->VehicleModelData.readRegions(new StringReader("{\"schemaVersion\":2,\"lods\":[]}"),COUNTS));
     }
+    @Test void rejectsUnsortedSparseVerticesBeforeLodBinarySearch() {
+        assertThrows(IOException.class,()->VehicleModelData.readRegions(new StringReader(document(
+                "{\"indices\":[2,0],\"delta\":[0,0,0,0,0,0]}")),COUNTS));
+    }
 }

@@ -1,6 +1,45 @@
 {
   "sites": [
     {
+      "id": "pit-pump-service",
+      "title": "pump-service",
+      "function": "Рабочая земляная терраса на отметке −6 м",
+      "route": "Боковой откос между независимыми грузовыми спусками",
+      "bounds": [
+        575.5,
+        599.5,
+        632.5,
+        652.5
+      ],
+      "kind": "earthwork-terrace"
+    },
+    {
+      "id": "pit-survey-bench",
+      "title": "survey-bench",
+      "function": "Рабочая земляная терраса на отметке −6 м",
+      "route": "Боковой откос между независимыми грузовыми спусками",
+      "bounds": [
+        331.75,
+        355.75,
+        393.75,
+        413.75
+      ],
+      "kind": "earthwork-terrace"
+    },
+    {
+      "id": "excavation",
+      "title": "Котлован 17Б",
+      "function": "Разные фазы фундаментных работ, дренаж и рабочие террасы",
+      "route": "Западный, восточный, южный и северный грузовые спуски остаются независимыми",
+      "bounds": [
+        280,
+        650,
+        330,
+        730
+      ],
+      "kind": "excavation"
+    },
+    {
       "id": "unfinished-apartments",
       "title": "Корпус 17Б",
       "function": "Каркас жилого корпуса и монтажный двор",
@@ -51,6 +90,71 @@
         1180
       ],
       "kind": "elevated-road"
+    },
+    {
+      "id": "dispatch-curing-yard",
+      "title": "Камеры выдержки",
+      "function": "Три формы и общий мостовой подъёмник для выдержки и выдачи панелей",
+      "route": "Погрузочный двор у factory-dispatch",
+      "bounds": [
+        1199.0,
+        1251.0,
+        831.0,
+        865.0
+      ],
+      "kind": "production-yard"
+    },
+    {
+      "id": "frame-reinforcement-yard",
+      "title": "Арматурный двор",
+      "function": "Сортировка стержней по длине и общая линия погрузки",
+      "route": "Северный хозяйственный проезд за недостроем",
+      "bounds": [
+        448.0,
+        512.0,
+        1135.0,
+        1165.0
+      ],
+      "kind": "production-yard"
+    },
+    {
+      "id": "interchange-span-yard",
+      "title": "Сборка пролётов",
+      "function": "Сборка двух балок на транспортных опорах под монтажным порталом",
+      "route": "Восточная дорога обслуживания развязки",
+      "bounds": [
+        1505.0,
+        1555.0,
+        993.0,
+        1027.0
+      ],
+      "kind": "production-yard"
+    },
+    {
+      "id": "interchange-exit-bearings",
+      "title": "Доставка опорных частей",
+      "function": "Опорные блоки и упругие подушки в транспортной упаковке",
+      "route": "Карман у северо-восточного съезда",
+      "bounds": [
+        1558.0,
+        1582.0,
+        1146.0,
+        1164.0
+      ],
+      "kind": "production-yard"
+    },
+    {
+      "id": "aggregate-screening-inlet",
+      "title": "Приём заполнителей",
+      "function": "Грохот и транспортер в существующем открытом бункере",
+      "route": "Служебный подъезд от складов к силосам",
+      "bounds": [
+        917.5,
+        932.5,
+        415.0,
+        447.0
+      ],
+      "kind": "production-yard"
     }
   ],
   "districts": [
@@ -1245,7 +1349,9 @@
     },
     "totalAmmunition": 72,
     "spawns": 9,
-    "startAccess": [
+    "placementSource": "src/tools/assets/arena-revision3/supply-layout.json",
+    "baselineDefinitionSha256": "80b0ac33bf160a9ec784097765e46f5cb1023960ae235ff8423874278956868e",
+    "verifiedBaselineAccess": [
       {
         "spawnId": 0,
         "pickups": [

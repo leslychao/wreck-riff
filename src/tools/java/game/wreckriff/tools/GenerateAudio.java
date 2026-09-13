@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.*;
 import java.util.*;
+import com.google.gson.*;
 
 /** Local licensed recordings and original deterministic ancillary sound-effect synthesis. No build-time network. */
 public final class GenerateAudio {
@@ -15,6 +16,13 @@ public final class GenerateAudio {
     private GenerateAudio() {}
 
     public static void main(String[] args) throws Exception {
+        if(args.length==3&&args[0].equals("--ambient-only")) {
+            Path output=Path.of(args[1]).resolve("audio");Files.createDirectories(output);
+            METRICS.clear();METRICS.add("asset,frames,channels,sample_rate,bits,peak,rms,sha256");
+            prepareAmbient(output,Path.of(args[2]).resolve("ambient"));
+            Files.write(output.resolve("ambient-metrics.csv"),METRICS,StandardCharsets.UTF_8);
+            System.out.println("Prepared three recorded machinery loops offline in "+output);return;
+        }
         if(args.length!=2)throw new IllegalArgumentException("GenerateAudio <output-resources-root> <audio-source-directory>");
         Path output=Path.of(args[0]).resolve("audio"),sources=Path.of(args[1]);
         Files.createDirectories(output);
@@ -27,6 +35,7 @@ public final class GenerateAudio {
         METRICS.clear();METRICS.add("asset,frames,channels,sample_rate,bits,peak,rms,sha256");
         prepareMusic(output,sources);
         prepareRecordedEffects(output,sources.resolve("recorded"));
+        prepareAmbient(output,sources.resolve("ambient"));
         prepareResults(output,sources);
         preparePickups(output);
         prepareSpecials(output);
@@ -97,6 +106,64 @@ public final class GenerateAudio {
     private static double sample(byte[] data,int frame,int channel) {
         int offset=frame*4+channel*2;
         return (short)((data[offset]&255)|(data[offset+1]<<8))/32768.0;
+    }
+
+    /** Real local machinery recordings; this is a loop edit, not synthesized replacement audio. */
+    private static void prepareAmbient(Path output,Path source)throws Exception {
+        byte[] evidence=Files.readAllBytes(source.resolve("sources.json"));
+        JsonObject manifest=JsonParser.parseString(new String(evidence,StandardCharsets.UTF_8)).getAsJsonObject();
+        JsonArray entries=new JsonArray();
+        Set<String> required=new HashSet<>(List.of("qubodup-fan","rvgerxini-motor","jerimee-machinery"));
+        for(JsonElement element:manifest.getAsJsonArray("sources")) {
+            JsonObject item=element.getAsJsonObject();String id=item.get("id").getAsString();
+            if(!required.remove(id)||!item.get("license").getAsString().equals("CC0-1.0"))throw new IOException("Invalid ambient source");
+            Path decoded=source.resolve("decoded").resolve(id+".wav");
+            if(!hash(Files.readAllBytes(decoded)).equals(item.get("decodedSha256").getAsString()))throw new IOException("Ambient input changed: "+id);
+            byte[] raw;
+            try(var stream=javax.sound.sampled.AudioSystem.getAudioInputStream(decoded.toFile())) {
+                var format=stream.getFormat();
+                if(format.getChannels()!=1||format.getSampleRate()!=RATE||format.getSampleSizeInBits()!=16||format.isBigEndian()
+                        ||stream.getFrameLength()>RATE*20)throw new IOException("Invalid ambient PCM");
+                raw=stream.readAllBytes();
+            }
+            boolean rotor=id.equals("qubodup-fan"),motor=id.equals("rvgerxini-motor");
+            String cue=rotor?"ambient-rotor":motor?"ambient-motor":"ambient-ventilation";
+            int trim=(int)(RATE*(rotor?.15:.5)),length=raw.length/2-trim*2,overlap=(int)(RATE*(rotor?.25:.6));
+            if(length<overlap*3)throw new IOException("Ambient recording is too short: "+id);
+            float[] edited=new float[length];double low=0,dc=0;
+            double highAlpha=1-Math.exp(-TAU*45/RATE),lowAlpha=1-Math.exp(-TAU*(rotor?2600:motor?3400:3000)/RATE);
+            for(int i=0;i<length;i++) {
+                int j=(i+trim)*2;double value=(short)((raw[j]&255)|(raw[j+1]<<8))/32768.0;
+                dc+=highAlpha*(value-dc);low+=lowAlpha*(value-dc-low);edited[i]=(float)low;
+            }
+            float[] loop=new float[length-overlap];int middle=length-2*overlap;
+            System.arraycopy(edited,overlap,loop,0,middle);
+            for(int i=0;i<overlap;i++) {
+                float blend=i/(float)(overlap-1);
+                loop[middle+i]=edited[length-overlap+i]*(1-blend)+edited[i]*blend;
+            }
+            // Tiny end correction keeps the repeated PCM boundary click-free,
+            // without silent attack/release gaps in the continuous mechanism.
+            int edge=RATE/200;float delta=loop[0]-loop[loop.length-1];
+            for(int i=0;i<edge;i++)loop[loop.length-edge+i]+=delta*i/(edge-1);
+            double mean=0,peak=0;for(float value:loop)mean+=value;mean/=loop.length;
+            for(int i=0;i<loop.length;i++){loop[i]-=(float)mean;peak=Math.max(peak,Math.abs(loop[i]));}
+            if(peak<.0001)throw new IOException("Silent ambient recording: "+id);
+            for(int i=0;i<loop.length;i++)loop[i]*=(float)(.45/peak);
+            write(output,cue,new float[][]{loop});
+            JsonObject entry=new JsonObject();entry.addProperty("path","audio/"+cue+".wav");entry.addProperty("sourceId",id);
+            entry.addProperty("sha256",hash(Files.readAllBytes(output.resolve(cue+".wav"))));entry.addProperty("frames",loop.length);
+            entry.addProperty("license","CC0-1.0");entry.addProperty("loop",true);
+            entry.addProperty("transformation","Preserved mono 48 kHz recording; trim "+trim+" frames per edge; highpass 45 Hz; lowpass "+(rotor?2600:motor?3400:3000)+" Hz; "+overlap+" frame tail/head overlap; 5 ms seam correction; DC removal; linear peak normalization 0.45; no synthesized layers");
+            entries.add(entry);
+        }
+        if(!required.isEmpty())throw new IOException("Missing ambient recordings: "+required);
+        JsonObject provenance=new JsonObject();provenance.addProperty("schemaVersion",1);provenance.addProperty("origin","LICENSED_RECORDINGS");
+        provenance.addProperty("sourceEvidenceSha256",hash(evidence));provenance.addProperty("generatorPath","src/tools/java/game/wreckriff/tools/GenerateAudio.java");
+        provenance.addProperty("generatorSha256",hash(Files.readAllBytes(Path.of("src/tools/java/game/wreckriff/tools/GenerateAudio.java"))));
+        provenance.addProperty("artisticStatus","NEEDS_CREATIVE_REVIEW");provenance.add("assets",entries);
+        Files.writeString(output.resolve("ambient-provenance.json"),new GsonBuilder().setPrettyPrinting().create().toJson(provenance)+"\n",StandardCharsets.UTF_8);
+        Files.write(output.resolve("ambient-sources.json"),evidence);
     }
     private static String hash(byte[] bytes)throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));

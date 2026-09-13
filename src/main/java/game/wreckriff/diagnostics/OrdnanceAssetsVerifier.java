@@ -39,7 +39,7 @@ public final class OrdnanceAssetsVerifier {
         for(var style:OrdnanceStyle.values()){models.put(style.model(),style);required.add(style.model());}
         for(String atlas:List.of("projectiles","mines"))for(var use:OrdnanceStyle.textures(atlas))required.add(use.path());
         Set<String> hashes=new HashSet<>();var manager=new DesktopAssetManager(true);
-        for(JsonElement element:provenance.getAsJsonArray("assets")) {
+        try {for(JsonElement element:provenance.getAsJsonArray("assets")) {
             var entry=element.getAsJsonObject();String path=entry.get("path").getAsString();
             if(!required.remove(path))throw new IOException("Unexpected/duplicate ordnance asset: "+path);
             byte[] bytes=resource(path);String digest=hash(bytes);
@@ -47,7 +47,7 @@ public final class OrdnanceAssetsVerifier {
             if(models.containsKey(path))verifyModel(models.get(path).load(manager),models.get(path),entry);
             else verifyTexture(path,bytes);
             assets.add(asset(path,models.containsKey(path)?"ordnance-model":"ordnance-texture",bytes,"MODEL_UV_MATERIAL_HASH_VERIFIED"));
-        }
+        }}finally{manager.clearCache();}
         if(!required.isEmpty())throw new IOException("Missing ordnance assets: "+required);
         assets.add(asset(manifest,"ordnance-provenance",json,"VERIFIED"));
         assets.add(asset(SOURCE,"procedural-source",Files.readAllBytes(Path.of(SOURCE)),"SOURCE_PRESENT"));
@@ -59,6 +59,8 @@ public final class OrdnanceAssetsVerifier {
         assets.add(asset(FREEZE_HISTORY,"historical-source",originalGenerator,"SOURCE_PRESENT"));
     }
     static void verifyTexture(String path,byte[] bytes)throws IOException {
+        if(path.endsWith("-specular.png")&&(bytes.length<26||bytes[24]!=8||bytes[25]!=0))
+            throw new IOException("Expected scalar L8 ordnance specular without duplicated RGB channels: "+path);
         var image=ImageIO.read(new ByteArrayInputStream(bytes));
         if(image==null||image.getWidth()!=2048||image.getHeight()!=2048)throw new IOException("Expected a 2048x2048 ordnance atlas: "+path);
         Set<Integer> samples=new HashSet<>();for(int y=11;y<2048;y+=17)for(int x=13;x<2048;x+=19)samples.add(image.getRGB(x,y));
@@ -88,6 +90,8 @@ public final class OrdnanceAssetsVerifier {
                 var texture=param.getTextureValue();
                 if(texture.getMinFilter()!=Texture.MinFilter.Trilinear||texture.getMagFilter()!=Texture.MagFilter.Bilinear||texture.getAnisotropicFilter()<4
                         ||texture.getImage().getColorSpace()!=(use.color()?ColorSpace.sRGB:ColorSpace.Linear))throw new IOException("Invalid texture sampler/data colour space: "+use.path());
+                if(use.parameter().equals("SpecularMap")&&texture.getImage().getFormat()!=com.jme3.texture.Image.Format.Luminance8)
+                    throw new IOException("Expected native Luminance8 ordnance specular: "+use.path());
             }
         }
         if((model.getChild("signal")!=null)!=(style.signal()!=null))throw new IOException("Missing/extra ordnance active signal: "+style.kind());

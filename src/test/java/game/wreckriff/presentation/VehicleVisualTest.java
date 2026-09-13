@@ -7,6 +7,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class VehicleVisualTest {
     @Test void authoredProfilesHaveNativeSocketsIndependentWheelsAndPreparedDetail() {
         List<VehicleProfile> profiles=new ArrayList<>(VehicleProfile.bosses(VehicleRules.load()));for(var id:VehicleDefinition.values())profiles.add(VehicleProfile.player(id.id(),VehicleRules.load()));

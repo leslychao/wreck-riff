@@ -13,6 +13,7 @@ import com.jme3.system.*;
 import com.jme3.texture.Texture;
 import game.wreckriff.arena.ArenaDefinition.Theme;
 import game.wreckriff.config.*;
+import game.wreckriff.diagnostics.StageProfiler;
 import game.wreckriff.presentation.*;
 import game.wreckriff.simulation.*;
 import java.io.File;
@@ -40,6 +41,7 @@ public final class VehicleDamageReview extends SimpleApplication {
     private final Set<String> captured=new LinkedHashSet<>();
     private final Map<String,String> cleanMasks=new LinkedHashMap<>();
     private SceneLighting.Handle lighting;
+    private StageProfiler profiler;
     private GaragePresentation garage;
     private ScreenshotAppState screenshots;
     private BitmapText title;
@@ -64,6 +66,7 @@ public final class VehicleDamageReview extends SimpleApplication {
     @Override public void simpleInitApp() {
         require(context.getType()==JmeContext.Type.Display,"Real display required");
         setDisplayFps(false);setDisplayStatView(false);flyCam.setEnabled(false);
+        profiler=new StageProfiler();profiler.attachGpu(renderManager.getRenderer());setAppProfiler(profiler);
         screenshots=new ScreenshotAppState(output+File.separator);stateManager.attach(screenshots);
         rootNode.attachChild(display);
         var floor=new Geometry("review-floor",new Box(70,.15f,70));floor.setLocalTranslation(0,-.15f,0);
@@ -184,7 +187,14 @@ public final class VehicleDamageReview extends SimpleApplication {
         row.put("vehicles",states);evidence.add(row);
     }
     private static Map<String,Object> state(Node car) {
-        var state=new LinkedHashMap<String,Object>();state.put("profile",car.getUserData("profileId"));state.put("hpStage",car.getUserData("damageStage"));state.put("lod",car.getUserData("vehicleLod"));state.put("repairRevision",car.getUserData("repairRevision"));var active=visibleGeometry(car);state.put("visibleGeometries",active.size());state.put("visibleTriangles",active.stream().mapToInt(g->g.getMesh().getTriangleCount()).sum());state.put("localMaskSha256",maskHash(car));return state;
+        var state=new LinkedHashMap<String,Object>();state.put("profile",car.getUserData("profileId"));state.put("hpStage",car.getUserData("damageStage"));state.put("lod",car.getUserData("vehicleLod"));state.put("repairRevision",car.getUserData("repairRevision"));var active=visibleGeometry(car);state.put("visibleGeometries",active.size());state.put("visibleTriangles",active.stream().mapToInt(g->g.getMesh().getTriangleCount()).sum());state.put("localMaskSha256",maskHash(car));
+        var morphs=new ArrayList<Map<String,Object>>();
+        for(Geometry geometry:active)if(geometry.getMesh().getMorphTargets().length>0) {
+            int actual=geometry.getNbSimultaneousGPUMorph();
+            require(actual==2,"GPU morph fallback on "+car.getName()+"/"+geometry.getName()+": expected 2, actual "+actual);
+            morphs.add(Map.of("geometry",geometry.getName(),"gpuTargets",actual,"preparedTargets",geometry.getMesh().getMorphTargets().length,"material",geometry.getMaterial().getMaterialDef().getAssetName()));
+        }
+        require(!morphs.isEmpty(),"No active GPU morph geometry: "+car.getName());state.put("activeGpuMorphs",morphs);return state;
     }
     private void checkFraming(Node car) {
         BoundingBox bounds=(BoundingBox)car.getWorldBound();Vector3f centre=bounds.getCenter();
@@ -196,8 +206,14 @@ public final class VehicleDamageReview extends SimpleApplication {
     private void finish() {
         try {
             require(captured.size()==shots.size(),"Incomplete capture matrix");
+            var captureHashes=new LinkedHashMap<String,String>();
+            try(var files=Files.list(output)) {
+                for(Path file:files.filter(p->p.toString().endsWith(".png")).sorted().toList())if(Files.getLastModifiedTime(file).toMillis()>=startedAt)
+                    captureHashes.put(file.getFileName().toString(),HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file))));
+            }
             for(String name:captured)try(var files=Files.list(output)){boolean found=false;for(Path file:files.toList())if(file.getFileName().toString().startsWith(name+"-")&&file.toString().endsWith(".png")&&Files.getLastModifiedTime(file).toMillis()>=startedAt){found=true;break;}require(found,"Missing fresh captured PNG: "+name);}
-            var result=new LinkedHashMap<String,Object>();result.put("realWindow",true);result.put("releaseAcceptance",false);result.put("captures",evidence);result.put("assets",assetEvidence);result.put("captureCount",captured.size());result.put("primaryProfileStageCount",30);result.put("renderer",renderManager.getRenderer().getClass().getName());result.put("java",System.getProperty("java.version"));
+            var result=new LinkedHashMap<String,Object>();result.put("realWindow",true);result.put("releaseAcceptance",false);result.put("captures",evidence);result.put("assets",assetEvidence);result.put("captureCount",captured.size());result.put("primaryProfileStageCount",30);result.put("renderer",renderManager.getRenderer().getClass().getName());result.put("java",System.getProperty("java.version"));result.put("profiling",profiler.snapshot());result.put("profilingScope","Short fixed-step model review including capture and shader warmup; not a match benchmark");
+            result.put("buildIdentity",BuildInfo.current());result.put("captureSha256",captureHashes);
             Files.writeString(output.resolve("complete.json"),new GsonBuilder().setPrettyPrinting().create().toJson(result));complete=true;stop();
         } catch(Exception error){throw new IllegalStateException(error);}
     }
@@ -208,5 +224,6 @@ public final class VehicleDamageReview extends SimpleApplication {
     private static String maskHash(Node car){try{ByteBuffer data=damageMap(car).getImage().getData(0).duplicate();data.clear();MessageDigest hash=MessageDigest.getInstance("SHA-256");hash.update(data);return HexFormat.of().formatHex(hash.digest());}catch(Exception e){throw new IllegalStateException(e);}}
     private static void require(boolean value,String message){if(!value)throw new IllegalStateException(message);}
     @Override public void handleError(String message,Throwable error){failure=error==null?new IllegalStateException(message):error;try{Files.writeString(output.resolve("failure.txt"),message+"\n"+failure);}catch(Exception ignored){}stop(false);done.countDown();}
-    @Override public void destroy(){try{if(garage!=null)garage.close();for(Node car:cars)if(car!=null)VehicleVisual.close(car);super.destroy();}finally{done.countDown();}}
+    @Override public void simpleRender(com.jme3.renderer.RenderManager manager){if(profiler!=null)profiler.renderStatistics(manager.getRenderer().getStatistics());}
+    @Override public void destroy(){try{if(profiler!=null){setAppProfiler(null);profiler.close();}if(garage!=null)garage.close();for(Node car:cars)if(car!=null)VehicleVisual.close(car);super.destroy();}finally{done.countDown();}}
 }

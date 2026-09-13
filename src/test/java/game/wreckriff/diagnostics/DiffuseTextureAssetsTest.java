@@ -19,10 +19,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class DiffuseTextureAssetsTest {
     private static final List<String> MATERIALS = List.of("asphalt_02", "cracked_concrete",
             "metal_plate_02", "blue_metal_plate", "rusty_metal_03", "leafy_grass", "brown_mud",
-            "gravelly_sand", "red_brick_03", "wood_planks_grey", "concrete_wall_009");
+            "gravelly_sand", "red_brick_03", "wood_planks_grey", "concrete_wall_009", "asphalt_pit_lane", "dirt", "grass_ground");
     private static final List<String> ORIGINAL_SIXTEEN_BIT=List.of("cracked_concrete","metal_plate_02","blue_metal_plate","rusty_metal_03");
 
-    @Test void runtimeDiffuseUsesEightBitPngWithoutChangingResolutionOrAlpha() throws Exception {
+    @Test void preservedIntermediateUsesEightBitPngWithoutChangingResolutionOrAlpha() throws Exception {
         for (String material : MATERIALS) {
             var original = ImageIO.read(source(material).toFile());
             var derivative = ImageIO.read(runtime(material).toFile());
@@ -56,12 +56,15 @@ class DiffuseTextureAssetsTest {
         for (var element : manifest.getAsJsonArray("assets")) {
             var item = element.getAsJsonObject();
             String path = item.get("path").getAsString();
-            if (!path.startsWith("textures/materials/") || !path.endsWith("/diffuse.png")) continue;
+            if (!path.startsWith("textures/materials/") || !path.endsWith("/diffuse.dds")) continue;
             found++;
             byte[] original = Files.readAllBytes(Path.of(item.get("sourcePath").getAsString()));
-            byte[] derivative = Files.readAllBytes(Path.of("src/main/resources").resolve(path));
+            var compressed=JsonParser.parseString(Files.readString(Path.of("src/main/resources/textures/materials/diffuse-provenance.json"))).getAsJsonObject();
+            var intermediate=java.util.stream.StreamSupport.stream(compressed.getAsJsonArray("textures").spliterator(),false)
+                    .map(elementValue->elementValue.getAsJsonObject()).filter(value->value.get("runtime").getAsString().equals(path)).findFirst().orElseThrow();
+            byte[] derivative = Files.readAllBytes(Path.of(intermediate.get("source").getAsString()));
             assertEquals(hash(original), item.get("sourceSha256").getAsString(), path);
-            assertEquals(hash(derivative), item.get("sha256").getAsString(), path);
+            assertEquals(hash(derivative), intermediate.get("sourceSha256").getAsString(), path);
             assertEquals("CC0-1.0", item.get("license").getAsString(), path);
             String material=path.split("/")[2];
             if(ORIGINAL_SIXTEEN_BIT.contains(material))assertEquals(16,original[24],"Preserve existing 16-bit original: "+path);
@@ -87,7 +90,7 @@ class DiffuseTextureAssetsTest {
     }
 
     private static Path runtime(String material) {
-        return Path.of("src/main/resources/textures/materials", material, "diffuse.png");
+        return Path.of("src/tools/assets/materials", material, "runtime-diffuse.png");
     }
 
     private static Image load(Path path, boolean flip) throws Exception {

@@ -13,6 +13,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ArenaSignTest {
     private static final ArenaDefinition.Vec3 POSITION=new ArenaDefinition.Vec3(12,8,25);
 
@@ -87,7 +88,7 @@ class ArenaSignTest {
         var root=attach(arena,scene(arena.id(),List.of(sign("empty","",0),sign("exterior","exterior",0),sign("box",arena.boxes().getFirst().id(),0))));
         assertNotNull(root.getChild("empty"));assertNotNull(root.getChild("exterior"));assertNotNull(root.getChild("box"));
         assertThrows(IllegalArgumentException.class,()->attach(arena,scene(arena.id(),List.of(sign("bad","missing-panel",0)))));
-        var group=new ArenaArt.Group("wheel",POSITION,ArenaArt.Motion.ROTATE_Z,5,0);
+        var group=new ArenaArt.Group("wheel",POSITION,ArenaArt.Motion.ROTATE_Z,5,0,0);
         var scene=new ArenaArt.Scene(2,arena.id(),"test","original",List.of(group),List.of(),List.of(),List.of(),List.of(sign("bad","wheel",0)));
         assertThrows(IllegalArgumentException.class,()->attach(arena,scene));
     }

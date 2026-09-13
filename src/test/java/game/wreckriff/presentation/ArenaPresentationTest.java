@@ -7,6 +7,7 @@ import game.wreckriff.simulation.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ArenaPresentationTest {
     @Test void hazardFeedbackUsesExactAuthoritativePhasesAndFreezesWithTick() {
         Fixture fixture=new Fixture();

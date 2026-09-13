@@ -12,6 +12,10 @@ import game.wreckriff.arena.*;
 import game.wreckriff.config.NativeSetup;
 import game.wreckriff.config.BuildInfo;
 import game.wreckriff.presentation.SceneLighting;
+import game.wreckriff.presentation.ArenaPresentation;
+import game.wreckriff.simulation.MatchSession;
+import game.wreckriff.combat.CombatRules;
+import game.wreckriff.config.Configs;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -31,6 +35,9 @@ public final class ArenaRouteReview extends SimpleApplication {
     private SceneLighting.Handle lighting;
     private ScreenshotAppState screenshots;
     private ArenaRegistry registry;
+    private MatchSession presentationSession;
+    private game.wreckriff.presentation.PickupPresentation pickupPresentation;
+    private double presentationSeconds;
     private String loadedArena="";
     private int routeIndex,shot;
     private float seconds;
@@ -92,8 +99,16 @@ public final class ArenaRouteReview extends SimpleApplication {
     private void nextRoute() {
         var route=routes.get(routeIndex);
         if(!route.arenaId().equals(loadedArena)) {
+            if(pickupPresentation!=null)pickupPresentation.close();
             rootNode.detachAllChildren();var arena=registry.definition(route.arenaId());
-            rootNode.attachChild(new ArenaFactory(assetManager).build(arena).visual());lighting.apply(arena.metadata().theme(),true);
+            var scene=new ArenaFactory(assetManager).build(arena).visual();rootNode.attachChild(scene);
+            presentationSession=new MatchSession(42,arena,MatchSession.Mode.ARENA,Configs.load("combat",CombatRules.class));
+            presentationSeconds=0;
+            var systems=new ArenaSystems(presentationSession,arena);
+            ArenaPresentation.attach(assetManager,scene,presentationSession,arena,systems);
+            pickupPresentation=new game.wreckriff.presentation.PickupPresentation(
+                    assetManager,scene,presentationSession,arena,systems,(kind,position)->{});
+            lighting.apply(arena.metadata().theme(),true);
             loadedArena=route.arenaId();
             cam.setFrustumPerspective(65,cam.getWidth()/(float)cam.getHeight(),.3f,
                     (float)Math.hypot(arena.bounds().maxX()-arena.bounds().minX(),arena.bounds().maxZ()-arena.bounds().minZ())+200);
@@ -110,7 +125,10 @@ public final class ArenaRouteReview extends SimpleApplication {
         }
         unavailableSeconds=0;
         try {
-            seconds+=dt;var route=routes.get(routeIndex);float progress=Math.clamp((seconds-1)/8,0,1);
+            seconds+=dt;presentationSeconds+=dt;
+            presentationSession.tick=(long)(presentationSeconds*MatchSession.TICKS_PER_SECOND);
+            pickupPresentation.update((float)(presentationSeconds*MatchSession.TICKS_PER_SECOND-presentationSession.tick));
+            var route=routes.get(routeIndex);float progress=Math.clamp((seconds-1)/8,0,1);
             Vector3f point=sample(route.points(),progress),ahead=sample(route.points(),Math.min(1,progress+.035f));
             if(ahead.distanceSquared(point)<.001f)ahead=point.add(point.subtract(sample(route.points(),Math.max(0,progress-.035f))));
             cam.setLocation(point.add(0,3.5f,0));cam.lookAt(ahead.add(0,2.5f,0),Vector3f.UNIT_Y);
@@ -122,7 +140,7 @@ public final class ArenaRouteReview extends SimpleApplication {
                 if(routeIndex==routes.size()) {
                     Files.writeString(output.resolve("review.json"),new GsonBuilder().setPrettyPrinting().create().toJson(Map.of(
                             "status","VISUAL_CAPTURE_COMPLETE","acceptance","OWNER_REVIEW_PENDING","performanceEvidence",false,
-                            "build",BuildInfo.current(),"audio",false,"camera","authored route inspection",
+                            "build",BuildInfo.current(),"audio",false,"camera","authored route inspection","pickups",true,
                             "resolution",List.of(cam.getWidth(),cam.getHeight()),"routes",routes,"captures",captures)));
                     complete.countDown();
                 } else nextRoute();

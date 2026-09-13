@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class BossActionPresentationTest {
     @Test void actualTelegraphStartsOnceAndCancelsItsOwnStartOnCharge() {
         MatchSession session=session();World world=new World();List<BossActionPresentation.Signal> signals=new ArrayList<>();

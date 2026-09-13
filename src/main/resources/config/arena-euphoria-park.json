@@ -20,6 +20,390 @@
   },
   "boxes": [
     {
+      "id": "east-abutment-support-0",
+      "center": {
+        "x": 1000.0,
+        "y": -8.1,
+        "z": 630.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 19.8,
+        "z": 3.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "east-abutment-support-1",
+      "center": {
+        "x": 1008.0,
+        "y": -8.1,
+        "z": 675.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 19.8,
+        "z": 3.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "east-abutment-support-2",
+      "center": {
+        "x": 1040.0,
+        "y": 0.9,
+        "z": 622.0
+      },
+      "size": {
+        "x": 3.0,
+        "y": 1.8,
+        "z": 3.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-pile-0--1",
+      "center": {
+        "x": 550.0,
+        "y": -8.45,
+        "z": 640.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 19.5,
+        "z": 2.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-pile-0-1",
+      "center": {
+        "x": 550.0,
+        "y": -8.45,
+        "z": 660.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 19.5,
+        "z": 2.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-cap-0",
+      "center": {
+        "x": 550.0,
+        "y": 1.55,
+        "z": 650.0
+      },
+      "size": {
+        "x": 5.0,
+        "y": 0.6,
+        "z": 29.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-pile-1--1",
+      "center": {
+        "x": 585.0,
+        "y": -8.45,
+        "z": 640.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 19.5,
+        "z": 2.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-pile-1-1",
+      "center": {
+        "x": 585.0,
+        "y": -8.45,
+        "z": 660.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 19.5,
+        "z": 2.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-cap-1",
+      "center": {
+        "x": 585.0,
+        "y": 1.55,
+        "z": 650.0
+      },
+      "size": {
+        "x": 5.0,
+        "y": 0.6,
+        "z": 29.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-pile-2--1",
+      "center": {
+        "x": 620.0,
+        "y": -8.45,
+        "z": 640.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 19.5,
+        "z": 2.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-pile-2-1",
+      "center": {
+        "x": 620.0,
+        "y": -8.45,
+        "z": 660.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 19.5,
+        "z": 2.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-bridge-cap-2",
+      "center": {
+        "x": 620.0,
+        "y": 1.55,
+        "z": 650.0
+      },
+      "size": {
+        "x": 5.0,
+        "y": 0.6,
+        "z": 29.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "east-bridge-pier-0",
+      "center": {
+        "x": 900.0,
+        "y": -8.45,
+        "z": 657.3125
+      },
+      "size": {
+        "x": 4.0,
+        "y": 19.5,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "east-bridge-cap-0",
+      "center": {
+        "x": 900.0,
+        "y": 1.55,
+        "z": 657.3125
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.6,
+        "z": 33.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": -10.619655276155134
+    },
+    {
+      "id": "east-bridge-pier-1",
+      "center": {
+        "x": 940.0,
+        "y": -8.45,
+        "z": 661.8125
+      },
+      "size": {
+        "x": 4.0,
+        "y": 19.5,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "east-bridge-cap-1",
+      "center": {
+        "x": 940.0,
+        "y": 1.55,
+        "z": 661.8125
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.6,
+        "z": 33.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": -2.147585428298503
+    },
+    {
+      "id": "east-bridge-pier-2",
+      "center": {
+        "x": 980.0,
+        "y": -8.45,
+        "z": 660.3125
+      },
+      "size": {
+        "x": 4.0,
+        "y": 19.5,
+        "z": 4.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "east-bridge-cap-2",
+      "center": {
+        "x": 980.0,
+        "y": 1.55,
+        "z": 660.3125
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.6,
+        "z": 33.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 6.418786730238786
+    },
+    {
+      "id": "north-bridge-pier-0",
+      "center": {
+        "x": 755.0,
+        "y": -8.45,
+        "z": 835.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 19.5,
+        "z": 4.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bridge-cap-0",
+      "center": {
+        "x": 755.0,
+        "y": 1.55,
+        "z": 835.0
+      },
+      "size": {
+        "x": 23.0,
+        "y": 0.6,
+        "z": 7.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": -0.0
+    },
+    {
+      "id": "north-bridge-pier-1",
+      "center": {
+        "x": 755.0,
+        "y": -8.45,
+        "z": 870.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 19.5,
+        "z": 4.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bridge-cap-1",
+      "center": {
+        "x": 755.0,
+        "y": 1.55,
+        "z": 870.0
+      },
+      "size": {
+        "x": 23.0,
+        "y": 0.6,
+        "z": 7.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": -0.0
+    },
+    {
+      "id": "north-bridge-pier-2",
+      "center": {
+        "x": 755.0,
+        "y": -8.45,
+        "z": 900.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 19.5,
+        "z": 4.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bridge-cap-2",
+      "center": {
+        "x": 755.0,
+        "y": 1.55,
+        "z": 900.0
+      },
+      "size": {
+        "x": 23.0,
+        "y": 0.6,
+        "z": 7.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": -0.0
+    },
+    {
       "id": "service-shortcut-panel",
       "center": {
         "x": 227.5,
@@ -785,6 +1169,22 @@
       },
       "material": "ivory",
       "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "comet-coaster-proxy",
+      "center": {
+        "x": 1310.0,
+        "y": 20.0,
+        "z": 315.0
+      },
+      "size": {
+        "x": 300.0,
+        "y": 40.0,
+        "z": 136.0
+      },
+      "material": "steel",
+      "collision": false,
       "yawDegrees": 0
     },
     {
@@ -3284,22 +3684,6 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-fixture-se",
-      "center": {
-        "x": 1324.0,
-        "y": 4.0,
-        "z": 257.0
-      },
-      "size": {
-        "x": 0.45,
-        "y": 8.0,
-        "z": 0.45
-      },
-      "material": "steel",
-      "collision": true,
-      "yawDegrees": 0
-    },
-    {
       "id": "dress-fixture-entry_n",
       "center": {
         "x": 227.82804,
@@ -5236,6 +5620,4502 @@
       "yawDegrees": 0
     },
     {
+      "id": "dress-carnival-roof-structure-orbit-column-0",
+      "center": {
+        "x": 1175.0,
+        "y": 10.0593,
+        "z": 485.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 20.11859,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-0",
+      "center": {
+        "x": 1175.0,
+        "y": 0.35,
+        "z": 485.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-1",
+      "center": {
+        "x": 1175.0,
+        "y": 10.0593,
+        "z": 545.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 20.11859,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-1",
+      "center": {
+        "x": 1175.0,
+        "y": 0.35,
+        "z": 545.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-2",
+      "center": {
+        "x": 1245.0,
+        "y": 15.07502,
+        "z": 550.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 30.15004,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-2",
+      "center": {
+        "x": 1245.0,
+        "y": 0.35,
+        "z": 550.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-3",
+      "center": {
+        "x": 1250.0,
+        "y": 15.24684,
+        "z": 410.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 30.49368,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-3",
+      "center": {
+        "x": 1250.0,
+        "y": 0.35,
+        "z": 410.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-4",
+      "center": {
+        "x": 1305.0,
+        "y": 14.87107,
+        "z": 410.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 29.74215,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-4",
+      "center": {
+        "x": 1305.0,
+        "y": 0.35,
+        "z": 410.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-5",
+      "center": {
+        "x": 1370.0,
+        "y": 10.0593,
+        "z": 460.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 20.11859,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-5",
+      "center": {
+        "x": 1370.0,
+        "y": 0.35,
+        "z": 460.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-6",
+      "center": {
+        "x": 1370.0,
+        "y": 10.0593,
+        "z": 490.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 20.11859,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-orbit-column-foot-6",
+      "center": {
+        "x": 1370.0,
+        "y": 0.35,
+        "z": 490.0
+      },
+      "size": {
+        "x": 2.0,
+        "y": 0.7,
+        "z": 2.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-king-pole-0",
+      "center": {
+        "x": 347.5,
+        "y": 21.0,
+        "z": 1005.0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 42.0,
+        "z": 1.5
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-king-foot-0",
+      "center": {
+        "x": 347.5,
+        "y": 0.45,
+        "z": 1005.0
+      },
+      "size": {
+        "x": 2.4,
+        "y": 0.9,
+        "z": 2.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-king-pole-1",
+      "center": {
+        "x": 397.5,
+        "y": 21.0,
+        "z": 1115.0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 42.0,
+        "z": 1.5
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-king-foot-1",
+      "center": {
+        "x": 397.5,
+        "y": 0.45,
+        "z": 1115.0
+      },
+      "size": {
+        "x": 2.4,
+        "y": 0.9,
+        "z": 2.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-1",
+      "center": {
+        "x": 442.19765,
+        "y": 8.7,
+        "z": 1099.44151
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-9",
+      "center": {
+        "x": 252.80235,
+        "y": 8.7,
+        "z": 1030.55849
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-10",
+      "center": {
+        "x": 275.02155,
+        "y": 8.7,
+        "z": 1001.36039
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-11",
+      "center": {
+        "x": 308.27495,
+        "y": 8.7,
+        "z": 981.85084
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-12",
+      "center": {
+        "x": 347.5,
+        "y": 8.7,
+        "z": 975.0
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-13",
+      "center": {
+        "x": 386.72505,
+        "y": 8.7,
+        "z": 981.85084
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-14",
+      "center": {
+        "x": 419.97845,
+        "y": 8.7,
+        "z": 1001.36039
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-circus-edge-pole-15",
+      "center": {
+        "x": 442.19765,
+        "y": 8.7,
+        "z": 1030.55849
+      },
+      "size": {
+        "x": 0.9,
+        "y": 17.4,
+        "z": 0.9
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-0-fabric",
+      "center": {
+        "x": 254.19105,
+        "y": 8.65,
+        "z": 1028.73361
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-0-ground-anchor",
+      "center": {
+        "x": 254.19105,
+        "y": 0.25,
+        "z": 1028.73361
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-1-fabric",
+      "center": {
+        "x": 256.96845,
+        "y": 8.65,
+        "z": 1025.08385
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-1-ground-anchor",
+      "center": {
+        "x": 256.96845,
+        "y": 0.25,
+        "z": 1025.08385
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-2-fabric",
+      "center": {
+        "x": 259.74585,
+        "y": 8.65,
+        "z": 1021.43408
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-2-ground-anchor",
+      "center": {
+        "x": 259.74585,
+        "y": 0.25,
+        "z": 1021.43408
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-3-fabric",
+      "center": {
+        "x": 262.52325,
+        "y": 8.65,
+        "z": 1017.78432
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-3-ground-anchor",
+      "center": {
+        "x": 262.52325,
+        "y": 0.25,
+        "z": 1017.78432
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-4-fabric",
+      "center": {
+        "x": 265.30065,
+        "y": 8.65,
+        "z": 1014.13456
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-4-ground-anchor",
+      "center": {
+        "x": 265.30065,
+        "y": 0.25,
+        "z": 1014.13456
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-5-fabric",
+      "center": {
+        "x": 268.07805,
+        "y": 8.65,
+        "z": 1010.4848
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-5-ground-anchor",
+      "center": {
+        "x": 268.07805,
+        "y": 0.25,
+        "z": 1010.4848
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-6-fabric",
+      "center": {
+        "x": 270.85545,
+        "y": 8.65,
+        "z": 1006.83503
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-6-ground-anchor",
+      "center": {
+        "x": 270.85545,
+        "y": 0.25,
+        "z": 1006.83503
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-7-fabric",
+      "center": {
+        "x": 273.63285,
+        "y": 8.65,
+        "z": 1003.18527
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-9-7-ground-anchor",
+      "center": {
+        "x": 273.63285,
+        "y": 0.25,
+        "z": 1003.18527
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 142.72954636304274
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-0-fabric",
+      "center": {
+        "x": 277.09989,
+        "y": 8.65,
+        "z": 1000.14104
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-0-ground-anchor",
+      "center": {
+        "x": 277.09989,
+        "y": 0.25,
+        "z": 1000.14104
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-1-fabric",
+      "center": {
+        "x": 281.25657,
+        "y": 8.65,
+        "z": 997.70235
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-1-ground-anchor",
+      "center": {
+        "x": 281.25657,
+        "y": 0.25,
+        "z": 997.70235
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-2-fabric",
+      "center": {
+        "x": 285.41324,
+        "y": 8.65,
+        "z": 995.26366
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-2-ground-anchor",
+      "center": {
+        "x": 285.41324,
+        "y": 0.25,
+        "z": 995.26366
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-3-fabric",
+      "center": {
+        "x": 289.56991,
+        "y": 8.65,
+        "z": 992.82496
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-3-ground-anchor",
+      "center": {
+        "x": 289.56991,
+        "y": 0.25,
+        "z": 992.82496
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-4-fabric",
+      "center": {
+        "x": 293.72659,
+        "y": 8.65,
+        "z": 990.38627
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-4-ground-anchor",
+      "center": {
+        "x": 293.72659,
+        "y": 0.25,
+        "z": 990.38627
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-5-fabric",
+      "center": {
+        "x": 297.88326,
+        "y": 8.65,
+        "z": 987.94758
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-5-ground-anchor",
+      "center": {
+        "x": 297.88326,
+        "y": 0.25,
+        "z": 987.94758
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-6-fabric",
+      "center": {
+        "x": 302.03994,
+        "y": 8.65,
+        "z": 985.50888
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-6-ground-anchor",
+      "center": {
+        "x": 302.03994,
+        "y": 0.25,
+        "z": 985.50888
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-7-fabric",
+      "center": {
+        "x": 306.19661,
+        "y": 8.65,
+        "z": 983.07019
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-10-7-ground-anchor",
+      "center": {
+        "x": 306.19661,
+        "y": 0.25,
+        "z": 983.07019
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 120.39986884030971
+    },
+    {
+      "id": "dress-carnival-circus-curtain-11-0-fabric",
+      "center": {
+        "x": 310.72651,
+        "y": 8.65,
+        "z": 981.42266
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 99.90705146221032
+    },
+    {
+      "id": "dress-carnival-circus-curtain-11-0-ground-anchor",
+      "center": {
+        "x": 310.72651,
+        "y": 0.25,
+        "z": 981.42266
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 99.90705146221032
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-0-fabric",
+      "center": {
+        "x": 349.95157,
+        "y": 8.65,
+        "z": 975.42818
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-0-ground-anchor",
+      "center": {
+        "x": 349.95157,
+        "y": 0.25,
+        "z": 975.42818
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-1-fabric",
+      "center": {
+        "x": 354.8547,
+        "y": 8.65,
+        "z": 976.28453
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-1-ground-anchor",
+      "center": {
+        "x": 354.8547,
+        "y": 0.25,
+        "z": 976.28453
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-2-fabric",
+      "center": {
+        "x": 359.75783,
+        "y": 8.65,
+        "z": 977.14089
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-2-ground-anchor",
+      "center": {
+        "x": 359.75783,
+        "y": 0.25,
+        "z": 977.14089
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-3-fabric",
+      "center": {
+        "x": 364.66096,
+        "y": 8.65,
+        "z": 977.99724
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-3-ground-anchor",
+      "center": {
+        "x": 364.66096,
+        "y": 0.25,
+        "z": 977.99724
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-4-fabric",
+      "center": {
+        "x": 369.56409,
+        "y": 8.65,
+        "z": 978.8536
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-4-ground-anchor",
+      "center": {
+        "x": 369.56409,
+        "y": 0.25,
+        "z": 978.8536
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-5-fabric",
+      "center": {
+        "x": 374.46722,
+        "y": 8.65,
+        "z": 979.70995
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-5-ground-anchor",
+      "center": {
+        "x": 374.46722,
+        "y": 0.25,
+        "z": 979.70995
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-6-fabric",
+      "center": {
+        "x": 379.37035,
+        "y": 8.65,
+        "z": 980.56631
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-6-ground-anchor",
+      "center": {
+        "x": 379.37035,
+        "y": 0.25,
+        "z": 980.56631
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-7-fabric",
+      "center": {
+        "x": 384.27349,
+        "y": 8.65,
+        "z": 981.42266
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.99735
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-12-7-ground-anchor",
+      "center": {
+        "x": 384.27349,
+        "y": 0.25,
+        "z": 981.42266
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.99735
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 80.09294853778984
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-0-fabric",
+      "center": {
+        "x": 388.80339,
+        "y": 8.65,
+        "z": 983.07019
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-0-ground-anchor",
+      "center": {
+        "x": 388.80339,
+        "y": 0.25,
+        "z": 983.07019
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-1-fabric",
+      "center": {
+        "x": 392.96006,
+        "y": 8.65,
+        "z": 985.50888
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-1-ground-anchor",
+      "center": {
+        "x": 392.96006,
+        "y": 0.25,
+        "z": 985.50888
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-2-fabric",
+      "center": {
+        "x": 397.11674,
+        "y": 8.65,
+        "z": 987.94758
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-2-ground-anchor",
+      "center": {
+        "x": 397.11674,
+        "y": 0.25,
+        "z": 987.94758
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-3-fabric",
+      "center": {
+        "x": 401.27341,
+        "y": 8.65,
+        "z": 990.38627
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-3-ground-anchor",
+      "center": {
+        "x": 401.27341,
+        "y": 0.25,
+        "z": 990.38627
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-4-fabric",
+      "center": {
+        "x": 405.43009,
+        "y": 8.65,
+        "z": 992.82496
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-4-ground-anchor",
+      "center": {
+        "x": 405.43009,
+        "y": 0.25,
+        "z": 992.82496
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-5-fabric",
+      "center": {
+        "x": 409.58676,
+        "y": 8.65,
+        "z": 995.26366
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-5-ground-anchor",
+      "center": {
+        "x": 409.58676,
+        "y": 0.25,
+        "z": 995.26366
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-6-fabric",
+      "center": {
+        "x": 413.74343,
+        "y": 8.65,
+        "z": 997.70235
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-6-ground-anchor",
+      "center": {
+        "x": 413.74343,
+        "y": 0.25,
+        "z": 997.70235
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-7-fabric",
+      "center": {
+        "x": 417.90011,
+        "y": 8.65,
+        "z": 1000.14104
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.83925
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-13-7-ground-anchor",
+      "center": {
+        "x": 417.90011,
+        "y": 0.25,
+        "z": 1000.14104
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.83925
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 59.6001311596903
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-0-fabric",
+      "center": {
+        "x": 421.36715,
+        "y": 8.65,
+        "z": 1003.18527
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-0-ground-anchor",
+      "center": {
+        "x": 421.36715,
+        "y": 0.25,
+        "z": 1003.18527
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-1-fabric",
+      "center": {
+        "x": 424.14455,
+        "y": 8.65,
+        "z": 1006.83503
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-1-ground-anchor",
+      "center": {
+        "x": 424.14455,
+        "y": 0.25,
+        "z": 1006.83503
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-2-fabric",
+      "center": {
+        "x": 426.92195,
+        "y": 8.65,
+        "z": 1010.4848
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-2-ground-anchor",
+      "center": {
+        "x": 426.92195,
+        "y": 0.25,
+        "z": 1010.4848
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-3-fabric",
+      "center": {
+        "x": 429.69935,
+        "y": 8.65,
+        "z": 1014.13456
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-3-ground-anchor",
+      "center": {
+        "x": 429.69935,
+        "y": 0.25,
+        "z": 1014.13456
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-4-fabric",
+      "center": {
+        "x": 432.47675,
+        "y": 8.65,
+        "z": 1017.78432
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-4-ground-anchor",
+      "center": {
+        "x": 432.47675,
+        "y": 0.25,
+        "z": 1017.78432
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-5-fabric",
+      "center": {
+        "x": 435.25415,
+        "y": 8.65,
+        "z": 1021.43408
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-5-ground-anchor",
+      "center": {
+        "x": 435.25415,
+        "y": 0.25,
+        "z": 1021.43408
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-6-fabric",
+      "center": {
+        "x": 438.03155,
+        "y": 8.65,
+        "z": 1025.08385
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-6-ground-anchor",
+      "center": {
+        "x": 438.03155,
+        "y": 0.25,
+        "z": 1025.08385
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-7-fabric",
+      "center": {
+        "x": 440.80895,
+        "y": 8.65,
+        "z": 1028.73361
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.60636
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-14-7-ground-anchor",
+      "center": {
+        "x": 440.80895,
+        "y": 0.25,
+        "z": 1028.73361
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.60636
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 37.270453636957185
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-0-fabric",
+      "center": {
+        "x": 442.6853,
+        "y": 8.65,
+        "z": 1032.71109
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-0-ground-anchor",
+      "center": {
+        "x": 442.6853,
+        "y": 0.25,
+        "z": 1032.71109
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-1-fabric",
+      "center": {
+        "x": 443.66059,
+        "y": 8.65,
+        "z": 1037.01627
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-1-ground-anchor",
+      "center": {
+        "x": 443.66059,
+        "y": 0.25,
+        "z": 1037.01627
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-2-fabric",
+      "center": {
+        "x": 444.63589,
+        "y": 8.65,
+        "z": 1041.32146
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-2-ground-anchor",
+      "center": {
+        "x": 444.63589,
+        "y": 0.25,
+        "z": 1041.32146
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-3-fabric",
+      "center": {
+        "x": 445.61118,
+        "y": 8.65,
+        "z": 1045.62665
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-3-ground-anchor",
+      "center": {
+        "x": 445.61118,
+        "y": 0.25,
+        "z": 1045.62665
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-4-fabric",
+      "center": {
+        "x": 446.58647,
+        "y": 8.65,
+        "z": 1049.93184
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-4-ground-anchor",
+      "center": {
+        "x": 446.58647,
+        "y": 0.25,
+        "z": 1049.93184
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-5-fabric",
+      "center": {
+        "x": 447.56177,
+        "y": 8.65,
+        "z": 1054.23703
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-5-ground-anchor",
+      "center": {
+        "x": 447.56177,
+        "y": 0.25,
+        "z": 1054.23703
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-6-fabric",
+      "center": {
+        "x": 448.53706,
+        "y": 8.65,
+        "z": 1058.54222
+      },
+      "size": {
+        "x": 0.35,
+        "y": 17.3,
+        "z": 4.43428
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-circus-curtain-15-6-ground-anchor",
+      "center": {
+        "x": 448.53706,
+        "y": 0.25,
+        "z": 1058.54222
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.5,
+        "z": 4.43428
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12.764289699676041
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-column-0",
+      "center": {
+        "x": 1145.0,
+        "y": 7.23889,
+        "z": 990.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 14.47778,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-column-1",
+      "center": {
+        "x": 1220.0,
+        "y": 9.32222,
+        "z": 990.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 18.64444,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-column-2",
+      "center": {
+        "x": 1290.0,
+        "y": 7.93333,
+        "z": 990.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 15.86667,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-column-3",
+      "center": {
+        "x": 1150.0,
+        "y": 7.37778,
+        "z": 1120.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 14.75556,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-column-4",
+      "center": {
+        "x": 1200.0,
+        "y": 8.76667,
+        "z": 1120.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 17.53333,
+        "z": 1.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-eave-beam-990",
+      "center": {
+        "x": 1230.0,
+        "y": 14.15,
+        "z": 990.0
+      },
+      "size": {
+        "x": 180.0,
+        "y": 1.7,
+        "z": 1.2
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-roof-structure-depot-eave-beam-1120",
+      "center": {
+        "x": 1230.0,
+        "y": 14.15,
+        "z": 1120.0
+      },
+      "size": {
+        "x": 180.0,
+        "y": 1.7,
+        "z": 1.2
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-curb--1",
+      "center": {
+        "x": 577.5,
+        "y": 3.22,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 85.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-top-rail--1",
+      "center": {
+        "x": 577.5,
+        "y": 4.55,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 85.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-middle-rail--1",
+      "center": {
+        "x": 577.5,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 85.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-0",
+      "center": {
+        "x": 535.0,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-1",
+      "center": {
+        "x": 541.53846,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-2",
+      "center": {
+        "x": 548.07692,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-3",
+      "center": {
+        "x": 554.61538,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-4",
+      "center": {
+        "x": 561.15385,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-5",
+      "center": {
+        "x": 567.69231,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-6",
+      "center": {
+        "x": 574.23077,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-7",
+      "center": {
+        "x": 580.76923,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-8",
+      "center": {
+        "x": 587.30769,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-9",
+      "center": {
+        "x": 593.84615,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-10",
+      "center": {
+        "x": 600.38462,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-11",
+      "center": {
+        "x": 606.92308,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-12",
+      "center": {
+        "x": 613.46154,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post--1-13",
+      "center": {
+        "x": 620.0,
+        "y": 3.95,
+        "z": 664.6
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-curb-1",
+      "center": {
+        "x": 577.5,
+        "y": 3.22,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 85.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-top-rail-1",
+      "center": {
+        "x": 577.5,
+        "y": 4.55,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 85.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-middle-rail-1",
+      "center": {
+        "x": 577.5,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 85.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-0",
+      "center": {
+        "x": 535.0,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-1",
+      "center": {
+        "x": 541.53846,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-2",
+      "center": {
+        "x": 548.07692,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-3",
+      "center": {
+        "x": 554.61538,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-4",
+      "center": {
+        "x": 561.15385,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-5",
+      "center": {
+        "x": 567.69231,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-6",
+      "center": {
+        "x": 574.23077,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-7",
+      "center": {
+        "x": 580.76923,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-8",
+      "center": {
+        "x": 587.30769,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-9",
+      "center": {
+        "x": 593.84615,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-10",
+      "center": {
+        "x": 600.38462,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-11",
+      "center": {
+        "x": 606.92308,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-12",
+      "center": {
+        "x": 613.46154,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-west-lake-bridge-guard-post-1-13",
+      "center": {
+        "x": 620.0,
+        "y": 3.95,
+        "z": 635.4
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 90.0
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-0",
+      "center": {
+        "x": 885.4576,
+        "y": 3.22,
+        "z": 671.22002
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 0.67758
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-0",
+      "center": {
+        "x": 885.4576,
+        "y": 4.55,
+        "z": 671.22002
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 0.67758
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-0",
+      "center": {
+        "x": 885.4576,
+        "y": 3.95,
+        "z": 671.22002
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 0.67758
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-0",
+      "center": {
+        "x": 885.12991,
+        "y": 3.95,
+        "z": 671.134
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-0",
+      "center": {
+        "x": 893.88702,
+        "y": 3.22,
+        "z": 639.10795
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 0.67758
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-0",
+      "center": {
+        "x": 893.88702,
+        "y": 4.55,
+        "z": 639.10795
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 0.67758
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-0",
+      "center": {
+        "x": 893.88702,
+        "y": 3.95,
+        "z": 639.10795
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 0.67758
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-0",
+      "center": {
+        "x": 893.55933,
+        "y": 3.95,
+        "z": 639.02193
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 75.29169610031725
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-1",
+      "center": {
+        "x": 896.94081,
+        "y": 3.22,
+        "z": 673.44068
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.34853
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-1",
+      "center": {
+        "x": 896.94081,
+        "y": 4.55,
+        "z": 673.44068
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.34853
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-1",
+      "center": {
+        "x": 896.94081,
+        "y": 3.95,
+        "z": 673.44068
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.34853
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-1",
+      "center": {
+        "x": 892.95469,
+        "y": 3.95,
+        "z": 672.69328
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-2",
+      "center": {
+        "x": 899.63454,
+        "y": 3.95,
+        "z": 673.94575
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-3",
+      "center": {
+        "x": 906.31439,
+        "y": 3.95,
+        "z": 675.19823
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-1",
+      "center": {
+        "x": 903.05919,
+        "y": 3.22,
+        "z": 640.80932
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.34853
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-1",
+      "center": {
+        "x": 903.05919,
+        "y": 4.55,
+        "z": 640.80932
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.34853
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-1",
+      "center": {
+        "x": 903.05919,
+        "y": 3.95,
+        "z": 640.80932
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.34853
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-1",
+      "center": {
+        "x": 899.07306,
+        "y": 3.95,
+        "z": 640.06192
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-2",
+      "center": {
+        "x": 905.75292,
+        "y": 3.95,
+        "z": 641.3144
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-3",
+      "center": {
+        "x": 912.43277,
+        "y": 3.95,
+        "z": 642.56687
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 79.38034472384487
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-2",
+      "center": {
+        "x": 918.14421,
+        "y": 3.22,
+        "z": 676.62094
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-2",
+      "center": {
+        "x": 918.14421,
+        "y": 4.55,
+        "z": 676.62094
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-2",
+      "center": {
+        "x": 918.14421,
+        "y": 3.95,
+        "z": 676.62094
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-4",
+      "center": {
+        "x": 914.26452,
+        "y": 3.95,
+        "z": 676.18448
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-5",
+      "center": {
+        "x": 921.01818,
+        "y": 3.95,
+        "z": 676.94426
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-6",
+      "center": {
+        "x": 927.77184,
+        "y": 3.95,
+        "z": 677.70405
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-2",
+      "center": {
+        "x": 921.85579,
+        "y": 3.22,
+        "z": 643.62906
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-2",
+      "center": {
+        "x": 921.85579,
+        "y": 4.55,
+        "z": 643.62906
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-2",
+      "center": {
+        "x": 921.85579,
+        "y": 3.95,
+        "z": 643.62906
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-4",
+      "center": {
+        "x": 917.97611,
+        "y": 3.95,
+        "z": 643.1926
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-5",
+      "center": {
+        "x": 924.72977,
+        "y": 3.95,
+        "z": 643.95238
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-6",
+      "center": {
+        "x": 931.48342,
+        "y": 3.95,
+        "z": 644.71217
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 83.58121326976122
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-3",
+      "center": {
+        "x": 939.37794,
+        "y": 3.22,
+        "z": 678.21334
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-3",
+      "center": {
+        "x": 939.37794,
+        "y": 4.55,
+        "z": 678.21334
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-3",
+      "center": {
+        "x": 939.37794,
+        "y": 3.95,
+        "z": 678.21334
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-7",
+      "center": {
+        "x": 935.79497,
+        "y": 3.95,
+        "z": 678.07898
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-8",
+      "center": {
+        "x": 942.58645,
+        "y": 3.95,
+        "z": 678.33366
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-9",
+      "center": {
+        "x": 949.37794,
+        "y": 3.95,
+        "z": 678.58834
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-3",
+      "center": {
+        "x": 940.62206,
+        "y": 3.22,
+        "z": 645.03666
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-3",
+      "center": {
+        "x": 940.62206,
+        "y": 4.55,
+        "z": 645.03666
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-3",
+      "center": {
+        "x": 940.62206,
+        "y": 3.95,
+        "z": 645.03666
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-7",
+      "center": {
+        "x": 937.03909,
+        "y": 3.95,
+        "z": 644.9023
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-8",
+      "center": {
+        "x": 943.83058,
+        "y": 3.95,
+        "z": 645.15698
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-9",
+      "center": {
+        "x": 950.62206,
+        "y": 3.95,
+        "z": 645.41166
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 87.8524145717015
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-4",
+      "center": {
+        "x": 960.62206,
+        "y": 3.22,
+        "z": 678.21334
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-4",
+      "center": {
+        "x": 960.62206,
+        "y": 4.55,
+        "z": 678.21334
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-4",
+      "center": {
+        "x": 960.62206,
+        "y": 3.95,
+        "z": 678.21334
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-10",
+      "center": {
+        "x": 957.41355,
+        "y": 3.95,
+        "z": 678.33366
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-11",
+      "center": {
+        "x": 964.20503,
+        "y": 3.95,
+        "z": 678.07898
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-4",
+      "center": {
+        "x": 959.37794,
+        "y": 3.22,
+        "z": 645.03666
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-4",
+      "center": {
+        "x": 959.37794,
+        "y": 4.55,
+        "z": 645.03666
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-4",
+      "center": {
+        "x": 959.37794,
+        "y": 3.95,
+        "z": 645.03666
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.01406
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-10",
+      "center": {
+        "x": 956.16942,
+        "y": 3.95,
+        "z": 645.15698
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-11",
+      "center": {
+        "x": 962.96091,
+        "y": 3.95,
+        "z": 644.9023
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 92.1475854282985
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-5",
+      "center": {
+        "x": 981.85579,
+        "y": 3.22,
+        "z": 676.62094
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-5",
+      "center": {
+        "x": 981.85579,
+        "y": 4.55,
+        "z": 676.62094
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-5",
+      "center": {
+        "x": 981.85579,
+        "y": 3.95,
+        "z": 676.62094
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-12",
+      "center": {
+        "x": 972.22816,
+        "y": 3.95,
+        "z": 677.70405
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-13",
+      "center": {
+        "x": 978.98182,
+        "y": 3.95,
+        "z": 676.94426
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-14",
+      "center": {
+        "x": 985.73548,
+        "y": 3.95,
+        "z": 676.18448
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-5",
+      "center": {
+        "x": 978.14421,
+        "y": 3.22,
+        "z": 643.62906
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-5",
+      "center": {
+        "x": 978.14421,
+        "y": 4.55,
+        "z": 643.62906
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-5",
+      "center": {
+        "x": 978.14421,
+        "y": 3.95,
+        "z": 643.62906
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 20.12616
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-12",
+      "center": {
+        "x": 968.51658,
+        "y": 3.95,
+        "z": 644.71217
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-13",
+      "center": {
+        "x": 975.27023,
+        "y": 3.95,
+        "z": 643.95238
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-14",
+      "center": {
+        "x": 982.02389,
+        "y": 3.95,
+        "z": 643.1926
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 96.41878673023879
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb--1-segment-6",
+      "center": {
+        "x": 993.56346,
+        "y": 3.22,
+        "z": 675.22113
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 1.02611
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail--1-segment-6",
+      "center": {
+        "x": 993.56346,
+        "y": 4.55,
+        "z": 675.22113
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 1.02611
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail--1-segment-6",
+      "center": {
+        "x": 993.56346,
+        "y": 3.95,
+        "z": 675.22113
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 1.02611
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post--1-15",
+      "center": {
+        "x": 993.68561,
+        "y": 3.95,
+        "z": 675.19823
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-curb-1-segment-6",
+      "center": {
+        "x": 987.44508,
+        "y": 3.22,
+        "z": 642.58977
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 1.02611
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-top-rail-1-segment-6",
+      "center": {
+        "x": 987.44508,
+        "y": 4.55,
+        "z": 642.58977
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 1.02611
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-middle-rail-1-segment-6",
+      "center": {
+        "x": 987.44508,
+        "y": 3.95,
+        "z": 642.58977
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 1.02611
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-east-lake-bridge-guard-post-1-15",
+      "center": {
+        "x": 987.56723,
+        "y": 3.95,
+        "z": 642.56687
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 100.61965527615514
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-curb--1",
+      "center": {
+        "x": 743.4,
+        "y": 3.22,
+        "z": 872.5
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 105.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-top-rail--1",
+      "center": {
+        "x": 743.4,
+        "y": 4.55,
+        "z": 872.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 105.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-middle-rail--1",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 872.5
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 105.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-0",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 820.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-1",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 827.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-2",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 834.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-3",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 841.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-4",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 848.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-5",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 855.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-6",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 862.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-7",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 869.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-8",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 876.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-9",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 883.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-10",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 890.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-11",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 897.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-12",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 904.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-13",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 911.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-14",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 918.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post--1-15",
+      "center": {
+        "x": 743.4,
+        "y": 3.95,
+        "z": 925.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-curb-1",
+      "center": {
+        "x": 766.6,
+        "y": 3.22,
+        "z": 872.5
+      },
+      "size": {
+        "x": 0.6,
+        "y": 0.44,
+        "z": 105.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-top-rail-1",
+      "center": {
+        "x": 766.6,
+        "y": 4.55,
+        "z": 872.5
+      },
+      "size": {
+        "x": 0.3,
+        "y": 0.3,
+        "z": 105.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-middle-rail-1",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 872.5
+      },
+      "size": {
+        "x": 0.2,
+        "y": 0.2,
+        "z": 105.0
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-0",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 820.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-1",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 827.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-2",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 834.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-3",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 841.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-4",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 848.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-5",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 855.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-6",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 862.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-7",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 869.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-8",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 876.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-9",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 883.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-10",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 890.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-11",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 897.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-12",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 904.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-13",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 911.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-14",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 918.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-north-lake-bridge-guard-post-1-15",
+      "center": {
+        "x": 766.6,
+        "y": 3.95,
+        "z": 925.0
+      },
+      "size": {
+        "x": 0.4,
+        "y": 1.9,
+        "z": 0.4
+      },
+      "material": "cast-concrete",
+      "collision": true,
+      "yawDegrees": 0.0
+    },
+    {
+      "id": "dress-carnival-main-entrance-tower-136",
+      "center": {
+        "x": 136.0,
+        "y": 8.0,
+        "z": 250.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 16.0,
+        "z": 6.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-main-entrance-tower-cap-136",
+      "center": {
+        "x": 136.0,
+        "y": 16.5,
+        "z": 250.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.0,
+        "z": 8.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-main-entrance-tower-259",
+      "center": {
+        "x": 259.0,
+        "y": 8.0,
+        "z": 250.0
+      },
+      "size": {
+        "x": 4.0,
+        "y": 16.0,
+        "z": 6.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-main-entrance-tower-cap-259",
+      "center": {
+        "x": 259.0,
+        "y": 16.5,
+        "z": 250.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.0,
+        "z": 8.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-main-entrance-lintel",
+      "center": {
+        "x": 197.5,
+        "y": 15.0,
+        "z": 250.0
+      },
+      "size": {
+        "x": 127.0,
+        "y": 2.4,
+        "z": 2.4
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-carnival-main-entrance-sign-backing",
+      "center": {
+        "x": 197.5,
+        "y": 17.5,
+        "z": 250.0
+      },
+      "size": {
+        "x": 69.0,
+        "y": 5.0,
+        "z": 0.8
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
       "id": "dress-carnival-arrival-map-post--3.5",
       "center": {
         "x": 156.5,
@@ -7092,6 +11972,102 @@
       "yawDegrees": 90
     },
     {
+      "id": "dress-carnival-depot-dispatch-car-service-plinth",
+      "center": {
+        "x": 1185.0,
+        "y": 0.3,
+        "z": 1193.0
+      },
+      "size": {
+        "x": 9.0,
+        "y": 0.6,
+        "z": 6.0
+      },
+      "material": "concrete",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-carnival-depot-dispatch-car-chassis",
+      "center": {
+        "x": 1185.0,
+        "y": 1.3,
+        "z": 1193.0
+      },
+      "size": {
+        "x": 7.0,
+        "y": 0.8,
+        "z": 3.6
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-carnival-depot-dispatch-car-front-cowl",
+      "center": {
+        "x": 1185.0,
+        "y": 2.0,
+        "z": 1194.6
+      },
+      "size": {
+        "x": 7.0,
+        "y": 1.5,
+        "z": 0.65
+      },
+      "material": "yellow",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-carnival-depot-dispatch-car-side--3.3",
+      "center": {
+        "x": 1188.3,
+        "y": 2.1,
+        "z": 1193.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.8,
+        "z": 3.6
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-carnival-depot-dispatch-car-side-3.3",
+      "center": {
+        "x": 1181.7,
+        "y": 2.1,
+        "z": 1193.0
+      },
+      "size": {
+        "x": 0.6,
+        "y": 1.8,
+        "z": 3.6
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
+      "id": "dress-carnival-depot-dispatch-car-back-cowl",
+      "center": {
+        "x": 1185.0,
+        "y": 2.1,
+        "z": 1191.4
+      },
+      "size": {
+        "x": 7.0,
+        "y": 1.8,
+        "z": 0.55
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": 180
+    },
+    {
       "id": "dress-carnival-north-service-desk-leg--4.5--2",
       "center": {
         "x": 1334.5,
@@ -8787,9 +13763,9 @@
       "id": "route-cache-078",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 780.625,
+        "x": 768.25,
         "y": 0.0,
-        "z": 987.375
+        "z": 979.95
       },
       "respawnTicks": 3000
     },
@@ -9087,9 +14063,9 @@
       "id": "route-cache-108",
       "type": "NAPALM_AMMO",
       "position": {
-        "x": 1096.4,
+        "x": 1085.85,
         "y": 0.0,
-        "z": 694.6
+        "z": 666.85
       },
       "respawnTicks": 3000
     },
@@ -12360,41 +17336,77 @@
     {
       "id": 332,
       "position": {
-        "x": 910.0,
+        "x": 890.0,
         "y": 3.0,
-        "z": 650.0
+        "z": 655.25
       },
       "surfaceId": "road-east-lake-bridge-0"
     },
     {
       "id": 333,
       "position": {
-        "x": 950.0,
+        "x": 910.0,
         "y": 3.0,
-        "z": 650.0
+        "z": 659.0
       },
-      "surfaceId": "road-east-lake-bridge-0"
+      "surfaceId": "road-east-lake-bridge-1"
     },
     {
       "id": 334,
       "position": {
-        "x": 990.0,
+        "x": 930.0,
         "y": 3.0,
-        "z": 650.0
+        "z": 661.25
       },
-      "surfaceId": "road-east-lake-bridge-0"
+      "surfaceId": "road-east-lake-bridge-2"
     },
     {
       "id": 335,
+      "position": {
+        "x": 950.0,
+        "y": 3.0,
+        "z": 662.0
+      },
+      "surfaceId": "road-east-lake-bridge-3"
+    },
+    {
+      "id": 336,
+      "position": {
+        "x": 970.0,
+        "y": 3.0,
+        "z": 661.25
+      },
+      "surfaceId": "road-east-lake-bridge-4"
+    },
+    {
+      "id": 337,
+      "position": {
+        "x": 990.0,
+        "y": 3.0,
+        "z": 659.0
+      },
+      "surfaceId": "road-east-lake-bridge-5"
+    },
+    {
+      "id": 338,
+      "position": {
+        "x": 1010.0,
+        "y": 3.0,
+        "z": 655.25
+      },
+      "surfaceId": "road-east-lake-bridge-6"
+    },
+    {
+      "id": 339,
       "position": {
         "x": 1030.0,
         "y": 3.0,
         "z": 650.0
       },
-      "surfaceId": "road-east-lake-bridge-0"
+      "surfaceId": "road-east-lake-bridge-7"
     },
     {
-      "id": 336,
+      "id": 340,
       "position": {
         "x": 1065.0,
         "y": 1.5,
@@ -12403,7 +17415,25 @@
       "surfaceId": "road-east-bridge-fall-0"
     },
     {
-      "id": 337,
+      "id": 341,
+      "position": {
+        "x": 1028.0,
+        "y": 3.0,
+        "z": 633.0
+      },
+      "surfaceId": "east-bridge-turning-apron"
+    },
+    {
+      "id": 342,
+      "position": {
+        "x": 1008.0,
+        "y": 3.0,
+        "z": 633.0
+      },
+      "surfaceId": "east-bridge-turning-apron"
+    },
+    {
+      "id": 343,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -12412,7 +17442,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 338,
+      "id": 344,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -12421,7 +17451,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 339,
+      "id": 345,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -12430,7 +17460,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 340,
+      "id": 346,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -12439,7 +17469,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 341,
+      "id": 347,
       "position": {
         "x": 781.66667,
         "y": 2.0,
@@ -12448,7 +17478,7 @@
       "surfaceId": "road-north-bridge-fall-0"
     },
     {
-      "id": 342,
+      "id": 348,
       "position": {
         "x": 808.33333,
         "y": 1.0,
@@ -16122,37 +21152,77 @@
       "id": "east-lake-bridge-0-1",
       "from": 296,
       "to": 332,
-      "width": 26,
+      "width": 34,
       "clearance": 100,
       "type": "ROAD",
       "objectId": "",
       "bidirectional": true
     },
     {
-      "id": "east-lake-bridge-0-2",
+      "id": "east-lake-bridge-1-1",
       "from": 332,
       "to": 333,
-      "width": 26,
+      "width": 34,
       "clearance": 100,
       "type": "ROAD",
       "objectId": "",
       "bidirectional": true
     },
     {
-      "id": "east-lake-bridge-0-3",
+      "id": "east-lake-bridge-2-1",
       "from": 333,
       "to": 334,
-      "width": 26,
+      "width": 34,
       "clearance": 100,
       "type": "ROAD",
       "objectId": "",
       "bidirectional": true
     },
     {
-      "id": "east-lake-bridge-0-4",
+      "id": "east-lake-bridge-3-1",
       "from": 334,
       "to": 335,
-      "width": 26,
+      "width": 34,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-lake-bridge-4-1",
+      "from": 335,
+      "to": 336,
+      "width": 34,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-lake-bridge-5-1",
+      "from": 336,
+      "to": 337,
+      "width": 34,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-lake-bridge-6-1",
+      "from": 337,
+      "to": 338,
+      "width": 34,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-lake-bridge-7-1",
+      "from": 338,
+      "to": 339,
+      "width": 34,
       "clearance": 100,
       "type": "ROAD",
       "objectId": "",
@@ -16160,8 +21230,8 @@
     },
     {
       "id": "east-bridge-fall-0-1",
-      "from": 335,
-      "to": 336,
+      "from": 339,
+      "to": 340,
       "width": 26,
       "clearance": 100,
       "type": "RAMP",
@@ -16170,7 +21240,7 @@
     },
     {
       "id": "east-bridge-fall-0-2",
-      "from": 336,
+      "from": 340,
       "to": 204,
       "width": 26,
       "clearance": 100,
@@ -16179,9 +21249,39 @@
       "bidirectional": true
     },
     {
+      "id": "east-abutment-turn-0-1",
+      "from": 339,
+      "to": 341,
+      "width": 12,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-abutment-turn-1-1",
+      "from": 341,
+      "to": 342,
+      "width": 12,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-abutment-turn-2-1",
+      "from": 342,
+      "to": 338,
+      "width": 12,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
       "id": "north-lake-bridge-0-1",
       "from": 301,
-      "to": 337,
+      "to": 343,
       "width": 24,
       "clearance": 100,
       "type": "ROAD",
@@ -16190,8 +21290,8 @@
     },
     {
       "id": "north-lake-bridge-0-2",
-      "from": 337,
-      "to": 338,
+      "from": 343,
+      "to": 344,
       "width": 24,
       "clearance": 100,
       "type": "ROAD",
@@ -16200,8 +21300,8 @@
     },
     {
       "id": "north-lake-bridge-0-3",
-      "from": 338,
-      "to": 339,
+      "from": 344,
+      "to": 345,
       "width": 24,
       "clearance": 100,
       "type": "ROAD",
@@ -16210,8 +21310,8 @@
     },
     {
       "id": "north-lake-bridge-0-4",
-      "from": 339,
-      "to": 340,
+      "from": 345,
+      "to": 346,
       "width": 24,
       "clearance": 100,
       "type": "ROAD",
@@ -16220,8 +21320,8 @@
     },
     {
       "id": "north-bridge-fall-0-1",
-      "from": 340,
-      "to": 341,
+      "from": 346,
+      "to": 347,
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
@@ -16230,8 +21330,8 @@
     },
     {
       "id": "north-bridge-fall-0-2",
-      "from": 341,
-      "to": 342,
+      "from": 347,
+      "to": 348,
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
@@ -16240,7 +21340,7 @@
     },
     {
       "id": "north-bridge-fall-0-3",
-      "from": 342,
+      "from": 348,
       "to": 265,
       "width": 24,
       "clearance": 100,
@@ -17007,6 +22107,48 @@
       "grip": 1
     },
     {
+      "id": "road-east-lake-bridge-1",
+      "geometryId": "road-east-lake-bridge-1",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-east-lake-bridge-2",
+      "geometryId": "road-east-lake-bridge-2",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-east-lake-bridge-3",
+      "geometryId": "road-east-lake-bridge-3",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-east-lake-bridge-4",
+      "geometryId": "road-east-lake-bridge-4",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-east-lake-bridge-5",
+      "geometryId": "road-east-lake-bridge-5",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-east-lake-bridge-6",
+      "geometryId": "road-east-lake-bridge-6",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-east-lake-bridge-7",
+      "geometryId": "road-east-lake-bridge-7",
+      "level": 1,
+      "grip": 1
+    },
+    {
       "id": "road-east-bridge-fall-0",
       "geometryId": "road-east-bridge-fall-0",
       "level": 1,
@@ -17039,6 +22181,12 @@
     {
       "id": "island",
       "geometryId": "island",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "east-bridge-turning-apron",
+      "geometryId": "east-bridge-turning-apron",
       "level": 1,
       "grip": 1
     },
@@ -17628,6 +22776,120 @@
       "id": "ground-1440-1120",
       "geometryId": "ground-1440-1120",
       "level": 0,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-ticket-office-west-hipped-roof",
+      "geometryId": "dress-carnival-ticket-office-west-hipped-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-ticket-office-east-hipped-roof",
+      "geometryId": "dress-carnival-ticket-office-east-hipped-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-0-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-0-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-1-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-1-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-2-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-2-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-3-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-3-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-4-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-4-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-5-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-5-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-stall-6-gable-roof",
+      "geometryId": "dress-carnival-fair-stall-6-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-sweet-shop-gable-roof",
+      "geometryId": "dress-carnival-fair-shop-sweet-shop-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-shooting-gallery-clerestory-roof",
+      "geometryId": "dress-carnival-fair-shop-shooting-gallery-clerestory-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-fortune-cabinet-hipped-roof",
+      "geometryId": "dress-carnival-fair-shop-fortune-cabinet-hipped-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-arcade-clerestory-roof",
+      "geometryId": "dress-carnival-fair-shop-arcade-clerestory-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-tea-house-hipped-roof",
+      "geometryId": "dress-carnival-fair-shop-tea-house-hipped-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-bakery-gable-roof",
+      "geometryId": "dress-carnival-fair-shop-bakery-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-prize-store-gable-roof",
+      "geometryId": "dress-carnival-fair-shop-prize-store-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-photo-kiosk-clerestory-roof",
+      "geometryId": "dress-carnival-fair-shop-photo-kiosk-clerestory-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-souvenir-row-gable-roof",
+      "geometryId": "dress-carnival-fair-shop-souvenir-row-gable-roof",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "dress-carnival-fair-shop-puppet-stage-gable-roof",
+      "geometryId": "dress-carnival-fair-shop-puppet-stage-gable-roof",
+      "level": 1,
       "grip": 1
     }
   ],
@@ -19242,7 +24504,7 @@
         3,
         2
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19305,7 +24567,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19368,7 +24630,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19431,7 +24693,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19494,7 +24756,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19557,7 +24819,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19620,7 +24882,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19683,7 +24945,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19746,7 +25008,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -19809,7 +25071,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20446,7 +25708,7 @@
         18,
         17
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20545,7 +25807,7 @@
         13,
         12
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20608,7 +25870,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20653,7 +25915,7 @@
         4,
         3
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20716,7 +25978,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20805,7 +26067,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20894,7 +26156,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -20947,7 +26209,7 @@
         5,
         4
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21054,7 +26316,7 @@
         14,
         13
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21161,7 +26423,7 @@
         14,
         13
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21242,7 +26504,7 @@
         10,
         9
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21305,7 +26567,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21394,7 +26656,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21651,7 +26913,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21714,7 +26976,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21777,7 +27039,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21840,7 +27102,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21903,7 +27165,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -21940,7 +27202,7 @@
         3,
         2
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22003,7 +27265,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22066,7 +27328,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22129,7 +27391,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22200,7 +27462,7 @@
         8,
         7
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22333,7 +27595,7 @@
         18,
         17
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22422,7 +27684,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22485,7 +27747,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22574,7 +27836,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22689,7 +27951,7 @@
         15,
         14
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -22841,7 +28103,7 @@
         8,
         7
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -23420,7 +28682,7 @@
         8,
         7
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -23483,7 +28745,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -23546,7 +28808,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -23821,7 +29083,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -24014,7 +29276,7 @@
         27,
         26
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -24155,7 +29417,7 @@
         19,
         18
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -24332,7 +29594,7 @@
         25,
         24
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -24481,7 +29743,7 @@
         20,
         19
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -24518,7 +29780,7 @@
         3,
         2
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -24581,7 +29843,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -24670,7 +29932,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -24759,7 +30021,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -24804,7 +30066,7 @@
         4,
         3
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -24875,7 +30137,7 @@
         8,
         7
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -24938,7 +30200,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -25001,7 +30263,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -25168,7 +30430,7 @@
         23,
         22
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -25213,7 +30475,7 @@
         4,
         3
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -25276,7 +30538,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -25355,7 +30617,7 @@
         9,
         8
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -25507,7 +30769,7 @@
         10,
         9
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -25660,24 +30922,14 @@
       "id": "road-east-lake-bridge-0",
       "vertices": [
         {
-          "x": 895.08751,
+          "x": 893.69165,
           "y": 3.0,
-          "z": 637.0
+          "z": 638.82069
         },
         {
-          "x": 1030.0,
+          "x": 891.12213,
           "y": 3.0,
-          "z": 637.0
-        },
-        {
-          "x": 1030.0,
-          "y": 3.0,
-          "z": 663.0
-        },
-        {
-          "x": 909.11356,
-          "y": 3.0,
-          "z": 663.0
+          "z": 650.25607
         },
         {
           "x": 887.10568,
@@ -25685,14 +30937,19 @@
           "z": 647.41108
         },
         {
-          "x": 872.40768,
+          "x": 874.31627,
           "y": 3.0,
-          "z": 637.0
+          "z": 633.55707
         },
         {
-          "x": 895.08751,
+          "x": 893.72933,
           "y": 3.0,
-          "z": 637.0
+          "z": 638.653
+        },
+        {
+          "x": 893.69165,
+          "y": 3.0,
+          "z": 638.82069
         },
         {
           "x": 887.10568,
@@ -25700,19 +30957,34 @@
           "z": 647.41108
         },
         {
+          "x": 873.25496,
+          "y": 3.0,
+          "z": 637.60016
+        },
+        {
+          "x": 891.12213,
+          "y": 3.0,
+          "z": 650.25607
+        },
+        {
+          "x": 886.27067,
+          "y": 3.0,
+          "z": 671.847
+        },
+        {
+          "x": 871.3702,
+          "y": 3.0,
+          "z": 667.93562
+        },
+        {
           "x": 887.10568,
           "y": 3.0,
           "z": 647.41108
         },
         {
-          "x": 909.11356,
+          "x": 870.0,
           "y": 3.0,
-          "z": 663.0
-        },
-        {
-          "x": 875.15418,
-          "y": 3.0,
-          "z": 663.0
+          "z": 650.0
         },
         {
           "x": 876.93621,
@@ -25728,11 +31000,226 @@
           "x": 879.52328,
           "y": 3.0,
           "z": 657.30118
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        3,
+        5,
+        4,
+        3,
+        6,
+        5,
+        3,
+        7,
+        6,
+        8,
+        10,
+        9,
+        8,
+        11,
+        10,
+        12,
+        14,
+        13,
+        12,
+        15,
+        14
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-1",
+      "vertices": [
+        {
+          "x": 893.72933,
+          "y": 3.0,
+          "z": 638.653
         },
         {
-          "x": 870.0,
+          "x": 912.52009,
           "y": 3.0,
-          "z": 650.0
+          "z": 642.17627
+        },
+        {
+          "x": 912.31697,
+          "y": 3.0,
+          "z": 643.53226
+        },
+        {
+          "x": 893.72933,
+          "y": 3.0,
+          "z": 638.653
+        },
+        {
+          "x": 912.31697,
+          "y": 3.0,
+          "z": 643.53226
+        },
+        {
+          "x": 907.47991,
+          "y": 3.0,
+          "z": 675.82373
+        },
+        {
+          "x": 886.27067,
+          "y": 3.0,
+          "z": 671.847
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        3,
+        5,
+        4,
+        3,
+        6,
+        5
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-2",
+      "vertices": [
+        {
+          "x": 912.52009,
+          "y": 3.0,
+          "z": 642.17627
+        },
+        {
+          "x": 931.27055,
+          "y": 3.0,
+          "z": 644.2857
+        },
+        {
+          "x": 931.16668,
+          "y": 3.0,
+          "z": 645.67251
+        },
+        {
+          "x": 912.52009,
+          "y": 3.0,
+          "z": 642.17627
+        },
+        {
+          "x": 931.16668,
+          "y": 3.0,
+          "z": 645.67251
+        },
+        {
+          "x": 928.72945,
+          "y": 3.0,
+          "z": 678.2143
+        },
+        {
+          "x": 907.47991,
+          "y": 3.0,
+          "z": 675.82373
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        3,
+        5,
+        4,
+        3,
+        6,
+        5
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-3",
+      "vertices": [
+        {
+          "x": 931.27055,
+          "y": 3.0,
+          "z": 644.2857
+        },
+        {
+          "x": 950.0,
+          "y": 3.0,
+          "z": 644.98805
+        },
+        {
+          "x": 950.0,
+          "y": 3.0,
+          "z": 646.39276
+        },
+        {
+          "x": 931.27055,
+          "y": 3.0,
+          "z": 644.2857
+        },
+        {
+          "x": 950.0,
+          "y": 3.0,
+          "z": 646.39276
+        },
+        {
+          "x": 950.0,
+          "y": 3.0,
+          "z": 679.01195
+        },
+        {
+          "x": 928.72945,
+          "y": 3.0,
+          "z": 678.2143
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        3,
+        5,
+        4,
+        3,
+        6,
+        5
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-4",
+      "vertices": [
+        {
+          "x": 950.0,
+          "y": 3.0,
+          "z": 644.98805
+        },
+        {
+          "x": 968.72945,
+          "y": 3.0,
+          "z": 644.2857
+        },
+        {
+          "x": 971.27055,
+          "y": 3.0,
+          "z": 678.2143
+        },
+        {
+          "x": 950.0,
+          "y": 3.0,
+          "z": 679.01195
         }
       ],
       "indices": [
@@ -25741,22 +31228,180 @@
         1,
         0,
         3,
-        2,
+        2
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-5",
+      "vertices": [
+        {
+          "x": 968.72945,
+          "y": 3.0,
+          "z": 644.2857
+        },
+        {
+          "x": 987.47991,
+          "y": 3.0,
+          "z": 642.17627
+        },
+        {
+          "x": 987.68938,
+          "y": 3.0,
+          "z": 643.5747
+        },
+        {
+          "x": 968.72945,
+          "y": 3.0,
+          "z": 644.2857
+        },
+        {
+          "x": 987.68938,
+          "y": 3.0,
+          "z": 643.5747
+        },
+        {
+          "x": 992.52009,
+          "y": 3.0,
+          "z": 675.82373
+        },
+        {
+          "x": 971.27055,
+          "y": 3.0,
+          "z": 678.2143
+        }
+      ],
+      "indices": [
         0,
-        4,
+        2,
+        1,
         3,
         5,
-        7,
+        4,
+        3,
         6,
-        8,
-        10,
-        9,
-        11,
-        13,
-        12,
-        11,
-        14,
-        13
+        5
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-6",
+      "vertices": [
+        {
+          "x": 987.47991,
+          "y": 3.0,
+          "z": 642.17627
+        },
+        {
+          "x": 1006.27067,
+          "y": 3.0,
+          "z": 638.653
+        },
+        {
+          "x": 1006.57953,
+          "y": 3.0,
+          "z": 640.02756
+        },
+        {
+          "x": 987.47991,
+          "y": 3.0,
+          "z": 642.17627
+        },
+        {
+          "x": 1006.57953,
+          "y": 3.0,
+          "z": 640.02756
+        },
+        {
+          "x": 1013.72933,
+          "y": 3.0,
+          "z": 671.847
+        },
+        {
+          "x": 992.52009,
+          "y": 3.0,
+          "z": 675.82373
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        3,
+        5,
+        4,
+        3,
+        6,
+        5
+      ],
+      "material": "steel",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "road-east-lake-bridge-7",
+      "vertices": [
+        {
+          "x": 1006.27067,
+          "y": 3.0,
+          "z": 638.653
+        },
+        {
+          "x": 1025.68373,
+          "y": 3.0,
+          "z": 633.55707
+        },
+        {
+          "x": 1026.048,
+          "y": 3.0,
+          "z": 634.94475
+        },
+        {
+          "x": 1006.27067,
+          "y": 3.0,
+          "z": 638.653
+        },
+        {
+          "x": 1026.048,
+          "y": 3.0,
+          "z": 634.94475
+        },
+        {
+          "x": 1030.0,
+          "y": 3.0,
+          "z": 650.0
+        },
+        {
+          "x": 1014.54862,
+          "y": 3.0,
+          "z": 671.63193
+        },
+        {
+          "x": 1013.72933,
+          "y": 3.0,
+          "z": 671.847
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        3,
+        5,
+        4,
+        3,
+        6,
+        5,
+        3,
+        7,
+        6
       ],
       "material": "steel",
       "collision": true,
@@ -25785,6 +31430,36 @@
           "x": 1022.4439,
           "y": 3.0,
           "z": 660.57854
+        },
+        {
+          "x": 1038.71857,
+          "y": 2.30251,
+          "z": 672.2033
+        },
+        {
+          "x": 1012.56285,
+          "y": 3.0,
+          "z": 674.412
+        },
+        {
+          "x": 1022.4439,
+          "y": 3.0,
+          "z": 660.57854
+        },
+        {
+          "x": 1037.5561,
+          "y": 3.0,
+          "z": 639.42146
+        },
+        {
+          "x": 1047.43715,
+          "y": 3.0,
+          "z": 625.588
+        },
+        {
+          "x": 1053.83077,
+          "y": 2.30251,
+          "z": 651.04623
         }
       ],
       "indices": [
@@ -25793,7 +31468,13 @@
         1,
         0,
         3,
-        2
+        2,
+        4,
+        6,
+        5,
+        7,
+        9,
+        8
       ],
       "material": "steel",
       "collision": true,
@@ -26199,12 +31880,32 @@
         {
           "x": 870.0,
           "y": 3.0,
-          "z": 635.29456
+          "z": 632.42405
+        },
+        {
+          "x": 863.56148,
+          "y": 3.0,
+          "z": 630.73394
         },
         {
           "x": 749.68957,
           "y": 3.0,
           "z": 550.07467
+        },
+        {
+          "x": 870.0,
+          "y": 3.0,
+          "z": 632.42405
+        },
+        {
+          "x": 870.0,
+          "y": 3.0,
+          "z": 635.29456
+        },
+        {
+          "x": 863.56148,
+          "y": 3.0,
+          "z": 630.73394
         },
         {
           "x": 870.0,
@@ -26485,22 +32186,22 @@
         12,
         16,
         15,
+        12,
         17,
-        19,
+        16,
         18,
-        17,
         20,
         19,
         21,
         23,
         22,
+        21,
         24,
-        26,
+        23,
         25,
         27,
-        29,
+        26,
         28,
-        27,
         30,
         29,
         31,
@@ -26521,16 +32222,16 @@
         39,
         42,
         41,
-        39,
         43,
-        42,
+        45,
         44,
+        43,
         46,
         45,
+        43,
         47,
-        49,
+        46,
         48,
-        47,
         50,
         49,
         51,
@@ -26556,9 +32257,216 @@
         64,
         63,
         66,
-        65
+        65,
+        67,
+        69,
+        68,
+        67,
+        70,
+        69
       ],
-      "material": "district-warm",
+      "material": "park-paving",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 1.2
+    },
+    {
+      "id": "east-bridge-turning-apron",
+      "vertices": [
+        {
+          "x": 990.0,
+          "y": 3.0,
+          "z": 620.0
+        },
+        {
+          "x": 1050.0,
+          "y": 3.0,
+          "z": 620.0
+        },
+        {
+          "x": 1050.0,
+          "y": 3.0,
+          "z": 622.0
+        },
+        {
+          "x": 1045.45138,
+          "y": 3.0,
+          "z": 628.36807
+        },
+        {
+          "x": 1006.27067,
+          "y": 3.0,
+          "z": 638.653
+        },
+        {
+          "x": 990.0,
+          "y": 3.0,
+          "z": 641.70375
+        },
+        {
+          "x": 1045.45138,
+          "y": 3.0,
+          "z": 628.36807
+        },
+        {
+          "x": 1043.02783,
+          "y": 3.0,
+          "z": 631.76103
+        },
+        {
+          "x": 1026.048,
+          "y": 3.0,
+          "z": 634.94475
+        },
+        {
+          "x": 1025.68373,
+          "y": 3.0,
+          "z": 633.55707
+        },
+        {
+          "x": 1043.02783,
+          "y": 3.0,
+          "z": 631.76103
+        },
+        {
+          "x": 1039.79203,
+          "y": 3.0,
+          "z": 636.29116
+        },
+        {
+          "x": 1026.78553,
+          "y": 3.0,
+          "z": 637.75439
+        },
+        {
+          "x": 1026.048,
+          "y": 3.0,
+          "z": 634.94475
+        },
+        {
+          "x": 1039.79203,
+          "y": 3.0,
+          "z": 636.29116
+        },
+        {
+          "x": 1030.0,
+          "y": 3.0,
+          "z": 650.0
+        },
+        {
+          "x": 1026.78553,
+          "y": 3.0,
+          "z": 637.75439
+        },
+        {
+          "x": 1014.54862,
+          "y": 3.0,
+          "z": 671.63193
+        },
+        {
+          "x": 1013.88863,
+          "y": 3.0,
+          "z": 672.55592
+        },
+        {
+          "x": 1013.72933,
+          "y": 3.0,
+          "z": 671.847
+        },
+        {
+          "x": 1013.88863,
+          "y": 3.0,
+          "z": 672.55592
+        },
+        {
+          "x": 1004.28571,
+          "y": 3.0,
+          "z": 686.0
+        },
+        {
+          "x": 994.04444,
+          "y": 3.0,
+          "z": 686.0
+        },
+        {
+          "x": 992.52009,
+          "y": 3.0,
+          "z": 675.82373
+        },
+        {
+          "x": 1013.72933,
+          "y": 3.0,
+          "z": 671.847
+        },
+        {
+          "x": 994.04444,
+          "y": 3.0,
+          "z": 686.0
+        },
+        {
+          "x": 990.0,
+          "y": 3.0,
+          "z": 686.0
+        },
+        {
+          "x": 990.0,
+          "y": 3.0,
+          "z": 676.10724
+        },
+        {
+          "x": 992.52009,
+          "y": 3.0,
+          "z": 675.82373
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2,
+        0,
+        4,
+        3,
+        0,
+        5,
+        4,
+        6,
+        8,
+        7,
+        6,
+        9,
+        8,
+        10,
+        12,
+        11,
+        10,
+        13,
+        12,
+        14,
+        16,
+        15,
+        17,
+        19,
+        18,
+        20,
+        22,
+        21,
+        20,
+        23,
+        22,
+        20,
+        24,
+        23,
+        25,
+        27,
+        26,
+        25,
+        28,
+        27
+      ],
+      "material": "steel",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 1.2
@@ -26621,7 +32529,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -26817,7 +32725,7 @@
         3,
         2
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -26917,7 +32825,7 @@
         7,
         6
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -27498,7 +33406,7 @@
         8,
         7
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -27658,7 +33566,7 @@
         8,
         7
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -27851,7 +33759,7 @@
         27,
         26
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -28802,7 +34710,7 @@
         19,
         18
       ],
-      "material": "district-fair",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -29076,7 +34984,7 @@
         15,
         14
       ],
-      "material": "district-fair",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -29262,7 +35170,7 @@
         4,
         3
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -29510,7 +35418,7 @@
         26,
         25
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -29680,7 +35588,7 @@
         11,
         10
       ],
-      "material": "district-warm",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -30861,7 +36769,7 @@
         30,
         29
       ],
-      "material": "district-fair",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -31031,7 +36939,7 @@
         18,
         17
       ],
-      "material": "district-fair",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -31839,7 +37747,7 @@
         24,
         23
       ],
-      "material": "district-fair",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -32043,7 +37951,7 @@
         3,
         2
       ],
-      "material": "district-fair",
+      "material": "park-paving",
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
@@ -39088,6 +44996,993 @@
       "collision": true,
       "triangleMaterials": [],
       "thickness": 0
+    },
+    {
+      "id": "dress-carnival-ticket-office-west-hipped-roof",
+      "vertices": [
+        {
+          "x": 140.0,
+          "y": 6.2,
+          "z": 240.0
+        },
+        {
+          "x": 140.0,
+          "y": 6.2,
+          "z": 280.0
+        },
+        {
+          "x": 105.0,
+          "y": 6.2,
+          "z": 280.0
+        },
+        {
+          "x": 105.0,
+          "y": 6.2,
+          "z": 240.0
+        },
+        {
+          "x": 122.5,
+          "y": 9.2,
+          "z": 260.0
+        }
+      ],
+      "indices": [
+        0,
+        4,
+        1,
+        1,
+        4,
+        2,
+        2,
+        4,
+        3,
+        3,
+        4,
+        0
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-ticket-office-east-hipped-roof",
+      "vertices": [
+        {
+          "x": 255.0,
+          "y": 6.2,
+          "z": 280.0
+        },
+        {
+          "x": 255.0,
+          "y": 6.2,
+          "z": 240.0
+        },
+        {
+          "x": 300.0,
+          "y": 6.2,
+          "z": 240.0
+        },
+        {
+          "x": 300.0,
+          "y": 6.2,
+          "z": 280.0
+        },
+        {
+          "x": 277.5,
+          "y": 9.2,
+          "z": 260.0
+        }
+      ],
+      "indices": [
+        0,
+        4,
+        1,
+        1,
+        4,
+        2,
+        2,
+        4,
+        3,
+        3,
+        4,
+        0
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-0-gable-roof",
+      "vertices": [
+        {
+          "x": 226.8547,
+          "y": 8.2,
+          "z": 418.41118
+        },
+        {
+          "x": 231.84458,
+          "y": 8.2,
+          "z": 394.93564
+        },
+        {
+          "x": 242.50506,
+          "y": 11.6,
+          "z": 421.73777
+        },
+        {
+          "x": 247.49494,
+          "y": 11.6,
+          "z": 398.26223
+        },
+        {
+          "x": 258.15542,
+          "y": 8.2,
+          "z": 425.06436
+        },
+        {
+          "x": 263.1453,
+          "y": 8.2,
+          "z": 401.58882
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-1-gable-roof",
+      "vertices": [
+        {
+          "x": 272.05083,
+          "y": 8.2,
+          "z": 487.72085
+        },
+        {
+          "x": 275.52379,
+          "y": 8.2,
+          "z": 507.417
+        },
+        {
+          "x": 258.26352,
+          "y": 11.6,
+          "z": 490.15192
+        },
+        {
+          "x": 261.73648,
+          "y": 11.6,
+          "z": 509.84808
+        },
+        {
+          "x": 244.47621,
+          "y": 8.2,
+          "z": 492.583
+        },
+        {
+          "x": 247.94917,
+          "y": 8.2,
+          "z": 512.27915
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-2-gable-roof",
+      "vertices": [
+        {
+          "x": 351.96165,
+          "y": 8.2,
+          "z": 481.18339
+        },
+        {
+          "x": 359.99609,
+          "y": 8.2,
+          "z": 456.45593
+        },
+        {
+          "x": 370.98278,
+          "y": 11.6,
+          "z": 487.36373
+        },
+        {
+          "x": 379.01722,
+          "y": 11.6,
+          "z": 462.63627
+        },
+        {
+          "x": 390.00391,
+          "y": 8.2,
+          "z": 493.54407
+        },
+        {
+          "x": 398.03835,
+          "y": 8.2,
+          "z": 468.81661
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-3-gable-roof",
+      "vertices": [
+        {
+          "x": 192.20273,
+          "y": 8.2,
+          "z": 742.92289
+        },
+        {
+          "x": 184.95579,
+          "y": 8.2,
+          "z": 715.87696
+        },
+        {
+          "x": 208.62347,
+          "y": 11.6,
+          "z": 738.52296
+        },
+        {
+          "x": 201.37653,
+          "y": 11.6,
+          "z": 711.47704
+        },
+        {
+          "x": 225.04421,
+          "y": 8.2,
+          "z": 734.12304
+        },
+        {
+          "x": 217.79727,
+          "y": 8.2,
+          "z": 707.07711
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-4-gable-roof",
+      "vertices": [
+        {
+          "x": 406.38493,
+          "y": 8.2,
+          "z": 736.19465
+        },
+        {
+          "x": 403.32312,
+          "y": 8.2,
+          "z": 757.98055
+        },
+        {
+          "x": 391.5309,
+          "y": 11.6,
+          "z": 734.10705
+        },
+        {
+          "x": 388.4691,
+          "y": 11.6,
+          "z": 755.89295
+        },
+        {
+          "x": 376.67688,
+          "y": 8.2,
+          "z": 732.01945
+        },
+        {
+          "x": 373.61507,
+          "y": 8.2,
+          "z": 753.80535
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-5-gable-roof",
+      "vertices": [
+        {
+          "x": 299.79504,
+          "y": 8.2,
+          "z": 337.07862
+        },
+        {
+          "x": 274.3632,
+          "y": 8.2,
+          "z": 342.48433
+        },
+        {
+          "x": 297.71592,
+          "y": 11.6,
+          "z": 327.29715
+        },
+        {
+          "x": 272.28408,
+          "y": 11.6,
+          "z": 332.70285
+        },
+        {
+          "x": 295.6368,
+          "y": 8.2,
+          "z": 317.51567
+        },
+        {
+          "x": 270.20496,
+          "y": 8.2,
+          "z": 322.92138
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-stall-6-gable-roof",
+      "vertices": [
+        {
+          "x": 341.8547,
+          "y": 8.2,
+          "z": 708.41118
+        },
+        {
+          "x": 346.84458,
+          "y": 8.2,
+          "z": 684.93564
+        },
+        {
+          "x": 357.50506,
+          "y": 11.6,
+          "z": 711.73777
+        },
+        {
+          "x": 362.49494,
+          "y": 11.6,
+          "z": 688.26223
+        },
+        {
+          "x": 373.15542,
+          "y": 8.2,
+          "z": 715.06436
+        },
+        {
+          "x": 378.1453,
+          "y": 8.2,
+          "z": 691.58882
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-sweet-shop-gable-roof",
+      "vertices": [
+        {
+          "x": 278.0,
+          "y": 7.2,
+          "z": 560.0
+        },
+        {
+          "x": 278.0,
+          "y": 7.2,
+          "z": 580.0
+        },
+        {
+          "x": 265.0,
+          "y": 10.6,
+          "z": 560.0
+        },
+        {
+          "x": 265.0,
+          "y": 10.6,
+          "z": 580.0
+        },
+        {
+          "x": 252.0,
+          "y": 7.2,
+          "z": 560.0
+        },
+        {
+          "x": 252.0,
+          "y": 7.2,
+          "z": 580.0
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-shooting-gallery-clerestory-roof",
+      "vertices": [
+        {
+          "x": 254.59762,
+          "y": 8.2,
+          "z": 653.1777
+        },
+        {
+          "x": 286.55377,
+          "y": 8.2,
+          "z": 654.85245
+        },
+        {
+          "x": 253.84922,
+          "y": 10.4,
+          "z": 667.4581
+        },
+        {
+          "x": 285.80536,
+          "y": 10.4,
+          "z": 669.13285
+        },
+        {
+          "x": 253.44623,
+          "y": 8.2,
+          "z": 675.14755
+        },
+        {
+          "x": 285.40238,
+          "y": 8.2,
+          "z": 676.8223
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-fortune-cabinet-hipped-roof",
+      "vertices": [
+        {
+          "x": 282.27077,
+          "y": 10.2,
+          "z": 709.11753
+        },
+        {
+          "x": 283.6659,
+          "y": 10.2,
+          "z": 729.06881
+        },
+        {
+          "x": 257.72923,
+          "y": 10.2,
+          "z": 730.88247
+        },
+        {
+          "x": 256.3341,
+          "y": 10.2,
+          "z": 710.93119
+        },
+        {
+          "x": 270.0,
+          "y": 14.4,
+          "z": 720.0
+        }
+      ],
+      "indices": [
+        0,
+        4,
+        1,
+        1,
+        4,
+        2,
+        2,
+        4,
+        3,
+        3,
+        4,
+        0
+      ],
+      "material": "purple",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-arcade-clerestory-roof",
+      "vertices": [
+        {
+          "x": 347.62493,
+          "y": 9.2,
+          "z": 529.59724
+        },
+        {
+          "x": 353.03064,
+          "y": 9.2,
+          "z": 504.16541
+        },
+        {
+          "x": 366.69881,
+          "y": 11.4,
+          "z": 533.65152
+        },
+        {
+          "x": 372.10452,
+          "y": 11.4,
+          "z": 508.21968
+        },
+        {
+          "x": 376.96936,
+          "y": 9.2,
+          "z": 535.83459
+        },
+        {
+          "x": 382.37507,
+          "y": 9.2,
+          "z": 510.40276
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-tea-house-hipped-roof",
+      "vertices": [
+        {
+          "x": 209.62857,
+          "y": 8.2,
+          "z": 491.04473
+        },
+        {
+          "x": 204.76642,
+          "y": 8.2,
+          "z": 463.47012
+        },
+        {
+          "x": 230.37143,
+          "y": 8.2,
+          "z": 458.95527
+        },
+        {
+          "x": 235.23358,
+          "y": 8.2,
+          "z": 486.52988
+        },
+        {
+          "x": 220.0,
+          "y": 11.2,
+          "z": 475.0
+        }
+      ],
+      "indices": [
+        0,
+        4,
+        1,
+        1,
+        4,
+        2,
+        2,
+        4,
+        3,
+        3,
+        4,
+        0
+      ],
+      "material": "wood",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-bakery-gable-roof",
+      "vertices": [
+        {
+          "x": 211.01579,
+          "y": 7.2,
+          "z": 547.26548
+        },
+        {
+          "x": 209.09837,
+          "y": 7.2,
+          "z": 525.34919
+        },
+        {
+          "x": 225.95871,
+          "y": 10.6,
+          "z": 545.95814
+        },
+        {
+          "x": 224.04129,
+          "y": 10.6,
+          "z": 524.04186
+        },
+        {
+          "x": 240.90163,
+          "y": 7.2,
+          "z": 544.65081
+        },
+        {
+          "x": 238.98421,
+          "y": 7.2,
+          "z": 522.73452
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "wood",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-prize-store-gable-roof",
+      "vertices": [
+        {
+          "x": 243.46229,
+          "y": 7.2,
+          "z": 596.99028
+        },
+        {
+          "x": 213.75425,
+          "y": 7.2,
+          "z": 592.81508
+        },
+        {
+          "x": 244.85402,
+          "y": 10.6,
+          "z": 587.0876
+        },
+        {
+          "x": 215.14598,
+          "y": 10.6,
+          "z": 582.9124
+        },
+        {
+          "x": 246.24575,
+          "y": 7.2,
+          "z": 577.18492
+        },
+        {
+          "x": 216.53771,
+          "y": 7.2,
+          "z": 573.00972
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-photo-kiosk-clerestory-roof",
+      "vertices": [
+        {
+          "x": 459.26522,
+          "y": 8.2,
+          "z": 528.09343
+        },
+        {
+          "x": 433.51825,
+          "y": 8.2,
+          "z": 531.71193
+        },
+        {
+          "x": 457.45597,
+          "y": 10.4,
+          "z": 515.21995
+        },
+        {
+          "x": 431.709,
+          "y": 10.4,
+          "z": 518.83845
+        },
+        {
+          "x": 456.48175,
+          "y": 8.2,
+          "z": 508.28807
+        },
+        {
+          "x": 430.73478,
+          "y": 8.2,
+          "z": 511.90657
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-souvenir-row-gable-roof",
+      "vertices": [
+        {
+          "x": 417.76877,
+          "y": 9.2,
+          "z": 779.28509
+        },
+        {
+          "x": 424.56715,
+          "y": 9.2,
+          "z": 800.20833
+        },
+        {
+          "x": 401.60081,
+          "y": 12.6,
+          "z": 784.53838
+        },
+        {
+          "x": 408.39919,
+          "y": 12.6,
+          "z": 805.46162
+        },
+        {
+          "x": 385.43285,
+          "y": 9.2,
+          "z": 789.79167
+        },
+        {
+          "x": 392.23123,
+          "y": 9.2,
+          "z": 810.71491
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "wood",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
+    },
+    {
+      "id": "dress-carnival-fair-shop-puppet-stage-gable-roof",
+      "vertices": [
+        {
+          "x": 200.93547,
+          "y": 9.2,
+          "z": 786.38173
+        },
+        {
+          "x": 203.20152,
+          "y": 9.2,
+          "z": 760.48067
+        },
+        {
+          "x": 218.86698,
+          "y": 12.6,
+          "z": 787.95053
+        },
+        {
+          "x": 221.13302,
+          "y": 12.6,
+          "z": 762.04947
+        },
+        {
+          "x": 236.79848,
+          "y": 9.2,
+          "z": 789.51933
+        },
+        {
+          "x": 239.06453,
+          "y": 9.2,
+          "z": 763.61827
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        3,
+        3,
+        4,
+        5
+      ],
+      "material": "faded-red",
+      "collision": true,
+      "triangleMaterials": [],
+      "thickness": 0.35
     }
   ],
   "districts": [
@@ -39282,9 +46177,15 @@
         333,
         334,
         335,
+        336,
         337,
         338,
-        339
+        339,
+        341,
+        342,
+        343,
+        344,
+        345
       ],
       "boundary": [
         {
@@ -39409,7 +46310,7 @@
         285,
         286,
         287,
-        336
+        340
       ],
       "boundary": [
         {
@@ -39577,9 +46478,9 @@
         270,
         326,
         327,
-        340,
-        341,
-        342
+        346,
+        347,
+        348
       ],
       "boundary": [
         {
@@ -40368,16 +47269,28 @@
     {
       "id": "east-lake-bridge",
       "title": "east lake bridge",
-      "width": 26,
+      "width": 34,
       "geometryIds": [
-        "road-east-lake-bridge-0"
+        "road-east-lake-bridge-0",
+        "road-east-lake-bridge-1",
+        "road-east-lake-bridge-2",
+        "road-east-lake-bridge-3",
+        "road-east-lake-bridge-4",
+        "road-east-lake-bridge-5",
+        "road-east-lake-bridge-6",
+        "road-east-lake-bridge-7",
+        "east-bridge-turning-apron"
       ],
       "navNodeIds": [
         296,
         332,
         333,
         334,
-        335
+        335,
+        336,
+        337,
+        338,
+        339
       ]
     },
     {
@@ -40388,9 +47301,25 @@
         "road-east-bridge-fall-0"
       ],
       "navNodeIds": [
-        335,
-        336,
+        339,
+        340,
         204
+      ]
+    },
+    {
+      "id": "east-abutment-turn",
+      "title": "east abutment turn",
+      "width": 12,
+      "geometryIds": [
+        "road-east-lake-bridge-7",
+        "east-bridge-turning-apron",
+        "road-east-lake-bridge-6"
+      ],
+      "navNodeIds": [
+        339,
+        341,
+        342,
+        338
       ]
     },
     {
@@ -40402,10 +47331,10 @@
       ],
       "navNodeIds": [
         301,
-        337,
-        338,
-        339,
-        340
+        343,
+        344,
+        345,
+        346
       ]
     },
     {
@@ -40416,9 +47345,9 @@
         "road-north-bridge-fall-0"
       ],
       "navNodeIds": [
-        340,
-        341,
-        342,
+        346,
+        347,
+        348,
         265
       ]
     },

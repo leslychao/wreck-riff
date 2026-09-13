@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "origin": "LICENSED_RECORDINGS",
+  "sourceEvidenceSha256": "12225c47d411e5ad1ded3ec8eab01f0e0b3a26eae10d69a085f70a8d85382457",
+  "generatorPath": "src/tools/java/game/wreckriff/tools/GenerateAudio.java",
+  "generatorSha256": "147e56d4e2251e486f17b301ba23353e9c2443b86d6af926a478ec66cd2fa0af",
+  "artisticStatus": "NEEDS_CREATIVE_REVIEW",
+  "assets": [
+    {
+      "path": "audio/ambient-rotor.wav",
+      "sourceId": "qubodup-fan",
+      "sha256": "c292d1a9efc4c63403a77406fa3f10bc0d9dffdf965f64ce7d528aabb6b74f64",
+      "frames": 118116,
+      "license": "CC0-1.0",
+      "loop": true,
+      "transformation": "Preserved mono 48 kHz recording; trim 7200 frames per edge; highpass 45 Hz; lowpass 2600 Hz; 12000 frame tail/head overlap; 5 ms seam correction; DC removal; linear peak normalization 0.45; no synthesized layers"
+    },
+    {
+      "path": "audio/ambient-motor.wav",
+      "sourceId": "rvgerxini-motor",
+      "sha256": "a51060a11a797e85b27ff48c6f56141afdcd8252bf3cd9271a9808511cea7546",
+      "frames": 353621,
+      "license": "CC0-1.0",
+      "loop": true,
+      "transformation": "Preserved mono 48 kHz recording; trim 24000 frames per edge; highpass 45 Hz; lowpass 3400 Hz; 28800 frame tail/head overlap; 5 ms seam correction; DC removal; linear peak normalization 0.45; no synthesized layers"
+    },
+    {
+      "path": "audio/ambient-ventilation.wav",
+      "sourceId": "jerimee-machinery",
+      "sha256": "b2e15c003dfe4293d53cc08d4528d28d2a6708b0ec00d6959987ce657f909fb2",
+      "frames": 489900,
+      "license": "CC0-1.0",
+      "loop": true,
+      "transformation": "Preserved mono 48 kHz recording; trim 24000 frames per edge; highpass 45 Hz; lowpass 3000 Hz; 28800 frame tail/head overlap; 5 ms seam correction; DC removal; linear peak normalization 0.45; no synthesized layers"
+    }
+  ]
+}

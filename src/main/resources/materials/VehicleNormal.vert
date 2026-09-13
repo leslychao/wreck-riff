@@ -2,6 +2,7 @@
 #import "Common/ShaderLib/GLSLCompat.glsllib"
 #import "Common/ShaderLib/Instancing.glsllib"
 #import "Common/ShaderLib/Skinning.glsllib"
+#import "materials/VehicleMorph.glsllib"
 
 attribute vec3 inPosition;
 attribute vec3 inNormal;
@@ -15,6 +16,9 @@ void main(void)
    texCoord=inTexCoord.xy;
    vec4 modelSpacePos = vec4(inPosition, 1.0);
    vec3 modelSpaceNormals = inNormal;
+   #ifdef NUM_MORPH_TARGETS
+       Morph_Compute(modelSpacePos, modelSpaceNormals);
+   #endif
    #ifdef NUM_BONES
        Skinning_Compute(modelSpacePos,modelSpaceNormals);
    #endif

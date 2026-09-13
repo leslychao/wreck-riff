@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.LinkedHashMap;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArenaBarrierRestoreTest {
     @Test void savedActiveBarrierBlocksTheNativeWorldBeforeParticipantsArePlaced() {
         var arena=ArenaRegistry.load().definition("neon_zero");
@@ -20,7 +21,7 @@ class NativeArenaBarrierRestoreTest {
         var checkpoint=new ProgressStore.ArenaState(initial.pickups(),initial.objects(),hazards,initial.eventCooldownTicks(),initial.randomState());
         try(var world=new PhysicsWorld(VehicleRules.load())) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             Vector3f center=box.center().vector();
             Vector3f localFrom=new Vector3f(-box.size().x()/2-2,0,0),localTo=localFrom.negate();
             Vector3f from=center.add(box.rotation().mult(localFrom)),to=center.add(box.rotation().mult(localTo));

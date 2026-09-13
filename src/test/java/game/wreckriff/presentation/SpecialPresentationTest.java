@@ -22,6 +22,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class SpecialPresentationTest {
     @Test void warmupFollowsInterpolatedModelAndNeverPretendsToBeTheImpact() {
         Node scene=new Node(),model=new Node();World world=new World();MatchSession session=session();

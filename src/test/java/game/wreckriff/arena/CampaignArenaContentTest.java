@@ -36,8 +36,10 @@ class CampaignArenaContentTest {
         var neon=registry.definition("neon_zero");
         assertTrue(neon.surfaceAt(new Vector3f(1190,-12,680),0,.01f).isPresent());
         assertTrue(neon.surfaceAt(new Vector3f(1190,0,680),0,.01f).isEmpty());
-        assertTrue(neon.surfaceAt(new Vector3f(1530,8,240),0,.01f).isPresent());
-        assertTrue(neon.surfaceAt(new Vector3f(1530,16,440),0,.01f).isPresent());
+        // The lengthened ramps meet their decks at x=1570. Their earlier
+        // x=1530 position lies in the real opening, below the upper floor.
+        assertTrue(neon.surfaceAt(new Vector3f(1575,8,240),0,.01f).isPresent());
+        assertTrue(neon.surfaceAt(new Vector3f(1575,16,440),0,.01f).isPresent());
         var carnival=registry.definition("euphoria_park");
         assertTrue(carnival.surfaceAt(new Vector3f(570,0,730),0,.01f).isEmpty());
         assertTrue(carnival.surfaceAt(new Vector3f(750,3,650),0,.01f).isPresent());
@@ -69,7 +71,9 @@ class CampaignArenaContentTest {
             assertTrue(arena.meshes().stream().anyMatch(m->m.triangleMaterials().contains("road-marking")),id);
             for(var mesh:arena.meshes())if(!mesh.triangleMaterials().isEmpty()) {
                 assertEquals(mesh.indices().size()/3,mesh.triangleMaterials().size());
-                assertTrue(mesh.id().startsWith("road-"));
+                // Parking bays and district paving also partition their existing
+                // support mesh. A road-name prefix is not the surface contract.
+                assertTrue(mesh.collision(),mesh.id()+" must retain its physical surface");
                 assertTrue(arena.surfaces().stream().anyMatch(s->s.geometryId().equals(mesh.id())));
             }
             assertTrue(arena.meshes().stream().noneMatch(m->m.id().startsWith("paint-")),"Paint must retain the road's support identity");

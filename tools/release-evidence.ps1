@@ -3,7 +3,9 @@ Set-StrictMode -Version Latest
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 
 function Get-ReleaseSha256([string]$Path) {
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    $stream=[IO.File]::OpenRead($Path)
+    try { return Get-ReleaseStreamHash $stream }
+    finally { $stream.Dispose() }
 }
 function Get-ReleaseStreamHash([IO.Stream]$Stream) {
     $hash=[Security.Cryptography.SHA256]::Create()
@@ -434,12 +436,26 @@ function Assert-ReleaseTestXml([string]$Path,[DateTime]$StartedUtc) {
 function Assert-ReleaseNumber($Value,[double]$Minimum,[double]$Maximum,[string]$Name) {
     if($null -eq $Value -or $Value -is [string] -or $Value -is [bool] -or [double]::IsNaN([double]$Value) -or [double]::IsInfinity([double]$Value) -or [double]$Value -lt $Minimum -or [double]$Value -gt $Maximum){throw "Invalid $Name"}
 }
+function Assert-ReleaseCombatEnvironment($Diagnostic,[bool]$DetailedProfiling=$false) {
+    if($Diagnostic.width -ne 1920 -or $Diagnostic.height -ne 1080 -or $Diagnostic.msaaSamples -ne 4){throw 'Invalid final combat framebuffer.'}
+    foreach($field in @('audioEnabled','windowVisible','autoIconify')) {
+        if($Diagnostic.$field -isnot [bool] -or !$Diagnostic.$field){throw "Invalid final combat environment: $field"}
+    }
+    foreach($field in @('vsync','videoRecording')) {
+        if($Diagnostic.$field -isnot [bool] -or $Diagnostic.$field){throw "Invalid final combat environment: $field"}
+    }
+    if($Diagnostic.detailedProfiling -isnot [bool] -or $Diagnostic.detailedProfiling -ne $DetailedProfiling){throw 'Unexpected detailed profiling mode.'}
+    Assert-ReleaseNumber $Diagnostic.requestedRenderFps 0 0 'requested frame cap'
+    Assert-ReleaseNumber $Diagnostic.phaseMetrics.droppedSimulationSeconds 0 0 'dropped simulation time'
+    Assert-ReleaseNumber $Diagnostic.undrawableSeconds 0 0 'undrawable window seconds'
+}
 function Assert-ReleaseBenchmark($Report,$Diagnostic,$Memory,[string]$Arena) {
     if($Report.status -ne 'PASS' -or $Diagnostic.status -ne 'BENCHMARK_MEASURED' -or $Diagnostic.mode -ne 'benchmark' -or $Diagnostic.arenaId -ne $Arena){throw "Benchmark did not pass for $Arena"}
-    if($Diagnostic.releaseEligible -ne $true -or $Diagnostic.width -ne 1920 -or $Diagnostic.height -ne 1080 -or $Diagnostic.msaaSamples -ne 4 -or $Diagnostic.vsync -ne $false -or $Diagnostic.audioEnabled -ne $true -or $Diagnostic.windowVisible -ne $true -or $Diagnostic.autoIconify -isnot [bool] -or $Diagnostic.autoIconify -ne $true -or $Diagnostic.detailedProfiling -ne $false -or $Diagnostic.invalidBenchmarkWindowObserved -ne $false){throw 'Invalid final benchmark environment.'}
+    Assert-ReleaseCombatEnvironment $Diagnostic
+    if($Diagnostic.releaseEligible -isnot [bool] -or !$Diagnostic.releaseEligible -or $Diagnostic.invalidBenchmarkWindowObserved -isnot [bool] -or $Diagnostic.invalidBenchmarkWindowObserved){throw 'Invalid final benchmark environment.'}
     Assert-ReleaseNumber $Diagnostic.requestedSeconds 600 3600 'requested benchmark seconds'
     Assert-ReleaseNumber $Diagnostic.warmupActiveSeconds 30 3600 'active warmup'
-    Assert-ReleaseNumber $Diagnostic.measuredActiveSeconds 600 7200 'measured active seconds'
+    Assert-ReleaseNumber $Diagnostic.measuredActiveSeconds $Diagnostic.requestedSeconds 7200 'measured active seconds'
     $frames=$Diagnostic.activeCombatFrames
     Assert-ReleaseNumber $frames.sampleSeconds 600 7200 'sample seconds'
     if([Math]::Abs($frames.sampleSeconds-$Diagnostic.measuredActiveSeconds) -gt .001){throw 'Active duration mismatch.'}
@@ -461,15 +477,21 @@ function Assert-ReleaseBenchmark($Report,$Diagnostic,$Memory,[string]$Arena) {
 }
 function Assert-ReleaseMemory($Report,$Diagnostic,$Memory,[double]$MinimumSeconds) {
     if($Report.gamePid -ne $Diagnostic.pid -or $Memory.pid -ne $Diagnostic.pid -or $Memory.processExited -ne $true -or $Memory.samples.Count -lt $MinimumSeconds -or $Report.processStartTimeUtc -ne $Memory.processStartTimeUtc){throw 'Missing or unrelated external process memory samples.'}
-    $previous=-1.0;$peak=0.0
+    $previous=-1.0;$peak=0.0;$processStart=([DateTimeOffset]$Memory.processStartTimeUtc).UtcDateTime
     foreach($sample in $Memory.samples) {
         Assert-ReleaseNumber $sample.seconds 0 7200 'memory sample time'
         if($sample.seconds -le $previous -or ($previous -ge 0 -and $sample.seconds-$previous -gt 5)){throw 'Memory sampling has a gap or unordered samples.'}
+        if([Math]::Abs((([DateTimeOffset]$sample.observedAtUtc).UtcDateTime-$processStart).TotalSeconds-$sample.seconds) -gt .01){throw 'Memory sample time does not identify elapsed process lifetime.'}
         $previous=[double]$sample.seconds
         Assert-ReleaseNumber $sample.workingSetBytes 1 1.5GB 'working set'
-        $peak=[Math]::Max($peak,[double]$sample.workingSetBytes)
+        Assert-ReleaseNumber $sample.peakWorkingSetBytes ([Math]::Max($peak,[double]$sample.workingSetBytes)) 1.5GB 'OS peak working set'
+        $peak=[double]$sample.peakWorkingSetBytes
     }
-    if($Memory.samples[0].seconds -gt 5 -or $previous -lt $MinimumSeconds -or $Memory.peakWorkingSetBytes -ne $peak){throw 'External memory coverage or peak mismatch.'}
+    # The lifetime OS counter covers loading before identity discovery and any
+    # spikes between samples. Query it again after exit on the retained handle,
+    # so even the final interval before termination cannot hide a peak.
+    Assert-ReleaseNumber $Memory.finalPeakWorkingSetBytes $peak 1.5GB 'final OS peak working set'
+    if($Memory.finalPeakObservedAfterExit -isnot [bool] -or !$Memory.finalPeakObservedAfterExit -or $Memory.samples[0].seconds -gt 45 -or $previous -lt $MinimumSeconds -or $Memory.peakWorkingSetBytes -ne $Memory.finalPeakWorkingSetBytes){throw 'External memory coverage or peak mismatch.'}
 }
 function Assert-ReleaseDiagnostic($Diagnostic,$Identity,[string]$Image,[string]$Mode) {
     if($Diagnostic.schemaVersion -lt 2 -or $Diagnostic.sourceSha256 -ne $Identity.sourceSha256 -or $Diagnostic.version -ne $Identity.version -or $Diagnostic.mode -ne $Mode -or $Diagnostic.pid -le 0){throw 'Diagnostic build/process/mode identity mismatch.'}
@@ -677,8 +699,9 @@ function Assert-ReleaseReview([string]$Name,$Review,$Identity) {
 }
 function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
     if($Report.status -ne 'PASS' -or $Diagnostic.status -ne 'SOAK_MEASURED' -or $Diagnostic.mode -ne 'soak'){throw 'Soak was not completed.'}
+    Assert-ReleaseCombatEnvironment $Diagnostic
     Assert-ReleaseNumber $Diagnostic.requestedSeconds 1800 3600 'requested soak duration'
-    Assert-ReleaseNumber $Diagnostic.soakCoverage.measuredSeconds 1800 7200 'measured soak duration'
+    Assert-ReleaseNumber $Diagnostic.soakCoverage.measuredSeconds $Diagnostic.requestedSeconds 7200 'measured soak duration'
     Assert-ReleaseNumber $Diagnostic.soakCoverage.mapChanges 10 1000 'map changes'
     Assert-ReleaseNumber $Diagnostic.soakCoverage.retries 20 1000 'retry count'
     if(@($Diagnostic.soakCoverage.arenaIds).Count -ne 4){throw 'Soak must identify exactly the four current maps.'}
@@ -692,6 +715,7 @@ function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
     $requiredModes=@('dead-air-yard/LEGACY')+@(@('construction_17','neon_zero','euphoria_park') | ForEach-Object {"$_/ARENA";"$_/BOSS_DUEL"})
     $modes=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $baselines=@{};$baseline=$null;$handleBaseline=$null;$comparisons=0;$previousSeconds=-1.0
+    $openLoad=$null;$previousLoad=$null;$loadCount=0;$actualMapChanges=0;$actualRetries=0
     $timedSamples=@($Memory.samples | ForEach-Object {[pscustomobject]@{sample=$_;utc=([DateTimeOffset]$_.observedAtUtc).UtcDateTime}})
     foreach($snapshot in $Diagnostic.resourceSnapshots) {
         Assert-ReleaseNumber $snapshot.elapsedSeconds 0 7200 'resource observation time'
@@ -704,6 +728,14 @@ function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
         $mode=$snapshot.arenaId+'/'+$snapshot.mode
         if($requiredModes -notcontains $mode){throw 'Resource observation names an unexpected arena/mode.'}
         if($snapshot.stage -eq 'LOAD') {
+            if($null -ne $openLoad){throw 'A new match loaded without a corresponding settled UNLOAD.'}
+            if($null -ne $previousLoad) {
+                if($snapshot.arenaId -eq $previousLoad.arenaId) {
+                    if($snapshot.mode -ne $previousLoad.mode -or $snapshot.profileId -ne $previousLoad.profileId){throw 'Retry changed the requested mode or vehicle profile.'}
+                    $actualRetries++
+                } else {$actualMapChanges++}
+            }
+            $openLoad=$snapshot;$previousLoad=$snapshot;$loadCount++
             $null=$modes.Add($mode)
             $key=@($snapshot.arenaId,$snapshot.mode,$snapshot.phase,$snapshot.profileId,$snapshot.topology) | ConvertTo-Json -Compress
             if($baselines.ContainsKey($key)) {
@@ -714,6 +746,11 @@ function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
             continue
         }
         if($snapshot.stage -ne 'UNLOAD'){throw 'Unknown resource observation stage.'}
+        if($null -eq $openLoad){throw 'UNLOAD has no corresponding reconstructed match.'}
+        foreach($field in @('arenaId','mode','phase','profileId','topology')) {
+            if($snapshot.$field -ne $openLoad.$field){throw "UNLOAD does not identify its LOAD: $field"}
+        }
+        $openLoad=$null
         if($snapshot.bodies -ne 0 -or $snapshot.listeners -ne 0 -or $snapshot.tickListeners -ne 0 -or $snapshot.projectiles -ne 0 -or $snapshot.voices -ne 0){throw 'Match-owned resources survived unload.'}
         if($snapshot.saveQueueDepth -ne 0 -or $snapshot.saveWorkerScheduled -ne $false -or $snapshot.revision -ne $snapshot.persistedRevision){throw 'Progress did not settle after unload.'}
         if($snapshot.collectionRequested -ne $true){throw 'Unload retention observation omitted collection and menu settling.'}
@@ -732,8 +769,38 @@ function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
             }
         }
     }
+    if($null -ne $openLoad -or $loadCount -ne $Diagnostic.soakCoverage.completedLoads -or $actualMapChanges -ne $Diagnostic.soakCoverage.mapChanges -or $actualRetries -ne $Diagnostic.soakCoverage.retries){throw 'Soak counts do not match the actual paired LOAD/UNLOAD sequence.'}
     if($null -eq $baseline -or $comparisons -lt 3 -or $Diagnostic.resourceChecks.minimumUnloadComparisons -ne 3 -or $Diagnostic.resourceChecks.unloadComparisons -ne $comparisons){throw 'Insufficient or inconsistent fixed warmed unload comparisons.'}
     foreach($mode in $requiredModes){if($Diagnostic.soakCoverage.loadedModes -notcontains $mode){throw 'Soak omitted an arena or duel resource mode.'}}
+}
+
+function Get-ReleaseProcessPeakWorkingSet([IntPtr]$Handle) {
+    if(-not ('WreckRiffEvidence.ProcessMemory' -as [type])) {
+        Add-Type @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+namespace WreckRiffEvidence {
+    public static class ProcessMemory {
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Counters {
+            public uint Size, PageFaultCount;
+            public UIntPtr PeakWorkingSet, WorkingSet, QuotaPeakPagedPool, QuotaPagedPool,
+                QuotaPeakNonPagedPool, QuotaNonPagedPool, Pagefile, PeakPagefile;
+        }
+        [DllImport("psapi.dll", SetLastError=true)]
+        private static extern bool GetProcessMemoryInfo(IntPtr process, out Counters counters, uint size);
+        public static ulong Peak(IntPtr process) {
+            Counters counters;
+            if(!GetProcessMemoryInfo(process, out counters, (uint)Marshal.SizeOf(typeof(Counters))))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            return counters.PeakWorkingSet.ToUInt64();
+        }
+    }
+}
+'@
+    }
+    return [WreckRiffEvidence.ProcessMemory]::Peak($Handle)
 }
 
 # All final executable tests use a newly extracted ZIP and an isolated LOCALAPPDATA.
@@ -741,7 +808,7 @@ function Assert-ReleaseSoak($Report,$Diagnostic,$Memory) {
 function Invoke-ReleaseProcess([string]$Image,[string]$RunRoot,[string[]]$Arguments,[string]$Mode,[int]$TimeoutSeconds,$Identity) {
     $stdout=Join-Path $RunRoot 'stdout.log';$stderr=Join-Path $RunRoot 'stderr.log'
     $started=[DateTime]::UtcNow;$game=$null;$launcher=$null;$reportPath=$null;$exitCode=$null
-    $samples=[Collections.Generic.List[object]]::new();$sampleStarted=$null;$processStarted=$null;$completed=$false
+    $samples=[Collections.Generic.List[object]]::new();$processStarted=$null;$completed=$false;$gameHandle=[IntPtr]::Zero;$finalPeak=0;$finalPeakObserved=$false
     $oldJava=$env:JAVA_HOME;$oldPath=$env:PATH;$oldLocal=$env:LOCALAPPDATA
     $env:JAVA_HOME=Join-Path $RunRoot 'Java is not installed'
     $env:PATH="$env:SystemRoot\System32;$env:SystemRoot";$env:LOCALAPPDATA=Join-Path $RunRoot 'user-data'
@@ -758,7 +825,7 @@ function Invoke-ReleaseProcess([string]$Image,[string]$RunRoot,[string[]]$Argume
                 if((Get-Item -LiteralPath $candidate).LastWriteTimeUtc -lt $started){throw 'Reported evidence predates this launch.'}
                 try {$initial=Read-ReleaseJson $candidate} catch {Start-Sleep -Milliseconds 100;continue}
                 if($initial.sourceSha256 -ne $Identity.sourceSha256 -or $initial.mode -ne $Mode){throw 'Startup diagnostic identity mismatch.'}
-                $game=Get-Process -Id $initial.pid -ErrorAction Stop;$null=$game.Handle
+                $game=Get-Process -Id $initial.pid -ErrorAction Stop;$gameHandle=$game.Handle
                 $processStarted=$game.StartTime.ToUniversalTime()
                 if($processStarted -lt $started.AddSeconds(-1)){throw 'Reported process predates the launcher.'}
                 $gamePath=[IO.Path]::GetFullPath($game.Path)
@@ -778,12 +845,11 @@ function Invoke-ReleaseProcess([string]$Image,[string]$RunRoot,[string[]]$Argume
             Start-Sleep -Milliseconds 250
         }
         if(!$reportPath){throw 'No startup diagnostic report within 45 seconds.'}
-        $sampleStarted=[DateTime]::UtcNow
         while(!$game.HasExited) {
             if(([DateTime]::UtcNow-$started).TotalSeconds -gt $TimeoutSeconds){throw 'Executable verification timed out.'}
             $game.Refresh();$now=[DateTime]::UtcNow
             if($game.HasExited){break}
-            $samples.Add([pscustomobject][ordered]@{seconds=[Math]::Round(($now-$sampleStarted).TotalSeconds,3);observedAtUtc=$now.ToString('o');workingSetBytes=$game.WorkingSet64;privateBytes=$game.PrivateMemorySize64;handles=$game.HandleCount;threads=$game.Threads.Count})
+            $samples.Add([pscustomobject][ordered]@{seconds=[Math]::Round(($now-$processStarted).TotalSeconds,3);observedAtUtc=$now.ToString('o');workingSetBytes=$game.WorkingSet64;peakWorkingSetBytes=$game.PeakWorkingSet64;privateBytes=$game.PrivateMemorySize64;handles=$game.HandleCount;threads=$game.Threads.Count})
             Start-Sleep -Seconds 1
         }
         if(!$launcher.WaitForExit(15000)){throw 'Launcher did not finish after the JVM stopped.'}
@@ -799,9 +865,15 @@ function Invoke-ReleaseProcess([string]$Image,[string]$RunRoot,[string[]]$Argume
             if($null -ne $game -and !$game.HasExited -and $null -ne $reportPath){$game.Kill();$null=$game.WaitForExit(10000)}
             if($null -ne $launcher -and !$launcher.HasExited){$launcher.Kill();$null=$launcher.WaitForExit(10000)}
         }
-        $peak=if($samples.Count -gt 0){($samples | Measure-Object workingSetBytes -Maximum).Maximum}else{0}
-        $memory=[ordered]@{schemaVersion=2;pid=$(if($game){$game.Id}else{0});processStartTimeUtc=$(if($processStarted){$processStarted.ToString('o')}else{$null});
-            processExited=($null -ne $game -and $game.HasExited);peakWorkingSetBytes=$peak;measurement='Windows process working set and handles';samples=$samples.ToArray()}
+        if($gameHandle -ne [IntPtr]::Zero -and $game.HasExited) {
+            try {$finalPeak=Get-ReleaseProcessPeakWorkingSet $gameHandle;$finalPeakObserved=$true}
+            catch {$finalPeak=0;$finalPeakObserved=$false}
+        }
+        $samplePeak=if($samples.Count -gt 0){($samples | Measure-Object peakWorkingSetBytes -Maximum).Maximum}else{0}
+        $peak=[Math]::Max($samplePeak,$finalPeak)
+        $memory=[ordered]@{schemaVersion=3;pid=$(if($game){$game.Id}else{0});processStartTimeUtc=$(if($processStarted){$processStarted.ToString('o')}else{$null});
+            processExited=($null -ne $game -and $game.HasExited);peakWorkingSetBytes=$peak;finalPeakWorkingSetBytes=$finalPeak;finalPeakObservedAfterExit=$finalPeakObserved;
+            measurement='Windows lifetime PeakWorkingSetSize, including loading and final post-exit handle query; current working set and handles sampled each second';samples=$samples.ToArray()}
         Write-ReleaseJson (Join-Path $RunRoot 'memory.json') $memory
         $env:JAVA_HOME=$oldJava;$env:PATH=$oldPath;$env:LOCALAPPDATA=$oldLocal
     }

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class OrdnancePresentationTest {
     @Test void freezeKeepsItsLuminousIceNoseAndTechnicalSilhouetteAtBothDistances() {
         Node scene=new Node();

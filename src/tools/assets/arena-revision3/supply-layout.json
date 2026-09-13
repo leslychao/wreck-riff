@@ -1,0 +1,4396 @@
+{
+  "schemaVersion": 1,
+  "origin": "Original project authored sockets from the verified revision-3 publication before final pit/bridge/coaster geometry; fixed identifiers, positions, quantities, intervals and starting headings.",
+  "arenas": {
+    "construction_17": {
+      "sourceSha256": "80b0ac33bf160a9ec784097765e46f5cb1023960ae235ff8423874278956868e",
+      "spawns": [
+        {
+          "id": 0,
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 140.0
+          },
+          "yawDegrees": 90
+        },
+        {
+          "id": 1,
+          "position": {
+            "x": 830.0,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "yawDegrees": 169.3747
+        },
+        {
+          "id": 2,
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "yawDegrees": -73.3626
+        },
+        {
+          "id": 3,
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 570.0
+          },
+          "yawDegrees": 144.9916
+        },
+        {
+          "id": 4,
+          "position": {
+            "x": 710.0,
+            "y": 0.0,
+            "z": 920.0
+          },
+          "yawDegrees": -118.0519
+        },
+        {
+          "id": 5,
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 780.0
+          },
+          "yawDegrees": -69.8177
+        },
+        {
+          "id": 6,
+          "position": {
+            "x": 1260.0,
+            "y": 18.0,
+            "z": 1000.0
+          },
+          "yawDegrees": -39.345
+        },
+        {
+          "id": 7,
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 1060.0
+          },
+          "yawDegrees": 162.504
+        },
+        {
+          "id": 8,
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 1100.0
+          },
+          "yawDegrees": 120.4727
+        }
+      ],
+      "pickups": [
+        {
+          "id": "start-cache-001",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 247.0,
+            "y": 0.0,
+            "z": 147.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-002",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 218.26
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-003",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 893.7,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-004",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 751.52,
+            "y": 0.0,
+            "z": 569.48
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-005",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1350.24,
+            "y": 0.0,
+            "z": 285.78
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-006",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1332.8,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-007",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 507.65
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-008",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 236.73333,
+            "y": 0.0,
+            "z": 545.73333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-009",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 652.0,
+            "y": 0.0,
+            "z": 943.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-010",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 693.65,
+            "y": 0.0,
+            "z": 843.7
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-011",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1357.16667,
+            "y": 0.0,
+            "z": 780.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-012",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1371.66667,
+            "y": 0.0,
+            "z": 821.08333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-013",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1305.5,
+            "y": 18.0,
+            "z": 1045.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-014",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1194.6,
+            "y": 18.0,
+            "z": 956.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-015",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 995.40909
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-016",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 212.46667,
+            "y": 0.0,
+            "z": 999.33333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-017",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1474.6,
+            "y": 0.0,
+            "z": 1130.33333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-018",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 1012.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "pit-cache-019",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 459.0,
+            "y": -14.0,
+            "z": 530.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "pit-cache-020",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 465.0,
+            "y": -14.0,
+            "z": 512.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "pit-cache-021",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 483.33333,
+            "y": -14.0,
+            "z": 530.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "pit-cache-022",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 465.0,
+            "y": -14.0,
+            "z": 551.08333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "pit-cache-023",
+          "type": "REPAIR",
+          "position": {
+            "x": 439.0,
+            "y": -14.0,
+            "z": 530.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "pit-cache-024",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 505.66666,
+            "y": -14.0,
+            "z": 530.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "homes-cache-025",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 504.0,
+            "y": 0.0,
+            "z": 860.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-026",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 510.0,
+            "y": 0.0,
+            "z": 879.25
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-027",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 528.7,
+            "y": 0.0,
+            "z": 851.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-028",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 484.0,
+            "y": 0.0,
+            "z": 860.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-029",
+          "type": "REPAIR",
+          "position": {
+            "x": 510.0,
+            "y": 0.0,
+            "z": 902.7
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "homes-cache-030",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 551.48,
+            "y": 0.0,
+            "z": 840.48
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "plant-cache-031",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1151.9,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "plant-cache-032",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1182.0,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "plant-cache-033",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1160.0,
+            "y": 0.0,
+            "z": 624.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "plant-cache-034",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1124.9,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "plant-cache-035",
+          "type": "REPAIR",
+          "position": {
+            "x": 1208.8,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "plant-cache-036",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1106.9,
+            "y": 0.0,
+            "z": 600.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "warehouses-cache-037",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1252.8,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "warehouses-cache-038",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1260.0,
+            "y": 0.0,
+            "z": 259.25
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "warehouses-cache-039",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1282.0,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "warehouses-cache-040",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1228.8,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "warehouses-cache-041",
+          "type": "REPAIR",
+          "position": {
+            "x": 1260.0,
+            "y": 0.0,
+            "z": 282.7
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "warehouses-cache-042",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1308.8,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "interchange-cache-043",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1227.33333,
+            "y": 0.0,
+            "z": 943.76667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "interchange-cache-044",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1211.42,
+            "y": 0.0,
+            "z": 953.3
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "interchange-cache-045",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1188.8,
+            "y": 18.0,
+            "z": 1005.93334
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "interchange-cache-046",
+          "type": "REPAIR",
+          "position": {
+            "x": 1247.33333,
+            "y": 0.0,
+            "z": 926.76667
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "interchange-cache-047",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1188.02,
+            "y": 0.0,
+            "z": 962.3
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "boss-supply-048",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 842.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "boss-supply-049",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 278.46
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-050",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 687.0,
+            "y": 0.0,
+            "z": 187.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-051",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 906.7,
+            "y": 0.0,
+            "z": 1100.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-052",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 964.16,
+            "y": 0.0,
+            "z": 338.28
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-053",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 995.62857,
+            "y": 0.0,
+            "z": 814.34286
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-054",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 508.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-055",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 271.15,
+            "y": 0.0,
+            "z": 779.525
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-056",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 458.53846,
+            "y": 0.0,
+            "z": 166.23077
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-057",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 399.68,
+            "y": 0.0,
+            "z": 1073.92
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-058",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1125.1,
+            "y": 0.0,
+            "z": 419.55
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-059",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 857.07143,
+            "y": 0.0,
+            "z": 925.07143
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-060",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 734.08,
+            "y": 0.0,
+            "z": 1094.18667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-061",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 795.6,
+            "y": 0.0,
+            "z": 318.52
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-062",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 471.55714,
+            "y": 0.0,
+            "z": 326.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-063",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 575.68,
+            "y": 0.0,
+            "z": 1084.58667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-064",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1063.89286,
+            "y": 0.0,
+            "z": 1100.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-065",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1183.83333,
+            "y": 0.0,
+            "z": 780.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-066",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1078.06667,
+            "y": 0.0,
+            "z": 240.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-067",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1269.26667,
+            "y": 0.0,
+            "z": 463.15
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-068",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 652.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-069",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 668.89091
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-070",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 887.125,
+            "y": 0.0,
+            "z": 213.875
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-071",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 735.5,
+            "y": 0.0,
+            "z": 713.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-072",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 823.7,
+            "y": 0.0,
+            "z": 448.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-073",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 861.77273
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-074",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 378.65
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-075",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 474.46,
+            "y": 0.0,
+            "z": 732.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-076",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 580.84285,
+            "y": 0.0,
+            "z": 266.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-077",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 361.66667,
+            "y": 0.0,
+            "z": 860.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-078",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 922.77143,
+            "y": 0.0,
+            "z": 720.05715
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-079",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1103.4,
+            "y": 0.0,
+            "z": 881.1
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-080",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1420.0,
+            "y": 0.0,
+            "z": 379.53333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-081",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 981.35714,
+            "y": 0.0,
+            "z": 929.35714
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-082",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1322.7,
+            "y": 0.0,
+            "z": 569.5
+          },
+          "respawnTicks": 3000
+        }
+      ],
+      "supplyReport": {
+        "ammunitionCounts": {
+          "HOMING_AMMO": 18,
+          "POWER_AMMO": 18,
+          "NAPALM_AMMO": 12,
+          "BALLISTIC_AMMO": 8,
+          "CANNON_AMMO": 10,
+          "MINE_AMMO": 6
+        },
+        "totalAmmunition": 72,
+        "spawns": 9,
+        "startAccess": [
+          {
+            "spawnId": 0,
+            "pickups": [
+              {
+                "id": "start-cache-001",
+                "routeMeters": 92.611,
+                "initialDirection": {
+                  "x": 0.99589,
+                  "y": 0.0,
+                  "z": 0.09054
+                }
+              },
+              {
+                "id": "start-cache-002",
+                "routeMeters": 93.74,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 1.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 1,
+            "pickups": [
+              {
+                "id": "start-cache-003",
+                "routeMeters": 76.3,
+                "initialDirection": {
+                  "x": 1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              },
+              {
+                "id": "start-cache-004",
+                "routeMeters": 84.206,
+                "initialDirection": {
+                  "x": -0.932,
+                  "y": 0.0,
+                  "z": -0.36245
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 2,
+            "pickups": [
+              {
+                "id": "start-cache-005",
+                "routeMeters": 83.44,
+                "initialDirection": {
+                  "x": -0.83605,
+                  "y": 0.0,
+                  "z": 0.54866
+                }
+              },
+              {
+                "id": "start-cache-006",
+                "routeMeters": 87.2,
+                "initialDirection": {
+                  "x": -1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 3,
+            "pickups": [
+              {
+                "id": "start-cache-007",
+                "routeMeters": 62.35,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": -1.0
+                }
+              },
+              {
+                "id": "start-cache-008",
+                "routeMeters": 85.054,
+                "initialDirection": {
+                  "x": 0.93979,
+                  "y": 0.0,
+                  "z": -0.34174
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 4,
+            "pickups": [
+              {
+                "id": "start-cache-009",
+                "routeMeters": 62.468,
+                "initialDirection": {
+                  "x": -0.92848,
+                  "y": 0.0,
+                  "z": 0.37139
+                }
+              },
+              {
+                "id": "start-cache-010",
+                "routeMeters": 78.032,
+                "initialDirection": {
+                  "x": -0.20953,
+                  "y": 0.0,
+                  "z": -0.9778
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 5,
+            "pickups": [
+              {
+                "id": "start-cache-011",
+                "routeMeters": 62.833,
+                "initialDirection": {
+                  "x": -1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              },
+              {
+                "id": "start-cache-012",
+                "routeMeters": 63.435,
+                "initialDirection": {
+                  "x": -0.76194,
+                  "y": 0.0,
+                  "z": 0.64765
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 6,
+            "pickups": [
+              {
+                "id": "start-cache-013",
+                "routeMeters": 77.075,
+                "initialDirection": {
+                  "x": 0.70711,
+                  "y": 0.0,
+                  "z": 0.70711
+                }
+              },
+              {
+                "id": "start-cache-014",
+                "routeMeters": 78.601,
+                "initialDirection": {
+                  "x": -0.83205,
+                  "y": 0.0,
+                  "z": -0.5547
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 7,
+            "pickups": [
+              {
+                "id": "start-cache-015",
+                "routeMeters": 64.591,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": -1.0
+                }
+              },
+              {
+                "id": "start-cache-016",
+                "routeMeters": 88.701,
+                "initialDirection": {
+                  "x": 0.57346,
+                  "y": 0.0,
+                  "z": -0.81923
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 8,
+            "pickups": [
+              {
+                "id": "start-cache-017",
+                "routeMeters": 74.815,
+                "initialDirection": {
+                  "x": 0.87416,
+                  "y": 0.0,
+                  "z": 0.48564
+                }
+              },
+              {
+                "id": "start-cache-018",
+                "routeMeters": 87.2,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": -1.0
+                }
+              }
+            ]
+          }
+        ],
+        "relocatedForAccess": [
+          {
+            "id": "boss-supply-049",
+            "before": {
+              "x": 170.0,
+              "y": 0.0,
+              "z": 249.65
+            },
+            "after": {
+              "x": 170.0,
+              "y": 0.0,
+              "z": 278.46
+            }
+          }
+        ]
+      }
+    },
+    "neon_zero": {
+      "sourceSha256": "05b1425d04323e602dddfb6ed7c9e9906591851ec82b65a99b32b7a4de580a49",
+      "spawns": [
+        {
+          "id": 0,
+          "position": {
+            "x": 200.0,
+            "y": 0.0,
+            "z": 220.0
+          },
+          "yawDegrees": 90
+        },
+        {
+          "id": 1,
+          "position": {
+            "x": 1010.0,
+            "y": 0.0,
+            "z": 800.0
+          },
+          "yawDegrees": -56.6926
+        },
+        {
+          "id": 2,
+          "position": {
+            "x": 1720.0,
+            "y": 0.0,
+            "z": 350.0
+          },
+          "yawDegrees": -133.3168
+        },
+        {
+          "id": 3,
+          "position": {
+            "x": 660.0,
+            "y": 0.0,
+            "z": 470.0
+          },
+          "yawDegrees": -71.1071
+        },
+        {
+          "id": 4,
+          "position": {
+            "x": 780.0,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "yawDegrees": -37.4793
+        },
+        {
+          "id": 5,
+          "position": {
+            "x": 1190.0,
+            "y": -12.0,
+            "z": 680.0
+          },
+          "yawDegrees": -90.0
+        },
+        {
+          "id": 6,
+          "position": {
+            "x": 1610.0,
+            "y": 8.0,
+            "z": 440.0
+          },
+          "yawDegrees": -90.0
+        },
+        {
+          "id": 7,
+          "position": {
+            "x": 200.0,
+            "y": 0.0,
+            "z": 1200.0
+          },
+          "yawDegrees": 119.8145
+        },
+        {
+          "id": 8,
+          "position": {
+            "x": 1620.0,
+            "y": 0.0,
+            "z": 1120.0
+          },
+          "yawDegrees": -81.2655
+        },
+        {
+          "id": 9,
+          "position": {
+            "x": 790.0,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "yawDegrees": -55.1335
+        },
+        {
+          "id": 10,
+          "position": {
+            "x": 430.0,
+            "y": 0.0,
+            "z": 640.0
+          },
+          "yawDegrees": -145.2572
+        }
+      ],
+      "pickups": [
+        {
+          "id": "start-cache-001",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 276.7,
+            "y": 0.0,
+            "z": 214.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-002",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 193.93333,
+            "y": 0.0,
+            "z": 296.84444
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-003",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 952.0,
+            "y": 0.0,
+            "z": 771.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-004",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1013.64,
+            "y": 0.0,
+            "z": 865.52
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-005",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1716.375,
+            "y": 0.0,
+            "z": 288.375
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-006",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1632.8,
+            "y": 0.0,
+            "z": 350.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-007",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 581.52,
+            "y": 0.0,
+            "z": 439.48
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-008",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 616.4,
+            "y": 0.0,
+            "z": 542.66667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-009",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 717.16667,
+            "y": 0.0,
+            "z": 1035.16667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-010",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 801.84,
+            "y": 0.0,
+            "z": 1101.88
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-011",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1190.0,
+            "y": -12.0,
+            "z": 756.3
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-012",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1190.0,
+            "y": -12.0,
+            "z": 616.3
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-013",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1563.64,
+            "y": 8.0,
+            "z": 480.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-014",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1610.0,
+            "y": 8.0,
+            "z": 352.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-015",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 231.41667,
+            "y": 0.0,
+            "z": 1144.41667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-016",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 277.65333,
+            "y": 0.0,
+            "z": 1201.21333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-017",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1558.77778,
+            "y": 0.0,
+            "z": 1107.11111
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-018",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1561.76,
+            "y": 0.0,
+            "z": 1152.76
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-019",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 728.89286,
+            "y": 0.0,
+            "z": 184.14286
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-020",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 754.575,
+            "y": 0.0,
+            "z": 259.025
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-021",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 367.16667,
+            "y": 0.0,
+            "z": 630.33333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-022",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 448.16667,
+            "y": 0.0,
+            "z": 552.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "business-cache-023",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 513.16,
+            "y": 0.0,
+            "z": 1018.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "business-cache-024",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 526.3,
+            "y": 0.0,
+            "z": 1002.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "business-cache-025",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 543.83333,
+            "y": 0.0,
+            "z": 1021.83333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "business-cache-026",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 490.36,
+            "y": 0.0,
+            "z": 1012.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "business-cache-027",
+          "type": "REPAIR",
+          "position": {
+            "x": 553.825,
+            "y": 0.0,
+            "z": 1007.7
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "business-cache-028",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 536.52,
+            "y": 0.0,
+            "z": 972.8
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "market-cache-029",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 850.0,
+            "y": 0.0,
+            "z": 714.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "market-cache-030",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 850.0,
+            "y": 0.0,
+            "z": 696.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "market-cache-031",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 872.0,
+            "y": 0.0,
+            "z": 731.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "market-cache-032",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 850.0,
+            "y": 0.0,
+            "z": 744.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "market-cache-033",
+          "type": "REPAIR",
+          "position": {
+            "x": 824.0,
+            "y": 0.0,
+            "z": 720.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "market-cache-034",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 850.0,
+            "y": 0.0,
+            "z": 676.5
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "homes-cache-035",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 472.08,
+            "y": 0.0,
+            "z": 401.08
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-036",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 499.8,
+            "y": 0.0,
+            "z": 407.7
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-037",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 475.41667,
+            "y": 0.0,
+            "z": 422.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "homes-cache-038",
+          "type": "REPAIR",
+          "position": {
+            "x": 445.68,
+            "y": 0.0,
+            "z": 404.68
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "homes-cache-039",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 523.92,
+            "y": 0.0,
+            "z": 417.08
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "transport-cache-040",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1390.3,
+            "y": 0.0,
+            "z": 892.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "transport-cache-041",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1376.5,
+            "y": 0.0,
+            "z": 912.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "transport-cache-042",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1371.0,
+            "y": 0.0,
+            "z": 895.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "transport-cache-043",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1405.8125,
+            "y": 0.0,
+            "z": 915.125
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "transport-cache-044",
+          "type": "REPAIR",
+          "position": {
+            "x": 1410.42857,
+            "y": 0.0,
+            "z": 889.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "transport-cache-045",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1391.3,
+            "y": 0.0,
+            "z": 868.8
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "parking-cache-046",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1472.8,
+            "y": 0.0,
+            "z": 350.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "parking-cache-047",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1484.25,
+            "y": 8.0,
+            "z": 340.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "parking-cache-048",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1480.0,
+            "y": 0.0,
+            "z": 371.08333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "parking-cache-049",
+          "type": "REPAIR",
+          "position": {
+            "x": 1502.0,
+            "y": 0.0,
+            "z": 350.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "parking-cache-050",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1458.7,
+            "y": 8.0,
+            "z": 340.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "boss-supply-051",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1568.825,
+            "y": 0.0,
+            "z": 1071.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "boss-supply-052",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 294.72,
+            "y": 0.0,
+            "z": 1201.48
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "boss-supply-053",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 247.23333,
+            "y": 0.0,
+            "z": 1116.43333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-054",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1120.76191,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-055",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1157.97143,
+            "y": 0.0,
+            "z": 1210.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-056",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1651.26,
+            "y": 0.0,
+            "z": 752.62
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-057",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 985.53571,
+            "y": 0.0,
+            "z": 465.92857
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-058",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 286.44444,
+            "y": 0.0,
+            "z": 869.27778
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-059",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1224.85,
+            "y": 0.0,
+            "z": 389.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-060",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1414.66667,
+            "y": 0.0,
+            "z": 645.33333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-061",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 175.93334,
+            "y": 0.0,
+            "z": 524.84445
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-062",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 518.17857,
+            "y": 0.0,
+            "z": 198.42857
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-063",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1325.35238,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-064",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1361.68571,
+            "y": 0.0,
+            "z": 1210.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-065",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 618.98667,
+            "y": 0.0,
+            "z": 1206.54667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-066",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 963.11428,
+            "y": 0.0,
+            "z": 1210.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-067",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 960.45715,
+            "y": 0.0,
+            "z": 276.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-068",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1193.0,
+            "y": 0.0,
+            "z": 964.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-069",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 643.83333,
+            "y": 0.0,
+            "z": 720.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-070",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1570.68571,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-071",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 794.9,
+            "y": 0.0,
+            "z": 512.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-072",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 840.375,
+            "y": 0.0,
+            "z": 919.25
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-073",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 215.33333,
+            "y": 0.0,
+            "z": 704.83333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-074",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1637.26667,
+            "y": 0.0,
+            "z": 912.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-075",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1679.26,
+            "y": 0.0,
+            "z": 588.62
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-076",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1316.84444,
+            "y": 0.0,
+            "z": 1056.17778
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-077",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 448.32,
+            "y": 0.0,
+            "z": 1203.88
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-078",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 296.08,
+            "y": 0.0,
+            "z": 425.08
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-079",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1086.74286,
+            "y": 0.0,
+            "z": 344.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-080",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 958.0,
+            "y": 0.0,
+            "z": 995.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-081",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1531.88572,
+            "y": 0.0,
+            "z": 823.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-082",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 514.36,
+            "y": 0.0,
+            "z": 675.52
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-083",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 582.3,
+            "y": 0.0,
+            "z": 842.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-084",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1062.0,
+            "y": 0.0,
+            "z": 1115.65
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-085",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1282.24,
+            "y": 0.0,
+            "z": 522.32
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-086",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 312.23333,
+            "y": 0.0,
+            "z": 1001.43333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-087",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1063.5,
+            "y": 20.0,
+            "z": 570.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-088",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 701.4375,
+            "y": 0.0,
+            "z": 377.5625
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-089",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 857.90476,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-090",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1702.15,
+            "y": 0.0,
+            "z": 454.55
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-091",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1314.25,
+            "y": 0.0,
+            "z": 305.33333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-092",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1251.76364,
+            "y": 20.0,
+            "z": 856.38182
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-093",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1426.84,
+            "y": 8.0,
+            "z": 480.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-094",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 746.98667,
+            "y": 0.0,
+            "z": 1208.54667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-095",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1443.51111,
+            "y": 0.0,
+            "z": 1082.84444
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-096",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1074.25,
+            "y": 0.0,
+            "z": 980.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-097",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 391.75,
+            "y": 0.0,
+            "z": 207.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-098",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1439.25714,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-099",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 184.83333,
+            "y": 0.0,
+            "z": 412.11111
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-100",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1690.28572,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-101",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1168.8,
+            "y": 0.0,
+            "z": 1070.26
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-102",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1395.75,
+            "y": 0.0,
+            "z": 762.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-103",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1001.16191,
+            "y": 0.0,
+            "z": 180.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-104",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1484.96,
+            "y": 0.0,
+            "z": 1195.96
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-105",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 859.92857,
+            "y": 0.0,
+            "z": 1210.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-106",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1117.66667,
+            "y": 0.0,
+            "z": 828.33333
+          },
+          "respawnTicks": 3000
+        }
+      ],
+      "supplyReport": {
+        "ammunitionCounts": {
+          "HOMING_AMMO": 24,
+          "POWER_AMMO": 24,
+          "NAPALM_AMMO": 16,
+          "BALLISTIC_AMMO": 10,
+          "CANNON_AMMO": 14,
+          "MINE_AMMO": 8
+        },
+        "totalAmmunition": 96,
+        "spawns": 11,
+        "startAccess": [
+          {
+            "spawnId": 0,
+            "pickups": [
+              {
+                "id": "start-cache-001",
+                "routeMeters": 92.082,
+                "initialDirection": {
+                  "x": 0.99771,
+                  "y": 0.0,
+                  "z": -0.06764
+                }
+              },
+              {
+                "id": "start-cache-002",
+                "routeMeters": 92.331,
+                "initialDirection": {
+                  "x": -0.0787,
+                  "y": 0.0,
+                  "z": 0.9969
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 1,
+            "pickups": [
+              {
+                "id": "start-cache-003",
+                "routeMeters": 64.846,
+                "initialDirection": {
+                  "x": -0.89443,
+                  "y": 0.0,
+                  "z": -0.44721
+                }
+              },
+              {
+                "id": "start-cache-004",
+                "routeMeters": 78.601,
+                "initialDirection": {
+                  "x": 0.05547,
+                  "y": 0.0,
+                  "z": 0.99846
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 2,
+            "pickups": [
+              {
+                "id": "start-cache-005",
+                "routeMeters": 61.732,
+                "initialDirection": {
+                  "x": -0.05872,
+                  "y": 0.0,
+                  "z": -0.99827
+                }
+              },
+              {
+                "id": "start-cache-006",
+                "routeMeters": 87.2,
+                "initialDirection": {
+                  "x": -1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 3,
+            "pickups": [
+              {
+                "id": "start-cache-007",
+                "routeMeters": 84.206,
+                "initialDirection": {
+                  "x": -0.932,
+                  "y": 0.0,
+                  "z": -0.36245
+                }
+              },
+              {
+                "id": "start-cache-008",
+                "routeMeters": 84.743,
+                "initialDirection": {
+                  "x": -0.5145,
+                  "y": 0.0,
+                  "z": 0.85749
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 4,
+            "pickups": [
+              {
+                "id": "start-cache-009",
+                "routeMeters": 63.019,
+                "initialDirection": {
+                  "x": -0.99705,
+                  "y": 0.0,
+                  "z": -0.0767
+                }
+              },
+              {
+                "id": "start-cache-010",
+                "routeMeters": 78.601,
+                "initialDirection": {
+                  "x": 0.33282,
+                  "y": 0.0,
+                  "z": 0.94299
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 5,
+            "pickups": [
+              {
+                "id": "start-cache-011",
+                "routeMeters": 76.3,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 1.0
+                }
+              },
+              {
+                "id": "start-cache-012",
+                "routeMeters": 76.3,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": -1.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 6,
+            "pickups": [
+              {
+                "id": "start-cache-013",
+                "routeMeters": 86.36,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": 1.0
+                }
+              },
+              {
+                "id": "start-cache-014",
+                "routeMeters": 87.2,
+                "initialDirection": {
+                  "x": 0.0,
+                  "y": 0.0,
+                  "z": -1.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 7,
+            "pickups": [
+              {
+                "id": "start-cache-015",
+                "routeMeters": 63.848,
+                "initialDirection": {
+                  "x": 0.49206,
+                  "y": 0.0,
+                  "z": -0.87056
+                }
+              },
+              {
+                "id": "start-cache-016",
+                "routeMeters": 93.025,
+                "initialDirection": {
+                  "x": 0.99988,
+                  "y": 0.0,
+                  "z": 0.01562
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 8,
+            "pickups": [
+              {
+                "id": "start-cache-017",
+                "routeMeters": 62.564,
+                "initialDirection": {
+                  "x": -0.97855,
+                  "y": 0.0,
+                  "z": -0.20601
+                }
+              },
+              {
+                "id": "start-cache-018",
+                "routeMeters": 80.039,
+                "initialDirection": {
+                  "x": -0.87158,
+                  "y": 0.0,
+                  "z": 0.49026
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 9,
+            "pickups": [
+              {
+                "id": "start-cache-019",
+                "routeMeters": 61.247,
+                "initialDirection": {
+                  "x": -0.99771,
+                  "y": 0.0,
+                  "z": 0.06764
+                }
+              },
+              {
+                "id": "start-cache-020",
+                "routeMeters": 86.602,
+                "initialDirection": {
+                  "x": -0.40906,
+                  "y": 0.0,
+                  "z": 0.91251
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 10,
+            "pickups": [
+              {
+                "id": "start-cache-021",
+                "routeMeters": 63.573,
+                "initialDirection": {
+                  "x": -0.98837,
+                  "y": 0.0,
+                  "z": -0.15206
+                }
+              },
+              {
+                "id": "start-cache-022",
+                "routeMeters": 89.072,
+                "initialDirection": {
+                  "x": 0.20395,
+                  "y": 0.0,
+                  "z": -0.97898
+                }
+              }
+            ]
+          }
+        ],
+        "relocatedForAccess": [
+          {
+            "id": "route-cache-067",
+            "before": {
+              "x": 950.42857,
+              "y": 0.0,
+              "z": 271.0
+            },
+            "after": {
+              "x": 960.45715,
+              "y": 0.0,
+              "z": 276.4
+            }
+          },
+          {
+            "id": "route-cache-104",
+            "before": {
+              "x": 1465.76,
+              "y": 0.0,
+              "z": 1206.76
+            },
+            "after": {
+              "x": 1484.96,
+              "y": 0.0,
+              "z": 1195.96
+            }
+          }
+        ]
+      }
+    },
+    "euphoria_park": {
+      "sourceSha256": "b39e3e7f05749914622b4ac939a43b32f8cf9eb28b2c88f98b80a37055963bf4",
+      "spawns": [
+        {
+          "id": 0,
+          "position": {
+            "x": 160.0,
+            "y": 0.0,
+            "z": 80.0
+          },
+          "yawDegrees": 90
+        },
+        {
+          "id": 1,
+          "position": {
+            "x": 380.0,
+            "y": 0.0,
+            "z": 390.0
+          },
+          "yawDegrees": -65.4075
+        },
+        {
+          "id": 2,
+          "position": {
+            "x": 1410.0,
+            "y": 0.0,
+            "z": 520.0
+          },
+          "yawDegrees": -133.1642
+        },
+        {
+          "id": 3,
+          "position": {
+            "x": 1390.0,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "yawDegrees": -136.0227
+        },
+        {
+          "id": 4,
+          "position": {
+            "x": 530.0,
+            "y": 0.0,
+            "z": 1080.0
+          },
+          "yawDegrees": -77.8861
+        },
+        {
+          "id": 5,
+          "position": {
+            "x": 460.0,
+            "y": 0.0,
+            "z": 890.0
+          },
+          "yawDegrees": -100.5272
+        },
+        {
+          "id": 6,
+          "position": {
+            "x": 870.0,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "yawDegrees": -81.3937
+        },
+        {
+          "id": 7,
+          "position": {
+            "x": 1140.0,
+            "y": 0.0,
+            "z": 820.0
+          },
+          "yawDegrees": 75.9806
+        },
+        {
+          "id": 8,
+          "position": {
+            "x": 1370.0,
+            "y": 0.0,
+            "z": 900.0
+          },
+          "yawDegrees": 49.0651
+        },
+        {
+          "id": 9,
+          "position": {
+            "x": 1340.0,
+            "y": 0.0,
+            "z": 220.0
+          },
+          "yawDegrees": -70.1338
+        },
+        {
+          "id": 10,
+          "position": {
+            "x": 220.0,
+            "y": 0.0,
+            "z": 1060.0
+          },
+          "yawDegrees": 77.4916
+        },
+        {
+          "id": 11,
+          "position": {
+            "x": 740.0,
+            "y": 0.0,
+            "z": 250.0
+          },
+          "yawDegrees": -38.1643
+        },
+        {
+          "id": 12,
+          "position": {
+            "x": 170.0,
+            "y": 0.0,
+            "z": 620.0
+          },
+          "yawDegrees": 84.0939
+        }
+      ],
+      "pickups": [
+        {
+          "id": "start-cache-001",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 172.13333,
+            "y": 0.0,
+            "z": 155.83333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-002",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 232.8,
+            "y": 0.0,
+            "z": 116.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-003",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 354.52,
+            "y": 0.0,
+            "z": 451.88
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-004",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 301.52,
+            "y": 0.0,
+            "z": 363.84
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-005",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1395.5,
+            "y": 0.0,
+            "z": 457.85714
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-006",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1322.8,
+            "y": 0.0,
+            "z": 505.46667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-007",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1313.7,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-008",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1392.725,
+            "y": 0.0,
+            "z": 963.7
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-009",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 472.0,
+            "y": 0.0,
+            "z": 1106.1
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-010",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 442.8,
+            "y": 0.0,
+            "z": 1080.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-011",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 409.25,
+            "y": 0.0,
+            "z": 850.125
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-012",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 400.85,
+            "y": 0.0,
+            "z": 908.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-013",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 804.6,
+            "y": 3.0,
+            "z": 603.675
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-014",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 828.14,
+            "y": 3.0,
+            "z": 704.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-015",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1128.2519,
+            "y": 0.0,
+            "z": 884.0822
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-016",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1165.43333,
+            "y": 0.0,
+            "z": 740.06667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-017",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1381.1,
+            "y": 0.0,
+            "z": 977.7
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-018",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1397.41667,
+            "y": 0.0,
+            "z": 838.77778
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-019",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1277.85714,
+            "y": 0.0,
+            "z": 223.10714
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-020",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1279.33333,
+            "y": 0.0,
+            "z": 265.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-021",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 270.05,
+            "y": 0.0,
+            "z": 1110.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-022",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 286.73333,
+            "y": 0.0,
+            "z": 1035.73333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-023",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 684.41667,
+            "y": 0.0,
+            "z": 276.58333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-024",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 725.2,
+            "y": 0.0,
+            "z": 320.3
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-025",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 176.21428,
+            "y": 0.0,
+            "z": 559.92857
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "start-cache-026",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 168.18,
+            "y": 0.0,
+            "z": 692.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "entrance-cache-027",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 177.0,
+            "y": 0.0,
+            "z": 186.25
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "entrance-cache-028",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 181.46667,
+            "y": 0.0,
+            "z": 214.16667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "entrance-cache-029",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 185.46667,
+            "y": 0.0,
+            "z": 239.16667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "entrance-cache-030",
+          "type": "REPAIR",
+          "position": {
+            "x": 248.8,
+            "y": 0.0,
+            "z": 124.4
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "entrance-cache-031",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 272.8,
+            "y": 0.0,
+            "z": 136.4
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "fair-cache-032",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 312.52,
+            "y": 0.0,
+            "z": 553.88
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "fair-cache-033",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 330.16667,
+            "y": 0.0,
+            "z": 571.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "fair-cache-034",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 311.1,
+            "y": 0.0,
+            "z": 584.2
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "fair-cache-035",
+          "type": "REPAIR",
+          "position": {
+            "x": 320.92,
+            "y": 0.0,
+            "z": 533.48
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "fair-cache-036",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 354.73334,
+            "y": 0.0,
+            "z": 584.4
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "lake-cache-037",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 743.4,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "lake-cache-038",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 772.0,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "lake-cache-039",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 721.4,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "lake-cache-040",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 776.65,
+            "y": 3.0,
+            "z": 670.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "lake-cache-041",
+          "type": "REPAIR",
+          "position": {
+            "x": 798.8,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "lake-cache-042",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 696.83333,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "rides-cache-043",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1210.0,
+            "y": 0.0,
+            "z": 592.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "rides-cache-044",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1228.0,
+            "y": 0.0,
+            "z": 592.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "rides-cache-045",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1192.125,
+            "y": 0.0,
+            "z": 609.625
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "rides-cache-046",
+          "type": "REPAIR",
+          "position": {
+            "x": 1208.9,
+            "y": 0.0,
+            "z": 622.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "rides-cache-047",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1210.0,
+            "y": 0.0,
+            "z": 568.8
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "circus-cache-048",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 330.0,
+            "y": 0.0,
+            "z": 1065.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "circus-cache-049",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 330.0,
+            "y": 0.0,
+            "z": 1040.625
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "circus-cache-050",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 330.0,
+            "y": 0.0,
+            "z": 1088.25
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "circus-cache-051",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 351.86667,
+            "y": 0.0,
+            "z": 1036.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "circus-cache-052",
+          "type": "REPAIR",
+          "position": {
+            "x": 335.86667,
+            "y": 0.0,
+            "z": 1024.4
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "circus-cache-053",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 313.5,
+            "y": 0.0,
+            "z": 1026.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "backstage-cache-054",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1243.7,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "backstage-cache-055",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 1269.25,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "backstage-cache-056",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1250.0,
+            "y": 0.0,
+            "z": 1062.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "backstage-cache-057",
+          "type": "REPAIR",
+          "position": {
+            "x": 1222.7,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "respawnTicks": 4800
+        },
+        {
+          "id": "backstage-cache-058",
+          "type": "TURBO_CELL",
+          "position": {
+            "x": 1292.7,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "respawnTicks": 3600
+        },
+        {
+          "id": "route-cache-059",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 844.0125,
+            "y": 0.0,
+            "z": 1101.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-060",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1006.44,
+            "y": 0.0,
+            "z": 362.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-061",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 655.0,
+            "y": 0.0,
+            "z": 945.25
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-062",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1042.3875,
+            "y": 0.0,
+            "z": 1147.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-063",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 179.20833,
+            "y": 0.0,
+            "z": 882.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-064",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 519.24,
+            "y": 0.0,
+            "z": 359.34
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-065",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 998.8,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-066",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 524.16667,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-067",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1404.63333,
+            "y": 0.0,
+            "z": 655.95556
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-068",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 878.0,
+            "y": 0.0,
+            "z": 243.1
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-069",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 418.04,
+            "y": 0.0,
+            "z": 226.24
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-070",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1176.16667,
+            "y": 0.0,
+            "z": 406.16667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-071",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1106.42857,
+            "y": 0.0,
+            "z": 231.67857
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-072",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 1004.06667,
+            "y": 0.0,
+            "z": 990.73333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-073",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 755.0,
+            "y": 3.0,
+            "z": 829.725
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-074",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 317.64,
+            "y": 0.0,
+            "z": 728.08
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-075",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 698.08,
+            "y": 0.0,
+            "z": 1080.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-076",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 526.42857,
+            "y": 0.0,
+            "z": 908.82143
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-077",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 190.48571,
+            "y": 0.0,
+            "z": 421.97143
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-078",
+          "type": "HOMING_AMMO",
+          "position": {
+            "x": 768.25,
+            "y": 0.0,
+            "z": 979.95
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-079",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1163.975,
+            "y": 0.0,
+            "z": 1160.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-080",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1368.2,
+            "y": 0.0,
+            "z": 340.85714
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-081",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 838.44,
+            "y": 0.0,
+            "z": 352.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-082",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1112.4,
+            "y": 0.0,
+            "z": 508.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-083",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 432.13333,
+            "y": 0.0,
+            "z": 722.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-084",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1107.33333,
+            "y": 0.0,
+            "z": 1040.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-085",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 989.42857,
+            "y": 0.0,
+            "z": 237.52857
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-086",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 294.4,
+            "y": 0.0,
+            "z": 889.95
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-087",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 941.90625,
+            "y": 0.0,
+            "z": 1124.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-088",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 909.31667,
+            "y": 0.0,
+            "z": 1026.06667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-089",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 598.2,
+            "y": 0.0,
+            "z": 1080.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-090",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1092.42857,
+            "y": 0.0,
+            "z": 607.85714
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-091",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 617.1,
+            "y": 0.0,
+            "z": 352.35
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-092",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 203.68334,
+            "y": 0.0,
+            "z": 988.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-093",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 165.78,
+            "y": 0.0,
+            "z": 788.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-094",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 713.14,
+            "y": 3.0,
+            "z": 745.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-095",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1256.16,
+            "y": 0.0,
+            "z": 1154.72
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-096",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1184.63333,
+            "y": 0.0,
+            "z": 956.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-097",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 207.92,
+            "y": 0.0,
+            "z": 332.64
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-098",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 1242.53334,
+            "y": 0.0,
+            "z": 464.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-099",
+          "type": "POWER_AMMO",
+          "position": {
+            "x": 234.58333,
+            "y": 0.0,
+            "z": 627.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-100",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1192.14286,
+            "y": 0.0,
+            "z": 227.39286
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-101",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1400.75,
+            "y": 0.0,
+            "z": 754.33333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-102",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 922.44,
+            "y": 0.0,
+            "z": 357.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-103",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1090.44,
+            "y": 0.0,
+            "z": 367.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-104",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1199.33334,
+            "y": 0.0,
+            "z": 325.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-105",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 420.0,
+            "y": 0.0,
+            "z": 636.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-106",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 607.5,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-107",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 322.05,
+            "y": 0.0,
+            "z": 810.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-108",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1085.85,
+            "y": 0.0,
+            "z": 666.85
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-109",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 352.8,
+            "y": 0.0,
+            "z": 176.4
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-110",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1086.28889,
+            "y": 0.0,
+            "z": 961.84444
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-111",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 392.0,
+            "y": 0.0,
+            "z": 1142.1
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-112",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 462.04,
+            "y": 0.0,
+            "z": 290.24
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-113",
+          "type": "NAPALM_AMMO",
+          "position": {
+            "x": 1195.425,
+            "y": 0.0,
+            "z": 845.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-114",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 755.0,
+            "y": 3.0,
+            "z": 916.725
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-115",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 447.16667,
+            "y": 0.0,
+            "z": 374.5
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-116",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 772.91667,
+            "y": 0.0,
+            "z": 1083.66667
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-117",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 737.625,
+            "y": 3.0,
+            "z": 574.5625
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-118",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 806.42857,
+            "y": 0.0,
+            "z": 246.67857
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-119",
+          "type": "BALLISTIC_AMMO",
+          "position": {
+            "x": 325.05,
+            "y": 0.0,
+            "z": 1165.05
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-120",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1407.41667,
+            "y": 0.0,
+            "z": 585.44444
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-121",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 782.14,
+            "y": 3.0,
+            "z": 764.6
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-122",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 314.44,
+            "y": 0.0,
+            "z": 657.68
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-123",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 330.0,
+            "y": 0.0,
+            "z": 954.75
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-124",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 443.66667,
+            "y": 0.0,
+            "z": 792.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-125",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 932.0,
+            "y": 3.0,
+            "z": 650.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-126",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 1312.16,
+            "y": 0.0,
+            "z": 1106.72
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-127",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 183.62857,
+            "y": 0.0,
+            "z": 488.25715
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-128",
+          "type": "CANNON_AMMO",
+          "position": {
+            "x": 843.98333,
+            "y": 0.0,
+            "z": 1020.73333
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-129",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1205.56,
+            "y": 0.0,
+            "z": 688.8
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-130",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1297.2,
+            "y": 0.0,
+            "z": 565.12
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-131",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1106.25,
+            "y": 0.0,
+            "z": 1137.0
+          },
+          "respawnTicks": 3000
+        },
+        {
+          "id": "route-cache-132",
+          "type": "MINE_AMMO",
+          "position": {
+            "x": 1124.4,
+            "y": 0.0,
+            "z": 448.0
+          },
+          "respawnTicks": 3000
+        }
+      ],
+      "supplyReport": {
+        "ammunitionCounts": {
+          "HOMING_AMMO": 30,
+          "POWER_AMMO": 30,
+          "NAPALM_AMMO": 20,
+          "BALLISTIC_AMMO": 12,
+          "CANNON_AMMO": 18,
+          "MINE_AMMO": 10
+        },
+        "totalAmmunition": 120,
+        "spawns": 13,
+        "startAccess": [
+          {
+            "spawnId": 0,
+            "pickups": [
+              {
+                "id": "start-cache-001",
+                "routeMeters": 91.989,
+                "initialDirection": {
+                  "x": 0.15799,
+                  "y": 0.0,
+                  "z": 0.98744
+                }
+              },
+              {
+                "id": "start-cache-002",
+                "routeMeters": 97.493,
+                "initialDirection": {
+                  "x": 0.89443,
+                  "y": 0.0,
+                  "z": 0.44721
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 1,
+            "pickups": [
+              {
+                "id": "start-cache-003",
+                "routeMeters": 80.158,
+                "initialDirection": {
+                  "x": -0.38075,
+                  "y": 0.0,
+                  "z": 0.92468
+                }
+              },
+              {
+                "id": "start-cache-004",
+                "routeMeters": 82.725,
+                "initialDirection": {
+                  "x": -0.94868,
+                  "y": 0.0,
+                  "z": -0.31623
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 2,
+            "pickups": [
+              {
+                "id": "start-cache-005",
+                "routeMeters": 63.812,
+                "initialDirection": {
+                  "x": -0.22723,
+                  "y": 0.0,
+                  "z": -0.97384
+                }
+              },
+              {
+                "id": "start-cache-006",
+                "routeMeters": 88.403,
+                "initialDirection": {
+                  "x": -0.98639,
+                  "y": 0.0,
+                  "z": -0.1644
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 3,
+            "pickups": [
+              {
+                "id": "start-cache-007",
+                "routeMeters": 76.3,
+                "initialDirection": {
+                  "x": -1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              },
+              {
+                "id": "start-cache-008",
+                "routeMeters": 76.349,
+                "initialDirection": {
+                  "x": 0.03569,
+                  "y": 0.0,
+                  "z": -0.99936
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 4,
+            "pickups": [
+              {
+                "id": "start-cache-009",
+                "routeMeters": 63.602,
+                "initialDirection": {
+                  "x": -0.91192,
+                  "y": 0.0,
+                  "z": 0.41036
+                }
+              },
+              {
+                "id": "start-cache-010",
+                "routeMeters": 87.2,
+                "initialDirection": {
+                  "x": -1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 5,
+            "pickups": [
+              {
+                "id": "start-cache-011",
+                "routeMeters": 64.541,
+                "initialDirection": {
+                  "x": -0.78632,
+                  "y": 0.0,
+                  "z": -0.61782
+                }
+              },
+              {
+                "id": "start-cache-012",
+                "routeMeters": 74.128,
+                "initialDirection": {
+                  "x": -0.95578,
+                  "y": 0.0,
+                  "z": 0.29409
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 6,
+            "pickups": [
+              {
+                "id": "start-cache-013",
+                "routeMeters": 80.145,
+                "initialDirection": {
+                  "x": -0.81602,
+                  "y": 0.0,
+                  "z": -0.57802
+                }
+              },
+              {
+                "id": "start-cache-014",
+                "routeMeters": 82.409,
+                "initialDirection": {
+                  "x": -0.60843,
+                  "y": 0.0,
+                  "z": 0.79361
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 7,
+            "pickups": [
+              {
+                "id": "start-cache-015",
+                "routeMeters": 78.037,
+                "initialDirection": {
+                  "x": -0.18032,
+                  "y": 0.0,
+                  "z": 0.98361
+                }
+              },
+              {
+                "id": "start-cache-016",
+                "routeMeters": 83.882,
+                "initialDirection": {
+                  "x": 0.3032,
+                  "y": 0.0,
+                  "z": -0.95293
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 8,
+            "pickups": [
+              {
+                "id": "start-cache-017",
+                "routeMeters": 78.489,
+                "initialDirection": {
+                  "x": 0.14142,
+                  "y": 0.0,
+                  "z": 0.98995
+                }
+              },
+              {
+                "id": "start-cache-018",
+                "routeMeters": 86.27,
+                "initialDirection": {
+                  "x": 1.0,
+                  "y": 0.0,
+                  "z": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 9,
+            "pickups": [
+              {
+                "id": "start-cache-019",
+                "routeMeters": 62.22,
+                "initialDirection": {
+                  "x": -0.99875,
+                  "y": 0.0,
+                  "z": 0.04994
+                }
+              },
+              {
+                "id": "start-cache-020",
+                "routeMeters": 90.833,
+                "initialDirection": {
+                  "x": -0.8,
+                  "y": 0.0,
+                  "z": 0.6
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 10,
+            "pickups": [
+              {
+                "id": "start-cache-021",
+                "routeMeters": 84.782,
+                "initialDirection": {
+                  "x": 0.70711,
+                  "y": 0.0,
+                  "z": 0.70711
+                }
+              },
+              {
+                "id": "start-cache-022",
+                "routeMeters": 85.054,
+                "initialDirection": {
+                  "x": 0.93979,
+                  "y": 0.0,
+                  "z": -0.34174
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 11,
+            "pickups": [
+              {
+                "id": "start-cache-023",
+                "routeMeters": 61.613,
+                "initialDirection": {
+                  "x": -0.90213,
+                  "y": 0.0,
+                  "z": 0.43146
+                }
+              },
+              {
+                "id": "start-cache-024",
+                "routeMeters": 71.841,
+                "initialDirection": {
+                  "x": -0.20601,
+                  "y": 0.0,
+                  "z": 0.97855
+                }
+              }
+            ]
+          },
+          {
+            "spawnId": 12,
+            "pickups": [
+              {
+                "id": "start-cache-025",
+                "routeMeters": 60.392,
+                "initialDirection": {
+                  "x": 0.1029,
+                  "y": 0.0,
+                  "z": -0.99469
+                }
+              },
+              {
+                "id": "start-cache-026",
+                "routeMeters": 87.227,
+                "initialDirection": {
+                  "x": -0.02499,
+                  "y": 0.0,
+                  "z": 0.99969
+                }
+              }
+            ]
+          }
+        ],
+        "relocatedForAccess": [
+          {
+            "id": "route-cache-078",
+            "before": {
+              "x": 780.625,
+              "y": 0.0,
+              "z": 987.375
+            },
+            "after": {
+              "x": 768.25,
+              "y": 0.0,
+              "z": 979.95
+            }
+          },
+          {
+            "id": "route-cache-108",
+            "before": {
+              "x": 1096.4,
+              "y": 0.0,
+              "z": 694.6
+            },
+            "after": {
+              "x": 1085.85,
+              "y": 0.0,
+              "z": 666.85
+            }
+          }
+        ]
+      }
+    }
+  }
+}

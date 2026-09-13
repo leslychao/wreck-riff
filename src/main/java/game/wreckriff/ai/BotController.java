@@ -9,6 +9,7 @@ import game.wreckriff.combat.WeaponType;
 import com.jme3.math.Vector3f;
 import game.wreckriff.arena.*;
 import game.wreckriff.input.VehicleCommand;
+import game.wreckriff.config.VehicleRules;
 import game.wreckriff.simulation.*;
 import java.util.*;
 import java.util.function.Supplier;
@@ -32,6 +33,7 @@ public final class BotController {
     private static final Logger LOG=Logger.getLogger(BotController.class.getName());
     // Below the native four-wheel deceleration, including the driver's partial-brake range.
     private static final float OBSTACLE_BRAKING_DECELERATION=10;
+    private static final VehicleRules VEHICLE_RULES=VehicleRules.load();
     private record Warning(Vector3f point,float radius,long impactTick) {}
     private static final class Brain {
         final Random random;
@@ -46,7 +48,7 @@ public final class BotController {
         Map<Integer,Float> supplyLengths=Map.of();
         BotObservation observation=new BotObservation(0,List.of(),List.of());
         State state=State.SEEK_TARGET;
-        int target=-1,goalNode=-1,pathIndex,reverseAttempts,recoveriesSeen,lockTicks;
+        int target=-1,goalNode=-1,pathIndex,reverseAttempts,recoveriesSeen,lockTicks,routeTurnSide;
         long targetChanged=Long.MIN_VALUE/2,reactionUntil,replanAt,reverseUntil,stuckSince=-1,
                 progressWindowStart,aliveTicks,stationaryTicks,maximumStationaryTicks;
         float progress;
@@ -59,8 +61,8 @@ public final class BotController {
         BossTactics boss;
         List<Warning> warnings=List.of();
         int weaponCursor;
-        Vector3f destination,lastPosition,passingDestination,lastDrivingTarget,progressDirection=new Vector3f();
-        long passingUntil,nextPassAttempt;
+        Vector3f destination,lastPosition,passingDestination,lastDrivingTarget,routeTurnHeading,progressDirection=new Vector3f();
+        long passingUntil,nextPassAttempt,nextRouteTurnCheck;
         String pickup,launchTask;
         boolean healing,requiredMovement,backingToRoute,recoveryDetourAttempted,ballisticEvading;
         Brain(long seed) { random=new Random(seed); }
@@ -76,6 +78,7 @@ public final class BotController {
     private final Map<String,PickupReservation> reservations=new LinkedHashMap<>();
     private final Map<String,Integer> pickupNodes=new HashMap<>();
     private final Map<String,Float> pickupConnectors=new HashMap<>();
+    private final Map<String,Integer> surfaceLevels=new HashMap<>();
     private final Set<Integer> pickupGoals;
     private final ArrayDeque<BossCommand> bossCommands=new ArrayDeque<>();
     private Supplier<List<ArenaDefinition.Hazard>> activeHazards;
@@ -95,6 +98,7 @@ public final class BotController {
     public BotController(MatchSession session,ArenaDefinition arena,NavGraph graph,AiRules rules,
             Supplier<List<ArenaDefinition.Pickup>> activePickups) {
         this.session=session; this.arena=arena; this.graph=graph; this.rules=rules; this.activePickups=activePickups;
+        for(var surface:arena.surfaces())surfaceLevels.put(surface.id(),surface.level());
         for(var pickup:arena.pickups()) {
             var point=pickup.position().vector();int node=graph.nearest(point);
             pickupNodes.put(pickup.id(),node);pickupConnectors.put(pickup.id(),graph.position(node).distance(point));
@@ -421,7 +425,10 @@ public final class BotController {
         float leadSeconds=self.profileId.equals("boss_prefect")?Math.min(2,position.distance(target.position())/45):0;
         Vector3f candidate=target.position().add(target.velocity().mult(leadSeconds)).addLocal(away.mult(policy.standOff()))
                 .addLocal(sideways.mult(16));
-        int goal=graph.nearest(candidate,world.roadContext(self.id).known()?world.roadContext(self.id).surfaceId():null);
+        // Physical support also includes sidewalks and parking slabs without graph
+        // samples. Pick the road at the chassis' actual height, not an exact mesh ID.
+        candidate.y=position.y-roadOffset(world,self.id);
+        int goal=graph.nearest(candidate);
         route(brain,position,graph.position(goal),avoidHazards,world,self.id);return true;
     }
     private void requestBossProtocol(VehicleState self,Brain brain,BotObservation.Opponent target,WorldQuery world) {
@@ -696,6 +703,24 @@ public final class BotController {
                         && supportedRoadConnection(vehicleId,position,next.add(0,offset,0),world)) brain.pathIndex=1;
             }
         }
+        // A large turning circle can contain the nearest junction sample. Continue
+        // along at most two already-planned ROAD links when their forward connector
+        // is physically open, instead of orbiting that inner sample indefinitely.
+        int first=brain.pathIndex,last=Math.min(brain.path.size()-1,first+2);
+        if(first<brain.path.size()&&Math.abs(signedAngle(world.forward(vehicleId),graph.position(brain.path.get(first)).subtract(position)))>1.2f) {
+            float reach=Math.max(rules.maximumLookAhead(),world.profile(vehicleId).length()*4);
+            for(int index=first+1;index<=last;index++) {
+                if(brain.traversals.get(index-1).type()!=ArenaDefinition.Transition.ROAD)break;
+                var point=graph.position(brain.path.get(index));
+                if(horizontalDistance(position,point)>reach||Math.abs(point.y-(position.y-offset))>.75f
+                        ||Math.abs(signedAngle(world.forward(vehicleId),point.subtract(position)))>1.2f
+                        ||hazardActive&&graph.crossesHazard(position,point)
+                        ||!safeWarningSegment(position,point.add(0,offset,0),brain.warnings))continue;
+                var endpoint=point.add(0,offset,0);
+                if(clearHullCorridor(vehicleId,-1,position,endpoint,world)
+                        &&supportedRoadConnection(vehicleId,position,endpoint,world))brain.pathIndex=index;
+            }
+        }
         brain.replanAt=session.tick+120;
     }
     private int routeStart(Brain brain,Vector3f position,WorldQuery world,int vehicleId) {
@@ -722,7 +747,12 @@ public final class BotController {
         Vector3f surface=position.add(0,-roadOffset(world,vehicleId),0);
         var context=world.roadContext(vehicleId);
         List<ArenaDefinition.NavNode> candidates=graph.nodes().stream()
-                .filter(n->context.known()?n.surfaceId().equals(context.surfaceId()):Math.abs(n.position().y()-surface.y)<2.2f)
+                // Chunk seams are not walls: an adjoining node on the same level is
+                // eligible only when the existing full-hull and support probes reach it.
+                // Preserve the actual ramp's nodes even when its endpoints differ in height.
+                .filter(n->context.known()&&n.surfaceId().equals(context.surfaceId())
+                        ||Math.abs(n.position().y()-surface.y)<2.2f
+                        &&(!context.known()||Objects.equals(surfaceLevels.get(n.surfaceId()),context.level())))
                 .sorted(Comparator.comparingDouble((ArenaDefinition.NavNode n)->n.position().vector().distanceSquared(surface))
                         .thenComparingInt(ArenaDefinition.NavNode::id)).toList();
         for (var node:candidates) {
@@ -732,11 +762,18 @@ public final class BotController {
                     && supportedRoadConnection(vehicleId,position,endpoint,world)) return node.id();
         }
         // A temporarily surrounded car keeps its route and uses the normal reverse/recovery rules.
-        return graph.nearest(surface,candidates.isEmpty()?null:context.known()?context.surfaceId():null);
+        return candidates.isEmpty()?graph.nearest(surface):candidates.getFirst().id();
     }
     private VehicleCommand drive(VehicleState self,Brain brain,WorldQuery world) {
         Vector3f position=world.position(self.id),velocity=world.velocity(self.id),forward=world.forward(self.id);
         float speed=velocity.length();
+        if(brain.routeTurnSide!=0&&Math.abs(signedAngle(forward,brain.routeTurnHeading))<.35f) {
+            // The local waypoint may now lie inside the turning circle. Finish against
+            // the captured heading, then reconnect the route from the actual new pose.
+            brain.routeTurnSide=0;brain.routeTurnHeading=null;brain.nextRouteTurnCheck=session.tick+rules.decisionTicks();
+            brain.path=List.of();brain.traversals=List.of();brain.transition=null;brain.goalNode=-1;brain.replanAt=0;
+            if(brain.destination!=null)route(brain,position,brain.destination,visibleActiveHazard(self.id,world),world,self.id);
+        }
         boolean grinderApproach=self.profileId.equals("grinder")&&!self.controlled()
                 &&(self.specialPhase==VehicleState.SpecialPhase.GRINDER_WINDUP||self.specialPhase==VehicleState.SpecialPhase.GRINDER_SEARCH);
         var meleeTarget=brain.observation.visible(self.grinding()?self.specialTargetId:brain.target);
@@ -848,6 +885,12 @@ public final class BotController {
         }
         VehicleCommand backing=backTowardRoute(self,brain,world,position,forward,velocity,direction,error);
         if (backing!=null) return backing;
+        if(brain.routeTurnSide!=0) {
+            error=Math.copySign(Math.abs(signedAngle(forward,brain.routeTurnHeading)),brain.routeTurnSide);
+            // The first half of a real U-turn travels away from its final waypoint.
+            // Measure actual movement along the approved arc; a stationary car still gets stuck.
+            brain.progressDirection=forward.clone().setY(0).normalizeLocal();
+        }
         float steer=Math.clamp(error*rules.steeringGain(),-1,1);
         float desiredSpeed=rules.cruiseSpeed()*(1-.75f*Math.min(1,Math.abs(error)/1.5f));
         if (Math.abs(error)>2) desiredSpeed=6;
@@ -949,6 +992,21 @@ public final class BotController {
     }
     private VehicleCommand backTowardRoute(VehicleState self,Brain brain,WorldQuery world,Vector3f position,
             Vector3f forward,Vector3f velocity,Vector3f direction,float error) {
+        boolean flatRoad=world.grounded(self.id)&&world.roadContext(self.id).motion()!=RoadContext.Motion.RAMP
+                &&rampAt(position,roadOffset(world,self.id))==null;
+        if(!flatRoad) {brain.routeTurnSide=0;brain.routeTurnHeading=null;}
+        if(brain.routeTurnSide!=0) {brain.backingToRoute=false;return null;}
+        if(flatRoad&&Math.abs(error)>=1.3f&&velocity.length()<=6&&session.tick>=brain.nextRouteTurnCheck) {
+            brain.nextRouteTurnCheck=session.tick+rules.decisionTicks();
+            int side=error>=0?1:-1;
+            boolean clear=clearRouteTurn(self.id,position,forward,side,world);
+            if(!clear&&Math.abs(error)>=1.8f) {side=-side;clear=clearRouteTurn(self.id,position,forward,side,world);}
+            if(clear) {
+                brain.routeTurnSide=side;
+                brain.routeTurnHeading=(side==(error>=0?1:-1)?direction:forward.negate()).clone().setY(0).normalizeLocal();
+                brain.backingToRoute=false;return null;
+            }
+        }
         // A waypoint behind a slow car requires room for a turning circle. Track it in reverse
         // through a clear rear corridor instead of repeatedly driving the nose into the same wall.
         // This is ordinary route driving; the separate timed stuck/recovery policy stays unchanged.
@@ -986,6 +1044,42 @@ public final class BotController {
         float reverse=throttle>0?0:Math.clamp((desired-rearSpeed)*.35f+.25f,0,1);
         brain.requiredMovement=true;
         return new VehicleCommand(throttle,reverse,steer,false,false,false,false,null,0,false,false,AbilityId.NONE);
+    }
+    private boolean clearRouteTurn(int id,Vector3f position,Vector3f forward,int side,WorldQuery world) {
+        var profile=world.profile(id);
+        var ground=world.support(position.add(0,2,0),5);
+        if(ground==null||ground.normal().y<.97f)return false;
+        // Match the native full-lock steering at the existing 6 m/s turning command.
+        // A small margin covers steering response and the chassis overhang.
+        float speedRatio=Math.clamp(6/VEHICLE_RULES.maxSpeed(),0,1);
+        float steering=(VEHICLE_RULES.lowSpeedSteering()
+                +(VEHICLE_RULES.highSpeedSteering()-VEHICLE_RULES.lowSpeedSteering())*speedRatio)
+                *(float)Math.PI/180*profile.turnMultiplier();
+        float radius=profile.wheelBase()/(float)Math.tan(steering)+profile.length()*.1f;
+        Vector3f heading=forward.clone().setY(0).normalizeLocal();
+        Vector3f lateral=new Vector3f(-heading.z,0,heading.x).multLocal(side);
+        Vector3f previous=position;
+        float roadHeight=ground.point().y,offset=roadOffset(world,id);
+        // Twelve chords bound one half-circle; this query runs only at decision cadence.
+        for(int step=1;step<=12;step++) {
+            float angle=step*(float)Math.PI/12,sine=(float)Math.sin(angle),cosine=(float)Math.cos(angle);
+            Vector3f point=position.add(heading.mult(radius*sine)).addLocal(lateral.mult(radius*(1-cosine)));
+            point.y=roadHeight+offset;
+            Vector3f tangent=heading.mult(cosine).addLocal(lateral.mult(sine));
+            Vector3f across=new Vector3f(-tangent.z,0,tangent.x);
+            for(int longitudinal=-1;longitudinal<=1;longitudinal++)for(int edge:new int[]{-1,1}) {
+                var corner=point.add(tangent.mult(longitudinal*(profile.length()/2+.35f)))
+                        .addLocal(across.mult(edge*(profile.width()/2+.35f)));
+                var support=world.support(corner.add(0,2,0),5);
+                if(support==null||support.normal().y<.97f||Math.abs(support.point().y-roadHeight)>.6f
+                        ||!roadSurface(support.point(),true))return false;
+            }
+            if(!clearHullCorridor(id,-1,previous,point,world))return false;
+            if(!clearHullCorridor(id,-1,point.subtract(tangent.mult(profile.length()/2)),
+                    point.add(tangent.mult(profile.length()/2)),world))return false;
+            previous=point;
+        }
+        return true;
     }
     private boolean beginLocalTrafficEscape(Brain brain,int id,Vector3f position,Vector3f forward,
             Vector3f contact,WorldQuery world) {
@@ -1147,7 +1241,7 @@ public final class BotController {
             brain.reverseUntil=0; brain.progress=0; brain.progressWindowStart=session.tick;
             brain.destination=null; brain.path=List.of(); brain.state=State.SEEK_TARGET;
             brain.passingDestination=null;
-            brain.backingToRoute=false;brain.recoveryDetourAttempted=false;
+            brain.backingToRoute=false;brain.recoveryDetourAttempted=false;brain.routeTurnSide=0;brain.routeTurnHeading=null;
         }
         if(!brain.requiredMovement) {
             // A telegraph/landing pause is intentional. Give the following acceleration
@@ -1175,6 +1269,7 @@ public final class BotController {
         if (brain.requiredMovement && brain.progress<rules.stuckMinimumProgress()) {
             if (brain.stuckSince<0) brain.stuckSince=brain.progressWindowStart;
             brain.reverseAttempts++; brain.reverseUntil=session.tick+rules.reverseTicks();
+            brain.routeTurnSide=0;brain.routeTurnHeading=null;
             brain.state=State.RECOVER; brain.replanAt=0; brain.goalNode=-1;
             LOG.warning("AI stuck seed="+session.seed+" id="+self.id+" tick="+session.tick+" position="+position+" destination="+brain.destination
                     +" steeringTarget="+brain.lastDrivingTarget+" passingTarget="+brain.passingDestination

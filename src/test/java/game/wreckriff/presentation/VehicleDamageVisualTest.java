@@ -12,9 +12,26 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class VehicleDamageVisualTest {
     private static Node car(){Node car=VehicleVisual.create(PresentationTestAssets.shared(),VehicleProfile.rivet(),0);VehicleVisual.configureMaximumHp(car,800);return car;}
     private static GameEvent hit(long id,float damage){return new GameEvent(GameEvent.Type.DAMAGE,id,0,1,new Vector3f(1,.2f,0),"machine-gun",damage).withContact(ContactSurface.METAL,new VehicleContact(new Vector3f(1,.2f,0),Vector3f.UNIT_X)).withHealthChange(new HealthChange(800,800-damage));}
+    @Test void immutableAttachmentsSharePreparedMeshesWhileLampColorsRemainPerCar() {
+        Node first=car(),second=car();var model=VehicleModelData.load(PresentationTestAssets.shared(),"rivet");
+        try {for(int level=0;level<3;level++) {
+            Node a=(Node)first.getChild("lod"+level),b=(Node)second.getChild("lod"+level);
+            Geometry gun=(Geometry)a.getChild("mount-weapon-barrel"),other=(Geometry)b.getChild("mount-weapon-barrel");
+            Mesh prepared=model.lods.get(level).stream().filter(p->p.name().equals("mount-weapon-barrel")).findFirst().orElseThrow().stages()[0];
+            assertSame(prepared,gun.getMesh());assertSame(prepared,other.getMesh());assertNotSame(gun.getMaterial(),other.getMaterial());
+            var lamp=((Geometry)a.getChild("headlights")).getMesh();var otherLamp=((Geometry)b.getChild("headlights")).getMesh();
+            assertNotSame(lamp,otherLamp);assertNotSame(lamp.getFloatBuffer(VertexBuffer.Type.Color),otherLamp.getFloatBuffer(VertexBuffer.Type.Color));
+            lamp.getFloatBuffer(VertexBuffer.Type.Color).put(0,.1f);assertEquals(1,otherLamp.getFloatBuffer(VertexBuffer.Type.Color).get(0));
+        }
+        VehicleVisual.updateDamage(first,0);VehicleVisual.updatePresentation(first,.12f,null);VehicleVisual.close(first);
+        var untouched=((Geometry)((Node)second.getChild("lod0")).getChild("mount-weapon-barrel")).getMesh();
+        assertTrue(Float.isFinite(untouched.getFloatBuffer(VertexBuffer.Type.Position).get(0)));assertEquals(0,untouched.getMorphTargets().length);
+        } finally {VehicleVisual.close(first);VehicleVisual.close(second);}
+    }
     @Test void fiveStagesUseExactlyTwoGpuTargetsAndKeepImmutableBaseAndWheelPose() {
         Node car=car();Geometry paint=(Geometry)car.getChild("paint");Mesh mesh=paint.getMesh();float[] original=points(mesh);var wheel=car.getChild("wheel-0").getLocalTransform().clone();
         for(float hp:new float[]{1,.75f,.5f,.25f,0}) {
@@ -197,6 +214,15 @@ class VehicleDamageVisualTest {
             VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.REPAIRED,3401,0,0,Vector3f.ZERO,"repair",40).withHealthChange(new HealthChange(760,800)));
             VehicleVisual.updatePresentation(car,.3f,camera);
             assertEquals(1,lampEnergy((Geometry)((Node)car.getChild("lod2")).getChild("headlights"),true),.001f);
+        } finally {VehicleVisual.close(car);}
+    }
+    @Test void centralEngineImpactUsesItsPreparedRegionalShape() {
+        Node car=car();VehicleProfile profile=VehicleProfile.rivet();Vector3f engine=new Vector3f(0,profile.height()*.28f,profile.length()*.29f);
+        try {
+            VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.DAMAGE,3500,0,1,engine,"cannon",40).withContact(ContactSurface.METAL,new VehicleContact(engine,Vector3f.UNIT_Y)));
+            VehicleVisual.updatePresentation(car,.12f,null);
+            assertEquals(.5f,car.getControl(VehicleDamageVisual.class).regionDamage(7),.001f);
+            assertEquals(0,car.getControl(VehicleDamageVisual.class).regionDamage(1),.001f,"A central engine strike must not become a right-front strike");
         } finally {VehicleVisual.close(car);}
     }
     private static float lampEnergy(Geometry geometry,boolean left){var position=geometry.getMesh().getFloatBuffer(VertexBuffer.Type.Position);var color=geometry.getMesh().getFloatBuffer(VertexBuffer.Type.Color);float sum=0;int count=0;for(int vertex=0;vertex<geometry.getVertexCount();vertex++)if((position.get(vertex*3)<0)==left){sum+=color.get(vertex*4);count++;}return sum/count;}

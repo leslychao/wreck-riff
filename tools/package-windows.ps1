@@ -42,13 +42,6 @@ function Assert-BuildChild([string]$Candidate) {
     return $absolute
 }
 
-function Get-Sha256([string]$LiteralPath) {
-    $stream=[IO.File]::OpenRead($LiteralPath)
-    $algorithm=[Security.Cryptography.SHA256]::Create()
-    try { return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
-    finally { $stream.Dispose();$algorithm.Dispose() }
-}
-
 $inputLib = Assert-BuildChild (Join-Path $buildRoot 'install/wreck-riff/lib')
 $assetReportRoot = Assert-BuildChild (Join-Path $buildRoot 'reports/assets')
 $assetReport = Read-ReleaseJson (Join-Path $assetReportRoot 'verification.json')
@@ -119,7 +112,7 @@ $requiredNatives = @(
 $foundNatives = @()
 $jarHashes = @()
 foreach ($jar in (Get-ChildItem -LiteralPath (Join-Path $image 'app') -Filter '*.jar' -File)) {
-    $jarHashes += [ordered]@{ file=$jar.Name; sha256=(Get-Sha256 $jar.FullName) }
+    $jarHashes += [ordered]@{ file=$jar.Name; sha256=(Get-ReleaseSha256 $jar.FullName) }
     $archive = [IO.Compression.ZipFile]::OpenRead($jar.FullName)
     try {
         foreach ($entry in $archive.Entries) {
@@ -210,7 +203,7 @@ $null=Get-ReleasePackageIdentity $stagedZip
 $null=Assert-ReleaseSourceDistribution $stagedZip
 $zipTarget = Assert-BuildChild (Join-Path $distributionRoot $zipName)
 Move-Item -LiteralPath $stagedZip -Destination $zipTarget -Force
-$checksum = Get-Sha256 $zipTarget
+$checksum = Get-ReleaseSha256 $zipTarget
 [IO.File]::WriteAllText(($zipTarget + '.sha256'), "$checksum  $zipName`n", [Text.UTF8Encoding]::new($false))
 $imageTarget = Assert-BuildChild (Join-Path $distributionRoot 'WreckRiff')
 if (Test-Path -LiteralPath $imageTarget) { Remove-Item -LiteralPath $imageTarget -Recurse -Force }

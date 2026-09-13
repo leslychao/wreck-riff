@@ -3,6 +3,7 @@ package game.wreckriff.app;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ScreenshotAppState;
 import com.jme3.app.state.VideoRecorderAppState;
+import game.wreckriff.diagnostics.BenchmarkGate;
 import com.jme3.font.BitmapText;
 import com.jme3.input.KeyInput;
 import com.jme3.material.Material;
@@ -105,6 +106,8 @@ public final class GameApplication extends SimpleApplication {
     private VehicleShowcase vehicleShowcase;
     private boolean vehicleSelectionCaptured;
     private VideoRecorderAppState videoRecorder;
+    private boolean movingVideoStarted,movingVideoFinished;
+    private MovingVideoFrames movingVideoFrames;
     private AudioCapture audioCapture;
     private BitmapText showcaseText;
     private final List<String> diagnosticCaptures=new ArrayList<>();
@@ -182,6 +185,7 @@ public final class GameApplication extends SimpleApplication {
         launchReport=options.dev()?null:new LaunchReport(store.directory(),progress.snapshot().campaign().checkpoint()!=null);
     }
     @Override public void simpleInitApp() {
+        assetManager.registerLoader(game.wreckriff.presentation.RawPngLoader.class,"png");
         flyCam.setEnabled(false); setDisplayFps(false); setDisplayStatView(false);
         inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         viewPort.setBackgroundColor(new ColorRGBA(0.033f,0.045f,0.065f,1));
@@ -209,6 +213,7 @@ public final class GameApplication extends SimpleApplication {
                 diagnostic.put("arenaId",requestedArena);diagnostic.put("glow",store.settings().glow);
                 diagnostic.put("detailedProfiling",options.profile());
                 diagnostic.put("requestedRenderFps",options.renderFps());
+                diagnostic.put("videoRecording",options.combatVideoSeconds()>0||options.showcase()||options.artShowcase()||options.vehicleShowcase());
                 diagnostic.put("gpu",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_RENDERER));
                 diagnostic.put("graphicsVersionDriver",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_VERSION));
                 diagnostic.put("width",cam.getWidth());diagnostic.put("height",cam.getHeight());
@@ -327,7 +332,7 @@ public final class GameApplication extends SimpleApplication {
             } finally {decodedTextures.clear();decodedModels.clear();}
         }));
         stages.add(new MatchLoading.Stage("Дорожные опоры",()->{
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             if(checkpoint!=null)ArenaSystems.restoreGeometry(checkpoint.arena(),world,content.graph(),arena);
         }));
         int count=mode==ProgressStore.Mode.BOSS_DUEL||bossCheckpoint?1:selected.metadata().normalEnemies()+1;
@@ -361,7 +366,10 @@ public final class GameApplication extends SimpleApplication {
             encounterSubtitles=new EncounterSubtitles(arena,session.sessionId);
             sceneLighting.apply(arena.metadata().theme(),store.settings().glow);
         }));
-        stages.add(new MatchLoading.Stage("Музыка",()->audio.prepareMatch(session.sessionId,arena.metadata().music(),arena.metadata().bossMusic())));
+        stages.add(new MatchLoading.Stage("Звук",()->{
+            audio.prepareMatch(session.sessionId,arena.metadata().music(),arena.metadata().bossMusic());
+            audio.prepareAmbience(session.sessionId,arena);
+        }));
         loading=new MatchLoading(stages,()->world.step(),()->{
             // Restoring resource timers after suspension warmup cannot spend a saved cooldown.
             if(checkpoint!=null)MatchCheckpoint.restorePlayer(session.vehicle(0),checkpoint.player());
@@ -540,6 +548,7 @@ public final class GameApplication extends SimpleApplication {
                         audio.voiceCount(),combatVisuals==null?0:combatVisuals.effectCount(),launchingVehicles(),diagnosticDrawable,
                         startingLoop==loop?Math.max(0,loop.droppedSimulationTime()-startingDropped):loop.droppedSimulationTime());
                 pendingFrameReport=report;
+                if(stageProfiler!=null)stageProfiler.measuredCombatFrame(pendingFrame.frame(),diagnostic!=null&&diagnostic.measuresCombatFrame(pendingFrame),options.benchmarkSeconds()>0);
             }
             if(options.automated()) advanceDiagnostic(diagnosticDrawable);
         } catch(Exception e) { fail(e); }
@@ -567,6 +576,14 @@ public final class GameApplication extends SimpleApplication {
     }
     private boolean preparingLoadingFrame() {return flow.screen()==Screen.LOADING&&loading!=null&&loading.awaitingFrame();}
     @Override public void simpleRender(com.jme3.renderer.RenderManager manager) {
+        // jME 3.8.1 calls this after viewport postFrame. Detach here so the next StateManager.update
+        // removes the recorder's processor before another render; detach in simpleUpdate records N+1.
+        if(movingVideoStarted&&!movingVideoFinished&&movingVideoFrames.frameRendered(videoRecorder.isInitialized())) {
+            movingVideoFinished=true;stateManager.detach(videoRecorder);capture("moving-combat-end");
+            diagnostic.put("movingVideo",Map.of("status","CAPTURED_REQUIRES_VISUAL_REVIEW","path","moving-combat.avi",
+                    "renderedFrames",movingVideoFrames.count(),"fps",captureFrameRate(),"seconds",movingVideoFrames.count()/(double)captureFrameRate(),
+                    "endTick",session==null?0:session.tick,"releaseEligible",false));
+        }
         if(uiReview!=null)uiReviewFrameRendered=true;
         if(loadingFramePrepared&&preparingLoadingFrame()) {
             // SimpleApplication calls this after RenderManager.render, so this acknowledges a real scene render.
@@ -624,6 +641,7 @@ public final class GameApplication extends SimpleApplication {
         }
         report.tick(session,events,bots);
         if(session.vehicle(0).recoveries>recoveries) chase.reset();
+        long contactPresentationStarted=profileStamp();
         List<GameEvent> contactEvents=events.stream().map(event->{
             Node model=vehicleModels.get(event.subjectId());
             return model==null?event:VehicleVisual.refineContact(model,event);
@@ -632,6 +650,7 @@ public final class GameApplication extends SimpleApplication {
         contactTimeline.accept(contactEvents,session.seconds());
         combatVisuals.accept(contactEvents);
         combatVisuals.registerContacts(contactEvents);
+        profileStage(StageProfiler.Stage.CONTACT_PRESENTATION,contactPresentationStarted);
         specialPresentation.accept(events);
         pickupPresentation.accept(events);
         pickupFeedback.accept(events,session.tick);
@@ -1385,8 +1404,11 @@ public final class GameApplication extends SimpleApplication {
             return;
         }
         boolean benchmark=options.benchmarkSeconds()>0;
-        if(benchmark&&diagnostic.measuredActiveSeconds()>=options.benchmarkSeconds()) {
+        if(options.combatVideoSeconds()>0)advanceMovingVideo(drawable);
+        if(benchmark&&(options.combatVideoSeconds()>0?movingVideoFinished:diagnostic.measuredActiveSeconds()>=options.benchmarkSeconds())) {
             // Completion is evidence, not release approval; the strict gate also requires external process memory.
+            // IsoTimer fixes simulation dt while readback/encoding may take longer than real time.
+            // Video completion follows captured frames; awaitDiagnostic retains the bounded wall-clock timeout.
             finishDiagnostic(undrawableSeconds==0);return;
         }
         if(!benchmark&&elapsed>=options.smokeSeconds()) {
@@ -1510,6 +1532,25 @@ public final class GameApplication extends SimpleApplication {
             try {diagnostic.write(store.directory(),status);}
             catch(IOException e) {diagnosticCompletion.shutdownFailed();System.err.println("Cannot write diagnostic evidence: "+e.getMessage());}
         }
+    }
+    /** Explicit visual review records the real renderer; Windows GDI can return a stale fullscreen image. */
+    private void advanceMovingVideo(boolean drawable) {
+        if(!movingVideoStarted&&drawable&&flow.screen()==Screen.RUNNING&&framePhase().combat()
+                &&diagnostic.warmedActiveSeconds()>=BenchmarkGate.WARMUP_ACTIVE_SECONDS) {
+            movingVideoStarted=true;
+            movingVideoFrames=new MovingVideoFrames(options.combatVideoSeconds()*captureFrameRate());
+            videoRecorder=new VideoRecorderAppState(store.directory().resolve("moving-combat.avi").toFile(),.85f,captureFrameRate());
+            stateManager.attach(videoRecorder);capture("moving-combat-start");
+            diagnostic.put("movingVideoStartTick",session.tick);
+            diagnostic.put("movingVideoCapture","jME VideoRecorderAppState framebuffer capture; real AI, chase camera and physics; recording is not performance evidence");
+        }
+    }
+    /** Counts completed recorder frames, independent of wall-clock encoding speed. */
+    static final class MovingVideoFrames {
+        private final int target;private int frames;
+        MovingVideoFrames(int target){if(target<=0)throw new IllegalArgumentException("Positive video frame target required");this.target=target;}
+        boolean frameRendered(boolean initialized){return initialized&&frames<target&&++frames==target;}
+        int count(){return frames;}
     }
     private void captureVisualStatistics() {
         if(diagnostic==null||combatVisuals==null)return;

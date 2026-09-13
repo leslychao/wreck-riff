@@ -1,11 +1,11 @@
 {
   "id": "rivet",
   "authoringMode": "original-recipe",
-  "generatorSha256": "73f0c67cb15823b0a5afcf43e29d720652c0c5bd2553594d2cdaf743bd85c93f",
+  "generatorSha256": "383a0b9644486c6fb4e5fdf3f1a8c7846d62e3100dabc04118f1a12a7f23c174",
   "exports": {
-    "source.blend": "b59eb544ff1dd6f8fa525a7d9019f607917bf0b05fdfadf27abc7dc3a8a9edb6",
+    "source.blend": "c0a9694c693cf437f5c737a2dcfa78404e0d80f9db754077fc0258225865e8c4",
     "source.glb": "b25ea0f87730e1d132b647a66b3db7eee0a0a9ceba1bfaadf0d2d14542c7f223",
-    "mesh.json.gz": "fdef39db217c8ee38027f1a4cc9a75f3055dd4af2178ee0605c24b645400af1d",
+    "mesh.json.gz": "597fd6b3efde0c637562d62a2381d54c0444039abed9bc9f2168385cf8244a19",
     "diffuse.png": "3e2d784946b76fbe9e89ecf8253e91ba125a05d78541c9fa59064f141aa60b42",
     "normal.png": "df29d065af43f22f3025873c5c356f744d3dd9042a04d3aa4cce73f2c4c216a8",
     "specular.png": "49113ab846bcbd8592e7fb904910f85ada4c5d8055d97f7053636ab370b1f35e",
@@ -16,7 +16,7 @@
     6784,
     1632
   ],
-  "sourceBlendSha256": "b59eb544ff1dd6f8fa525a7d9019f607917bf0b05fdfadf27abc7dc3a8a9edb6",
+  "sourceBlendSha256": "c0a9694c693cf437f5c737a2dcfa78404e0d80f9db754077fc0258225865e8c4",
   "sourceGlbSha256": "b25ea0f87730e1d132b647a66b3db7eee0a0a9ceba1bfaadf0d2d14542c7f223",
-  "meshSha256": "fdef39db217c8ee38027f1a4cc9a75f3055dd4af2178ee0605c24b645400af1d"
+  "meshSha256": "597fd6b3efde0c637562d62a2381d54c0444039abed9bc9f2168385cf8244a19"
 }

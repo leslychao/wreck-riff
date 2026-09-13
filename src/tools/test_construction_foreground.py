@@ -101,5 +101,28 @@ class ConstructionForegroundTest(unittest.TestCase):
         signatures=[json.dumps({k:v for k,v in part.items() if k not in ('id','anchor')},sort_keys=True) for part in self.scene.parts]
         self.assertEqual(len(signatures),len(set(signatures)))
 
+    def test_reviewed_production_yards_preserve_eight_metres_around_every_pickup(self):
+        names=('dispatch-curing-yard','frame-reinforcement-yard','interchange-span-yard','interchange-exit-bearings','aggregate-screening-inlet')
+        for name in names:
+            self.assertTrue(any(w['id']==name for w in self.workplaces),name)
+            boxes=[b for b in self.scene.data['boxes'] if b['id'].startswith('dress-construction-'+name+'-')]
+            for b in boxes:
+                c,s=b['center'],b['size'];angle=math.radians(b['yawDegrees'])
+                for pickup in self.scene.data['pickups']:
+                    p=pickup['position'];dx,dz=p['x']-c['x'],p['z']-c['z']
+                    local_x=math.cos(angle)*dx-math.sin(angle)*dz;local_z=math.sin(angle)*dx+math.cos(angle)*dz
+                    distance=math.hypot(max(0,abs(local_x)-s['x']/2),max(0,abs(local_z)-s['z']/2))
+                    self.assertGreaterEqual(distance,8,(b['id'],pickup['id']))
+
+    def test_industrial_continuation_stays_beyond_the_existing_physical_boundary(self):
+        prefixes=('estate-','north-panel-works-','northeast-powerhouse-','east-rolling-shop-','south-assembly-shop-','west-precast-works-')
+        for part in self.scene.parts:
+            if not part['id'].startswith(prefixes) or part['shape']!='BOX':continue
+            p,s=part['position'],part['size'];angle=math.radians(part['rotation']['y'])
+            dx=abs(math.cos(angle))*s['x']/2+abs(math.sin(angle))*s['z']/2
+            dz=abs(math.sin(angle))*s['x']/2+abs(math.cos(angle))*s['z']/2
+            self.assertTrue(p['x']+dx<=.001 or p['x']-dx>=1599.999 or p['z']+dz<=.001 or p['z']-dz>=1199.999,part['id'])
+            self.assertEqual('exterior',part['anchor'])
+
 
 if __name__=='__main__':unittest.main()

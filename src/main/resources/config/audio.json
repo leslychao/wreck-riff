@@ -17,6 +17,9 @@
   "musicDuckGain": 0.7079458,
   "musicDuckSeconds": 0.45,
   "effects": [
+    "ambient-motor",
+    "ambient-rotor",
+    "ambient-ventilation",
     "engine-idle",
     "engine-drive",
     "turbo-loop",

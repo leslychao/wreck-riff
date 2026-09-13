@@ -10,6 +10,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ArenaDynamicPresentationTest {
     @Test void everyLaunchHasDirectionalFlushGeometryInsideItsActualFootprintAndOneOwner() {
         for(var entry:ArenaRegistry.load().entries()) {
@@ -94,7 +95,7 @@ class ArenaDynamicPresentationTest {
         var f=new Fixture("neon_zero");String gate=f.arena.barriers().getFirst().geometryId();
         String barrier=f.arena.barriers().getLast().geometryId();
         var v=new ArenaDefinition.Vec3(0,0,0);var size=new ArenaDefinition.Vec3(1,1,1);
-        var group=new ArenaArt.Group("shared",v,ArenaArt.Motion.PULSE,12,0);
+        var group=new ArenaArt.Group("shared",v,ArenaArt.Motion.PULSE,12,0,0);
         var scene=new ArenaArt.Scene(1,f.arena.id(),"test","original",List.of(group),List.of(
                 new ArenaArt.Part("static-overlay","",gate,ArenaArt.Shape.BOX,"steel",v,size,v),
                 new ArenaArt.Part("static-overlay-2","",gate,ArenaArt.Shape.BOX,"steel",v,size,v),

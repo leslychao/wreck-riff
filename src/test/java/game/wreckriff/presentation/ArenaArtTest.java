@@ -8,6 +8,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ArenaArtTest {
     @Test void allFourScenesHaveTheirOwnLandmarksAndLocalProvenance() {
         var registry=ArenaRegistry.load();
@@ -33,6 +34,22 @@ class ArenaArtTest {
         for(int n=0;n<100;n++)visual.update(.1f);
         assertEquals(pose,wheel.getLocalRotation());session.tick=200;visual.update(.016f);assertNotEquals(pose,wheel.getLocalRotation());
         assertSame(visual,root.getControl(ArenaPresentation.class));
+        assertTrue(wheel.getQuantity()<=4,"Rim and spokes must be batched as a rigid assembly");
+        Node cabin=(Node)root.getChild("art-motion-euphoria-ferris-cabin-0");assertNotNull(cabin);
+        assertTrue(cabin.getQuantity()<=5,"Cabin panels share material batches");
+        for(int seconds:new int[]{0,15,30,45,60}) {
+            session.tick=(long)seconds*MatchSession.TICKS_PER_SECOND;visual.update(.016f);root.updateGeometricState();
+            Vector3f wheelPivot=wheel.localToWorld(new Vector3f(58,0,0),null);
+            Vector3f cabinPivot=cabin.localToWorld(new Vector3f(58,0,0),null);
+            assertEquals(0,wheelPivot.distance(cabinPivot),.001f,"Cabin stays attached through a whole revolution");
+            assertEquals(Vector3f.UNIT_Y,cabin.getWorldRotation().mult(Vector3f.UNIT_Y),"Cabin stays upright");
+            assertEquals(1300,wheel.getWorldBound().getCenter().x,.1f,"Batching preserves the authored axle position");
+            assertEquals(65,wheel.getWorldBound().getCenter().y,.1f);
+            assertEquals(cabinPivot.x,cabin.getWorldBound().getCenter().x,.1f,"Cabin geometry follows its actual pivot");
+        }
+        var stopped=cabin.getLocalTranslation().clone();
+        for(int frame=0;frame<120;frame++)visual.update(.1f);
+        assertEquals(stopped,cabin.getLocalTranslation(),"Paused session cannot advance cabin motion");
     }
     @Test void neonInformationScreenReactsToBossPhase() {
         var arena=ArenaRegistry.load().definition("neon_zero");var root=scene(arena);
@@ -49,7 +66,10 @@ class ArenaArtTest {
             root.depthFirstTraversal(spatial->{
                 if(spatial.getName().startsWith("art-cell-"))cells[0]++;
                 if(spatial instanceof Geometry geometry) {
-                    draws[0]++;var mesh=geometry.getMesh();assertTrue(mesh.getTriangleCount()>0);
+                    // Both authored LOD meshes are loaded, but a hidden alternate
+                    // cannot issue a draw. Validate its data without double-counting it.
+                    if(geometry.getCullHint()!=Spatial.CullHint.Always)draws[0]++;
+                    var mesh=geometry.getMesh();assertTrue(mesh.getTriangleCount()>0);
                     var positions=(java.nio.FloatBuffer)mesh.getBuffer(VertexBuffer.Type.Position).getData();
                     for(int i=0;i<positions.limit();i++)assertTrue(Float.isFinite(positions.get(i)));
                 }

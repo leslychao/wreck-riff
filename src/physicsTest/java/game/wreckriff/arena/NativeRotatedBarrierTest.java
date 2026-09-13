@@ -21,17 +21,17 @@ class NativeRotatedBarrierTest {
             assertEquals(ArenaSystems.HazardPhase.ACTIVE,rig.systems.barrierPhase(rig.barrier.id()));
             assertTrue(rig.world.containsArenaBody(rig.box.id()));
             Vector3f c=rig.box.center().vector();
-            var acrossWideAxis=rig.world.ray(c.add(8,0,-4),c.add(8,0,4),0);
-            assertNotNull(acrossWideAxis,"A quarter-turn barrier extends across the road in X");
+            var acrossWideAxis=rig.world.ray(rig.at(-4,0,8),rig.at(4,0,8),0);
+            assertNotNull(acrossWideAxis,"The authored rotation must carry the complete long barrier footprint");
             assertEquals(rig.box.id(),acrossWideAxis.objectId());
-            var sweep=rig.world.staticSweep(c.add(8,0,-4),c.add(8,0,4),.1f);
+            var sweep=rig.world.staticSweep(rig.at(-4,0,8),rig.at(4,0,8),.1f);
             assertNotNull(sweep);assertEquals(rig.box.id(),sweep.objectId());
-            assertNull(rig.world.ray(c.add(-4,0,8),c.add(4,0,8),0),"The unrotated long axis must remain clear");
+            assertNull(rig.world.ray(rig.at(8,0,-4),rig.at(8,0,4),0),"The perpendicular exterior must remain clear");
             rig.restore(ProgressStore.HazardPhase.ACTIVE,1);rig.session.tick++;
             rig.systems.beforePhysics(rig.world,Map.of());rig.world.step();rig.systems.synchronizeGeometry(rig.world,rig.graph);
             assertEquals(ArenaSystems.HazardPhase.OFF,rig.systems.barrierPhase(rig.barrier.id()));
             assertFalse(rig.world.containsArenaBody(rig.box.id()));
-            assertNull(rig.world.ray(c.add(8,0,-4),c.add(8,0,4),0));
+            assertNull(rig.world.ray(rig.at(-4,0,8),rig.at(4,0,8),0));
             assertTrue(rig.graph.isOpen(rig.barrier.id()));
         }
     }
@@ -53,10 +53,14 @@ class NativeRotatedBarrierTest {
         final PhysicsWorld world=new PhysicsWorld(rules);
         final NavGraph graph=new NavGraph(arena);
         Rig(boolean occupied) {
-            assertEquals(-90,box.yawDegrees(),.001f);session.phase=MatchSession.Phase.ARENA_COMBAT;
+            assertTrue(Math.abs(box.yawDegrees())>45,"Exercise a genuinely rotated barrier");session.phase=MatchSession.Phase.ARENA_COMBAT;
             world.configureArena(arena);Vector3f c=box.center().vector();float floor=c.y-box.size().y()/2;
             world.addStatic("test-floor",new BoxCollisionShape(new Vector3f(50,.5f,50)),new Vector3f(c.x,floor-.5f,c.z),new Quaternion());
-            var profile=VehicleProfile.rivet();world.addVehicle(0,new Vector3f(c.x+(occupied?8:30),floor+profile.roadOffset(),c.z),new Quaternion(),profile);
+            var profile=VehicleProfile.rivet();world.addVehicle(0,at(0,0,occupied?8:30).setY(floor+profile.roadOffset()),new Quaternion(),profile);
+        }
+        Vector3f at(float x,float y,float z) {
+            return new Quaternion().fromAngleAxis(box.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y)
+                    .mult(new Vector3f(x,y,z)).addLocal(box.center().vector());
         }
         void restore(ProgressStore.HazardPhase phase,long ticks) {
             var saved=systems.snapshot();var hazards=new LinkedHashMap<>(saved.hazards());

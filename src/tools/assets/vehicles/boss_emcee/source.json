@@ -1,11 +1,11 @@
 {
   "id": "boss_emcee",
   "authoringMode": "original-recipe",
-  "generatorSha256": "73f0c67cb15823b0a5afcf43e29d720652c0c5bd2553594d2cdaf743bd85c93f",
+  "generatorSha256": "383a0b9644486c6fb4e5fdf3f1a8c7846d62e3100dabc04118f1a12a7f23c174",
   "exports": {
-    "source.blend": "8dc169aace31853b46c2dedb638fed15f96c32bd56a6deccab13356b9d28ed80",
+    "source.blend": "67c4fbc5de83c9462128e69c380eb34ad84737d6206c28dc63b8ac7d8b026b66",
     "source.glb": "739f9037dba22f52af21e421de10bf4248a57e70d82a6ce93c1707919b06fa12",
-    "mesh.json.gz": "45b63c4fdf63a8b4d9c9bb59a757a22af87152e78f5b56c7aff1b91cd96c6fa1",
+    "mesh.json.gz": "7c0cd7700475f2e6dba4c045ceb0a6798d46f958e20a727236e3e7bad6bec625",
     "diffuse.png": "7d5703b6100441de7bb840db3a1e33d36e37d9746194d7bfb9acb4ee2dee62ae",
     "normal.png": "825d7b2e346adc341c90b230ad09cb09bda77fb87c5ec45ede17a8c652d59218",
     "specular.png": "f26842bfd5d1a678c4b5dd85a7136a7da598753c7509824c1944eeba05e1670e",
@@ -16,7 +16,7 @@
     7456,
     1848
   ],
-  "sourceBlendSha256": "8dc169aace31853b46c2dedb638fed15f96c32bd56a6deccab13356b9d28ed80",
+  "sourceBlendSha256": "67c4fbc5de83c9462128e69c380eb34ad84737d6206c28dc63b8ac7d8b026b66",
   "sourceGlbSha256": "739f9037dba22f52af21e421de10bf4248a57e70d82a6ce93c1707919b06fa12",
-  "meshSha256": "45b63c4fdf63a8b4d9c9bb59a757a22af87152e78f5b56c7aff1b91cd96c6fa1"
+  "meshSha256": "7c0cd7700475f2e6dba4c045ceb0a6798d46f958e20a727236e3e7bad6bec625"
 }

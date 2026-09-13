@@ -4,6 +4,7 @@ import game.wreckriff.diagnostics.ArenaModelVerifier;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(PresentationTestAssets.class)
 class ArenaModelAssetsTest {
     @Test void referencedArchitectureHasEditableSourcesNormalsUvsAndSilhouettePreservingLod() throws Exception {
         var assets=ArenaModelVerifier.verify(PresentationTestAssets.shared());

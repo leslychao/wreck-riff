@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Three seeds per registered map: authored autonomous PvE, or a scripted boss weapon opening followed by AI. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeEncounterBalanceProbeTest {
     private static final VehicleRules VEHICLES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
@@ -50,7 +51,7 @@ class NativeEncounterBalanceProbeTest {
             var surface=spawn.position().vector();var bossRotation=new Quaternion().fromAngleAxis(spawn.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y);
             if(surface.y!=0||!supported(arena,world,bossProfile,surface,bossRotation))continue;
             var bossPosition=surface.add(0,bossProfile.roadOffset(),0);
-            for(float distance:new float[]{35,40,45})for(float angle:new float[]{0,30,-30,60,-60,90,-90,120,-120,180}) {
+            for(float distance=35;distance<=90;distance+=5)for(float angle:new float[]{0,30,-30,60,-60,90,-90,120,-120,180}) {
                 var direction=new Quaternion().fromAngleAxis(angle*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y).mult(bossRotation.mult(Vector3f.UNIT_Z));
                 var playerSurface=surface.add(direction.mult(distance));var support=world.support(playerSurface.add(0,1,0),2);
                 if(support==null||Math.abs(support.point().y)>.15f)continue;
@@ -68,8 +69,9 @@ class NativeEncounterBalanceProbeTest {
     }
     private static boolean cannonOpening(VehicleProfile boss,Vector3f bossPosition,Quaternion bossRotation,
             VehicleProfile player,Vector3f playerPosition,Quaternion playerRotation) {
-        // Visibility alone is insufficient for a tall, fixed forward cannon: at 35 m
-        // its arc clears Rivet's roof. Choose the scripted fixture inside the existing
+        // Visibility alone is insufficient for a tall, fixed forward cannon: at the
+        // current 80 m/s its arc clears Rivet's roof at the old 35-45 m fixture. Choose
+        // a supported starting pose inside the configured
         // ballistic lane; only actual runtime DAMAGE events can pass the encounter.
         Vector3f muzzle=bossPosition.add(bossRotation.mult(boss.muzzle()));
         Vector3f forward=bossRotation.mult(Vector3f.UNIT_Z).setY(0).normalizeLocal();
@@ -107,7 +109,7 @@ class NativeEncounterBalanceProbeTest {
         var session=new MatchSession(seed,arena,duel?MatchSession.Mode.BOSS_DUEL:MatchSession.Mode.LEGACY,COMBAT);
         try(var world=new PhysicsWorld(VEHICLES)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             StartingPose initialPlayer=null;
             for(var state:session.vehicles) {
                 var profile=VehicleDefinition.forId(state.profileId).profile(VEHICLES);var spawn=arena.spawns().get(state.id);
@@ -117,13 +119,17 @@ class NativeEncounterBalanceProbeTest {
                 world.addVehicle(state.id,pose.position(),pose.rotation(),profile);
             }
             try(var runtime=new MatchRuntime(session,world,arena,content.graph(),VEHICLES)) {
+                assertTrue(session.vehicles.stream().flatMap(v->v.weapons().stream()).allMatch(slot->slot.ammo==0));
                 for(int tick=0;tick<360;tick++)world.step();
                 runtime.drivers().values().forEach(driver->driver.recordSafePose(0));runtime.skipIntro();
                 float damage10=0,damage30=0,playerDamage=0,enemyDamage=0,bossDamage=0,playerDamage10=0,playerDamage30=0,bossDamage10=0,bossDamage30=0;
-                int bossBoundShots=0,shots=0,pickups=0,steps=0;boolean nativeBoss=false;
+                int bossBoundShots=0,shots=0,pickups=0,steps=0;boolean nativeBoss=false,openingArmed=false;
                 var shotKinds=new TreeMap<String,Integer>();
                 Set<String> bound=duel?Set.of(arena.bosses().getFirst().primary().id(),arena.bosses().getFirst().secondary().id()):Set.of();
                 while(steps<180*120&&session.outcome==MatchSession.Outcome.NONE&&session.phase!=MatchSession.Phase.ERROR) {
+                    if(controlled&&!openingArmed&&session.phase==MatchSession.Phase.BOSS_COMBAT) {
+                        armControlledOpening(session);openingArmed=true;
+                    }
                     List<GameEvent> events;
                     if(controlled&&steps<30*120) {
                         var overrides=new HashMap<Integer,VehicleCommand>();
@@ -157,8 +163,8 @@ class NativeEncounterBalanceProbeTest {
                 var row=new LinkedHashMap<String,Object>();row.put("scenario",arenaId+"/"+seed);row.put("arena",arenaId);row.put("seed",seed);
                 row.put("layoutRevision",arena.layoutRevision());
                 row.put("mode",session.mode.name());row.put("start",controlled?"controlled-visible-entrance":"authored");
-                row.put("driver",controlled?"30s-scripted-stationary-bound-weapon-rotation-player-fires-after-10s-then-existing-ai-both":"existing-ai-player");
-                row.put("startingPosePolicy",controlled?"supported-visible-35-to-45m; cannon requires its unchanged ballistic lane to intersect player hull":"authored");
+                row.put("driver",controlled?"one-explicit-full-arsenal-fixture-after-empty-spawn; 30s-scripted-stationary-bound-weapon-rotation-player-fires-after-10s-then-existing-ai-both":"existing-ai-player");
+                row.put("startingPosePolicy",controlled?"supported-visible-35-to-90m; cannon requires its configured ballistic lane to intersect player hull":"authored");
                 row.put("initialPlayerPosition",initialPlayer.position().toString());row.put("initialPlayerRotation",initialPlayer.rotation().toString());
                 row.put("seconds",steps/120f);row.put("activeSeconds",session.seconds());
                 row.put("outcome",session.outcome.name());row.put("reason",session.outcomeReason);row.put("phase",session.phase.name());row.put("timeout",session.outcome==MatchSession.Outcome.NONE&&steps>=180*120);
@@ -176,5 +182,10 @@ class NativeEncounterBalanceProbeTest {
     }
     static VehicleCommand stationaryFire(WeaponType weapon) {
         return new VehicleCommand(0,0,0,true,false,true,true,weapon,0,false,false,AbilityId.NONE);
+    }
+    /** One explicit test loadout exercises firing lanes; the authored probe never receives it. */
+    static void armControlledOpening(MatchSession session) {
+        assertEquals(MatchSession.Phase.BOSS_COMBAT,session.phase);
+        for(var state:session.vehicles)for(var slot:state.weapons())slot.ammo=slot.maximumAmmo;
     }
 }

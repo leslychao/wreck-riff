@@ -17,6 +17,7 @@ import game.wreckriff.presentation.SurfaceMesh;
 import game.wreckriff.presentation.ArenaArt;
 import game.wreckriff.presentation.ArenaPresentation;
 import game.wreckriff.presentation.SpatialChunks;
+import game.wreckriff.simulation.ContactSurface;
 import java.util.*;
 
 /** Original, parameter-driven industrial yard. Every solid uses the rendered geometry. */
@@ -31,10 +32,10 @@ public final class ArenaFactory {
     public List<SurfaceMaterials.TextureUse> textureRequirements(ArenaDefinition definition,ArenaArt.Scene art) {
         if(!art.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
         var names=new LinkedHashSet<String>();
-        definition.boxes().forEach(part->names.add(surfaceMaterial(part,definition.metadata().theme())));
+        definition.boxes().forEach(part->names.add(part.surfaceMaterial(definition.metadata().theme())));
         definition.ramps().forEach(ramp->names.add(ramp.material()));
         definition.meshes().forEach(mesh->{names.add(mesh.material());names.addAll(mesh.triangleMaterials());});
-        definition.meshes().stream().filter(mesh->mesh.thickness()>0).forEach(mesh->names.add(structureMaterial(mesh)));
+        definition.meshes().stream().filter(mesh->mesh.thickness()>0).forEach(mesh->names.add(mesh.structureMaterial()));
         names.addAll(ArenaArt.surfaceMaterials(art));
         return SurfaceMaterials.texturesFor(names);
     }
@@ -61,7 +62,7 @@ public final class ArenaFactory {
             visual.setLocalTranslation(part.center().vector());
             Quaternion rotation=part.rotation();
             visual.setLocalRotation(rotation);
-            visual.setMaterial(material(surfaceMaterial(part,definition.metadata().theme()))); root.attachChild(visual);
+            visual.setMaterial(material(part.surfaceMaterial(definition.metadata().theme()))); root.attachChild(visual);
             if (part.collision()) bodies.add(new ArenaContent.StaticBody(part.id(),new BoxCollisionShape(half),
                     part.center().vector(),rotation));
         }
@@ -80,7 +81,7 @@ public final class ArenaFactory {
             for(Geometry visual:surfaceVisuals(surface,mesh))root.attachChild(visual);
             var shell=roadStructures.get(surface.id());
             if(shell!=null&&!shell.isEmpty()) {
-                String finish=structureMaterial(surface);
+                String finish=surface.structureMaterial();
                 Geometry structure=new Geometry(surface.id()+"-structure",SurfaceMesh.triangles(shell,tileSize(finish)));
                 structure.setMaterial(material(finish));root.attachChild(structure);
                 vertices.addAll(shell);mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
@@ -110,12 +111,6 @@ public final class ArenaFactory {
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(geometry.getMesh());});
         return new ArenaContent(root,bodies,definition.spawns(),definition.pickups(),new NavGraph(definition));
     }
-    private static String structureMaterial(ArenaDefinition.TriangleSurface surface) {
-        return switch(surface.material()) {
-            case "cast-concrete", "park-paving" -> "cast-concrete";
-            default -> "concrete";
-        };
-    }
     /** Triangle finishes partition the original road; no coplanar paint layer or extra physics owner. */
     List<Geometry> surfaceVisuals(ArenaDefinition.TriangleSurface surface,Mesh uniformMesh) {
         if(surface.triangleMaterials().isEmpty()) {
@@ -140,28 +135,25 @@ public final class ArenaFactory {
             Node placement=new Node(instance.id());placement.setLocalTranslation(instance.position().vector());placement.setLocalScale(instance.size().vector());
             placement.setLocalRotation(new Quaternion().fromAngles(instance.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)));
             placement.attachChild(assets.loadModel(instance.asset()));placement.updateGeometricState();
-            List<Vector3f> triangles=new ArrayList<>();
+            List<Vector3f> triangles=new ArrayList<>();List<ContactSurface> triangleSurfaces=new ArrayList<>();
             placement.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
+                String material=geometry.getUserData("surfaceMaterial");ContactSurface surface=ContactSurface.fromMaterial(material);
+                if(surface==ContactSurface.UNKNOWN)throw new IllegalArgumentException("Missing prepared architecture contact material: "+instance.asset()+" / "+geometry.getName());
                 Vector3f a=new Vector3f(),b=new Vector3f(),c=new Vector3f();
                 for(int triangle=0;triangle<geometry.getMesh().getTriangleCount();triangle++) {
                     geometry.getMesh().getTriangle(triangle,a,b,c);
                     Collections.addAll(triangles,geometry.localToWorld(a,null),geometry.localToWorld(b,null),geometry.localToWorld(c,null));
+                    triangleSurfaces.add(surface);
                 }
             }});
             if(triangles.isEmpty())throw new IllegalArgumentException("Empty structural model collision: "+instance.id());
             Mesh mesh=new Mesh();mesh.setBuffer(VertexBuffer.Type.Position,3,BufferUtils.createFloatBuffer(triangles.toArray(Vector3f[]::new)));
             int[] indices=new int[triangles.size()];for(int i=0;i<indices.length;i++)indices[i]=i;
             mesh.setBuffer(VertexBuffer.Type.Index,3,BufferUtils.createIntBuffer(indices));mesh.updateBound();
-            bodies.add(new ArenaContent.StaticBody("architecture-"+instance.id(),new MeshCollisionShape(mesh),Vector3f.ZERO,new Quaternion()));
+            bodies.add(new ArenaContent.StaticBody("architecture-"+instance.id(),new MeshCollisionShape(mesh),Vector3f.ZERO,new Quaternion(),triangleSurfaces));
         }
     }
     public Material material(String name) {return materials.material(name);}
-    private static String surfaceMaterial(ArenaDefinition.BoxPart part,ArenaDefinition.Theme theme) {
-        // Collision and material IDs in arena data stay authoritative. This only selects the surface finish.
-        if(theme==ArenaDefinition.Theme.NEON&&part.material().equals("rust"))return "dark-concrete";
-        if(theme==ArenaDefinition.Theme.CARNIVAL&&part.material().equals("red"))return "faded-red";
-        return part.material();
-    }
     private static float tileSize(String name) {
         return SurfaceMaterials.metresPerTile(name);
     }

@@ -77,10 +77,10 @@ final class VehicleModelData {
         int[] indices=null;float[] xyz=null;reader.beginObject();
         while(reader.hasNext())switch(reader.nextName()) {
             case "indices" -> {
-                if(indices!=null)throw new IOException("Duplicate region indices");int[] values=new int[Math.min(64,vertices)];int size=0;BitSet seen=new BitSet(vertices);reader.beginArray();
+                if(indices!=null)throw new IOException("Duplicate region indices");int[] values=new int[Math.min(64,vertices)];int size=0,previous=-1;reader.beginArray();
                 while(reader.hasNext()) {
                     if(size>=vertices)throw new IOException("Regional indices exceed mesh");int value=reader.nextInt();
-                    if(value<0||value>=vertices||seen.get(value))throw new IOException("Invalid or repeated regional vertex");seen.set(value);
+                    if(value<=previous||value>=vertices)throw new IOException("Regional vertices must be valid and strictly increasing");previous=value;
                     if(size==values.length)values=Arrays.copyOf(values,Math.min(vertices,Math.max(1,size*2)));values[size++]=value;
                 }
                 reader.endArray();indices=Arrays.copyOf(values,size);

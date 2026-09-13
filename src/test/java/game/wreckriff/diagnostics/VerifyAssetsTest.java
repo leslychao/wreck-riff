@@ -113,6 +113,34 @@ class VerifyAssetsTest {
         assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("fonts/wreck.png"),false));
         assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("textures/materials/asphalt_02/diffuse.png"),true));
     }
+    @Test void scalarSpecularValidationPreservesTheExistingSixteenBitRoughnessClipping() throws Exception {
+        var rough=new java.awt.image.BufferedImage(2048,2048,java.awt.image.BufferedImage.TYPE_USHORT_GRAY);
+        var scalar=new java.awt.image.BufferedImage(2048,2048,java.awt.image.BufferedImage.TYPE_BYTE_GRAY);
+        for(int y=0;y<2048;y++)for(int x=0;x<2048;x++) {
+            int input=x%512;rough.getRaster().setSample(x,y,0,input);
+            float r=Math.min(255,input)/255f,d=1-r;
+            scalar.getRaster().setSample(x,y,0,(int)Math.rint(255f*(.02f+.12f*(d*d))));
+        }
+        byte[] source=png(rough),prepared=png(scalar);
+        VerifyAssets.verifySpecularTextureBytes(prepared,source,"dirt");
+        scalar.getRaster().setSample(511,0,0,6);
+        assertThrows(IOException.class,()->VerifyAssets.verifySpecularTextureBytes(png(scalar),source,"dirt"));
+        assertThrows(IOException.class,()->VerifyAssets.verifySpecularTextureBytes(source,source,"dirt"),"RGB/16-bit formats cannot pretend to be L8");
+        var chunk=ByteBuffer.allocate(16).order(ByteOrder.BIG_ENDIAN).putInt(4).put("gAMA".getBytes(StandardCharsets.US_ASCII)).putInt(45455);
+        var crc=new java.util.zip.CRC32();crc.update(chunk.array(),4,8);chunk.putInt((int)crc.getValue());
+        var tagged=new ByteArrayOutputStream();tagged.write(prepared,0,33);tagged.write(chunk.array());tagged.write(prepared,33,prepared.length-33);
+        assertThrows(IOException.class,()->VerifyAssets.verifySpecularTextureBytes(tagged.toByteArray(),source,"dirt"),"Data maps must not acquire colour-transfer metadata");
+    }
+    @Test void everyEnvironmentSpecularMapRetainsItsOriginalScalarSamples() throws Exception {
+        for(String name:List.of("dirt","grass_ground","asphalt_pit_lane","concrete_wall_009","leafy_grass","brown_mud","gravelly_sand",
+                "red_brick_03","wood_planks_grey","asphalt_02","cracked_concrete","metal_plate_02","blue_metal_plate","rusty_metal_03")) {
+            VerifyAssets.verifySpecularTextureBytes(bundled("textures/materials/"+name+"/specular.png"),
+                    Files.readAllBytes(Path.of("src/tools/assets/materials",name,"rough.png")),name);
+        }
+    }
+    private static byte[] png(java.awt.image.BufferedImage image) throws IOException {
+        var output=new ByteArrayOutputStream();javax.imageio.ImageIO.write(image,"png",output);return output.toByteArray();
+    }
     @Test void fontSourceLicenseMustMatchTheActualFontRevision() throws Exception {
         for (String style : List.of("Regular", "Bold")) {
             byte[] ttf = Files.readAllBytes(Path.of("src/tools/assets/fonts/RobotoCondensed-" + style + ".ttf"));

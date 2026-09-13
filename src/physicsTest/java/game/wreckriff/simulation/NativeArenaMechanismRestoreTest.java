@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArenaMechanismRestoreTest {
     private static final VehicleRules RULES=VehicleRules.load();
     private static final CombatRules COMBAT=Configs.load("combat",CombatRules.class);
@@ -29,7 +30,7 @@ class NativeArenaMechanismRestoreTest {
         MatchCheckpoint.validateReferences(ArenaRegistry.load(),checkpoint);
         try(var world=new PhysicsWorld(RULES)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(arena);
-            for(var body:content.bodies())world.addStatic(body.id(),body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             ArenaSystems.restoreGeometry(savedArena,world,content.graph(),arena);
             assertPose(world,hazard);
             int bodies=world.bodyCount();

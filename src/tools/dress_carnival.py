@@ -205,6 +205,20 @@ class ParkDressing:
         self.detail('recess',(0,h/2+.5,face-.18),(width*.82,h,.3),'black')
         for xx in (-width*.44,width*.44):self.detail('front-jamb',(xx,3,face-.4),(.6,5.5,.5),'wood')
         self.detail('front-sign',(0,min(s['y']-.6,6.5),face-.4),(width*.88,1,.5),'yellow' if 'shop-' in b['id'] else 'ivory')
+        titles={'sweet':'СЛАДОСТИ','bakery':'ПЕКАРНЯ','tea':'ЧАЙНАЯ','shooting':'ТИР','arcade':'ИГРОТЕКА','fortune':'ПРЕДСКАЗАНИЯ','prize':'ПРИЗЫ','souvenir':'СУВЕНИРЫ','photo':'ФОТО','puppet':'ТЕАТР КУКОЛ'}
+        title=next((text for key,text in titles.items() if key in b['id']),'БИЛЕТЫ' if b['id'].startswith('ticket-office') else 'ЯРМАРКА')
+        self.scene.sign(b['id']+'-title',title,self.position((0,min(s['y']-.6,6.5),face-.72)),yaw+180,width*.8,.8)
+        # The flank has a timber frame, weatherboard courses and a service
+        # hatch, so an oblique approach reads as a built kiosk rather than a box.
+        # All pieces stay within decimetres of the existing solid wall.
+        for side in (-1,1):
+            xx=side*(width/2+.16)
+            for zz in (-depth/2+.35,0,depth/2-.35):
+                self.detail('side-pier',(xx,s['y']/2,zz),(.4,s['y'],.55),'wood')
+            for yy in (.6,2.9,s['y']-.35):
+                self.detail('side-weatherboard',(xx,yy,0),(.34,.38,depth),'ivory' if 'ticket-office' in b['id'] else 'wood')
+            self.detail('side-hatch',(xx+side*.13,3.3,depth*.2),(.18,2.6,depth*.27),'steel')
+            self.detail('hatch-head',(xx+side*.24,4.75,depth*.2),(.22,.28,depth*.32),'wood')
         front=self.position((0,0,face-1.3))
         # Existing authored stalls are close to the lane. A shallow overhang is
         # allowed only when the full footprint still leaves four clear metres.
@@ -230,7 +244,99 @@ class ParkDressing:
         self.detail('service-door',(-width*.2,2.1,depth/2+.25),(2.5,4.2,.45),'steel')
         self.detail('rear-vent',(width*.2,3,depth/2+.28),(3,1.6,.5),'black')
         for offset in (-.3,0,.3):self.detail('vent-fin',(width*.2,3+offset,depth/2+.56),(3,.13,.13),'steel')
+        self.pavilion_roof(b,width,depth)
         self.installed.append(dict(id=label+'-frontage',x=front[0],z=front[2],radius=0,y=0,attachedTo=b['id']))
+
+    def pavilion_roof(self,building,width,depth):
+        """Small venues have pitched, hipped or stepped roofs on their own walls.
+
+        Upward roof faces and their thickness supply both visible and native
+        geometry. The short open eave is a supported ventilated canopy, not an
+        invisible box filling the sloped roof's bounding volume.
+        """
+        height=building['size']['y'];label=building['id']
+        if any(word in label for word in ('tea','fortune','ticket')):
+            style='hipped';rise=4.4 if 'fortune' in label else 3.2
+            local=[(-width/2,height+.2,-depth/2),(width/2,height+.2,-depth/2),
+                   (width/2,height+.2,depth/2),(-width/2,height+.2,depth/2),(0,height+rise,0)]
+            faces=[(0,4,1),(1,4,2),(2,4,3),(3,4,0)]
+        elif any(word in label for word in ('arcade','shooting','photo')):
+            style='clerestory';rise=2.4
+            local=[(-width/2,height+.2,-depth/2),(width/2,height+.2,-depth/2),
+                   (-width/2,height+rise,depth*.15),(width/2,height+rise,depth*.15),
+                   (-width/2,height+.2,depth/2),(width/2,height+.2,depth/2)]
+            faces=[(0,2,1),(1,2,3),(2,4,3),(3,4,5)]
+        else:
+            style='gable';rise=3.6
+            local=[(-width/2,height+.2,-depth/2),(width/2,height+.2,-depth/2),
+                   (-width/2,height+rise,0),(width/2,height+rise,0),
+                   (-width/2,height+.2,depth/2),(width/2,height+.2,depth/2)]
+            faces=[(0,2,1),(1,2,3),(2,4,3),(3,4,5)]
+        identity='dress-carnival-'+label+'-'+style+'-roof'
+        material='purple' if 'fortune' in label else 'wood' if any(w in label for w in ('tea','bakery','souvenir')) else 'faded-red'
+        self.scene.data['meshes'].append(dict(id=identity,vertices=[vec(self.position(p)) for p in local],
+                indices=[i for triangle in faces for i in triangle],material=material,collision=True,triangleMaterials=[],thickness=.35))
+        self.scene.data['surfaces'].append(dict(id=identity,geometryId=identity,level=1,grip=1))
+        self.scene.anchor=building['id']
+        for side in (-1,1):
+            self.detail('eave-timber',(side*(width/2-.25),height,0),(.5,.45,depth),'wood')
+            ridge_x=0 if style=='hipped' else side*(width/2-.25)
+            self.beam('roof-rafter',(side*(width/2-.25),height+.05,-depth/2),
+                      (ridge_x,height+rise-.25,0 if style!='clerestory' else depth*.15),.25,'wood')
+            self.beam('roof-rafter',(ridge_x,height+rise-.25,0 if style!='clerestory' else depth*.15),
+                      (side*(width/2-.25),height+.05,depth/2),.25,'wood')
+        # A continuous service-side cornice and restrained narrow end boards
+        # replace a single unexplained metal rectangle on each pavilion flank.
+        for side in (-1,1):
+            for i in range(max(3,int(depth/2.2))):
+                zz=-depth/2+1+i*(depth-2)/max(1,int(depth/2.2)-1)
+                self.detail('end-board',(side*(width/2+.38),height*.5,zz),(.18,height-.5,.22),'wood')
+
+    def bridge_edges(self):
+        """Vehicle guardrails attach to the three existing level bridge decks.
+
+        Junction mouths stay open. Curbs/posts/rails are canonical collision
+        solids; their inner faces leave at least width minus 1.4 metres clear.
+        """
+        for path in self.location.paths:
+            if path['id'] not in ('west-lake-bridge','east-lake-bridge','north-lake-bridge'):continue
+            points=[self.location.points[n] for n in path['names']]
+            total=sum(math.dist(a,b) for a,b in zip(points,points[1:]));before=0;end_opening=path.get('junctionEnd',20)
+            material='wood' if path['id'].startswith('west') else 'steel' if path['id'].startswith('east') else 'cast-concrete'
+            for segment,(a,b) in enumerate(zip(points,points[1:])):
+                dx,dz=b[0]-a[0],b[2]-a[2];length=math.hypot(dx,dz)
+                start=max(0,20-before);end=min(length,total-end_opening-before)
+                self.origin=a;self.yaw=math.degrees(math.atan2(dx,dz));self.name=path['id']+'-guard';self.scene.group=''
+                suffix='' if len(points)==2 else '-segment-'+str(segment)
+                if end>start+.05:
+                    for side in (-1,1):
+                        edge=side*(path['width']/2-.4);mid=(start+end)/2
+                        self.solid('curb-'+str(side)+suffix,(edge,.22,mid),(.6,.44,end-start),material)
+                        self.solid('top-rail-'+str(side)+suffix,(edge,1.55,mid),(.3,.3,end-start),'wood' if material=='wood' else 'steel')
+                        self.solid('middle-rail-'+str(side)+suffix,(edge,.95,mid),(.2,.2,end-start),material)
+                        sections=math.ceil((total-40)/7)
+                        for index in range(sections+1):
+                            global_distance=20+index*(total-40)/sections
+                            if global_distance<before+start-.0001 or global_distance>before+end+.0001:continue
+                            if segment and abs(global_distance-before)<.0001:continue
+                            along=global_distance-before
+                            self.solid(f'post-{side}-{index}',(edge,.95,along),(.4,1.9,.4),material)
+                            if index%4==0:self.detail('reflector',(edge,.98,along),(.46,.22,.46),'yellow')
+                before+=length
+            a,b=points[0],points[-1]
+            self.installed.append(dict(id=self.name,x=(a[0]+b[0])/2,z=(a[2]+b[2])/2,radius=0,y=a[1],attachedTo=path['id']))
+
+    def entrance_portal(self):
+        # The two ticket houses support a real entrance span across the public
+        # lane. Neither approach from the initial spawn is narrowed by a gate.
+        self.origin=(0,0,0);self.yaw=0;self.name='main-entrance';self.scene.group=''
+        for x in (136,259):
+            self.solid('tower-'+str(x),(x,8,250),(4,16,6),'ivory')
+            self.solid('tower-cap-'+str(x),(x,16.5,250),(6,1,8),'faded-red')
+        self.solid('lintel',(197.5,15,250),(127,2.4,2.4),'steel')
+        self.solid('sign-backing',(197.5,17.5,250),(69,5,.8),'faded-red')
+        self.scene.sign('main-entrance-name','ЛУНАПАРК ЭЙФОРИЯ',(197.5,17.6,249.52),180,64,3.5)
+        self.installed.append(dict(id=self.name,x=197.5,z=250,radius=0,y=14,attachedTo='ticket-office-west'))
 
     def fitted_equipment(self):
         # Replace the three monolithic depot workbench blocks with functional
@@ -258,7 +364,7 @@ class ParkDressing:
         self.origin=(0,0,0);self.yaw=0;self.name='roof-structure';self.scene.anchor=''
         # The barrel shell bears on columns placed in the existing side-wall
         # envelopes; the openings retain their complete verified driving width.
-        for i,(x,z) in enumerate([(1175,485),(1175,545),(1245,550),(1250,410),(1305,410)]):
+        for i,(x,z) in enumerate([(1175,485),(1175,545),(1245,550),(1250,410),(1305,410),(1370,460),(1370,490)]):
             assert self.road_clear(x,z,1),('orbit support',x,z)
             local_x=x-1272.5;height=20+12*math.sin(math.pi*(local_x+102.5)/205)-.8
             self.solid('orbit-column-'+str(i),(x,height/2,z),(1.4,height,1.4),'steel')
@@ -277,6 +383,17 @@ class ParkDressing:
                 self.solid('circus-edge-pole-'+str(i),(x,8.7,z),(.9,17.4,.9),'ivory')
                 self.beam('circus-tension-cable',(x,17.5,z),(347.5,37.5,1065),.18,'steel')
         for a,b in zip(ring,ring[1:]+ring[:1]):self.beam('circus-tension-ring',a,b,.45,'steel')
+        # Fabric side walls turn the canopy into a tent. Full-width road mouths
+        # interrupt the perimeter naturally; no curtain crosses a drive route.
+        for sector,(a,b) in enumerate(zip(ring,ring[1:]+ring[:1])):
+            dx,dz=b[0]-a[0],b[2]-a[2];length=math.hypot(dx,dz);sections=math.ceil(length/5)
+            for panel in range(sections):
+                t=(panel+.5)/sections;x,z=a[0]+dx*t,a[2]+dz*t
+                if not self.road_clear(x,z,length/sections/2+.25):continue
+                self.origin=(x,0,z);self.yaw=math.degrees(math.atan2(dx,dz));self.name=f'circus-curtain-{sector}-{panel}'
+                self.solid('fabric',(0,8.65,0),(.35,17.3,length/sections+.02),'faded-red' if panel%2 else 'ivory')
+                self.solid('ground-anchor',(0,.25,0),(.6,.5,length/sections+.02),'steel')
+        self.origin=(0,0,0);self.yaw=0;self.name='roof-structure'
         # Depot columns coincide with the established solid side wall footprints.
         # The floor-to-eave columns also carry the longitudinal gantry runway.
         for i,(x,z) in enumerate([(1145,990),(1220,990),(1290,990),(1150,1120),(1200,1120)]):
@@ -288,6 +405,20 @@ class ParkDressing:
             # roadway portals remain below the 14m clear eave, never sealed.
             self.solid('depot-eave-beam-'+str(z),(1230,14.15,z),(180,1.7,1.2),'steel')
 
+    def venue_signs(self):
+        # Flat panels attach to existing solid walls; names face the public
+        # approaches. Their elevated position leaves the entire car volume clear.
+        for name,title,anchor,p,yaw,width in [
+            ('circus-name','ЦИРК ЭЙФОРИЯ','circus-se',(402.988,9.5,986.426),155.56,36),
+            ('orbit-name','ОРБИТА','ridehall-south',(1310,9.5,408.82),180,26),
+            ('depot-name','РЕМОНТНОЕ ДЕПО','depot-south-east',(1260,11,988.82),180,40),
+            ('island-name','ОСТРОВНАЯ СЦЕНА','island-bandstand-proxy',(755,11.8,689),180,20),
+        ]:
+            self.scene.anchor=anchor;self.scene.group=''
+            self.scene.part(name+'-panel',p,(width,2.5,.4),'ivory',rotation=(0,yaw,0))
+            a=math.radians(yaw);front=(p[0]+math.sin(a)*.24,p[1],p[2]+math.cos(a)*.24)
+            self.scene.sign(name,title,front,yaw,width-1,1.8)
+
 
 def dress(scene):
     d=ParkDressing(scene)
@@ -295,6 +426,9 @@ def dress(scene):
         if b['id'].startswith(('fair-stall-','fair-shop-','ticket-office-')):d.frontage(b)
     d.fitted_equipment()
     d.roof_structure()
+    d.venue_signs()
+    d.bridge_edges()
+    d.entrance_portal()
     # Named public/service functions have explicit alternative positions within
     # their own district. The choices are only collision-safe siting alternatives.
     sites=[
@@ -321,6 +455,7 @@ def dress(scene):
         ('depot-assembled-car',[(1290,1080),(1288,1095),(1300,1095)],(10,7),d.ride_car,90),
         ('depot-drive-rebuild',[(1220,1090),(1220,1070),(1204,1100)],(10,8),d.drive_motor,180),
         ('depot-unloading-car',[(1350,1000),(1355,977),(1340,965)],(10,7),d.ride_car,90),
+        ('depot-dispatch-car',[(1185,1193),(1200,1190)],(10,7),d.ride_car,180),
         ('north-service-desk',[(1330,930),(1330,904),(1320,953)],(12,7),d.workshop,180),
         ('lake-west-map',[(452,735),(458,760),(450,780)],(10,5),d.ticket_board,90),
         ('lake-south-rest',[(685,381),(687,354),(713,365)],(17,10),d.pergola,0),

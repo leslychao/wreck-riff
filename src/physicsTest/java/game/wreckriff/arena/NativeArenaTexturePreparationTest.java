@@ -15,6 +15,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Real local PNG decoding, clone-cache reuse and native arena construction; no renderer or window. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class NativeArenaTexturePreparationTest {
     @Test void eachShippedArenaPlansExactlyTheSurfaceTexturesItsActualBuildRequests() {
         var registry=ArenaRegistry.load();
@@ -28,7 +29,8 @@ class NativeArenaTexturePreparationTest {
                 var planned=new LinkedHashSet<TextureKey>();var held=new ArrayList<Texture>();
                 for(var requirement:requirements) {
                     TextureKey key=requirement.key();assertTrue(planned.add(key),"Each asset gets one loading step");
-                    assertTrue(key.isFlipY());assertTrue(key.isGenerateMips());
+                    boolean prepared=key.getName().endsWith(".dds");
+                    assertEquals(!prepared,key.isFlipY());assertEquals(!prepared,key.isGenerateMips());
                     Texture texture=requirement.load(assets);held.add(texture);retained.put(key,texture);
                 }
                 assertFalse(planned.isEmpty());

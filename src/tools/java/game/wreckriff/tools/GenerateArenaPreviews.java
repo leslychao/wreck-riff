@@ -95,7 +95,7 @@ public final class GenerateArenaPreviews extends SimpleApplication {
         // separate route review still inspects every district and interior.
         switch(definition.id()) {
             case "construction_17" -> frame(new Vector3f(1210,18,325),new Vector3f(1110,22,545));
-            case "neon_zero" -> frame(new Vector3f(700,15,1000),new Vector3f(465,55,1120));
+            case "neon_zero" -> frame(new Vector3f(655,12,1005),new Vector3f(465,55,1120));
             case "euphoria_park" -> frame(new Vector3f(1175,10,575),new Vector3f(1300,52,700));
             default -> frame(centre.add(-65,47,-77),centre);
         }

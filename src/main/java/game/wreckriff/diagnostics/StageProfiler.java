@@ -20,9 +20,15 @@ import jdk.jfr.Recording;
 
 /** Opt-in jME CPU intervals and bounded stock JDK Flight Recorder. Never enabled by final benchmark defaults. */
 public final class StageProfiler implements AppProfiler,AutoCloseable {
-    public enum Stage {AI,BULLET,COMBAT,SIMULATION,HUD,PRESENTATION,AUDIO}
+    public enum Stage {AI,BULLET,COMBAT,SIMULATION,HUD,PRESENTATION,CONTACT_PRESENTATION,AUDIO}
     private final EnumMap<Stage,FrameMetrics> stages=new EnumMap<>(Stage.class);
     private final EnumMap<AppStep,FrameMetrics> engine=new EnumMap<>(AppStep.class);
+    private final EnumMap<Stage,FrameMetrics> combatStages=new EnumMap<>(Stage.class);
+    private final EnumMap<AppStep,FrameMetrics> combatEngine=new EnumMap<>(AppStep.class);
+    private final FrameMetrics visualUpdateCpuUpperBound=new FrameMetrics();
+    private final long[] frameStages=new long[Stage.values().length],frameEngine=new long[AppStep.values().length];
+    private boolean benchmark,measuredCombat;
+    private long frameId=-1,measuredFrames,firstMeasuredFrame=-1,lastMeasuredFrame=-1;
     private final LongSupplier clock;
     private AppStep previousStep;
     private long previousTime;
@@ -63,16 +69,35 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     public void record(Stage stage,long nanos) {
         if(nanos<0)throw new IllegalArgumentException("Negative CPU duration");
         stages.computeIfAbsent(stage,ignored->new FrameMetrics()).add(nanos/1_000_000_000.0);
+        frameStages[stage.ordinal()]+=nanos;
+    }
+    /** Called after final phase classification and before RenderFrame; CPU work earlier in this frame is retained. */
+    public void measuredCombatFrame(long id,boolean eligible,boolean benchmark) {
+        if(id<0||eligible&&!benchmark)throw new IllegalArgumentException("Invalid measured-combat frame classification");
+        frameId=id;this.benchmark=benchmark;measuredCombat=eligible;if(vfxGpu!=null)vfxGpu.measuredCombatFrame(eligible);
     }
     @Override public void appStep(AppStep step) {
+        if(step==AppStep.BeginFrame){java.util.Arrays.fill(frameStages,0);java.util.Arrays.fill(frameEngine,0);measuredCombat=false;frameId=-1;if(vfxGpu!=null)vfxGpu.measuredCombatFrame(false);}
         // StatsAppState initialises after simpleInitApp and disables counters when its overlay
         // is hidden. A diagnostic owns collection independently of that UI preference.
         if(step==AppStep.RenderFrame&&rendererStatistics!=null)rendererStatistics.setEnabled(true);
-        if(gpu!=null) {if(step==AppStep.RenderFrame)gpu.begin();else if(step==AppStep.EndFrame)gpu.end();}
+        if(gpu!=null) {if(step==AppStep.RenderFrame)gpu.begin(measuredCombat);else if(step==AppStep.EndFrame)gpu.end();}
         long now=clock.getAsLong();
-        if(previousStep!=null&&previousStep!=AppStep.EndFrame&&now>=previousTime)
+        if(previousStep!=null&&previousStep!=AppStep.EndFrame&&now>=previousTime) {
             engine.computeIfAbsent(previousStep,ignored->new FrameMetrics()).add((now-previousTime)/1_000_000_000.0);
+            frameEngine[previousStep.ordinal()]+=now-previousTime;
+        }
         previousStep=step;previousTime=now;
+        if(step==AppStep.EndFrame&&measuredCombat) {
+            measuredFrames++;if(firstMeasuredFrame<0)firstMeasuredFrame=frameId;lastMeasuredFrame=frameId;
+            for(Stage stage:Stage.values())combatStages.computeIfAbsent(stage,ignored->new FrameMetrics()).add(frameStages[stage.ordinal()]/1_000_000_000.0);
+            for(AppStep engineStep:AppStep.values())if(engineStep!=AppStep.EndFrame)combatEngine.computeIfAbsent(engineStep,ignored->new FrameMetrics()).add(frameEngine[engineStep.ordinal()]/1_000_000_000.0);
+            // jME 3.8.1 ends simpleUpdate before SpatialUpdate; StateManagerRender follows scene updates.
+            // These intervals are disjoint. Aggregate actual frame costs, never independently computed percentiles.
+            long visualUpdateNanos=frameStages[Stage.PRESENTATION.ordinal()]+frameStages[Stage.CONTACT_PRESENTATION.ordinal()]+frameEngine[AppStep.SpatialUpdate.ordinal()];
+            visualUpdateCpuUpperBound.add(visualUpdateNanos/1_000_000_000.0);
+            measuredCombat=false;
+        }
     }
     @Override public void appSubStep(String... steps) { }
     @Override public void vpStep(VpStep step,ViewPort viewport,RenderQueue.Bucket bucket) { }
@@ -90,6 +115,7 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         engine.forEach((step,metrics)->jme.put(step.name(),metrics.snapshot()));
         result.put("cpuStages",application);result.put("jmeAppSteps",jme);
         result.put("measurement","CPU elapsed intervals; nested app stages are not additive and do not measure GPU execution");
+        result.put("scope","Whole diagnostic run; legacy CPU stage samples are per invocation, including loading, warmup, pause and Results");
         result.put("gpuTiming",gpu==null?Map.of("status","UNAVAILABLE","reason",gpuUnavailable):gpu.snapshot());
         result.put("vfxGpuTiming",vfxGpu==null?Map.of("status","UNAVAILABLE","reason",gpuUnavailable):vfxGpu.snapshot());
         result.put("jfrPath",recordingPath==null?"":recordingPath.toAbsolutePath().toString());result.put("jfrMaximumBytes",128L*1024*1024);
@@ -97,6 +123,18 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         result.put("maximumRendererStatistics",render);
         result.put("rendererStatisticsCollection",Map.of("status",renderSamplesWithGeometry>0?"VALID":"NO_RENDERED_GEOMETRY",
                 "sampledFrames",renderSamples,"framesWithGeometry",renderSamplesWithGeometry,"disabledFrames",disabledRenderSamples));
+        var active=new LinkedHashMap<String,Object>();var activeStages=new LinkedHashMap<String,Object>();var activeEngine=new LinkedHashMap<String,Object>();
+        combatStages.forEach((stage,metrics)->activeStages.put(stage.name(),metrics.snapshot()));combatEngine.forEach((step,metrics)->activeEngine.put(step.name(),metrics.snapshot()));
+        active.put("status",!benchmark?"NOT_APPLICABLE":measuredFrames==0?"NO_ELIGIBLE_FRAMES":"MEASURED");
+        active.put("scope","Benchmark only: drawable ARENA_COMBAT/BOSS_COMBAT frames after 30 complete active warmup seconds; same DiagnosticEvidence gate. Smoke and soak excluded.");
+        active.put("measurement","CPU stages aggregate all calls in each eligible render frame, including zero-call frames; nested CPU stages are not additive. PRESENTATION covers renderMatch (including HUD/audio/camera); CONTACT_PRESENTATION covers fixed-tick contact refinement and VFX acceptance. Both exclude jME scene update and render submission, shown separately in jmeAppSteps.");
+        active.put("frames",measuredFrames);active.put("firstFrame",firstMeasuredFrame);active.put("lastFrame",lastMeasuredFrame);active.put("cpuStages",activeStages);active.put("jmeAppSteps",activeEngine);
+        var visualUpdate=visualUpdateCpuUpperBound.snapshot();
+        visualUpdate.put("measurement","Per-render-frame sum of disjoint PRESENTATION + CONTACT_PRESENTATION + jME 3.8.1 SpatialUpdate intervals before histogram insertion. Conservative CPU visual-update bound including HUD/audio/camera and all root/gui logical/geometric scene updates. Excludes draw submission, which is reported separately in jmeAppSteps; this is not the CPU cost of new graphics alone.");
+        active.put("visualUpdateCpuUpperBound",visualUpdate);
+        active.put("gpuTiming",gpu==null?Map.of("status","UNAVAILABLE","reason",gpuUnavailable):gpu.measuredCombatSnapshot());
+        active.put("vfxGpuTiming",vfxGpu==null?Map.of("status","UNAVAILABLE","reason",gpuUnavailable):vfxGpu.measuredCombatSnapshot());
+        result.put("measuredCombat",active);
         return result;
     }
     @Override public void close() {

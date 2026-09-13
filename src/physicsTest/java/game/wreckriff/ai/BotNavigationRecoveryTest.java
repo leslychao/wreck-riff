@@ -14,13 +14,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Replays upright navigation poses from the ten-seed battle without combat or transform correction. */
+@org.junit.jupiter.api.extension.ExtendWith(game.wreckriff.arena.NativeArenaAssets.class)
 class BotNavigationRecoveryTest {
     @Test void closeTrafficAtTheWestDeckEndCanLeaveThroughTheSupportedRearCorridor() {
         var definition=ArenaDefinition.load();var session=new MatchSession(3,360);var rules=VehicleRules.load();
         for(int id=2;id<5;id++)session.vehicle(id).hp=0;
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(definition);
-            for(var body:content.bodies())world.addStatic(body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             world.addVehicle(0,new Vector3f(32.51f,6.85f,2.6f),new Quaternion().fromAngleAxis(-107.22f*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y));
             world.addVehicle(1,new Vector3f(40.69f,6.85f,2.39f),new Quaternion().fromAngleAxis(-90*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y));
             for(int tick=0;tick<240;tick++)world.step();
@@ -43,7 +44,7 @@ class BotNavigationRecoveryTest {
         for(int id=2;id<5;id++)session.vehicle(id).hp=0;
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(definition);
-            for(var body:content.bodies())world.addStatic(body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             world.addVehicle(0,new Vector3f(-54,.85f,22),new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y));
             world.addVehicle(1,new Vector3f(-34,.85f,22),new Quaternion().fromAngleAxis(-FastMath.HALF_PI,Vector3f.UNIT_Y));
             for(int tick=0;tick<240;tick++)world.step();
@@ -84,7 +85,7 @@ class BotNavigationRecoveryTest {
         var rules=VehicleRules.load();
         try(var world=new PhysicsWorld(rules)) {
             var content=new ArenaFactory(NativeArenaAssets.MANAGER).build(definition);
-            for(var body:content.bodies())world.addStatic(body.shape(),body.position(),body.rotation());
+            for(var body:content.bodies())world.addStatic(body);
             world.addVehicle(0,new Vector3f(x,y,z),new Quaternion().fromAngleAxis(yaw*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y));
             world.vehicle(0).brake(rules.brakeForce());
             for(int tick=0;tick<240;tick++)world.step();
