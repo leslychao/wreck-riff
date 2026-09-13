@@ -101,6 +101,8 @@ class Scene:
     def carnival(self):
         for proxy,asset in [('circus','circus-canopy'),('ride-pavilion','orbit-shell'),('repair-depot','depot-gantry')]:self.hero(proxy,asset)
         self.anchor='island-bandstand-proxy';self.model('island-bandstand','island-bandstand',(755,3,715),proxies=['island-bandstand-proxy'])
+        for label,x in [('west',733),('east',777)]:
+            self.light('island-stage-'+label,(x,10,715),(1,.78,.5),32);self.part('stage-light-fixture',(x,11,715),(1,.5,1),'steel');self.part('stage-light-lens',(x,10.65,715),(.7,.15,.7),'light-amber')
         for tree in self.location.trees:
             self.anchor=tree['id'];scale=tree['scale'];self.model(tree['id'],'park-tree',tree['position'],(scale,scale,scale),proxies=[tree['id']],lod=230)
         self.anchor='ferris-foundation'

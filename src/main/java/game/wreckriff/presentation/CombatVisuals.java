@@ -48,12 +48,13 @@ public final class CombatVisuals implements AutoCloseable {
         }
     }
     private static final class GunShot {
-        final long id;final Vector3f origin,end,direction;final float distance,flight;final boolean tracer;
-        float age;
-        GunShot(GameEvent event,boolean tracer) {
+        final long id;final Vector3f origin,end,direction;float distance;final float flight;final boolean tracer;
+        final double born;float age;int target=-1;VehicleContact contact;boolean occluded;
+        GunShot(GameEvent event,boolean tracer,double clock) {
             id=event.eventId();origin=event.origin().clone();end=event.position().clone();
             direction=end.subtract(origin);distance=direction.length();if(distance>0)direction.divideLocal(distance);
             flight=event.cosmeticImpactDelaySeconds();this.tracer=tracer;
+            born=event.simulationTick()>=0?event.simulationTick()/(double)MatchSession.TICKS_PER_SECOND:clock;
         }
     }
     private static final class Shard {
@@ -161,6 +162,10 @@ public final class CombatVisuals implements AutoCloseable {
     private int debrisQueryCursor;
     public static final int DEBRIS_QUERY_LIMIT=24;
     private int debrisQueries;
+    private double presentationTime;
+    private boolean externalPresentationTime;
+    private Map<Integer,Node> vehicleModels=Map.of();
+    public static final int TRACER_QUERY_LIMIT=16;
     private float flashIntensity=1;
     private int emissionPriority;
     private List<ProjectileState> projectiles=List.of();
@@ -215,7 +220,7 @@ public final class CombatVisuals implements AutoCloseable {
         // Match IMPACT to SHOT even if their transport order changes inside a drained event batch.
         for(GameEvent event:fresh)if(event.type()==GameEvent.Type.SHOT&&"machine-gun".equals(event.kind())&&!shots.containsKey(event.eventId())) {
             if(shots.size()>=SHOT_LIMIT)shots.remove(shots.keySet().iterator().next());
-            int count=gunShotCount.merge(event.sourceId(),1,Integer::sum);shots.put(event.eventId(),new GunShot(event,count%3==0));
+            int count=gunShotCount.merge(event.sourceId(),1,Integer::sum);shots.put(event.eventId(),new GunShot(event,count%3==0,presentationTime));
             emissionPriority=event.sourceId()==0?3:1;
             emit(event.origin(),Vector3f.ZERO,AMBER,.055f,.19f,1.4f,0);
             Vector3f forward=event.emission()==null?world.forward(event.sourceId()):event.emission().direction();
@@ -259,12 +264,30 @@ public final class CombatVisuals implements AutoCloseable {
             if(destroyedTargets.contains(event.subjectId()))continue;
             if(!presentedEvents.add(new EventKey(event.type(),event.eventId(),event.subjectId())))continue;
             if(presentedEvents.size()>EVENT_HISTORY_LIMIT)presentedEvents.remove(presentedEvents.iterator().next());
+            GunShot shot=shots.get(event.eventId());
+            if(shot!=null)retarget(shot,event.position());
             emissionPriority=event.sourceId()==0||event.subjectId()==0?3:2;
             if(event.type()==GameEvent.Type.SHIELD_HIT)shieldFlare(event);else impact(event);
         }
         emissionPriority=0;
     }
     public void setFireExposures(List<CombatSystem.FireExposureView> exposures) {fireExposures=List.copyOf(exposures);}
+    public void setPresentationTime(double seconds) {
+        if(!Double.isFinite(seconds)||seconds<0)throw new IllegalArgumentException("Finite nonnegative presentation time required");
+        presentationTime=seconds;externalPresentationTime=true;
+    }
+    /** Only reads poses; the application remains owner of vehicle transform updates. */
+    public void bindVehicleModels(Map<Integer,Node> models) {vehicleModels=Objects.requireNonNull(models);}
+    public void registerContacts(List<GameEvent> events) {
+        for(GameEvent event:events)if(event.type()==GameEvent.Type.IMPACT&&"machine-gun".equals(event.kind())) {
+            GunShot shot=shots.get(event.eventId());
+            if(shot!=null&&event.vehicleContact()!=null){shot.target=event.subjectId();shot.contact=event.vehicleContact();}
+        }
+    }
+    private static void retarget(GunShot shot,Vector3f end) {
+        shot.end.set(end);shot.direction.set(end).subtractLocal(shot.origin);shot.distance=shot.direction.length();
+        if(shot.distance>.00001f)shot.direction.divideLocal(shot.distance);
+    }
     public void setLighting(Vector3f direction,ColorRGBA key,ColorRGBA fill) {
         lightDirection.set(direction);Material material=particleBatch.geometry.getMaterial();
         material.setVector3("LightDirection",direction);material.setColor("KeyLight",key);material.setColor("FillLight",fill);
@@ -326,6 +349,7 @@ public final class CombatVisuals implements AutoCloseable {
         if(closed)return;
         observer.set(world.position(0));
         dt=Math.max(0,Math.min(.1f,dt));
+        if(!externalPresentationTime)presentationTime+=dt;
         projectiles=states;this.mines=mines;this.fires=fires;this.warnings=warnings;emissionPriority=0;
         if(dt<=0){render();return;}
         for(BlastLight light:lights)if(light.light.isEnabled()) {
@@ -378,8 +402,22 @@ public final class CombatVisuals implements AutoCloseable {
             if(p.age>=p.lifetime){it.remove();freeParticles.addLast(p);continue;}
             p.velocity.y-=p.gravity*dt;p.position.addLocal(p.velocity.x*dt,p.velocity.y*dt,p.velocity.z*dt);
         }
+        int tracerQueries=0;
         for(Iterator<GunShot> it=shots.values().iterator();it.hasNext();) {
-            GunShot shot=it.next();shot.age+=dt;
+            GunShot shot=it.next();shot.age=(float)Math.max(0,presentationTime-shot.born);
+            if(shot.contact!=null&&!destroyedTargets.contains(shot.target)) {
+                Node target=vehicleModels.get(shot.target);
+                Vector3f end=target==null?world.position(shot.target).add(world.rotation(shot.target).mult(shot.contact.localPoint())):
+                        target.getLocalRotation().mult(shot.contact.localPoint()).addLocal(target.getLocalTranslation());
+                retarget(shot,end);
+                if(shot.tracer) {
+                    shot.occluded=true;
+                    if(tracerQueries++<TRACER_QUERY_LIMIT) {
+                        WorldQuery.Hit obstruction=world.staticSweep(shot.origin,shot.end,.01f);
+                        shot.occluded=obstruction!=null&&obstruction.fraction()<.995f;
+                    }
+                }
+            }
             if(shot.age>=shot.flight+.035f)it.remove();
         }
         emissionPriority=0;
@@ -400,8 +438,12 @@ public final class CombatVisuals implements AutoCloseable {
                     float into=shard.velocity.dot(normal);
                     if(into<0)shard.velocity.subtractLocal(normal.mult(1.22f*into)).multLocal(.48f);
                     shard.bounces++;
-                    if(shard.velocity.lengthSquared()<.3f||shard.bounces>=2)shard.age=shard.life-.2f;
+                    if(shard.velocity.lengthSquared()<.3f||shard.bounces>=2){shard.age=shard.life-.2f;shard.velocity.set(0,0,0);}
                 }
+            } else if(nearby&&shard.bounces<2) {
+                // Never advance an unchecked fragment through a wall. Secondary
+                // shards fade at their last checked position when the budget is full.
+                next.set(shard.position);shard.age=Math.max(shard.age,shard.life-.12f);
             }
             shard.position.set(next);shard.rotation.multLocal(new Quaternion().fromAngles(dt*2.1f,dt*3.7f,dt*.9f));
         }
@@ -553,7 +595,7 @@ public final class CombatVisuals implements AutoCloseable {
         }
         Particle particle=freeParticles.pollFirst();if(particle==null)particle=new Particle();
         particle.reset(position,velocity,color,lifetime,size,growth,gravity,emissionPriority,
-                visualRandom.nextFloat()*FastMath.TWO_PI,visualRandom.nextFloat());particles.add(particle);
+                color==FIRE_FLAME?(visualRandom.nextFloat()-.5f)*.2f:visualRandom.nextFloat()*FastMath.TWO_PI,visualRandom.nextFloat());particles.add(particle);
     }
     private void addShard(Vector3f position,Vector3f velocity,float life,float size,ColorRGBA color) {
         if(shards.size()>=SHARD_LIMIT) {
@@ -637,7 +679,7 @@ public final class CombatVisuals implements AutoCloseable {
     }
     List<TracerSegment> tracerSegments() {
         List<TracerSegment> result=new ArrayList<>();
-        for(GunShot shot:shots.values())if(shot.tracer&&shot.distance>.001f&&shot.age>0) {
+        for(GunShot shot:shots.values())if(shot.tracer&&!shot.occluded&&shot.distance>.001f&&shot.age>0) {
             float head=Math.min(shot.distance,shot.flight>0?shot.distance*shot.age/shot.flight:shot.distance),tail=Math.max(0,head-TRACER_LENGTH);
             result.add(new TracerSegment(shot.id,shot.origin.add(shot.direction.mult(tail)),shot.origin.add(shot.direction.mult(head))));
         }
@@ -745,7 +787,7 @@ public final class CombatVisuals implements AutoCloseable {
     @Override public void close(){if(closed)return;closed=true;ordnance.close();root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
         particles.clear();freeParticles.clear();Arrays.fill(sortedParticles,null);shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();presentedEvents.clear();trailHeads.clear();
         fireSurfaces.clear();cachedFirePoints=0;
-        projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();fireExposures=List.of();}
+        projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();fireExposures=List.of();vehicleModels=Map.of();}
 
     private static final class Batch {
         final Geometry geometry;

@@ -6,6 +6,21 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ContactContractTest {
+    @Test void presentationProjectionCopiesWorldPoseWithoutChangingAuthoritativeContactOrTiming() {
+        var local=new VehicleContact(new Vector3f(1,.2f,0),Vector3f.UNIT_X);
+        var shot=new ShotEmission("weapon-muzzle",Vector3f.UNIT_Z,new Vector3f(10,0,0));
+        var original=new GameEvent(GameEvent.Type.IMPACT,42,1,0,new Vector3f(2,3,4),"machine-gun",2,
+                new Vector3f(5,6,7),Vector3f.UNIT_X,UUID.randomUUID(),"panel")
+                .withContact(ContactSurface.GLASS,local).withEmission(shot).withHealthChange(new HealthChange(100,98)).atTick(100,4);
+        Vector3f presentedPoint=new Vector3f(10,3,4),presentedNormal=Vector3f.UNIT_Z.clone();
+        var presented=original.forPresentation(presentedPoint,presentedNormal);
+        presentedPoint.zero();presentedNormal.zero();
+        assertEquals(new Vector3f(2,3,4),original.position());assertEquals(Vector3f.UNIT_X,original.normal());
+        assertEquals(new Vector3f(10,3,4),presented.position());assertEquals(Vector3f.UNIT_Z,presented.normal());
+        assertEquals(original,presented.forPresentation(original.position(),original.normal()));
+        assertSame(local,presented.vehicleContact());assertSame(shot,presented.emission());
+        assertThrows(IllegalArgumentException.class,()->original.forPresentation(new Vector3f(Float.NaN,0,0),Vector3f.UNIT_Y));
+    }
     @Test void snapshotsOwnTheirVectorsAndEventCopiesRetainAllContactMetadata() {
         Vector3f point=new Vector3f(1,2,3),normal=new Vector3f(0,0,-1),velocity=new Vector3f(4,0,5);
         var contact=new VehicleContact(point,normal);

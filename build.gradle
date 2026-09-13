@@ -71,6 +71,24 @@ tasks.register('prepareArenaModels', JavaExec) {
     args file('src/main/resources').absolutePath
 }
 
+tasks.register('authorVehicleModels', Exec) {
+    description = 'Explicit offline Blender preparation of vehicle sources; never part of an ordinary build'
+    commandLine providers.gradleProperty('blenderExecutable').getOrElse(file('build/tools/blender-4.5.9-windows-x64/blender.exe').absolutePath),
+            '--background', '--python', file('src/tools/author_vehicle_models.py').absolutePath
+}
+tasks.register('prepareVehicleModels', JavaExec) {
+    description = 'Convert prepared local vehicle sources to runtime assets without Blender or network'
+    dependsOn tasks.named('toolsClasses')
+    classpath = sourceSets.tools.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.PrepareVehicleModels'
+    args file('src/tools/assets/vehicles').absolutePath, file('src/main/resources').absolutePath
+}
+tasks.register('authorCombatVfx', Exec) {
+    description = 'Explicit offline Blender bake of combat flipbooks; never part of an ordinary build'
+    commandLine providers.gradleProperty('blenderExecutable').getOrElse(file('build/tools/blender-4.5.9-windows-x64/blender.exe').absolutePath),
+            '--background', '--python', file('src/tools/author_combat_vfx.py').absolutePath
+}
+
 application {
     mainClass = 'game.wreckriff.Main'
     applicationDefaultJvmArgs = ['-Xms128m', '-Xmx768m']

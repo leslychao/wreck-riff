@@ -145,8 +145,34 @@ class SceneLightingTest {
     private static void assertSinglePipeline(Fixture fixture) {
         assertEquals(2,fixture.viewport.getProcessors().size(),"One shared shadow renderer and one post processor");
         assertEquals(1,fixture.viewport.getProcessors().stream().filter(FilterPostProcessor.class::isInstance).count());
-        assertEquals(1,fixture.post.getFilterList().size(),"No always-enabled passthrough filter is needed");
+        assertEquals(2,fixture.post.getFilterList().size(),"One bloom and one match-only soft VFX compositor");
         assertSame(fixture.bloom,fixture.post.getFilterList().getFirst());
+    }
+    @Test void softVfxKeepsDepthAvailableWithBloomOffAndUnbindRestoresNormalOutput() {
+        try(var fixture=new Fixture();var visuals=new CombatVisuals(PresentationTestAssets.shared(),fixture.root,new SoftWorld())) {
+            fixture.lighting.apply(Theme.NEON,false);
+            fixture.lighting.bindCombatVisuals(visuals);fixture.initialize();fixture.post.preFrame(0);
+            assertNotSame(fixture.output,fixture.viewport.getOutputFrameBuffer());
+            assertFalse(fixture.bloom.isEnabled());
+            for(int[] size:new int[][]{{96,80},{120,90}}) {
+                fixture.post.reshape(fixture.viewport,size[0],size[1]);fixture.post.preFrame(0);
+                assertNotNull(fixture.post.getDepthTexture());
+            }
+            fixture.lighting.bindCombatVisuals(null);fixture.post.preFrame(0);
+            assertSame(fixture.output,fixture.viewport.getOutputFrameBuffer());
+        }
+    }
+    private static final class SoftWorld implements game.wreckriff.simulation.WorldQuery {
+        public Vector3f position(int id){return Vector3f.ZERO;} public Vector3f velocity(int id){return Vector3f.ZERO;}
+        public com.jme3.math.Quaternion rotation(int id){return com.jme3.math.Quaternion.IDENTITY;}
+        public boolean grounded(int id){return true;} public float mass(int id){return 1100;}
+        public Hit ray(Vector3f a,Vector3f b,int id){return null;}
+        public Hit sweep(Vector3f a,Vector3f b,float r,int id,float start,float end){return null;}
+        public Hit staticSweep(Vector3f a,Vector3f b,float r){return null;}
+        public boolean visible(Vector3f a,Vector3f b,int id){return true;}
+        public float distanceToHull(int id,Vector3f p){return 0;}
+        public void impulse(int id,Vector3f a,Vector3f b,float cap){throw new AssertionError("Presentation cannot change physics");}
+        public Vector3f closestHullPoint(int id,Vector3f from){return Vector3f.ZERO;}
     }
 
     private static final class Fixture implements AutoCloseable {

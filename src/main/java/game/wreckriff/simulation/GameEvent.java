@@ -55,6 +55,13 @@ public record GameEvent(Type type, long eventId, int subjectId, int sourceId,
     public GameEvent atTick(long tick,int ordinal) {
         return copyWith(sessionId,objectId,surface,vehicleContact,emission,healthChange,tick,ordinal);
     }
+    /** Presentation-only reprojection of an already timed contact; simulation consumes the original event. */
+    public GameEvent forPresentation(Vector3f point,Vector3f normal) {
+        if(!Vector3f.isValidVector(point)||!Vector3f.isValidVector(normal))
+            throw new IllegalArgumentException("Finite presentation contact required");
+        return new GameEvent(type,eventId,subjectId,sourceId,point,kind,value,origin,normal,sessionId,objectId,
+                surface,vehicleContact,emission,healthChange,simulationTick,ordinalWithinTick);
+    }
     private GameEvent copyWith(UUID session,String object,ContactSurface material,VehicleContact contact,
                                ShotEmission shot,HealthChange health,long tick,int ordinal) {
         return new GameEvent(type,eventId,subjectId,sourceId,position,kind,value,origin,normal,session,object,

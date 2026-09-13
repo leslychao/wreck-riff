@@ -94,6 +94,8 @@ public final class VerifyAssets {
         attempt(errors, "licensed soundtrack", () -> verifyMusic(assets));
         attempt(errors, "pickup models", () -> verifyPickupModels(assets));
         attempt(errors, "ordnance models and atlases", () -> OrdnanceAssetsVerifier.verify(assets));
+        attempt(errors, "baked combat VFX", () -> CombatVfxAssetsVerifier.verify(assets));
+        attempt(errors, "authored vehicle assets", () -> game.wreckriff.presentation.VehicleAssetsVerifier.verify());
         attempt(errors, "arena art", () -> verifyArenaArt(assets));
         attempt(errors, "font", () -> verifyFont(assets));
         attempt(errors, "licensed textures", () -> verifyTextures(assets));
@@ -362,6 +364,11 @@ public final class VerifyAssets {
             if(scene.parts().isEmpty())throw new IOException("Arena has no authored art: "+entry.id());
             String path="config/arena-art-"+entry.id().replace('_','-')+".json";
             assets.add(asset(path,"arena-art",resource(path),scene.source()+"; "+scene.license(),"SCENE_VALIDATED"));
+        }
+        for(String source:List.of("src/tools/author_campaign_arenas.py","src/tools/author_arena_art.py",
+                "src/tools/dress_construction.py","src/tools/dress_neon.py")) {
+            byte[] bytes=Files.readAllBytes(Path.of(source));
+            assets.add(asset(source,"procedural-source",bytes,"Offline original location and workplace authoring","SOURCE_HASH_VERIFIED"));
         }
         assets.addAll(ArenaModelVerifier.verify());
     }

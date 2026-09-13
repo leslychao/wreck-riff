@@ -192,6 +192,7 @@ public final class GameApplication extends SimpleApplication {
             if(options.profile()) {
                 stageProfiler=new StageProfiler();stageProfiler.startRecording(store.directory());
                 stageProfiler.attachGpu(renderer);
+                sceneLighting.setCombatVfxProbe(stageProfiler.vfxProbe());
                 setAppProfiler(stageProfiler);renderer.getStatistics().setEnabled(true);
             }
             if(options.automated()) {
@@ -342,6 +343,7 @@ public final class GameApplication extends SimpleApplication {
             if(checkpoint!=null)runtime.restoreCheckpoint(checkpoint);
             ArenaPresentation.attach(assetManager,content.visual(),session,arena,arenaSystems);
             combatVisuals=new CombatVisuals(assetManager,matchNode,world);
+            combatVisuals.bindVehicleModels(vehicleModels);
             contactTimeline=new ContactPresentationTimeline(session.sessionId);
             sceneLighting.bindCombatVisuals(combatVisuals);createNavigationLines();
             specialPresentation=new SpecialPresentation(assetManager,matchNode,world);
@@ -611,8 +613,14 @@ public final class GameApplication extends SimpleApplication {
         }
         report.tick(session,events,bots);
         if(session.vehicle(0).recoveries>recoveries) chase.reset();
-        List<GameEvent> presented=contactTimeline.accept(events,session.seconds());
+        List<GameEvent> contactEvents=events.stream().map(event->{
+            Node model=vehicleModels.get(event.subjectId());
+            return model==null?event:VehicleVisual.refineContact(model,event);
+        }).toList();
+        combatVisuals.setPresentationTime(session.seconds());
+        List<GameEvent> presented=contactTimeline.accept(contactEvents,session.seconds());
         combatVisuals.accept(presented);
+        combatVisuals.registerContacts(contactEvents);
         presentContactsAndVehicles(presented);
         specialPresentation.accept(events);
         pickupPresentation.accept(events);
@@ -626,6 +634,7 @@ public final class GameApplication extends SimpleApplication {
                     session.bossParticipantId>=0&&!session.vehicle(session.bossParticipantId).alive()));
             writeReport(); audio.stopMatch();
             audio.accept(presented);
+            contactTimeline.close();
             flow.results();
         } else audio.accept(presented);
     }
@@ -648,8 +657,27 @@ public final class GameApplication extends SimpleApplication {
         boolean advancing=flow.screen()==Screen.RUNNING;
         boolean results=flow.screen()==Screen.RESULTS;
         float alpha=advancing||results&&runtime.hasWrecks()?loop.alpha():1;
+        // Resolve the render pose before contact delivery so every consumer sees the same moving surface.
+        for(var state:session.vehicles) {
+            Node model=vehicleModels.get(state.id);
+            if(world.containsVehicle(state.id)) {
+                var pose=world.interpolatedPose(state.id,alpha);model.setLocalTranslation(pose.position());model.setLocalRotation(pose.rotation());
+                for(int i=0;i<4;i++)if(wheels.get(state.id)[i]!=null) {
+                    var wheel=world.interpolatedWheel(state.id,i,alpha);
+                    wheels.get(state.id)[i].setLocalTranslation(wheel.position());wheels.get(state.id)[i].setLocalRotation(wheel.rotation());
+                }
+            } else if(!state.alive()) {
+                model.removeFromParent();for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
+            }
+        }
+        combatVisuals.setPresentationTime(session.seconds());
         if(advancing) {
-            List<GameEvent> delivered=contactTimeline.advanceTo(session.seconds());
+            List<GameEvent> delivered=contactTimeline.advanceTo(session.seconds()).stream().map(event->{
+                Node model=vehicleModels.get(event.subjectId());var contact=event.vehicleContact();
+                return model==null||contact==null?event:event.forPresentation(
+                        model.getLocalTranslation().add(model.getLocalRotation().mult(contact.localPoint())),
+                        model.getLocalRotation().mult(contact.localNormal()));
+            }).toList();
             presentContactsAndVehicles(delivered);audio.accept(delivered);
         }
         for(var state:session.vehicles) {
@@ -658,16 +686,14 @@ public final class GameApplication extends SimpleApplication {
             VehicleVisual.updateDamage(model,showcase!=null&&session.seconds()<12?showcase.displayHpFraction(state):visibleHp/state.maximumHp);
             if(state.id==session.bossParticipantId)VehicleVisual.updateBossPhase(model,session.bossMode-1,state.alive()&&arenaSystems.bossVulnerable());
             VehicleVisual.updateEffects(model,!results&&state.alive()&&state.frozenTicks>0,!results&&state.alive()&&state.shieldTicks>0);
-            if(world.containsVehicle(state.id)) {
-                var pose=world.interpolatedPose(state.id,alpha); model.setLocalTranslation(pose.position()); model.setLocalRotation(pose.rotation());
-                for(int i=0;i<4;i++) if(wheels.get(state.id)[i]!=null) {
-                    var wheel=world.interpolatedWheel(state.id,i,alpha); wheels.get(state.id)[i].setLocalTranslation(wheel.position()); wheels.get(state.id)[i].setLocalRotation(wheel.rotation());
-                }
-            } else if(!state.alive()) {
-                model.removeFromParent();
-                for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
-            }
             VehicleVisual.updatePresentation(model,advancing||results?dt:0,cam);
+            for(var panel:VehicleVisual.drainDetached(model)) {
+                Quaternion rotation=model.getLocalRotation();
+                Vector3f position=model.getLocalTranslation().add(rotation.mult(panel.localPosition()));
+                Vector3f velocity=world.containsVehicle(state.id)?world.velocity(state.id):new Vector3f();
+                combatVisuals.detachPanel(position,rotation.mult(panel.localRotation()),
+                        velocity.add(rotation.mult(panel.localImpulse())),panel.halfExtents(),ContactSurface.METAL,state.id);
+            }
         }
         bossActionPresentation.setGlow(store.settings().glow);
         bossActionPresentation.update(vehicleModels);
@@ -1192,6 +1218,7 @@ public final class GameApplication extends SimpleApplication {
         if(contactTimeline!=null){contactTimeline.close();contactTimeline=null;}
         if(sceneLighting!=null)sceneLighting.bindCombatVisuals(null);
         if(combatVisuals!=null){combatVisuals.close();combatVisuals=null;}
+        vehicleModels.values().forEach(VehicleVisual::close);
         if(runtime!=null){runtime.close();runtime=null;world=null;combat=null;}
         else if(world!=null){world.close();world=null;}
         if(soak!=null&&unloading!=null) {

@@ -32,8 +32,10 @@ public final class ContactPresentationTimeline implements AutoCloseable {
             var key=new Key(event.type(),event.eventId(),event.subjectId(),event.sourceId(),event.simulationTick());
             if(!seen.add(key))continue;
             if(seen.size()>MAX_SEEN)seen.remove(seen.iterator().next());
-            if(event.type()==GameEvent.Type.REPAIRED||event.type()==GameEvent.Type.DESTROYED)
-                cancelDeformation(event.subjectId());
+            if(event.type()==GameEvent.Type.REPAIRED)cancelDeformation(event.subjectId());
+            if(event.type()==GameEvent.Type.DESTROYED) {
+                pending.removeIf(p->p.event.subjectId()==event.subjectId());overflow.remove(event.subjectId());
+            }
             double delay=contactDelay(event);
             if(delay<=0) {delivered.add(event);continue;}
             Pending next=new Pending(event,simulationSeconds+delay,sequence++);

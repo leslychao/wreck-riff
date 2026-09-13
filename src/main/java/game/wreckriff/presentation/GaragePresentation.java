@@ -79,6 +79,7 @@ public final class GaragePresentation implements AutoCloseable {
                 if(roller!=null)roller.setLocalRotation(new Quaternion().fromAngleAxis((float)(elapsed*.13%(Math.PI*2)),Vector3f.UNIT_X));
             }
             frame(camera,leftOcclusion,bottomOcclusion);
+            VehicleVisual.updatePresentation(selected.node,dt,camera);
         }
         fan.setLocalRotation(new Quaternion().fromAngleAxis((float)(elapsed*1.9%(Math.PI*2)),Vector3f.UNIT_Z));
         haze.update(elapsed);
@@ -311,5 +312,5 @@ public final class GaragePresentation implements AutoCloseable {
         }
     }
 
-    @Override public void close() {closed=true;root.removeFromParent();root.detachAllChildren();vehicles.clear();selected=null;}
+    @Override public void close() {closed=true;root.removeFromParent();vehicles.values().forEach(vehicle->VehicleVisual.close(vehicle.node));root.detachAllChildren();vehicles.clear();selected=null;}
 }

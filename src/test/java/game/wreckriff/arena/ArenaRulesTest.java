@@ -7,6 +7,14 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ArenaRulesTest {
+    @Test void repairContextUsesClampedActualGainAndDoesNotEmitAgainForFullHealth() {
+        var session=new MatchSession(42,360);var systems=new ArenaSystems(session,arena);var world=new TestWorld();
+        world.positions[0]=new Vector3f(-44,.8f,22);session.vehicle(0).hp=session.vehicle(0).maximumHp-3;
+        systems.collectPickups(world);var repair=systems.drainEvents().stream().filter(e->e.type()==GameEvent.Type.REPAIRED).findFirst().orElseThrow();
+        assertEquals(3,repair.value());assertEquals(session.vehicle(0).maximumHp,repair.healthChange().hpAfter());
+        assertEquals(repair.healthChange().hpBefore()+3,repair.healthChange().hpAfter());
+        session.tick=3000;systems.collectPickups(world);assertTrue(systems.drainEvents().isEmpty());
+    }
     private final ArenaDefinition arena=ArenaDefinition.load();
     @Test void configuredMaximumHealthAndRepairFractionAreAuthoritativeForBothDrivers() {
         var json=game.wreckriff.config.Configs.gson().toJsonTree(game.wreckriff.config.Configs.load("combat",game.wreckriff.combat.CombatRules.class)).getAsJsonObject();

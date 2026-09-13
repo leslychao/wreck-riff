@@ -1,6 +1,7 @@
 package game.wreckriff.presentation;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.anim.MorphControl;
 import com.jme3.material.Material;
 import com.jme3.math.*;
 import com.jme3.renderer.Camera;
@@ -81,4 +82,5 @@ public final class VehicleVisual {
     public static void updatePresentation(Node vehicle,float dt,Camera camera){vehicle.getControl(VehicleDamageVisual.class).advance(dt,camera);}
     public record DetachedPanel(String panelId,Vector3f localPosition,Quaternion localRotation,Vector3f halfExtents,Vector3f localImpulse) {}
     public static List<DetachedPanel> drainDetached(Node vehicle){return vehicle.getControl(VehicleDamageVisual.class).drainDetached();}
+    public static void close(Node vehicle){var control=vehicle.getControl(VehicleDamageVisual.class);if(control!=null){control.close();vehicle.removeControl(control);}vehicle.removeControl(MorphControl.class);}
 }

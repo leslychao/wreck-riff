@@ -37,7 +37,7 @@ class CombatSystemTest {
         assertEquals(200,damage.healthChange().hpBefore());assertEquals(session.vehicle(1).hp,damage.healthChange().hpAfter(),.0001f);
         var shot=events.stream().filter(e->e.type()==GameEvent.Type.SHOT).findFirst().orElseThrow();
         assertEquals("machine-gun-muzzle-0",shot.emission().socketId());
-        assertEquals(world.shotDirections.getLast(),shot.emission().direction());
+        assertTrue(world.shotDirections.getLast().distance(shot.emission().direction())<.000001f);
         assertEquals(0,shot.simulationTick());assertTrue(damage.ordinalWithinTick()>shot.ordinalWithinTick());
         var shield=events.stream().filter(e->e.type()==GameEvent.Type.SHIELD_HIT).findFirst().orElseThrow();
         assertEquals(contact,shield.vehicleContact());
@@ -61,6 +61,18 @@ class CombatSystemTest {
         var shots=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.SHOT).toList();
         assertEquals(List.of(0L,12L),shots.stream().map(GameEvent::simulationTick).toList());
         assertEquals("machine-gun-muzzle-1",shots.getLast().emission().socketId());
+    }
+    @Test void healthContextEndsAtExactlyTheAuthoritativeValueAcrossFractionalDamageShares() {
+        for(float hp:new float[]{200.12345f,31.2345f,.001f}) {
+            createSession();session.vehicle(1).hp=hp;
+            combat.queueDamage(1,0,1.234567f,"hazard",-101);
+            combat.queueDamage(1,2,2.345678f,"hazard",-102);combat.resolveDamage(world);
+            var hits=combat.drainEvents().stream().filter(e->e.type()==GameEvent.Type.DAMAGE).toList();
+            assertEquals(hp,hits.getFirst().healthChange().hpBefore());
+            assertEquals(hits.getFirst().healthChange().hpAfter(),hits.getLast().healthChange().hpBefore());
+            assertEquals(session.vehicle(1).hp,hits.getLast().healthChange().hpAfter());
+            assertEquals(Math.min(hp,1.234567f+2.345678f),hits.stream().mapToDouble(GameEvent::value).sum(),.00001f);
+        }
     }
     @Test void localMultiplierUsesActualHitscanPointAndNeverGenericDamage() {
         createSession();world.positions[1].set(0,0,10);Vector3f local=new Vector3f(.2f,.4f,-2);

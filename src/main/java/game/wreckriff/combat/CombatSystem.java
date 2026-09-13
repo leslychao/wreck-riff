@@ -1368,6 +1368,8 @@ public final class CombatSystem {
         if(total<=0)return;
         double loss = Math.min(target.hp, total);
         double remainingHealth=target.hp;
+        float resolvedHealth=Math.max(0,target.hp-(float)loss);
+        int remainingRequests=requests.size();
         Map<Integer, Double> externalAmounts = new TreeMap<>();
         for (Damage request : requests) {
             float actual = (float) (loss * request.amount / total);
@@ -1377,11 +1379,12 @@ public final class CombatSystem {
                 externalAmounts.merge(request.sourceId, (double) request.amount, Double::sum);
             }
             float hpBefore=(float)Math.max(0,remainingHealth);remainingHealth-=loss*request.amount/total;
+            float hpAfter=--remainingRequests==0?resolvedHealth:(float)Math.max(0,remainingHealth);
             emit(new GameEvent(GameEvent.Type.DAMAGE, request.eventId, targetId, request.sourceId,
                     request.point==null?world.position(targetId):request.point, request.cause, actual,request.origin,request.normal)
-                    .withContact(request.surface,request.contact).withHealthChange(new HealthChange(hpBefore,(float)Math.max(0,remainingHealth))));
+                    .withContact(request.surface,request.contact).withHealthChange(new HealthChange(hpBefore,hpAfter)));
         }
-        target.hp = Math.max(0, target.hp - (float) loss);
+        target.hp = resolvedHealth;
         double greatest = -1;
         for (Map.Entry<Integer, Double> external : externalAmounts.entrySet()) {
             session.vehicle(external.getKey()).damageDealt += (float) (loss * external.getValue() / total);

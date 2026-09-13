@@ -50,6 +50,6 @@ class NativeArchitectureCollisionTest {
             }
             assertTrue(checked>=4,"Sample the authored roof from several faces");
         }
-        assertEquals(3,roofs,"Three real structural interior models per map");
+        assertTrue(roofs>=3,"At least the three required interior models; outdoor structures share the same exact collision contract");
     }
 }

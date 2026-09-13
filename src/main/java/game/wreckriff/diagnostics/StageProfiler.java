@@ -33,6 +33,7 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     private com.jme3.renderer.Statistics rendererStatistics;
     private long renderSamples,renderSamplesWithGeometry,disabledRenderSamples;
     private GpuFrameProfiler gpu;
+    private GpuPassProfiler vfxGpu;
     private String gpuUnavailable="No graphical context attached";
     public StageProfiler() {this(System::nanoTime);}
     StageProfiler(LongSupplier clock) {this.clock=clock;}
@@ -40,12 +41,15 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         if(gpu!=null)throw new IllegalStateException("GPU profiler already attached");
         attachRendererStatistics(renderer.getStatistics());
         gpu=GpuFrameProfiler.create(renderer);gpuUnavailable="GL_ARB_timer_query / OpenGL 3.3 unavailable";
+        vfxGpu=GpuPassProfiler.create();
     }
+    public game.wreckriff.presentation.CombatVfxFilter.Probe vfxProbe(){return vfxGpu;}
     void attachRendererStatistics(com.jme3.renderer.Statistics statistics) {
         rendererStatistics=statistics;statistics.setEnabled(true);
     }
     public void detachGpuForVideoRestart() {
         if(gpu!=null){gpu.close();gpu=null;}
+        if(vfxGpu!=null){vfxGpu.close();vfxGpu=null;}
         gpuUnavailable="Video context restarted; start a new diagnostic run to capture GPU timings";
     }
     public void startRecording(Path directory) throws IOException,ParseException {
@@ -87,6 +91,7 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
         result.put("cpuStages",application);result.put("jmeAppSteps",jme);
         result.put("measurement","CPU elapsed intervals; nested app stages are not additive and do not measure GPU execution");
         result.put("gpuTiming",gpu==null?Map.of("status","UNAVAILABLE","reason",gpuUnavailable):gpu.snapshot());
+        result.put("vfxGpuTiming",vfxGpu==null?Map.of("status","UNAVAILABLE","reason",gpuUnavailable):vfxGpu.snapshot());
         result.put("jfrPath",recordingPath==null?"":recordingPath.toAbsolutePath().toString());result.put("jfrMaximumBytes",128L*1024*1024);
         var render=new LinkedHashMap<String,Integer>();if(renderLabels!=null)for(int i=0;i<renderLabels.length;i++)render.put(renderLabels[i],maximumRenderValues[i]);
         result.put("maximumRendererStatistics",render);
@@ -96,6 +101,7 @@ public final class StageProfiler implements AppProfiler,AutoCloseable {
     }
     @Override public void close() {
         if(gpu!=null)gpu.close();
+        if(vfxGpu!=null)vfxGpu.close();
         if(recording!=null){recording.stop();recording.close();recording=null;}
     }
 }

@@ -16,13 +16,14 @@ final class VehicleDamageMarks {
     private final ArrayDeque<Mark> marks=new ArrayDeque<>();
     private final ByteBuffer pixels=BufferUtils.createByteBuffer(SIZE*SIZE*4);
     private final Image image=new Image(Image.Format.RGBA8,SIZE,SIZE,pixels,ColorSpace.Linear);
+    private boolean dirty;
     final Texture2D texture=new Texture2D(image);
     VehicleDamageMarks(VehicleProfile profile){this.profile=profile;texture.setMagFilter(Texture.MagFilter.Bilinear);texture.setMinFilter(Texture.MinFilter.BilinearNoMipMaps);texture.setWrap(Texture.WrapMode.EdgeClamp);}
     void hit(Vector3f point,Vector3f normal,float amount,boolean fire,boolean glass,long id) {
-        if(marks.size()==LIMIT)marks.removeFirst();marks.add(new Mark(point.clone(),normal.clone(),Math.clamp(amount,.12f,1),fire?1:glass?2:0,id));rebuild();
+        if(marks.size()==LIMIT)marks.removeFirst();marks.add(new Mark(point.clone(),normal.clone(),Math.clamp(amount,.12f,1),fire?1:glass?2:0,id));dirty=true;
     }
     void repair(float ratio) {
-        if(ratio>=.999f)marks.clear();else {var retained=new ArrayDeque<Mark>();for(Mark m:marks)if(m.strength*(1-ratio)>.07f)retained.add(new Mark(m.point,m.normal,m.strength*(1-ratio),m.channel,m.id));marks.clear();marks.addAll(retained);}rebuild();
+        if(ratio>=.999f)marks.clear();else {var retained=new ArrayDeque<Mark>();for(Mark m:marks)if(m.strength*(1-ratio)>.07f)retained.add(new Mark(m.point,m.normal,m.strength*(1-ratio),m.channel,m.id));marks.clear();marks.addAll(retained);}dirty=true;
     }
     private void rebuild() {
         for(int i=0;i<pixels.capacity();i++)pixels.put(i,(byte)0);
@@ -47,5 +48,7 @@ final class VehicleDamageMarks {
         return new Vector2f((face%3+.06f+Math.clamp(u,0,1)*.88f)/3,(face/3+.06f+Math.clamp(v,0,1)*.88f)/2);
     }
     int count(){return marks.size();}
-    byte[] snapshot(){byte[] result=new byte[pixels.capacity()];pixels.duplicate().clear().get(result);return result;}
+    void flush(){if(dirty){rebuild();dirty=false;}}
+    void close(){marks.clear();image.dispose();}
+    byte[] snapshot(){flush();byte[] result=new byte[pixels.capacity()];pixels.duplicate().clear().get(result);return result;}
 }

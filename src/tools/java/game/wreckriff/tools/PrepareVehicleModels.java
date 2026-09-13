@@ -26,6 +26,9 @@ public final class PrepareVehicleModels {
         List<Map<String,Object>> records=new ArrayList<>();
         for(String id:List.of("rivet","grinder","spark","boss_foreman","boss_prefect","boss_emcee")) {
             Path input=source.resolve(id);JsonObject data;
+            manager.registerLocator(input.toAbsolutePath().toString(),FileLocator.class);
+            Spatial authored=manager.loadModel("source.glb");int[] sourceTriangles={0};authored.depthFirstTraversal(s->{if(s instanceof Geometry g)sourceTriangles[0]+=g.getMesh().getTriangleCount();});
+            manager.unregisterLocator(input.toAbsolutePath().toString(),FileLocator.class);manager.clearCache();
             try(var stream=new GZIPInputStream(Files.newInputStream(input.resolve("mesh.json.gz")))) {
                 data=JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject();
             }
@@ -53,6 +56,7 @@ public final class PrepareVehicleModels {
                 if(triangles>budget)throw new IllegalArgumentException(id+" LOD"+lod+" exceeds budget "+triangles+">"+budget);
                 counts.add(triangles);
             }
+            if(sourceTriangles[0]!=counts.getFirst())throw new IllegalArgumentException("GLB and canonical topology companion disagree for "+id);
             Path output=resources.resolve("models/vehicles/"+id);Files.createDirectories(output);
             bank.setUserData("profileId",id);bank.setUserData("assetOrigin","ORIGINAL_BLENDER_CONTENT");bank.updateGeometricState();
             BinaryExporter.getInstance().save(bank,output.resolve("vehicle.j3o").toFile());
@@ -61,6 +65,7 @@ public final class PrepareVehicleModels {
             record.put("model","models/vehicles/"+id+"/vehicle.j3o");record.put("modelSha256",hash(output.resolve("vehicle.j3o")));
             record.put("regional","models/vehicles/"+id+"/regions.json.gz");record.put("regionalSha256",hash(output.resolve("regions.json.gz")));
             record.put("sourceBlend","src/tools/assets/vehicles/"+id+"/source.blend");record.put("sourceBlendSha256",hash(input.resolve("source.blend")));
+            record.put("sourceGlb","src/tools/assets/vehicles/"+id+"/source.glb");record.put("sourceGlbSha256",hash(input.resolve("source.glb")));
             record.put("meshBundle","src/tools/assets/vehicles/"+id+"/mesh.json.gz");record.put("meshBundleSha256",hash(input.resolve("mesh.json.gz")));
             var textureRecords=new LinkedHashMap<String,String>();for(String map:List.of("diffuse","normal","specular"))textureRecords.put("textures/vehicles/"+id+"/"+map+".png",hash(textures.resolve(map+".png")));
             record.put("textures",textureRecords);records.add(record);System.out.println("Prepared vehicle "+id+" "+counts);

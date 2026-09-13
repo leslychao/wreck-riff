@@ -74,7 +74,7 @@ public final class CombatShowcase {
         if(tick==4620&&!combat.mines().isEmpty()) {
             // A live diagnostic target enters an already armed, authoritative mine trigger.
             session.vehicle(2).hp=session.vehicle(2).maximumHp;
-            world.teleport(2,combat.mines().getFirst().point().add(0,.85f,0),new Quaternion());
+            world.teleport(2,combat.mines().getFirst().position().add(0,.85f,0),new Quaternion());
         }
         return result;
     }

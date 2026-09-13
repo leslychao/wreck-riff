@@ -213,6 +213,7 @@ def make_textures(profile,out):
     spec=np.clip(.37+noise*.5-seam*.22-scratches*.10,0,1)
     def save(name,pixels):
         image=bpy.data.images.new(name,width=size,height=size,alpha=True,float_buffer=False)
+        if name!='diffuse.png':image.colorspace_settings.name='Non-Color'
         rgba=np.ones((size,size,4),np.float32);rgba[:,:,:3]=pixels
         image.pixels.foreach_set(rgba.ravel());image.file_format='PNG';image.filepath_raw=str(out/name);image.save();bpy.data.images.remove(image)
     save('diffuse.png',rgb);save('normal.png',normal*.5+.5);save('specular.png',np.repeat(spec[:,:,None],3,axis=2))
@@ -250,8 +251,9 @@ def export(profile):
     with gzip.GzipFile(filename=str(out/'mesh.json.gz'),mode='wb',mtime=0) as f:f.write(json.dumps(bundle,separators=(',',':')).encode())
     # The editable source retains topology, UVs and all five damage poses.
     bpy.ops.wm.save_as_mainfile(filepath=str(out/'source.blend'),compress=True)
+    bpy.ops.export_scene.gltf(filepath=str(out/'source.glb'),export_format='GLB',export_animations=False,export_morph=True,export_materials='NONE')
     make_textures(profile,out)
-    record={'id':profile,'lodTriangles':lodcounts,'sourceBlendSha256':sha(out/'source.blend'),'meshSha256':sha(out/'mesh.json.gz')}
+    record={'id':profile,'lodTriangles':lodcounts,'sourceBlendSha256':sha(out/'source.blend'),'sourceGlbSha256':sha(out/'source.glb'),'meshSha256':sha(out/'mesh.json.gz')}
     (out/'source.json').write_text(json.dumps(record,indent=2)+'\n',encoding='utf8');print('VEHICLE',profile,lodcounts,flush=True)
 
 if __name__=='__main__':

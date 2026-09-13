@@ -35,7 +35,7 @@ class ContactPresentationTimelineTest {
         var timeline=new ContactPresentationTimeline(session);
         var damage=event(GameEvent.Type.DAMAGE,1,100);
         var death=event(GameEvent.Type.DESTROYED,1,0);
-        assertEquals(List.of(death),timeline.accept(List.of(damage,death),0));
+        assertEquals(List.of(death),timeline.accept(List.of(event(GameEvent.Type.IMPACT,1,0),damage,death),0));
         assertEquals(0,timeline.visibleHp(1,0,100));
         assertTrue(timeline.advanceTo(1).isEmpty());
     }
