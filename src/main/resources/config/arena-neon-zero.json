@@ -11056,7 +11056,7 @@
       "width": 54,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-north-ramp-0",
       "bidirectional": true
     },
     {
@@ -11066,7 +11066,7 @@
       "width": 54,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-north-ramp-0",
       "bidirectional": true
     },
     {
@@ -11076,7 +11076,7 @@
       "width": 54,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-north-ramp-0",
       "bidirectional": true
     },
     {
@@ -11086,7 +11086,7 @@
       "width": 54,
       "clearance": 13.5,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-north-ramp-0",
       "bidirectional": true
     },
     {
@@ -11176,7 +11176,7 @@
       "width": 54,
       "clearance": 13.5,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-south-ramp-0",
       "bidirectional": true
     },
     {
@@ -11186,7 +11186,7 @@
       "width": 54,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-south-ramp-0",
       "bidirectional": true
     },
     {
@@ -11196,7 +11196,7 @@
       "width": 54,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-south-ramp-0",
       "bidirectional": true
     },
     {
@@ -11206,7 +11206,7 @@
       "width": 54,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-tunnel-south-ramp-0",
       "bidirectional": true
     },
     {
@@ -11216,7 +11216,7 @@
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-parking-ramp-one-0",
       "bidirectional": true
     },
     {
@@ -11226,7 +11226,7 @@
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-parking-ramp-one-0",
       "bidirectional": true
     },
     {
@@ -11236,7 +11236,7 @@
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-parking-ramp-one-0",
       "bidirectional": true
     },
     {
@@ -11246,7 +11246,7 @@
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-parking-ramp-two-0",
       "bidirectional": true
     },
     {
@@ -11256,7 +11256,7 @@
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-parking-ramp-two-0",
       "bidirectional": true
     },
     {
@@ -11266,7 +11266,7 @@
       "width": 24,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-parking-ramp-two-0",
       "bidirectional": true
     },
     {
@@ -11276,7 +11276,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11286,7 +11286,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11296,7 +11296,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11306,7 +11306,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11316,7 +11316,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11326,7 +11326,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11336,7 +11336,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-rise-0",
       "bidirectional": true
     },
     {
@@ -11456,7 +11456,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -11466,7 +11466,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -11476,7 +11476,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -11486,7 +11486,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -11496,7 +11496,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -11506,7 +11506,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -11516,7 +11516,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-express-fall-0",
       "bidirectional": true
     },
     {
@@ -32541,7 +32541,10 @@
       "id": "alley-west",
       "title": "alley west",
       "width": 18,
-      "geometryIds": [],
+      "geometryIds": [
+        "road-market-loading-0",
+        "road-market-avenue-1"
+      ],
       "navNodeIds": [
         210,
         209,
@@ -32586,7 +32589,10 @@
       "id": "industrial-shortcut-north",
       "title": "industrial shortcut north",
       "width": 22,
-      "geometryIds": [],
+      "geometryIds": [
+        "road-parking-north-entry-1",
+        "road-parking-north-entry-0"
+      ],
       "navNodeIds": [
         291,
         290,

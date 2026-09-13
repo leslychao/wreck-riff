@@ -152,8 +152,8 @@ class Location:
             for segment,(first,last) in enumerate(zip(path['names'],path['names'][1:])):
                 a,b=self.points[first],self.points[last];count=1 if path['kind']=='OPENABLE' else max(1,math.ceil(dist(a,b)/45));before=self.node(a);ids.append(before)
                 for n in range(1,count+1):
-                    after=self.node(tuple(a[k]+(b[k]-a[k])*n/count for k in range(3)));self.data['edges'].append(dict(id=f'{path["id"]}-{segment}-{n}',**{'from':before},to=after,width=path['width'],clearance=100,type=path['kind'],objectId=path['objectId'],bidirectional=True));before=after;ids.append(after)
-            self.data['roads'].append(dict(id=path['id'],title=path['id'].replace('-',' '),width=path['width'],geometryIds=path['geometryIds'],navNodeIds=list(dict.fromkeys(ids))))
+                    after=self.node(tuple(a[k]+(b[k]-a[k])*n/count for k in range(3)));self.data['edges'].append(dict(id=f'{path["id"]}-{segment}-{n}',**{'from':before},to=after,width=path['width'],clearance=100,type=path['kind'],objectId=path['objectId'] or (f'road-{path["id"]}-{segment}' if path['kind']=='RAMP' else ''),bidirectional=True));before=after;ids.append(after)
+            self.data['roads'].append(dict(id=path['id'],title=path['id'].replace('-',' '),width=path['width'],geometryIds=path['geometryIds'] or list(dict.fromkeys(self.data['nodes'][i]['surfaceId'] for i in ids)),navNodeIds=list(dict.fromkeys(ids))))
         for identity,title,center,boundary in self.district_specs:
             ids=[n['id'] for n in self.data['nodes'] if inside((n['position']['x'],n['position']['z']),boundary)]
             self.data['districts'].append(dict(id=identity,title=title,center=vec(center),patrolNodeIds=ids,boundary=[vec((x,0,z)) for x,z in boundary]))
@@ -246,8 +246,8 @@ def boss(identity,name,hp,weapons,entrances,quotes,pads=()):
     return dict(id=identity,name=name,profileId=identity,maximumHp=hp,primary=weapons[0],secondary=weapons[1],entrances=[dict(id=i,position=vec(p),yawDegrees=90) for i,p in enumerate(entrances)],launchPadIds=list(pads),quotes=quotes)
 
 def construction():
-    a=Location('construction_17','РњР•Р“РђРЎРўР РћР™-17','CONSTRUCTION',1600,1200,8,boss('boss_foreman','Р‘СЂРёРіР°РґРёСЂ',4000,('POWER','CANNON'),[(1420,0,780),(170,0,250)],['РћР±СЉРµРєС‚ Р·Р°РєСЂС‹С‚. РџРѕСЃС‚РѕСЂРѕРЅРЅРёС… вЂ” РїРѕРґ РѕС‚РІР°Р»','РЎРµР№С‡Р°СЃ РІС‹СЂРѕРІРЅСЏРµРј!']))
-    a.data['metadata']['introduction']='Р Р°Р±РѕС‡Р°СЏ СЃС‚СЂРѕР№РєР°: РєРѕС‚Р»РѕРІР°РЅ, РєРѕСЂРїСѓСЃР° РЅР° СЂР°Р·РЅС‹С… СЃС‚Р°РґРёСЏС…, РїСЂРѕРёР·РІРѕРґСЃС‚РІРѕ Р±РµС‚РѕРЅР°, СЃРєР»Р°РґС‹ Рё РјРѕРЅС‚Р°Р¶ СЂР°Р·РІСЏР·РєРё.'
+    a=Location('construction_17','МЕГАСТРОЙ-17','CONSTRUCTION',1600,1200,8,boss('boss_foreman','Бригадир',4000,('POWER','CANNON'),[(1420,0,780),(170,0,250)],['Объект закрыт. Посторонних — под отвал','Сейчас выровняем!']))
+    a.data['metadata']['introduction']='Рабочая стройка: котлован, корпуса на разных стадиях, производство бетона, склады и монтаж развязки.'
     a.holes=[rect(280,650,330,730)]
     a.fixed=[('pit-floor',rect(365,565,415,645),-14,'district-earth',-1)]
     for name,poly,height in [('west',[(280,330),(365,415),(365,645),(280,730)],lambda x,z:(x-280)*-14/85),
@@ -261,13 +261,13 @@ def construction():
     a.road('interchange-rise','ramp_s deck_s',34,'concrete','RAMP');a.road('interchange-span','deck_s deck_c deck_n',34,'concrete');a.road('interchange-descent','deck_n ramp_n',34,'concrete','RAMP')
     a.opening('warehouse-service-gate','gate_w','gate_e');a.launch('construction-gantry-launch','jump','landing',3.2)
     # Unfinished L-shaped frame: open bays, two connected courts, staggered upper wings.
-    a.site('unfinished-apartments','РљРѕСЂРїСѓСЃ 17Р‘','РљР°СЂРєР°СЃ Р¶РёР»РѕРіРѕ РєРѕСЂРїСѓСЃР° Рё РјРѕРЅС‚Р°Р¶РЅС‹Р№ РґРІРѕСЂ','Р—Р°РїР°РґРЅС‹Р№ РІСЉРµР·Рґ в†’ РѕС‚РєСЂС‹С‚С‹Р№ РєР°СЂРєР°СЃ в†’ СЃРµРІРµСЂРЅС‹Р№ РґРІРѕСЂ',[355,610,815,980],'through-interior')
+    a.site('unfinished-apartments','Корпус 17Б','Каркас жилого корпуса и монтажный двор','Западный въезд → открытый каркас → северный двор',[355,610,815,980],'through-interior')
     a.roof('unfinished-apartments',(360,595,820,950),16,'concrete');a.roof('unfinished-east-wing',(555,670,900,1050),29,'concrete')
     for x,z in [(370,830),(450,830),(570,810),(370,925),(450,925),(570,925),(610,940),(650,1025)]:a.box(f'frame-column-{x}-{z}',(x,8,z),(2.5,16,2.5))
     a.building('unfinished-stair-core',(550,575,870,910),42);a.building('finished-shell-west',(70,120,815,980),35,'ivory');a.building('foundation-next-phase',(235,285,1100,1150),1.2)
     a.building('cladding-in-progress',(675,735,990,1045),48,'ivory');a.wall('frame-courtyard-wall',(355,960),(455,960),7)
     # Concrete processing: offset loading/discharge legs around mixer core, side escape.
-    a.site('concrete-plant','Р‘РµС‚РѕРЅРЅС‹Р№ Р·Р°РІРѕРґ','РЎРёР»РѕСЃС‹ РїРёС‚Р°СЋС‚ СЃРјРµСЃРёС‚РµР»СЊ, РіСЂСѓР·РѕРІРѕР№ РґРІРѕСЂ РїСЂРёРЅРёРјР°РµС‚ РіРѕС‚РѕРІС‹Р№ Р±РµС‚РѕРЅ','Р—Р°РїР°РґРЅР°СЏ Р·Р°РіСЂСѓР·РєР° в†’ РїСЂРѕРёР·РІРѕРґСЃС‚РІРµРЅРЅС‹Р№ Р·Р°Р» в†’ СЃРµРІРµСЂРЅР°СЏ РІС‹РґР°С‡Р°; РІРѕСЃС‚РѕС‡РЅС‹Р№ РѕР±С…РѕРґ',[995,1210,500,710],'through-interior')
+    a.site('concrete-plant','Бетонный завод','Силосы питают смеситель, грузовой двор принимает готовый бетон','Западная загрузка → производственный зал → северная выдача; восточный обход',[995,1210,500,710],'through-interior')
     a.roof('concrete-plant',(1000,1210,505,705),23,'rust')
     a.wall('plant-south-wall',(1000,510),(1040,510),22,2,'rust');a.wall('plant-south-wing',(1100,510),(1210,510),22,2,'rust');a.wall('plant-north-wall',(1000,700),(1125,700),22,2,'rust');a.wall('plant-north-wing',(1195,680),(1205,680),22,2,'rust')
     a.building('plant-mixer-core',(1105,1135,530,565),31,'steel');a.building('plant-control-office',(1000,1040,650,685),12,'blue')
@@ -275,20 +275,20 @@ def construction():
     for x,z in [(1010,520),(1200,520),(1010,690),(1200,690)]:a.box(f'plant-column-{x}-{z}',(x,11.5,z),(3,23,3),'steel')
     a.wall('aggregate-bin-a',(870,410),(960,410),5,3);a.wall('aggregate-bin-b',(870,460),(960,460),5,3);a.wall('aggregate-bin-back',(870,410),(870,460),5,3)
     # Warehouse runs east-west then turns through north dock; racking defines a broad L.
-    a.site('warehouse','РЎРєР»Р°Рґ РєРѕРјРїР»РµРєС‚Р°С†РёРё','РџСЂРёС‘Рј РїР°РЅРµР»РµР№ Рё РІС‹РґР°С‡Р° РґРµС‚Р°Р»РµР№ РЅР° СЃС‚СЂРѕР№РєСѓ','Р—Р°РїР°РґРЅС‹Рµ РІРѕСЂРѕС‚Р° в†’ Р·РѕРЅР° РєРѕРјРїР»РµРєС‚Р°С†РёРё в†’ СЃРµРІРµСЂРЅС‹Рµ РґРѕРєРё',[1120,1350,180,315],'through-interior')
+    a.site('warehouse','Склад комплектации','Приём панелей и выдача деталей на стройку','Западные ворота → зона комплектации → северные доки',[1120,1350,180,315],'through-interior')
     a.roof('warehouse',(1120,1350,180,315),15,'blue');a.wall('warehouse-south-wall',(1120,180),(1350,180),15,2,'blue');a.wall('warehouse-north-west',(1120,315),(1225,315),15,2,'blue');a.wall('warehouse-north-east',(1345,315),(1350,315),15,2,'blue')
     for i,x in enumerate((1150,1210,1315)):a.building('warehouse-rack-'+str(i),(x-12,x+12,190,213),7,'steel')
     a.building('warehouse-dispatch-office',(1355,1410,310,360),10,'ivory');a.building('warehouse-cold-store',(1140,1270,65,125),13,'blue')
     for i,(x,z) in enumerate([(960,120),(1000,120),(1370,110),(1420,110)]):a.box('panel-stack-'+str(i),(x,2,z),(24,4,12),'concrete')
     # Supported elevated interchange, with empty ground routes between piers.
-    a.site('interchange','РњРѕРЅС‚Р°Р¶ СЂР°Р·РІСЏР·РєРё','РЎРІСЏР·СЊ РІРµСЂС…РЅРёС… СѓС‡Р°СЃС‚РєРѕРІ Рё РјРѕРЅС‚Р°Р¶ РїСЂРѕР»С‘С‚РѕРІ','Р®Р¶РЅС‹Р№ СЃСЉРµР·Рґ в†’ РґРёР°РіРѕРЅР°Р»СЊРЅС‹Рµ РїСЂРѕР»С‘С‚С‹ в†’ СЃРµРІРµСЂРѕ-РІРѕСЃС‚РѕС‡РЅС‹Р№ СЃСЉРµР·Рґ',[985,1530,805,1180],'elevated-road')
+    a.site('interchange','Монтаж развязки','Связь верхних участков и монтаж пролётов','Южный съезд → диагональные пролёты → северо-восточный съезд',[985,1530,805,1180],'elevated-road')
     for i,(x,z) in enumerate([(1138,860),(1180,975),(1278,974),(1340,1118)]):a.box('viaduct-pier-'+str(i),(x,8.3,z),(5,16.6,5));a.box('viaduct-pier-cap-'+str(i),(x,16,z),(12,2,8))
     a.building('pit-crane-foundation',(305,327,680,702),4,'concrete');a.building('pit-pump',(385,410,425,445),3,'blue',-14)
     for i,(x,z,w,d) in enumerate([(420,475,18,22),(510,585,30,14),(410,610,12,18)]):a.box('pile-cap-'+str(i),(x,-12,z),(w,4,d),'concrete')
     a.hazard('crane-1','CRANE',(535,-14,485),sector='pit-crane');a.hazard('crane-2','CRANE',(1160,0,640),sector='plant-crane');a.hazard('crane-3','CRANE',(1260,18,1000),sector='gantry-crane')
     a.regions=[(rect(970,1450,80,410),'district-service'),(rect(970,1300,470,740),'district-slate')]
     a.spawn('sw spine warehouse_e west frame_e plant_e deck_c nw ne')
-    a.district('pit','РљРѕС‚Р»РѕРІР°РЅ',(465,-14,530),rect(80,750,280,755));a.district('homes','РќРµРґРѕСЃС‚СЂРѕРµРЅРЅС‹Р№ РєРІР°СЂС‚Р°Р»',(510,0,860),rect(70,870,760,1160));a.district('plant','Р‘РµС‚РѕРЅРЅС‹Р№ Р·Р°РІРѕРґ',(1160,0,600),rect(870,1530,415,815));a.district('warehouses','РЎРєР»Р°РґС‹',(1260,0,240),rect(690,1530,35,410));a.district('interchange','РЎС‚СЂРѕСЏС‰Р°СЏСЃСЏ СЂР°Р·РІСЏР·РєР°',(1260,18,1000),rect(875,1570,820,1180))
+    a.district('pit','Котлован',(465,-14,530),rect(80,750,280,755));a.district('homes','Недостроенный квартал',(510,0,860),rect(70,870,760,1160));a.district('plant','Бетонный завод',(1160,0,600),rect(870,1530,415,815));a.district('warehouses','Склады',(1260,0,240),rect(690,1530,35,410));a.district('interchange','Строящаяся развязка',(1260,18,1000),rect(875,1570,820,1180))
     return a
 
 def neon():

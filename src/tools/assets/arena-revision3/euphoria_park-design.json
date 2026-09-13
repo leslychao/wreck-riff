@@ -1152,7 +1152,10 @@
       "id": "service-gate-a",
       "title": "service gate a",
       "width": 22,
-      "geometryIds": [],
+      "geometryIds": [
+        "road-fair-backstage-0",
+        "road-fair-backstage-1"
+      ],
       "navNodeIds": [
         67,
         68,

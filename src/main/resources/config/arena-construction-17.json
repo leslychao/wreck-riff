@@ -2,12 +2,12 @@
   "schemaVersion": 4,
   "id": "construction_17",
   "metadata": {
-    "title": "РњР•Р“РђРЎРўР РћР™-17",
+    "title": "МЕГАСТРОЙ-17",
     "theme": "CONSTRUCTION",
     "normalEnemies": 8,
     "durationSeconds": 0,
     "recoveryCost": 0,
-    "introduction": "Р Р°Р±РѕС‡Р°СЏ СЃС‚СЂРѕР№РєР°: РєРѕС‚Р»РѕРІР°РЅ, РєРѕСЂРїСѓСЃР° РЅР° СЂР°Р·РЅС‹С… СЃС‚Р°РґРёСЏС…, РїСЂРѕРёР·РІРѕРґСЃС‚РІРѕ Р±РµС‚РѕРЅР°, СЃРєР»Р°РґС‹ Рё РјРѕРЅС‚Р°Р¶ СЂР°Р·РІСЏР·РєРё.",
+    "introduction": "Рабочая стройка: котлован, корпуса на разных стадиях, производство бетона, склады и монтаж развязки.",
     "music": "audio/music/construction_17-normal.wav",
     "bossMusic": "audio/music/construction_17-boss.wav"
   },
@@ -8882,7 +8882,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-rise-0",
       "bidirectional": true
     },
     {
@@ -8892,7 +8892,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-rise-0",
       "bidirectional": true
     },
     {
@@ -8902,7 +8902,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-rise-0",
       "bidirectional": true
     },
     {
@@ -8912,7 +8912,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-rise-0",
       "bidirectional": true
     },
     {
@@ -9002,7 +9002,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-descent-0",
       "bidirectional": true
     },
     {
@@ -9012,7 +9012,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-descent-0",
       "bidirectional": true
     },
     {
@@ -9022,7 +9022,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-descent-0",
       "bidirectional": true
     },
     {
@@ -9032,7 +9032,7 @@
       "width": 34,
       "clearance": 100,
       "type": "RAMP",
-      "objectId": "",
+      "objectId": "road-interchange-descent-0",
       "bidirectional": true
     },
     {
@@ -10079,7 +10079,7 @@
   "bosses": [
     {
       "id": "boss_foreman",
-      "name": "Р‘СЂРёРіР°РґРёСЂ",
+      "name": "Бригадир",
       "profileId": "boss_foreman",
       "maximumHp": 4000,
       "primary": "POWER",
@@ -10106,8 +10106,8 @@
       ],
       "launchPadIds": [],
       "quotes": [
-        "РћР±СЉРµРєС‚ Р·Р°РєСЂС‹С‚. РџРѕСЃС‚РѕСЂРѕРЅРЅРёС… вЂ” РїРѕРґ РѕС‚РІР°Р»",
-        "РЎРµР№С‡Р°СЃ РІС‹СЂРѕРІРЅСЏРµРј!"
+        "Объект закрыт. Посторонних — под отвал",
+        "Сейчас выровняем!"
       ]
     }
   ],
@@ -23169,7 +23169,7 @@
   "districts": [
     {
       "id": "pit",
-      "title": "РљРѕС‚Р»РѕРІР°РЅ",
+      "title": "Котлован",
       "center": {
         "x": 465.0,
         "y": -14.0,
@@ -23250,7 +23250,7 @@
     },
     {
       "id": "homes",
-      "title": "РќРµРґРѕСЃС‚СЂРѕРµРЅРЅС‹Р№ РєРІР°СЂС‚Р°Р»",
+      "title": "Недостроенный квартал",
       "center": {
         "x": 510.0,
         "y": 0.0,
@@ -23353,7 +23353,7 @@
     },
     {
       "id": "plant",
-      "title": "Р‘РµС‚РѕРЅРЅС‹Р№ Р·Р°РІРѕРґ",
+      "title": "Бетонный завод",
       "center": {
         "x": 1160.0,
         "y": 0.0,
@@ -23438,7 +23438,7 @@
     },
     {
       "id": "warehouses",
-      "title": "РЎРєР»Р°РґС‹",
+      "title": "Склады",
       "center": {
         "x": 1260.0,
         "y": 0.0,
@@ -23516,7 +23516,7 @@
     },
     {
       "id": "interchange",
-      "title": "РЎС‚СЂРѕСЏС‰Р°СЏСЃСЏ СЂР°Р·РІСЏР·РєР°",
+      "title": "Строящаяся развязка",
       "center": {
         "x": 1260.0,
         "y": 18.0,
@@ -24206,7 +24206,10 @@
       "id": "cut-west-approach",
       "title": "cut west approach",
       "width": 22,
-      "geometryIds": [],
+      "geometryIds": [
+        "road-central-haul-0",
+        "road-arrival-haul-0"
+      ],
       "navNodeIds": [
         245,
         244,
@@ -24232,7 +24235,9 @@
       "id": "pit-west",
       "title": "pit west",
       "width": 32,
-      "geometryIds": [],
+      "geometryIds": [
+        "pit-west-slope"
+      ],
       "navNodeIds": [
         101,
         297,
@@ -24243,7 +24248,9 @@
       "id": "pit-east",
       "title": "pit east",
       "width": 32,
-      "geometryIds": [],
+      "geometryIds": [
+        "pit-east-slope"
+      ],
       "navNodeIds": [
         108,
         298,
@@ -24254,7 +24261,9 @@
       "id": "pit-south",
       "title": "pit south",
       "width": 32,
-      "geometryIds": [],
+      "geometryIds": [
+        "pit-south-slope"
+      ],
       "navNodeIds": [
         121,
         299,
@@ -24265,7 +24274,9 @@
       "id": "pit-north",
       "title": "pit north",
       "width": 32,
-      "geometryIds": [],
+      "geometryIds": [
+        "pit-north-slope"
+      ],
       "navNodeIds": [
         114,
         300,

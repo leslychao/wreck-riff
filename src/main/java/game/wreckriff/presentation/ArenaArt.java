@@ -30,30 +30,41 @@ public final class ArenaArt {
                     ||size.x()<=0||size.y()<=0||size.z()<=0)throw new IllegalArgumentException("Invalid art part");}
     }
     public record ModelInstance(String id,String group,String anchor,String asset,String distantAsset,
-            ArenaDefinition.Vec3 position,ArenaDefinition.Vec3 size,ArenaDefinition.Vec3 rotation,float lodDistance) {
+            ArenaDefinition.Vec3 position,ArenaDefinition.Vec3 size,ArenaDefinition.Vec3 rotation,float lodDistance,List<String> collisionGeometryIds) {
         public ModelInstance {
             Objects.requireNonNull(position);Objects.requireNonNull(size);Objects.requireNonNull(rotation);
+            collisionGeometryIds=List.copyOf(collisionGeometryIds);
             if(id==null||id.isBlank()||group==null||anchor==null||!localModel(asset)||distantAsset==null
                     ||!distantAsset.isEmpty()&&!localModel(distantAsset)||size.x()<=0||size.y()<=0||size.z()<=0
                     ||!Float.isFinite(lodDistance)||lodDistance<=0)throw new IllegalArgumentException("Invalid authored model instance");
+            if(!collisionGeometryIds.isEmpty()&&(!group.isEmpty()||!anchor.isEmpty()))throw new IllegalArgumentException("Structural model collision must be static");
         }
         private static boolean localModel(String asset) {
             return asset!=null&&asset.startsWith("models/arenas/")&&asset.endsWith(".j3o")&&!asset.contains("..")&&!asset.contains(":")&&!asset.contains("\\");
         }
     }
-    public record Scene(int schemaVersion,String arenaId,String source,String license,List<Group> groups,List<Part> parts,List<ModelInstance> models) {
+    public record LocalLight(String id,ArenaDefinition.Vec3 position,ArenaDefinition.Vec3 color,float radius) {
+        public LocalLight {
+            Objects.requireNonNull(position);Objects.requireNonNull(color);
+            if(id==null||id.isBlank()||color.x()<0||color.y()<0||color.z()<0||Math.max(color.x(),Math.max(color.y(),color.z()))>4
+                    ||!Float.isFinite(radius)||radius<1||radius>80)throw new IllegalArgumentException("Invalid authored local light");
+        }
+    }
+    public record Scene(int schemaVersion,String arenaId,String source,String license,List<Group> groups,List<Part> parts,List<ModelInstance> models,List<LocalLight> lights) {
         public Scene(int version,String arenaId,String source,String license,List<Group> groups,List<Part> parts) {
-            this(version,arenaId,source,license,groups,parts,List.of());
+            this(version,arenaId,source,license,groups,parts,List.of(),List.of());
         }
         public Scene {
             if((schemaVersion!=1&&schemaVersion!=2)||source==null||license==null||arenaId==null)throw new IllegalArgumentException("Invalid art scene");
             groups=List.copyOf(groups);parts=List.copyOf(parts);models=models==null?List.of():List.copyOf(models);
+            lights=lights==null?List.of():List.copyOf(lights);
             Set<String> groupIds=new HashSet<>(),partIds=new HashSet<>();
             for(var group:groups)if(!groupIds.add(group.id()))throw new IllegalArgumentException("Duplicate art group");
             for(var part:parts)if(!partIds.add(part.id())||!part.group().isEmpty()&&!groupIds.contains(part.group()))
                 throw new IllegalArgumentException("Invalid art part identity: "+part.id());
             for(var model:models)if(!partIds.add(model.id())||!model.group().isEmpty()&&!groupIds.contains(model.group()))
                 throw new IllegalArgumentException("Invalid model identity: "+model.id());
+            Set<String> lightIds=new HashSet<>();for(var light:lights)if(!lightIds.add(light.id()))throw new IllegalArgumentException("Duplicate authored light");
         }
     }
     private ArenaArt() {}
@@ -177,6 +188,7 @@ public final class ArenaArt {
             parent.attachChild(instance);
         }
         root.attachChild(art);
+        if(!scene.lights().isEmpty())root.addControl(new ArenaLocalLights(root,scene.lights()));
     }
     /** Each authored building swaps to its silhouette mesh independently; no district-wide detail blackout. */
     private static final class ModelDistance extends AbstractControl {

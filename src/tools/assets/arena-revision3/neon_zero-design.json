@@ -1236,7 +1236,10 @@
       "id": "alley-west",
       "title": "alley west",
       "width": 18,
-      "geometryIds": [],
+      "geometryIds": [
+        "road-market-loading-0",
+        "road-market-avenue-1"
+      ],
       "navNodeIds": [
         210,
         209,
@@ -1281,7 +1284,10 @@
       "id": "industrial-shortcut-north",
       "title": "industrial shortcut north",
       "width": 22,
-      "geometryIds": [],
+      "geometryIds": [
+        "road-parking-north-entry-1",
+        "road-parking-north-entry-0"
+      ],
       "navNodeIds": [
         291,
         290,
