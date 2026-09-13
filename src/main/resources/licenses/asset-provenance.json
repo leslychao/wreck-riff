@@ -2,18 +2,6 @@
   "schemaVersion": 1,
   "assets": [
     {
-      "path": "textures/materials/asphalt_02/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/asphalt_02/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_02/asphalt_02_diff_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-09",
-      "sourceSha256": "0f33cc1f8142bc1c19858b95f694dbf3a7be99a3c385462b1729cf65804af1d3",
-      "sha256": "0f33cc1f8142bc1c19858b95f694dbf3a7be99a3c385462b1729cf65804af1d3",
-      "transformation": "Unmodified 2K PNG; sRGB color"
-    },
-    {
       "path": "textures/materials/asphalt_02/normal.png",
       "sourcePath": "src/tools/assets/materials/asphalt_02/nor_gl.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_02/asphalt_02_nor_gl_2k.png",
@@ -35,19 +23,7 @@
       "acquired": "2026-09-09",
       "sourceSha256": "778fc203e68ddeee5fd42214f199a3d43498f46cda75a60dc9286074d81c9fff",
       "sha256": "056eca61fcc4855430259b0306cc4f63a92279b502e034a8a5895294accd2444",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
-    },
-    {
-      "path": "textures/materials/cracked_concrete/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/cracked_concrete/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/cracked_concrete/cracked_concrete_diff_2k.png",
-      "author": "Dimitrios Savva / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-09",
-      "sourceSha256": "5ece01bf6064af65e63e2e4be21076cc9a462d16e1a11fc0a99a908ebeaebb8e",
-      "sha256": "ff01401f2d92c02a02abaf254e4d601302a7b0cf4d5e437312ad48e532cea4d7",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/cracked_concrete/normal.png",
@@ -71,19 +47,7 @@
       "acquired": "2026-09-09",
       "sourceSha256": "ef4ff5122e36a70f69ce9f34a36eed646848992194f303da1f9614d8f1ea7491",
       "sha256": "021ffae0aa2a548f0d69f202a8e212fcb59dff32767b42fbec1fa7bf60c6ce89",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
-    },
-    {
-      "path": "textures/materials/metal_plate_02/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/metal_plate_02/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/metal_plate_02/metal_plate_02_diff_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-09",
-      "sourceSha256": "a28f2b0976c471c24f51c32bd2aa23331dcf72749d96e3e9c08fa320d5a5e13e",
-      "sha256": "5b17e3952d97812838abdbb988e2396621c2cea5468ce7958c25c716747072be",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/metal_plate_02/normal.png",
@@ -107,19 +71,7 @@
       "acquired": "2026-09-09",
       "sourceSha256": "0d094534e567315d41e5e67be3987992f65d0bbfaf9713c372edbbd547efc21f",
       "sha256": "1b193a90d38b130c61a8df6d15f10f944b1fee8750f7e952ed56d8dbef595545",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
-    },
-    {
-      "path": "textures/materials/blue_metal_plate/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/blue_metal_plate/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/blue_metal_plate/blue_metal_plate_diff_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-09",
-      "sourceSha256": "c37be7a33c50cd92308577132833bb1d1cc33688b6d3b1ffe68c976f5357ff02",
-      "sha256": "eaa1f977f1a361d91e72e691e7bbfb6bf49efd76ca8b9f100974af5a057a8870",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/blue_metal_plate/normal.png",
@@ -143,19 +95,7 @@
       "acquired": "2026-09-09",
       "sourceSha256": "5f6a97dafe6d6d81f7511e9eaa029a73edbc5206e5f1943a14fa9e86a1a35f18",
       "sha256": "021ffae0aa2a548f0d69f202a8e212fcb59dff32767b42fbec1fa7bf60c6ce89",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
-    },
-    {
-      "path": "textures/materials/rusty_metal_03/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/rusty_metal_03/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/rusty_metal_03/rusty_metal_03_diff_2k.png",
-      "author": "Amal Kumar / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-09",
-      "sourceSha256": "7d3556497d7f7125e2d6932e0ea511355b8c56f40487ed5f443a9070c8b7c2f5",
-      "sha256": "5af337a04f114c5fe3042900cd23aafc595914eb673055499eea8f8631dc20bf",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.025 + 0.7*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/materials/rusty_metal_03/normal.png",
@@ -179,7 +119,7 @@
       "acquired": "2026-09-09",
       "sourceSha256": "8349c9b696401a873f3aba03af78bfc3b4744839ef75fd240f36e3a9f08f69bc",
       "sha256": "021ffae0aa2a548f0d69f202a8e212fcb59dff32767b42fbec1fa7bf60c6ce89",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.025 + 0.22*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_assets.py"
     },
     {
       "path": "textures/vehicle/paint.png",
@@ -215,7 +155,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "9ae7994a36a7aedf5fe65dac49d5e096e9a8ff1d8a8e8ccb28df0c9c3a7a2d34",
       "sha256": "4e000e75b1a940a238ed5bd291b16713c7be85216a2d02eca39ef4e97d32b88f",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/leafy_grass/normal.png",
@@ -230,18 +170,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/brown_mud/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/brown_mud/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brown_mud/brown_mud_diff_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "4709452f41154926d6d6355207044fb13b8bedc2b234f2870bb3e0d5bd5a026d",
-      "sha256": "4709452f41154926d6d6355207044fb13b8bedc2b234f2870bb3e0d5bd5a026d",
-      "transformation": "Unmodified 2K PNG; sRGB color; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/brown_mud/normal.png",
       "sourcePath": "src/tools/assets/materials/brown_mud/nor_gl.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brown_mud/brown_mud_nor_gl_2k.png",
@@ -252,18 +180,6 @@
       "sourceSha256": "06f04240c8aad947bb37acd118763e92736f57c8edaf27e95fe8185d32bbbabd",
       "sha256": "1e407c4622c059f0335424944140bf49de85db9e823077185c3272b2bc7d4ab6",
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
-    },
-    {
-      "path": "textures/materials/gravelly_sand/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/gravelly_sand/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/gravelly_sand/gravelly_sand_diff_2k.png",
-      "author": "Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "a4982853355c4c08e3eb98dd8933062d688a42942f40121cc73f69675f3b7c2e",
-      "sha256": "e425e32c2480a89167057278f6b23eb88be86df4034bb87a2887e0f0f4cda905",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/gravelly_sand/normal.png",
@@ -278,18 +194,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/red_brick_03/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/red_brick_03/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/red_brick_03/red_brick_03_diff_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "c7acd2473455d71729ae9c649047f39ff8cc4a4b37873da47273b71925304181",
-      "sha256": "c7acd2473455d71729ae9c649047f39ff8cc4a4b37873da47273b71925304181",
-      "transformation": "Unmodified 2K PNG; sRGB color; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/red_brick_03/normal.png",
       "sourcePath": "src/tools/assets/materials/red_brick_03/nor_gl.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/red_brick_03/red_brick_03_nor_gl_2k.png",
@@ -300,18 +204,6 @@
       "sourceSha256": "f27cdea3ee64e775e48654de6ec154d1a48082ae1a5b7007fd111ae2b6a50e22",
       "sha256": "8cd434c8fc6f6a6d49e3a4fd02b58788ebc1097c84fdedc43b85970e5f0794b0",
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
-    },
-    {
-      "path": "textures/materials/wood_planks_grey/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/wood_planks_grey/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/wood_planks_grey/wood_planks_grey_diff_2k.png",
-      "author": "Rob Tuytel / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "e0a6dfa443835f22a2e8a9475f25ca33e3e1ff8bde74b0b1e148050e7d7225a5",
-      "sha256": "8d15d3c7ae8b1a6139a4a295208129d455049ff3117444e4da50295807ca29ec",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/wood_planks_grey/normal.png",
@@ -326,18 +218,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/concrete_wall_009/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/concrete_wall_009/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_diff_2k.png",
-      "author": "Charlotte Baglioni / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "052b265b9f7ab1f340e6ade1835725dbe76a8a666492ff3aac86a69854b87923",
-      "sha256": "5d77aa90edcbafd660f7c9a3417c4b9cd557ff459878cf6b2c554ed74fc34a6e",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/concrete_wall_009/normal.png",
       "sourcePath": "src/tools/assets/materials/concrete_wall_009/nor_gl.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_nor_gl_2k.png",
@@ -348,18 +228,6 @@
       "sourceSha256": "27c739b344a9fbf3ba9669a57a04e4902b5f8e4eb7f6ee1a05450383c19557f7",
       "sha256": "43b2504f1afac26e44392a2c078a99c28ef5d4c0cde27de392ca58e200a26a7a",
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
-    },
-    {
-      "path": "textures/materials/asphalt_pit_lane/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/asphalt_pit_lane/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_pit_lane/asphalt_pit_lane_diff_2k.png",
-      "author": "Dimitrios Savva / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "c7980477ec24b13aeabea2cc72b3ac5c7d17b9268a1dea64715ed318c5dfe402",
-      "sha256": "e818592dd275a75e77a737e137c78c9a31b25ae0fb127097e76d7525d21ae99e",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/asphalt_pit_lane/normal.png",
@@ -374,18 +242,6 @@
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
     },
     {
-      "path": "textures/materials/dirt/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/dirt/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/dirt/dirt_diff_2k.png",
-      "author": "Charlotte Baglioni / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "f0fee6965209d08fd073067c9c61cefc815fecdede90070b361e3f8c47c87801",
-      "sha256": "0e3a32024f011cb4fb1376bf80a4a779f7e180e744e23fca6dc9910849ffe2e9",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
-    },
-    {
       "path": "textures/materials/dirt/normal.png",
       "sourcePath": "src/tools/assets/materials/dirt/nor_gl.png",
       "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/dirt/dirt_nor_gl_2k.png",
@@ -396,18 +252,6 @@
       "sourceSha256": "d269f7e4c8f113474735c1d9e346f48272dcb5c2cba72c3976b0181a0867d7aa",
       "sha256": "81a578d2476a9e1898aa686145bdf0af99542a664b98cbc455a82fda370f8bf1",
       "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
-    },
-    {
-      "path": "textures/materials/grass_ground/diffuse.png",
-      "sourcePath": "src/tools/assets/materials/grass_ground/diff.png",
-      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/grass_ground/grass_ground_diff_2k.png",
-      "author": "Charlotte Baglioni / Poly Haven",
-      "license": "CC0-1.0",
-      "licensePath": "licenses/assets/CC0-1.0.txt",
-      "acquired": "2026-09-13",
-      "sourceSha256": "711341bcef8c1e7317a70e6bb39e1e63878e3946e26c93b78e3835f26bd26620",
-      "sha256": "cab43a9da3be0d59274752f7cf65ec34723f6dd0166b5a523c6093ca57f1f1cc",
-      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/grass_ground/normal.png",
@@ -431,7 +275,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "620354e281625391002fba6e9bcb1123859b434370f7ed6f046f4e8cb107f6f8",
       "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/grass_ground/specular.png",
@@ -443,7 +287,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "4bb2ecca7bca7aa8a84a8b4fc604abad633e7d1b73c0bf62c3279a2f28554da2",
       "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/asphalt_pit_lane/specular.png",
@@ -455,7 +299,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "9916139b6107d6090fa2dca8684d71e26e562fb0e1874559fdb9d41ca41609a7",
       "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/concrete_wall_009/specular.png",
@@ -467,7 +311,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "f540b0f23b968763d2a1d150b1938f7a89c587db26c3a35be20a092bca8a97cc",
       "sha256": "997961add7b3e971f8c78176609161a14c2922618f0601083abc74f2a248037f",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/leafy_grass/specular.png",
@@ -479,7 +323,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "71d2c187fd8cb7182c8877710431af23257904fb167c38218ed0abf21c2e73b6",
       "sha256": "6f8c1c5455ecab5b2e69f51ac23b74fb1bedb6e92c5b7a033521d16153e53e02",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/brown_mud/specular.png",
@@ -491,7 +335,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "7b3586a50c725b5231004da7784248f8768b00b407e104203921ed35b6d3c75a",
       "sha256": "9ea629ef4014d3aead7713670d6705666e893a19c11b658671756142f569ab3d",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/gravelly_sand/specular.png",
@@ -503,7 +347,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "0eb2c0a19c9bb58335fd5e621517bae022466faa1134ad57156a309d0759bf23",
       "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/red_brick_03/specular.png",
@@ -515,7 +359,7 @@
       "acquired": "2026-09-13",
       "sourceSha256": "585bf1e154ba1fac9582dab7794f19622440fe974e6a55a94dfdf21c8370942f",
       "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
     },
     {
       "path": "textures/materials/wood_planks_grey/specular.png",
@@ -527,7 +371,163 @@
       "acquired": "2026-09-13",
       "sourceSha256": "0e76025babe056bfdcd750a8f186df92d359fa804273fceb0f23d4884b9f5520",
       "sha256": "d5793d9d75b48b5ff8585552a256ba166453c402a7c2643865115bb6a6a461c6",
-      "transformation": "Roughness linear -> L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+      "transformation": "Roughness linear -\u003e L8 Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K, raw samples unchanged, no color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/asphalt_02/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/asphalt_02/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_02/asphalt_02_diff_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-09",
+      "sourceSha256": "0f33cc1f8142bc1c19858b95f694dbf3a7be99a3c385462b1729cf65804af1d3",
+      "sha256": "3dd1477ef0c13972664146e7b323446a76bce86e96d40ff74bd0ef16e87e9127",
+      "transformation": "Unmodified 2K PNG; sRGB color; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/asphalt_pit_lane/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/asphalt_pit_lane/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/asphalt_pit_lane/asphalt_pit_lane_diff_2k.png",
+      "author": "Dimitrios Savva / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "c7980477ec24b13aeabea2cc72b3ac5c7d17b9268a1dea64715ed318c5dfe402",
+      "sha256": "1c0c342f42728a7e2fcaeb2fe80d8ee56f5d3980c4670c246e6644c5c3e7df63",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/blue_metal_plate/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/blue_metal_plate/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/blue_metal_plate/blue_metal_plate_diff_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-09",
+      "sourceSha256": "c37be7a33c50cd92308577132833bb1d1cc33688b6d3b1ffe68c976f5357ff02",
+      "sha256": "be0c30090436dacb39c0cfa99883d3eafdc3e91598da9e96e7af2641bef26493",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/brown_mud/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/brown_mud/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/brown_mud/brown_mud_diff_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "4709452f41154926d6d6355207044fb13b8bedc2b234f2870bb3e0d5bd5a026d",
+      "sha256": "0595718dbfeb6cd6c233d2b53dac6b3ae7351ac2b2a08435b56bfcc964c9682a",
+      "transformation": "Unmodified 2K PNG; sRGB color; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/concrete_wall_009/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/concrete_wall_009/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_diff_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "052b265b9f7ab1f340e6ade1835725dbe76a8a666492ff3aac86a69854b87923",
+      "sha256": "47e129e8e388bf44a3a12f842116debf51bbbfa192e9e56e1c9c437cf69aafc9",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/cracked_concrete/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/cracked_concrete/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/cracked_concrete/cracked_concrete_diff_2k.png",
+      "author": "Dimitrios Savva / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-09",
+      "sourceSha256": "5ece01bf6064af65e63e2e4be21076cc9a462d16e1a11fc0a99a908ebeaebb8e",
+      "sha256": "80788ddecb57963e22a980313438cad7d1c5d7e0e6d1976e15e2e7322e4447cb",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/dirt/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/dirt/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/dirt/dirt_diff_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "f0fee6965209d08fd073067c9c61cefc815fecdede90070b361e3f8c47c87801",
+      "sha256": "4671c1fb6da60cb1520aaec76d72cbb8ff5e3a19541c1908f76e3aa23c42934a",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/grass_ground/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/grass_ground/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/grass_ground/grass_ground_diff_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "711341bcef8c1e7317a70e6bb39e1e63878e3946e26c93b78e3835f26bd26620",
+      "sha256": "8eeeed808e14961c9a5dd6957cf228fefcaeddb007fe9edcd6084ad32bc098df",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/gravelly_sand/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/gravelly_sand/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/gravelly_sand/gravelly_sand_diff_2k.png",
+      "author": "Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "a4982853355c4c08e3eb98dd8933062d688a42942f40121cc73f69675f3b7c2e",
+      "sha256": "93246748fd4dd712a6def16a99c99b3b420ac012321fc72c9c3c215a34dad5b8",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/metal_plate_02/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/metal_plate_02/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/metal_plate_02/metal_plate_02_diff_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-09",
+      "sourceSha256": "a28f2b0976c471c24f51c32bd2aa23331dcf72749d96e3e9c08fa320d5a5e13e",
+      "sha256": "51c63a76ad7a7210dde35832a2cdfd1cd014b920cd141e5b9fe1792410802d0f",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/red_brick_03/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/red_brick_03/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/red_brick_03/red_brick_03_diff_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "c7acd2473455d71729ae9c649047f39ff8cc4a4b37873da47273b71925304181",
+      "sha256": "2a93da5e1366eeffcd7097e8f4f1cb4ef5cbb49252e5a4d23a82dcd103481a44",
+      "transformation": "Unmodified 2K PNG; sRGB color; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/rusty_metal_03/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/rusty_metal_03/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/rusty_metal_03/rusty_metal_03_diff_2k.png",
+      "author": "Amal Kumar / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-09",
+      "sourceSha256": "7d3556497d7f7125e2d6932e0ea511355b8c56f40487ed5f443a9070c8b7c2f5",
+      "sha256": "a335177e64e3dc4ad9409a91341323c9ea48ea1ce08223c9ae83140d82790d49",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
+    },
+    {
+      "path": "textures/materials/wood_planks_grey/diffuse.dds",
+      "sourcePath": "src/tools/assets/materials/wood_planks_grey/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/wood_planks_grey/wood_planks_grey_diff_2k.png",
+      "author": "Rob Tuytel / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "e0a6dfa443835f22a2e8a9475f25ca33e3e1ff8bde74b0b1e148050e7d7225a5",
+      "sha256": "3bc2ce6ca4f4b46c18e55446e69e90e4d907e868983e67cfc23aa022a13a015d",
+      "transformation": "2K RGB(A)16 -\u003e RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py; BC7_UNORM_SRGB full BOX mips, offline vertical flip; PrepareEnvironmentDiffuse.java; same-device GPU repeat and decoded quality verified"
     }
   ]
 }

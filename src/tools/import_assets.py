@@ -5,9 +5,10 @@ Original bytes and per-file provenance are kept. Run with bundled Python (Pillow
 Soundtrack authoring is separate: src/tools/import_menu_music.py.
 Diffuse derivatives use Microsoft JDK 21 via JAVA_HOME or --java. To regenerate
 only these derivatives from preserved local originals, use --runtime-diffuse-only.
-It writes src/tools/assets/materials/<id>/runtime-diffuse.png, never runtime PNGs
-or the licensed DDS index. Then explicitly run prepareEnvironmentDiffuse with
-the pinned local texconv tool; ordinary builds never encode or download assets.
+It writes src/tools/assets/materials/<id>/runtime-diffuse.png for thirteen DDS
+materials and the single lossless textures/materials/leafy_grass/diffuse.png.
+Then explicitly run prepareEnvironmentDiffuse with the pinned local texconv tool;
+ordinary builds never encode or download assets. DDS license hashes stay untouched.
 --runtime-specular-only rebuilds only the five original scalar Phong maps as L8
 from preserved roughness files; it also stays offline and preserves their values.
 """
@@ -33,6 +34,7 @@ ENTRIES = []
 DATE = "2026-09-09"
 ORIGINAL_MATERIALS = {"asphalt_02": "Rob Tuytel", "cracked_concrete": "Dimitrios Savva",
     "metal_plate_02": "Rob Tuytel", "blue_metal_plate": "Rob Tuytel", "rusty_metal_03": "Amal Kumar"}
+LOSSLESS_DIFFUSE_PATH = "textures/materials/leafy_grass/diffuse.png"
 DIFFUSE_TRANSFORMATION = ("2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, "
     "matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; "
     "sRGB color; no resize, tint, dithering or additional gamma conversion; "
@@ -131,10 +133,12 @@ def runtime_diffuse(source, destination, java=None):
 def runtime_diffuse_only(java=None):
     manifest = RESOURCES / "licenses/asset-provenance.json"
     provenance = json.loads(manifest.read_text(encoding="utf-8"))
-    diffuse = [item for item in provenance["assets"] if item["path"].startswith("textures/materials/")
-        and item["path"].endswith("/diffuse.dds")]
+    diffuse = [item for item in provenance["assets"] if item["path"] == LOSSLESS_DIFFUSE_PATH
+        or (item["path"].startswith("textures/materials/") and item["path"].endswith("/diffuse.dds"))]
+    if any(item["path"] == "textures/materials/leafy_grass/diffuse.dds" for item in diffuse):
+        raise ValueError("leafy_grass must have its approved lossless PNG entry, never DDS")
     if not diffuse:
-        raise ValueError("Missing licensed environment DDS entries; complete the initial explicit DDS preparation first")
+        raise ValueError("Missing licensed environment diffuse entries; complete the initial explicit preparation first")
     # Validate every approved original before replacing any intermediate. DDS hashes
     # belong exclusively to PrepareEnvironmentDiffuse, including after this rebuild.
     for item in diffuse:
@@ -143,14 +147,21 @@ def runtime_diffuse_only(java=None):
             raise ValueError("Original diffuse source hash mismatch: " + str(source))
     for item in diffuse:
         source = ROOT / item["sourcePath"]
-        destination = source.with_name("runtime-diffuse.png")
-        runtime_diffuse(source, destination, java)
-        print("Prepared local diffuse intermediate", destination.relative_to(ROOT), flush=True)
+        if item["path"] == LOSSLESS_DIFFUSE_PATH:
+            replacement = material_diffuse_entry("leafy_grass", source, item.get("sourceUrl", ""),
+                item.get("author", ""), acquired=item.get("acquired", DATE), java=java)
+            merge_material_entries([replacement])
+            print("Prepared lossless runtime diffuse", item["path"], flush=True)
+        else:
+            destination = source.with_name("runtime-diffuse.png")
+            runtime_diffuse(source, destination, java)
+            print("Prepared local diffuse intermediate", destination.relative_to(ROOT), flush=True)
 
 
 def material_diffuse_entry(asset, source, source_url, author, acquired=DATE, java=None):
-    """Prepare immutable original -> local intermediate; never sign DDS output bytes."""
-    path = f"textures/materials/{asset}/diffuse.dds"
+    """Prepare the declared PNG or DDS intermediate; never sign DDS output bytes."""
+    lossless = asset == "leafy_grass"
+    path = LOSSLESS_DIFFUSE_PATH if lossless else f"textures/materials/{asset}/diffuse.dds"
     manifest = RESOURCES / "licenses/asset-provenance.json"
     provenance = json.loads(manifest.read_text(encoding="utf-8")) if manifest.exists() else {"assets": []}
     previous = next((item for item in provenance["assets"] if item["path"] == path), None)
@@ -158,14 +169,18 @@ def material_diffuse_entry(asset, source, source_url, author, acquired=DATE, jav
     source_hash = sha(source.read_bytes())
     if previous is not None and (previous["sourcePath"] != source_path or previous["sourceSha256"] != source_hash):
         raise ValueError("Original diffuse source hash mismatch: " + str(source))
-    change = runtime_diffuse(source, source.with_name("runtime-diffuse.png"), java)
+    destination = RESOURCES / path if lossless else source.with_name("runtime-diffuse.png")
+    change = runtime_diffuse(source, destination, java)
+    output_hash = sha(destination.read_bytes()) if lossless else ""
     if previous is not None:
+        if lossless and output_hash != previous["sha256"]:
+            return {**previous, "sha256": output_hash, "transformation": change}
         return previous
     # A fresh import is deliberately incomplete until the separate DDS preparation
     # publishes its actual hash. Never pretend the PNG checksum describes a DDS.
     return dict(path=path, sourcePath=source_path, sourceUrl=source_url, author=author,
         license="CC0-1.0", licensePath="licenses/assets/CC0-1.0.txt", acquired=acquired,
-        sourceSha256=source_hash, sha256="", transformation=change)
+        sourceSha256=source_hash, sha256=output_hash, transformation=change)
 
 
 def merge_material_entries(entries):
@@ -174,6 +189,8 @@ def merge_material_entries(entries):
     provenance = json.loads(manifest.read_text(encoding="utf-8")) if manifest.exists() else dict(schemaVersion=1, assets=[])
     replacements = {item["path"]: item for item in entries}
     retired = {path[:-4] + ".png" for path in replacements if path.endswith("/diffuse.dds")}
+    if LOSSLESS_DIFFUSE_PATH in replacements:
+        retired.add("textures/materials/leafy_grass/diffuse.dds")
     merged = []
     for item in provenance["assets"]:
         if item["path"] not in retired:
@@ -265,7 +282,7 @@ def font():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--runtime-diffuse-only", action="store_true", help="Offline: rebuild local diffuse intermediates; preserve DDS bytes and their licensed provenance")
+    parser.add_argument("--runtime-diffuse-only", action="store_true", help="Offline: rebuild thirteen DDS intermediates and leafy_grass lossless PNG; preserve DDS bytes and hashes")
     parser.add_argument("--runtime-specular-only", action="store_true", help="Offline: prepare only five original L8 specular maps and their provenance")
     parser.add_argument("--java", help="Path to Microsoft JDK 21 java executable; defaults to JAVA_HOME/bin/java.exe")
     arguments = parser.parse_args()

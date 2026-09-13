@@ -16,7 +16,7 @@
       "sourceSha256": "3d19bdde2cb64d9694dca04227cf22d642dc74582028af7f4832bafb4d53eaa4",
       "sourceBlend": "src/tools/assets/architecture/cement-silo-lod.blend",
       "sourceBlendSha256": "e95e00e5e1c38f271ae2ef49d4464f9bb94f656330f3de371af5081b52cebc1b",
-      "sha256": "031698bc6fb41ce988a0072db9924e56d03cf20a804d2f98602468a5723bbb5c",
+      "sha256": "21ee4a5f7a4967c407421814b64242a710ec6105d803fa9cbd34d3032f95149f",
       "triangles": 176,
       "materials": [
         "ivory",
@@ -29,7 +29,7 @@
       "sourceSha256": "a68df6662bc32b1516ec04c87a846086499a6063b8fc1c54161c789fa8f3992f",
       "sourceBlend": "src/tools/assets/architecture/cement-silo.blend",
       "sourceBlendSha256": "dd659eecbf89b65528f05db3ad9bfb6296d7f6a641b63e6c85dfd4ae3ec66cb3",
-      "sha256": "538d91dfb8cb33194463bc69be9e50d98ca6b7291e77d06f81a2feeb0f5a643e",
+      "sha256": "9c8fc7df0615a25b67c0cbec2ba64a93a39c6ecc4a179bc65ffbcd3f5daeb867",
       "triangles": 1308,
       "materials": [
         "ivory",
@@ -57,7 +57,7 @@
       "sourceSha256": "32d117bcdeccb13d3cb3d9e3e237413a7da17d9a88c09b952da7d1b1bb8757de",
       "sourceBlend": "src/tools/assets/architecture/circus-canopy.blend",
       "sourceBlendSha256": "e655ecc341b8c14db41afff3de290409ecacfd3986ae4e532930d2d28d106822",
-      "sha256": "6fd7d88d64d6c9cc5af5d946e23a2d82f1d4a8640dcb10dbed71689ee0297a16",
+      "sha256": "b80044b8907e150c000a5c4f9a82a8461071ba3217b3181a54d5feb5c2cddf5d",
       "triangles": 352,
       "materials": [
         "faded-red",
@@ -72,7 +72,7 @@
       "sourceSha256": "358688ef4cfbf3c3bbbd6c6b9998bae93bc5c98c364b66aa432abaa4a0e35243",
       "sourceBlend": "src/tools/assets/architecture/comet-coaster-lod.blend",
       "sourceBlendSha256": "5af1b191e2aa15dbcd5f69ea0f0c209f7bdcd609f5752ab77b063d5e14557d3b",
-      "sha256": "9dc32b9125b6cf27a9e7ad8062ece398e247e3f26c09db27abf0df96997e1da4",
+      "sha256": "aa8b530d1db1ccba84d75d04aed7e6e60c4665c4a47ceb458b00d9576275ac66",
       "triangles": 6668,
       "materials": [
         "blue",
@@ -89,7 +89,7 @@
       "sourceSha256": "32268b90cebd84991cfacb7b4277d0fd562d473df8f847ebbdeeb38763ae34d7",
       "sourceBlend": "src/tools/assets/architecture/comet-coaster.blend",
       "sourceBlendSha256": "34428000b92ae14503526c31ce12722c8f2821c135790c8038553ab112256421",
-      "sha256": "40931124c0e9df5a81a9d3996d7b7bfd58cba57ac5f10ad13d09aa2a863c5ac8",
+      "sha256": "5df99ab36f4ebc2a411dec9485fd12f0cfe3bd83dcba64e761270d3d72fd1000",
       "triangles": 12764,
       "materials": [
         "blue",
@@ -106,7 +106,7 @@
       "sourceSha256": "b422f1f7697496478b7deebe96df68e31b241948d2d9f0c96cea1048655a97a8",
       "sourceBlend": "src/tools/assets/architecture/depot-gantry-lod.blend",
       "sourceBlendSha256": "05fafe08a8c8b5ae851c8c23e5decbf08c9b3a107a940668d04667882d92f9f5",
-      "sha256": "5aeab50fe788a58daf947a9a737d9cda9e591662abae28e49be60475b84aea04",
+      "sha256": "a2f4ed0ff8e2632f22e5504bd8740745207a7638df5320adb75d893e99a764dd",
       "triangles": 360,
       "materials": [
         "blue",
@@ -120,7 +120,7 @@
       "sourceSha256": "305f3450a5f99aa48251c8c0dbc16f30940dcb87b1a41caa0ea48aebbf901a8c",
       "sourceBlend": "src/tools/assets/architecture/depot-gantry.blend",
       "sourceBlendSha256": "e6c975ca960a6a868e2f6425b187e85a6e1671997714b70830539810864c2d38",
-      "sha256": "ecff45065ff4186585e883aec9fc6201c4f77688802be9d8ecd88313ce784626",
+      "sha256": "ff223523bd149fa2ad89eac58e4651e29d264d3620d44d8b51c623bc61862957",
       "triangles": 1448,
       "materials": [
         "blue",
@@ -134,7 +134,7 @@
       "sourceSha256": "10752b595e473cd63d8e0653a1afad09e74079a711c8ba4d018eacc249e3d79c",
       "sourceBlend": "src/tools/assets/architecture/island-bandstand-lod.blend",
       "sourceBlendSha256": "43a2ca692b4b3fccff136dc15e3991c8b16db90ad432a4026b0a976030e3bdc7",
-      "sha256": "7841ef97fd134d0b1e91a178beb8f8e1a054674a258de054a9c7b6480bd96f28",
+      "sha256": "e15b22a2860c928ebdddd9bce1fc8d06697dbeb1138861d4ae981cdee9c0e203",
       "triangles": 320,
       "materials": [
         "faded-red",
@@ -148,7 +148,7 @@
       "sourceSha256": "00bbbdc4852f39d60610de30ff2313b2b1d421e2d6739781298da5b17a818140",
       "sourceBlend": "src/tools/assets/architecture/island-bandstand.blend",
       "sourceBlendSha256": "e17d84bd16882483baa481314ee615bc1e3e747aa6dd65cba6f10e143d71fa90",
-      "sha256": "8dd17a32f3b73bbbc379ff57d90a82e966e95ba46bf382b9eaffe40023d83bfd",
+      "sha256": "c37f0fb97b0cdbc569d2b7606b1cb94a5b490343a403f54348e5ee4321b635d3",
       "triangles": 640,
       "materials": [
         "faded-red",
@@ -163,7 +163,7 @@
       "sourceSha256": "bae925b661093463532c1337bf69e05ff9ae9b434d6ed1138d2a93d2e73b8cd1",
       "sourceBlend": "src/tools/assets/architecture/orbit-shell-lod.blend",
       "sourceBlendSha256": "9249521ceb3e1c30cfd6962239d2ebb721c40edc01e8ca7878d856a28dbc9530",
-      "sha256": "a471ef90fdf2ef75e6e6b4344bec8078e14b6cb2b78b4348f28363589efe444d",
+      "sha256": "407ed07784aa673d3011b03e0e5c96f734373d0ad44f3a46e6317b9d5e1ee92b",
       "triangles": 976,
       "materials": [
         "ivory",
@@ -177,7 +177,7 @@
       "sourceSha256": "84ecef43215790e3b7575d2cc13521af44fb177778a7573a60f3d74c50c3d51c",
       "sourceBlend": "src/tools/assets/architecture/orbit-shell.blend",
       "sourceBlendSha256": "f92c2cac6f1e8076879c584a378476d81689b28f0233453b198e596b95a3e5fb",
-      "sha256": "f302eca585dc7cd9c3598dfbeef2f0e9ce2d39a7238c5357d16e50a6822d4461",
+      "sha256": "835f88d952af5053504383de38658b26d3ce8026ee9d8b1f991a998ff20549fd",
       "triangles": 8832,
       "materials": [
         "ivory",
@@ -191,7 +191,7 @@
       "sourceSha256": "6bc0fd526076d61a4ddd30e8d6f44f83b98d27f63de9f7465fd04810bb6859b0",
       "sourceBlend": "src/tools/assets/architecture/park-tree-lod.blend",
       "sourceBlendSha256": "f1a7cdac29033f02b28e87b2e552c99a9ca1279aff906c30542ef79df2c7d084",
-      "sha256": "8f15d6fd9b51f4624a5f8a4395b865963283549ae862577906abe60de323eb1c",
+      "sha256": "e781df6fe317e7ee72dd27514103389a30ee20c92c54fed381e862232a1f0758",
       "triangles": 264,
       "materials": [
         "park-leaf",
@@ -204,7 +204,7 @@
       "sourceSha256": "b9f8b3feac726a42cd9c15a785e1dbda3e6c4c5d753b0d3c69b5c370fb14c79b",
       "sourceBlend": "src/tools/assets/architecture/park-tree.blend",
       "sourceBlendSha256": "9c901c2c1cd1224cb7919dcef8670e7a7be44cc8b13a4cc8331692cfa6fb79d0",
-      "sha256": "36484cf37337305991e43a210c1863a5eff3bd4b1acebfca3e4529d1bd588065",
+      "sha256": "38766c73da866cf16b7b7a6a4e0bd79c29461cd393232ec294be405e3c42c626",
       "triangles": 576,
       "materials": [
         "park-leaf",
@@ -217,7 +217,7 @@
       "sourceSha256": "62086c273abbc32a61b415c8c96d20f36bbf633542690d79825ed44ebf74acbb",
       "sourceBlend": "src/tools/assets/architecture/parking-ceiling-lod.blend",
       "sourceBlendSha256": "0aee791ac0deb111a0d496a22814f9714f5b268aa377514645c2eaba859a066e",
-      "sha256": "7407e3de755b7dd20a95bda43c225534d29e669241204374601b84b0bd8bc7cb",
+      "sha256": "571f270b05eb8973da36775bf876b5aaab77ee766cb5dbcbd3ab4ea6f3e19c08",
       "triangles": 24,
       "materials": [
         "cast-concrete"
@@ -229,7 +229,7 @@
       "sourceSha256": "6aa31bea910ca1e1fd35ab47b8af9685dde888f482cad0240fd8e01741453597",
       "sourceBlend": "src/tools/assets/architecture/parking-ceiling.blend",
       "sourceBlendSha256": "838802c252dfdfab18820cf216e348b3edb90a09139cfb78e89fe02e1514df40",
-      "sha256": "a882826da23507a7857b412c8f991355ea3290a45139cae9ac043d2dedd72bc7",
+      "sha256": "e492c904bcf127d424a102a5e2c3de441a73158d83a0ef5af06d8f6a0f03ca48",
       "triangles": 204,
       "materials": [
         "cast-concrete",
@@ -242,7 +242,7 @@
       "sourceSha256": "005e82938e4a01af9574c428b50d62dcdc2045e3577eee62de5e2cd2159e7fea",
       "sourceBlend": "src/tools/assets/architecture/passage-glass-lod.blend",
       "sourceBlendSha256": "a9e7b77596f6a1987aae199454e161245d7da841fab5e3867a119abff9dc98b1",
-      "sha256": "c3ba394f59caef4c33a59d8f30056e149e4eba936b5d7eecab95f2fa3a0e3d93",
+      "sha256": "3017f48d33604314dd872102188546566b9da3adb6000d5572c737c069c2b89a",
       "triangles": 480,
       "materials": [
         "glass",
@@ -256,7 +256,7 @@
       "sourceSha256": "ba4526bcbad7698451148db54b4c4354211e81f1743cd24f81705026c17c57f6",
       "sourceBlend": "src/tools/assets/architecture/passage-glass.blend",
       "sourceBlendSha256": "7fe8dd85e22668fc95bb3c4f21d09338398f71d780e54b38ad2afbd98bebd8e9",
-      "sha256": "34dfc16e9116f2b5c3555a5eba2be440f658763c9ae81e20cbfd2102a873133d",
+      "sha256": "16522a2b6fbad8f19317feabc2cbd564c3613a76cef6291ef9321b84d8dc6e11",
       "triangles": 4008,
       "materials": [
         "glass",
@@ -270,7 +270,7 @@
       "sourceSha256": "a39e7019dd95f5883a087e37406811ef903a279e786378aa07307fc2e86bf4e2",
       "sourceBlend": "src/tools/assets/architecture/plant-sawtooth-lod.blend",
       "sourceBlendSha256": "d2bb643177d5f02e6f255d0a6fb6a6e5b2781811f4db27162a984ac0f772db66",
-      "sha256": "1dc89d9002738fcdffed62b9dab4f69cac01d24d63a4db194ded64322c95308f",
+      "sha256": "e02aab055d50056c42c684cd08337a900fc0cade53ae8ef6269bd6637922f2c1",
       "triangles": 2344,
       "materials": [
         "glass",
@@ -284,7 +284,7 @@
       "sourceSha256": "164d5c95c66d9930e0b95ff46f61d73d8abce0e8abd6d905522831b920d4451b",
       "sourceBlend": "src/tools/assets/architecture/plant-sawtooth.blend",
       "sourceBlendSha256": "877d42c7325545ff3579d7f002674045a9fb85535d9ef64332fec8b68ccaf989",
-      "sha256": "d5c6a5865417d3852be55a631d599c48e3121d5db656d1e8d6af3b54ae86fb71",
+      "sha256": "81e469cae8b8be21df1afd9f328476ef2133bedece09fb9eba178ad6fb78ff9f",
       "triangles": 7324,
       "materials": [
         "glass",
@@ -298,7 +298,7 @@
       "sourceSha256": "94c3e50cc52db6a08f1dd029152dd1305d3090fdfd55640c880f76cc3419598c",
       "sourceBlend": "src/tools/assets/architecture/technical-rooftop-lod.blend",
       "sourceBlendSha256": "53df638d2ea165d810c0c79c1bd5f1a11ad21baeaebf631724aa59d248f47d31",
-      "sha256": "7a662074edf5b704dca2fd1125393a6e86333449a4774a9441fc9a7341d55281",
+      "sha256": "9acd67c5264b8eec5b2bd3338231c72129bd1fc47a887c767104ce38a1c7e82c",
       "triangles": 80,
       "materials": [
         "cast-concrete",
@@ -311,7 +311,7 @@
       "sourceSha256": "57418d3019f33d5ca33a18784695cde978d70ebb0adb33ce69ef5607cdad8fcf",
       "sourceBlend": "src/tools/assets/architecture/technical-rooftop.blend",
       "sourceBlendSha256": "d00efbca2feef20afffe7e1e5dc7e42c5be76aa9daf171533e133c3b71056529",
-      "sha256": "b97eba7766ecc2e57a48eb38db6ac4bc0f0d2bc91fc5c2493a1f03e3549368ff",
+      "sha256": "471aad289ede1e4c964ec9aacbe87bbcf17458f448d03cd027917632ee03557f",
       "triangles": 228,
       "materials": [
         "black",
@@ -326,7 +326,7 @@
       "sourceSha256": "052b4b89e636132aafeaac0174ae0335f577e8d173d06761afc5f3cef8d336d1",
       "sourceBlend": "src/tools/assets/architecture/unfinished-frame-lod.blend",
       "sourceBlendSha256": "5fccdbf7df9b4fe177d31a20cd8b728db25473beabebb8f7cc287ca3f15607bd",
-      "sha256": "f7a1dbafa13ae507e7f5ef416dcd72be0f15f1d3625bad224878779fa8ef7a5e",
+      "sha256": "006d79d7677bc77d0f340f6bf93d492b43eaa2053de3ad574ab0b23c5b816f48",
       "triangles": 84,
       "materials": [
         "cast-concrete"
@@ -338,7 +338,7 @@
       "sourceSha256": "7dca4977a0246ac89e6213bb67efc77dbc46c6c373f0ba3cbbfb8d8bff43858c",
       "sourceBlend": "src/tools/assets/architecture/unfinished-frame.blend",
       "sourceBlendSha256": "bdb6e2e2136730124298303a0134795cc3102325370b63eaef2193efe52f0b0c",
-      "sha256": "9e80c44935ec6157293e664296f235b5c5cc3126acea4655b995e2c267b3cb35",
+      "sha256": "cd4acb3ec5aad4e2b82259c2d295b102db44b29b5a10cbf74c532604252da741",
       "triangles": 228,
       "materials": [
         "cast-concrete",
@@ -351,7 +351,7 @@
       "sourceSha256": "13c05fb9d5d83a4a6d78d0cdc040418792edb6f2d65892fb64a6af4009002610",
       "sourceBlend": "src/tools/assets/architecture/warehouse-trusses-lod.blend",
       "sourceBlendSha256": "49fb5c2cfa577d243beb9efc772b9fecff44fa4a4f724121a6ec470f53e51000",
-      "sha256": "e622e150b5731c7902a1d3f3a595010e7b53055e756850a7cc0b8b29e820df40",
+      "sha256": "a9168b749c2edeaddb7e65ea84cc386fba78ce377b2749bf8b288448c3af4f09",
       "triangles": 324,
       "materials": [
         "blue",
@@ -364,7 +364,7 @@
       "sourceSha256": "9a812503c7d455963761bfc7096f50a15439114493e44359462001bd293f6e18",
       "sourceBlend": "src/tools/assets/architecture/warehouse-trusses.blend",
       "sourceBlendSha256": "b0d6030cbf919ca9cf8afd8844b79115a3d71f2f4c903c47ebc9e8b0e155a3eb",
-      "sha256": "59e65dca272f056f4187cb02fdfa32982cfce7a147bcc204f5152e8582e6120a",
+      "sha256": "1798ea0ce7703a52b5a01a2e2825f591fab0db867a432a2e02bb34f2a18529f6",
       "triangles": 1988,
       "materials": [
         "blue",

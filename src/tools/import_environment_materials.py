@@ -2,8 +2,9 @@
 
 Source PNGs and license evidence remain local. Re-running without --download only
 rebuilds derivatives from those originals. No other asset provenance is replaced.
-Diffuse writes only src/tools/assets/materials/<id>/runtime-diffuse.png; the
-separate explicit prepareEnvironmentDiffuse task publishes licensed BC7 DDS.
+Diffuse writes src/tools/assets/materials/<id>/runtime-diffuse.png for BC7 sets;
+leafy_grass alone keeps its lossless runtime diffuse.png. The separate explicit
+prepareEnvironmentDiffuse task publishes licensed BC7 DDS for the other sets.
 """
 import argparse
 from pathlib import Path
@@ -48,7 +49,10 @@ def prepare(download=False, selected=None, maps=None):
                 save(source, fetch(url, 64 * 1024 * 1024))
             if target == 'diffuse':
                 entries.append(material_diffuse_entry(asset, source, url, author, acquired='2026-09-13'))
-                print('Prepared local diffuse intermediate', source.with_name('runtime-diffuse.png').relative_to(ROOT), flush=True)
+                if asset == 'leafy_grass':
+                    print('Prepared lossless runtime diffuse', entries[-1]['path'], flush=True)
+                else:
+                    print('Prepared local diffuse intermediate', source.with_name('runtime-diffuse.png').relative_to(ROOT), flush=True)
                 continue
             destination = RESOURCES / 'textures/materials' / asset / (target + '.png')
             with Image.open(source) as image:

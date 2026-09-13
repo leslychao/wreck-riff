@@ -139,6 +139,47 @@ class RuntimeDiffuseImportTest(unittest.TestCase):
         self.assertIn(untouched, json.loads(manifest.read_text())["assets"])
         self.assertFalse((resources / "textures/materials/blue_metal_plate/diffuse.png").exists())
 
+    def test_offline_rebuild_restores_leafy_png_without_dds_or_intermediate(self):
+        resources = self.root / "src/main/resources"
+        source = self.root / "src/tools/assets/materials/leafy_grass/diff.png"
+        source.parent.mkdir(parents=True)
+        Image.new("RGB", (2048, 2048), (29, 115, 39)).save(source)
+        leaf = dict(path="textures/materials/leafy_grass/diffuse.png", sourcePath=source.relative_to(self.root).as_posix(),
+            sourceSha256=importer.sha(source.read_bytes()), sha256=importer.sha(source.read_bytes()), transformation="approved PNG")
+        manifest = resources / "licenses/asset-provenance.json"
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps(dict(schemaVersion=1, assets=[leaf])))
+        before = manifest.read_bytes()
+        with patch.object(importer, "ROOT", self.root), patch.object(importer, "RESOURCES", resources), \
+                patch.object(importer, "fetch", side_effect=AssertionError("Unexpected download")):
+            importer.runtime_diffuse_only()
+        self.assertEqual(source.read_bytes(), (resources / leaf["path"]).read_bytes())
+        self.assertFalse((resources / "textures/materials/leafy_grass/diffuse.dds").exists())
+        self.assertFalse(source.with_name("runtime-diffuse.png").exists())
+        self.assertEqual(before, manifest.read_bytes())
+
+    def test_environment_leafy_import_signs_only_lossless_png_and_preserves_dds_entries(self):
+        resources = self.root / "src/main/resources"
+        sources = self.root / "src/tools/assets/materials"
+        source = sources / "leafy_grass/diff.png"
+        source.parent.mkdir(parents=True)
+        Image.new("RGB", (2048, 2048), (29, 115, 39)).save(source)
+        manifest = resources / "licenses/asset-provenance.json"
+        manifest.parent.mkdir(parents=True)
+        untouched = {"path": "textures/materials/dirt/diffuse.dds", "sha256": "prepared DDS"}
+        manifest.write_text(json.dumps(dict(schemaVersion=1, assets=[untouched])))
+        with patch.object(environment, "ROOT", self.root), patch.object(environment, "RESOURCES", resources), \
+                patch.object(environment, "SOURCES", sources), patch.object(importer, "ROOT", self.root), \
+                patch.object(importer, "RESOURCES", resources):
+            environment.prepare(selected=["leafy_grass"], maps=["diffuse"])
+        entries = json.loads(manifest.read_text())["assets"]
+        self.assertIn(untouched, entries)
+        leaf = next(item for item in entries if item["path"] == "textures/materials/leafy_grass/diffuse.png")
+        self.assertEqual(importer.sha(source.read_bytes()), leaf["sha256"])
+        self.assertEqual(source.read_bytes(), (resources / leaf["path"]).read_bytes())
+        self.assertFalse((resources / "textures/materials/leafy_grass/diffuse.dds").exists())
+        self.assertFalse(source.with_name("runtime-diffuse.png").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

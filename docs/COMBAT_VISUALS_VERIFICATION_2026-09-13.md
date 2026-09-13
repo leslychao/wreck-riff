@@ -283,3 +283,29 @@ prove a causal explanation for the difference and is not final package FPS
 evidence. Both final post-exit OS peak queries succeeded. The passing run has
 only 10,846,208 bytes of margin under 1.5 GiB, so it does not establish memory
 headroom on larger maps or over a long session. Final ZIP checks follow below.
+
+## Closing environment memory change
+
+Construction's preceding 30+60-second run retained a lifetime PeakWorkingSet of
+1,915,895,808 bytes, so it failed the 1.5 GiB requirement. The final resource
+change uses 13 BC7 sRGB environment maps and preserves leafy_grass as its sole
+lossless PNG. Source resolution, normal/specular maps and material parameters
+remain unchanged. Leafy's GPU and CPU candidates failed the declared fine-detail
+bounds; no threshold was relaxed to accept them. The CPU result was RGB RMSE
+3.04017, p99=10, maximum32; the runtime source remains intact.
+
+All 13 selected maps passed two identical encodes, RGB RMSE<=3, p99<=8,
+maximum<=48 and alpha=255, with pinned texconv and GPU/driver. Explicit alpha
+weight100 corrects the default encoder's opacity error. Preparation is separate
+from Gradle builds and the game. Native A/B evidence is under
+`build/combat-graphics-work/environment-diffuse-native/`: two real MSAA4 scenes,
+13 actual BC7 sRGB uploads plus one unchanged PNG, day/neon frame RMSE
+0.53746/0.45628, maximum17/255; leafy's image region is byte-identical. The root
+reviewed both images and the daylight baseline: no apparent orientation or colour
+shift. This is technical image review, not owner acceptance or a memory benchmark.
+
+The user requested closure without further art or codec iterations. Final build,
+package and short-run outcomes are recorded separately in build artifacts. The
+original 600-second-per-map and 1800-second soak matrix has not yet been run on
+the final image; earlier short results do not substitute for it. RTX3060-class
+performance remains unconfirmed on this RTX5080 workstation.
