@@ -20,7 +20,7 @@ class PickupCollectionPresentationTest {
             Map<WeaponType,Integer> before=new EnumMap<>(WeaponType.class);
             for(var weapon:WeaponType.values())before.put(weapon,player.weapon(weapon).ammo);
             world.positions[0]=pickup.position().vector().add(0,.8f,0);systems.collectPickups(world);systems.collectPickups(world);
-            var events=systems.drainEvents();assertEquals(1,events.size(),style.name());GameEvent event=events.getFirst();
+            var events=systems.drainEvents();assertGrantEvents(events,style,player);GameEvent event=events.getFirst();
             assertEquals(GameEvent.Type.PICKUP,event.type());assertEquals(session.sessionId,event.sessionId());
             assertEquals(pickup.id(),event.objectId());assertEquals(style.kind(),event.kind());
             assertEquals(pickup.position().vector(),event.position());assertEquals(0,event.subjectId());assertEquals(0,event.sourceId());
@@ -65,7 +65,7 @@ class PickupCollectionPresentationTest {
             }
             int winner=playerFull?1:0;float[] before={resource(session.vehicle(0),style),resource(session.vehicle(1),style)};
             systems.collectPickups(world);session.tick++;systems.collectPickups(world);
-            var events=systems.drainEvents();assertEquals(1,events.size());assertEquals(winner,events.getFirst().subjectId());
+            var events=systems.drainEvents();assertGrantEvents(events,style,session.vehicle(winner));assertEquals(winner,events.getFirst().subjectId());
             assertEquals(winner,events.getFirst().sourceId());assertEquals(pickup.id(),events.getFirst().objectId());
             assertEquals(style.kind(),events.getFirst().kind());assertEquals(1,events.getFirst().value());
             for(int id=0;id<2;id++)assertEquals(before[id]+(winner==id?1:0),resource(session.vehicle(id),style),style.name());
@@ -144,6 +144,18 @@ class PickupCollectionPresentationTest {
         assertEquals(64,received.size());assertEquals(received.size(),received.stream().map(GameEvent::eventId).distinct().count());
     }
 
+    private static void assertGrantEvents(List<GameEvent> events,PickupStyle style,VehicleState recipient) {
+        assertEquals(style==PickupStyle.REPAIR?2:1,events.size(),style.name());
+        assertEquals(GameEvent.Type.PICKUP,events.getFirst().type());
+        if(style==PickupStyle.REPAIR) {
+            var grant=events.getFirst();var repair=events.getLast();
+            assertEquals(GameEvent.Type.REPAIRED,repair.type());
+            assertEquals(grant.eventId(),repair.eventId());assertEquals(grant.sessionId(),repair.sessionId());
+            assertEquals(grant.subjectId(),repair.subjectId());assertEquals(grant.objectId(),repair.objectId());
+            assertEquals(grant.value(),repair.value());
+            assertEquals(new HealthChange(recipient.maximumHp-1,recipient.maximumHp),repair.healthChange());
+        }
+    }
     private static ArenaDefinition.Pickup pickup(ArenaDefinition arena,ArenaDefinition.PickupType type) {
         return arena.pickups().stream().filter(p->p.type()==type).findFirst().orElseThrow();
     }

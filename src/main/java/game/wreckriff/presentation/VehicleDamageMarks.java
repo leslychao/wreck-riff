@@ -11,34 +11,40 @@ import java.util.*;
 /** Bounded per-car canonical UV history. Uploaded only when an actual hit/repair changes the mask. */
 final class VehicleDamageMarks {
     static final int SIZE=512,LIMIT=32;
-    record Mark(Vector3f point,Vector3f normal,float strength,int channel,long id) {}
+    record Mark(Vector3f point,Vector3f normal,Vector2f uv,float strength,int channel,long id) {}
     private final VehicleProfile profile;
     private final ArrayDeque<Mark> marks=new ArrayDeque<>();
     private final ByteBuffer pixels=BufferUtils.createByteBuffer(SIZE*SIZE*4);
+    private final ByteBuffer accumulated=ByteBuffer.allocate(SIZE*SIZE*4);
     private final Image image=new Image(Image.Format.RGBA8,SIZE,SIZE,pixels,ColorSpace.Linear);
     private boolean dirty;
     final Texture2D texture=new Texture2D(image);
     VehicleDamageMarks(VehicleProfile profile){this.profile=profile;texture.setMagFilter(Texture.MagFilter.Bilinear);texture.setMinFilter(Texture.MinFilter.BilinearNoMipMaps);texture.setWrap(Texture.WrapMode.EdgeClamp);}
-    void hit(Vector3f point,Vector3f normal,float amount,boolean fire,boolean glass,long id) {
-        if(marks.size()==LIMIT)marks.removeFirst();marks.add(new Mark(point.clone(),normal.clone(),Math.clamp(amount,.12f,1),fire?1:glass?2:0,id));dirty=true;
+    void hit(Vector3f point,Vector3f normal,Vector2f uv,float amount,boolean fire,boolean glass,long id) {
+        int channel=fire?1:glass?2:0;Mark nearby=null;for(Mark mark:marks)if(mark.channel==channel&&mark.uv.distanceSquared(uv)<.00016f){nearby=mark;break;}
+        if(nearby!=null){marks.remove(nearby);amount=Math.min(1,nearby.strength+amount*.6f);}
+        if(marks.size()==LIMIT)draw(marks.removeFirst(),accumulated);
+        marks.add(new Mark(point.clone(),normal.clone(),uv.clone(),Math.clamp(amount,.12f,1),channel,id));dirty=true;
     }
     void repair(float ratio) {
-        if(ratio>=.999f)marks.clear();else {var retained=new ArrayDeque<Mark>();for(Mark m:marks)if(m.strength*(1-ratio)>.07f)retained.add(new Mark(m.point,m.normal,m.strength*(1-ratio),m.channel,m.id));marks.clear();marks.addAll(retained);}dirty=true;
+        for(int i=0;i<accumulated.capacity();i++)accumulated.put(i,(byte)Math.round((accumulated.get(i)&255)*(1-ratio)));
+        if(ratio>=.999f)marks.clear();else {var retained=new ArrayDeque<Mark>();for(Mark m:marks)if(m.strength*(1-ratio)>.07f)retained.add(new Mark(m.point,m.normal,m.uv,m.strength*(1-ratio),m.channel,m.id));marks.clear();marks.addAll(retained);}dirty=true;
     }
     private void rebuild() {
-        for(int i=0;i<pixels.capacity();i++)pixels.put(i,(byte)0);
-        for(Mark mark:marks) {
-            Vector2f uv=uv(mark.point,mark.normal,profile);int cx=Math.round(uv.x*(SIZE-1)),cy=Math.round(uv.y*(SIZE-1));
+        for(int i=0;i<pixels.capacity();i++)pixels.put(i,accumulated.get(i));
+        for(Mark mark:marks)draw(mark,pixels);
+        image.setUpdateNeeded();
+    }
+    private static void draw(Mark mark,ByteBuffer output) {
+            Vector2f uv=mark.uv;int cx=Math.round(uv.x*(SIZE-1)),cy=Math.round(uv.y*(SIZE-1));
             int radius=3+Math.round(mark.strength*9);long seed=mark.id;
             for(int y=Math.max(0,cy-radius);y<=Math.min(SIZE-1,cy+radius);y++)for(int x=Math.max(0,cx-radius);x<=Math.min(SIZE-1,cx+radius);x++) {
                 float dx=(x-cx)/(float)radius,dy=(y-cy)/(float)radius,r=(float)Math.sqrt(dx*dx+dy*dy);
                 float noise=.65f+.35f*(float)Math.sin((x*13+y*31+(seed&65535))*.31);
                 float intensity=Math.max(0,1-r)*mark.strength*noise;
                 if(mark.channel==2){float a=(float)Math.atan2(dy,dx);intensity*=Math.pow(Math.abs(Math.cos(a*5+seed%7)),14);}
-                int offset=(y*SIZE+x)*4+mark.channel;pixels.put(offset,(byte)Math.max(pixels.get(offset)&255,Math.round(intensity*255)));
+                int offset=(y*SIZE+x)*4+mark.channel;output.put(offset,(byte)Math.max(output.get(offset)&255,Math.round(intensity*255)));
             }
-        }
-        image.setUpdateNeeded();
     }
     static Vector2f uv(Vector3f p,Vector3f normal,VehicleProfile profile) {
         int axis=Math.abs(normal.x)>Math.abs(normal.y)?0:1;if(Math.abs(normal.z)>(axis==0?Math.abs(normal.x):Math.abs(normal.y)))axis=2;

@@ -2,9 +2,13 @@ param(
     [Parameter(Mandatory=$true)][string]$Image,
     [ValidateSet('benchmark','soak')][string]$Mode='benchmark',
     [ValidateSet('construction_17','neon_zero','euphoria_park','dead-air-yard')][string]$Arena='construction_17',
-    [ValidateRange(60,3600)][int]$Seconds=600
+    [ValidateRange(60,3600)][int]$Seconds=600,
+    [switch]$ShortReview,
+    [switch]$Profile
 )
 $ErrorActionPreference='Stop'
+if($ShortReview -and ($Mode -ne 'benchmark' -or $Seconds -gt 90)){throw 'ShortReview requires benchmark mode and 60..90 measured seconds.'}
+if($Profile -and !$ShortReview){throw 'Detailed profiling belongs to the short diagnostic, not the full benchmark.'}
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $imagePath=(Resolve-Path -LiteralPath $Image).Path
 $library=Join-Path $imagePath 'lib'
@@ -20,6 +24,7 @@ $started=[DateTime]::UtcNow;$previousLocal=$env:LOCALAPPDATA;$game=$null;$report
 try {
     $env:LOCALAPPDATA=Join-Path $run 'user-data'
     $arguments=@('-Xms128m','-Xmx768m','-cp',('"'+$library+'\*"'),'game.wreckriff.Main','--dev','--seed=42','--ai-player',"--arena=$Arena",'--resolution=1080p',"--$Mode-seconds=$Seconds")
+    if($Profile){$arguments+='--profile'}
     $game=Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $root -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
     $null=$game.Handle;$processStart=$game.StartTime.ToUniversalTime()
     while(!$game.HasExited) {
@@ -46,8 +51,11 @@ try {
     if($report.phaseMetrics.droppedSimulationSeconds -ne 0){$failures.Add('Simulation time was dropped.')}
     if($Mode -eq 'benchmark') {
         $frames=$report.activeCombatFrames
-        if($report.status -ne 'BENCHMARK_MEASURED' -or $report.warmupActiveSeconds -lt 30 -or $report.measuredActiveSeconds -lt 600){$failures.Add('Full 30+600 active-second benchmark was not completed.')}
-        if($report.detailedProfiling -or $report.invalidBenchmarkWindowObserved){$failures.Add('Profiling or a changed/hidden framebuffer invalidated the benchmark.')}
+        $requiredSeconds=if($ShortReview){$Seconds}else{[Math]::Max(600,$Seconds)}
+        $requiredStatus=if($ShortReview){'DIAGNOSTIC_COMPLETE'}else{'BENCHMARK_MEASURED'}
+        if($report.status -ne $requiredStatus -or $report.warmupActiveSeconds -lt 30 -or $report.measuredActiveSeconds -lt $requiredSeconds){$failures.Add("Required 30+$requiredSeconds active-second measurement was not completed.")}
+        if(($report.detailedProfiling -and !$Profile) -or $report.invalidBenchmarkWindowObserved){$failures.Add('Unexpected profiling or a changed/hidden framebuffer invalidated the measurement.')}
+        if($Profile -and !$report.detailedProfiling){$failures.Add('Requested CPU/GPU/JFR profiling was not enabled.')}
         if($frames.frames -le 0 -or $frames.p95FrameMs -gt 16.7 -or $frames.p99FrameMs -gt 25 -or $frames.framesOver100ms -ne 0){$failures.Add('Active frame thresholds exceeded.')}
     } elseif($report.status -ne 'SOAK_MEASURED' -or !$report.soakCoverage.coverageComplete -or $report.resourceChecks.status -ne 'PASS'){$failures.Add('Full soak coverage or retained-resource check failed.')}
     if((Get-FileHash -LiteralPath $mainJar.FullName -Algorithm SHA256).Hash -ne $jarHash){$failures.Add('Application JAR changed during verification.')}
@@ -59,7 +67,7 @@ finally {
     if($peak -le 0 -or $peak -gt 1.5GB){$failures.Add('External process working set is unavailable or exceeds 1.5 GiB.')}
     $memory=[ordered]@{pid=$(if($game){$game.Id}else{0});processStartTimeUtc=$(if($game){$processStart.ToString('o')}else{''});counter='Windows process PeakWorkingSet64 and WorkingSet64 sampled each second';peakWorkingSetBytes=$peak;samples=$samples.ToArray()}
     [IO.File]::WriteAllText((Join-Path $run 'memory.json'),($memory|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
-    $result=[ordered]@{status=$(if($failures.Count){'FAIL'}else{'PASS'});scope='Local installDist build, not a Windows release ZIP or owner acceptance';arenaId=$Arena;mode=$Mode;mainJar=$mainJar.FullName;mainJarSha256=$jarHash;startedAtUtc=$started.ToString('o');completedAtUtc=[DateTime]::UtcNow.ToString('o');failures=$failures.ToArray();diagnostic=$report;memoryPeakBytes=$peak}
+    $result=[ordered]@{status=$(if($failures.Count){'FAIL'}else{'PASS'});scope='Local installDist build, not a Windows release ZIP or owner acceptance';shortReview=[bool]$ShortReview;longStabilityEvidence=(!$ShortReview -and !$Profile -and $failures.Count -eq 0);detailedProfiling=[bool]$Profile;arenaId=$Arena;mode=$Mode;mainJar=$mainJar.FullName;mainJarSha256=$jarHash;startedAtUtc=$started.ToString('o');completedAtUtc=[DateTime]::UtcNow.ToString('o');failures=$failures.ToArray();diagnostic=$report;memoryPeakBytes=$peak}
     [IO.File]::WriteAllText((Join-Path $run 'verification.json'),($result|ConvertTo-Json -Depth 25),[Text.UTF8Encoding]::new($false))
     Write-Output "$($result.status): $run"
 }

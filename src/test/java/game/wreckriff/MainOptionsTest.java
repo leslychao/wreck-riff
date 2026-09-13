@@ -4,6 +4,17 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MainOptionsTest {
+    @Test void combatGraphicsMatrixUsesExplicitDevOnlyFrameAndMsaaSettings() {
+        for(int fps:new int[]{30,60,120})for(int samples:new int[]{0,2,4,8}) {
+            var options=Main.Options.parse(new String[]{"--dev","--showcase","--render-fps="+fps,"--msaa="+samples});
+            assertEquals(fps,options.renderFps());assertEquals(samples,options.msaa());
+        }
+        for(String flag:new String[]{"--render-fps=60","--msaa=0"})assertThrows(IllegalArgumentException.class,
+                ()->Main.Options.parse(new String[]{flag}));
+        for(String flag:new String[]{"--render-fps=15","--render-fps=0","--msaa=3"})assertThrows(IllegalArgumentException.class,
+                ()->Main.Options.parse(new String[]{"--dev",flag}));
+        assertThrows(IllegalArgumentException.class,()->Main.Options.parse(new String[]{"--dev","--benchmark-seconds=600","--render-fps=60"}));
+    }
     @Test void automaticScreenshotsAreRestrictedToTheSmokeTour() {
         assertTrue(Main.Options.parse(new String[]{"--dev","--smoke-seconds=600"}).cameraTour());
         for(String mode:new String[]{"--benchmark-seconds=600","--soak-seconds=1800","--showcase","--art-showcase","--vehicle-showcase"})

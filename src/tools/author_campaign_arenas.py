@@ -11,6 +11,7 @@ ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'src/main/resources/config'
 SOURCE=ROOT/'src/tools/assets/arena-revision3'
 AMMO=('HOMING_AMMO','POWER_AMMO','NAPALM_AMMO','BALLISTIC_AMMO','CANNON_AMMO','MINE_AMMO')
+AMMO_COUNTS={'construction_17':(18,18,12,8,10,6),'neon_zero':(24,24,16,10,14,8),'euphoria_park':(30,30,20,12,18,10)}
 def vec(p):return dict(zip(('x','y','z'),(round(float(v),5) for v in p)))
 def point(v):return tuple(v[k] for k in ('x','y','z'))
 def dist(a,b):return math.sqrt(sum((a[i]-b[i])**2 for i in range(3)))
@@ -287,15 +288,23 @@ class Location:
                     assert bottom-p[1]>=5,(self.data['id'],'blocked',e['id'],box['id'],p)
                     clearance=min(clearance,bottom-p[1])
             e['clearance']=round(clearance,3)
-    def finish(self,counts):
-        self.boundaries();self.compile_geometry();self.compile_nav();self.validate();self.supplies(counts);SOURCE.mkdir(parents=True,exist_ok=True)
+    def compile(self,counts=None):
+        """Compile a fresh authored location without reading or writing generated files."""
+        if self.data['nodes']:raise ValueError('Compile a fresh Location, not previously generated geometry')
+        self.boundaries();self.compile_geometry();self.compile_nav();self.validate();self.supplies(counts or AMMO_COUNTS[self.data['id']])
         # The authored model replaces these metadata proxies in both rendering and
         # the single PhysicsSpace. Keep authoring clearance conservative beforehand.
         hero_roofs={'unfinished-apartments-roof','concrete-plant-roof','warehouse-roof','shopping-passage-roof','technical-complex-roof','parking-ground-floor-roof','circus-roof','ride-pavilion-roof','repair-depot-roof'}
         for box in self.data['boxes']:
             if box['id'] in hero_roofs:box['collision']=False
-        (OUT/(self.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        return self.data
+    def write_design(self):
+        SOURCE.mkdir(parents=True,exist_ok=True)
         (SOURCE/(self.data['id']+'-design.json')).write_text(json.dumps(dict(sites=self.sites,districts=self.data['districts'],roads=self.data['roads'],supply=self.supply_report,trees=self.trees),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    def finish(self,counts=None):
+        self.compile(counts)
+        (OUT/(self.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        self.write_design()
         print(self.data['id'],len(self.data['boxes']),'solids',len(self.data['meshes']),'meshes',len(self.data['nodes']),'nodes',len(self.data['pickups']),'pickups')
 
 def boss(identity,name,hp,weapons,entrances,quotes,pads=()):
@@ -487,7 +496,7 @@ def expand_yard():
     path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
 def main():
-    for factory,counts in [(construction,(18,18,12,8,10,6)),(neon,(24,24,16,10,14,8)),(carnival,(30,30,20,12,18,10))]:factory().finish(counts)
+    for factory in (construction,neon,carnival):factory().finish()
     expand_yard()
     write_review_routes()
 def write_review_routes():

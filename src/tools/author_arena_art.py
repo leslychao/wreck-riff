@@ -3,13 +3,16 @@
 Canonical pavement is already in ArenaDefinition. No road overlays, anonymous
 block grids, decorative paving sheets, or shared drive-through hall generator.
 """
+import copy
 import json
 import math
-from author_campaign_arenas import ROOT,OUT,vec,construction,neon,carnival
+from author_campaign_arenas import ROOT,OUT,vec,construction,neon,carnival,write_review_routes
 
 class Scene:
     def __init__(self,location):
-        self.location=location;self.data=json.loads((OUT/(location.resource+'.json')).read_text(encoding='utf-8'));self.data['boxes']=[b for b in self.data['boxes'] if not b['id'].startswith('dress-')];self.parts=[];self.groups=[];self.models=[];self.lights=[];self.anchor='';self.group=''
+        # Dressing changes both surfaces and solids. Always rebuild from the
+        # authoring source; stripping IDs cannot restore ground cut on an earlier run.
+        self.location=location;self.data=copy.deepcopy(location.compile());self.parts=[];self.groups=[];self.models=[];self.lights=[];self.anchor='';self.group=''
     def part(self,name,pos,size,material,shape='BOX',rotation=(0,0,0)):
         self.parts.append(dict(id=f'{name}-{len(self.parts):05}',group=self.group,anchor=self.anchor,shape=shape,material=material,position=vec(pos),size=vec(size),rotation=vec(rotation)))
     def cylinder(self,name,p,r,h,mat):self.part(name,p,(r*2,r*2,h),mat,'CYLINDER',(90,0,0))
@@ -151,7 +154,8 @@ class Scene:
         # Model roof geometry is the single visible/physical source; former analytical
         # proxy is metadata only, excluded from ordinary solids by collision:false.
         (OUT/(self.location.resource+'.json')).write_text(json.dumps(self.data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
+        self.location.write_design()
+        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; src/tools/dress_construction.py; src/tools/dress_neon.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
         (OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json')).write_text(json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
 if __name__=='__main__':
     for factory,method in [(construction,'construction'),(neon,'neon'),(carnival,'carnival')]:
@@ -163,3 +167,4 @@ if __name__=='__main__':
             from dress_neon import dress
             dress(scene)
         scene.save()
+    write_review_routes()

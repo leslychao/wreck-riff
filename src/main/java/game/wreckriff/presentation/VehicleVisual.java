@@ -79,6 +79,8 @@ public final class VehicleVisual {
     public static void updateDamage(Node vehicle,float hpFraction){vehicle.getControl(VehicleDamageVisual.class).damage(hpFraction);}
     public static void updateEffects(Node vehicle,boolean frozen,boolean shielded){vehicle.getControl(VehicleDamageVisual.class).effects(frozen,shielded);}
     public static void acceptPresented(Node vehicle,GameEvent event){vehicle.getControl(VehicleDamageVisual.class).accept(event);}
+    public static void configureMaximumHp(Node vehicle,float maximumHp){vehicle.getControl(VehicleDamageVisual.class).configureMaximumHp(maximumHp);}
+    public static GameEvent refineContact(Node vehicle,GameEvent event){return vehicle.getControl(VehicleDamageVisual.class).refineContact(event);}
     public static void updatePresentation(Node vehicle,float dt,Camera camera){vehicle.getControl(VehicleDamageVisual.class).advance(dt,camera);}
     public record DetachedPanel(String panelId,Vector3f localPosition,Quaternion localRotation,Vector3f halfExtents,Vector3f localImpulse) {}
     public static List<DetachedPanel> drainDetached(Node vehicle){return vehicle.getControl(VehicleDamageVisual.class).drainDetached();}

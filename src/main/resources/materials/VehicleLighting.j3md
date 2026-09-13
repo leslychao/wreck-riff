@@ -38,7 +38,7 @@ MaterialDef Phong Lighting {
         Texture2D NormalMap -LINEAR
 
         // Specular/gloss map
-        Texture2D SpecularMap
+        Texture2D SpecularMap -LINEAR
 
         // Parallax/height map
         Texture2D ParallaxMap -LINEAR

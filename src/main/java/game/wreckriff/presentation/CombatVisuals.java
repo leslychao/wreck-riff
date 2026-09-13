@@ -149,7 +149,7 @@ public final class CombatVisuals implements AutoCloseable {
     private static final class Emitter { float previousTurbo=100,smokeClock,turboClock; }
     private final Map<Integer,Emitter> emitters=new HashMap<>();
     private final Random visualRandom=new Random(0x56495355414cL); // Never touches combat RNG.
-    private final Batch particleBatch,fragmentBatch,fieldBatch;
+    private final Batch particleBatch,sparkBatch,fragmentBatch,fieldBatch;
     private final CombatVfxAtlas atlas;
     private final Vector3f lightDirection=new Vector3f(-.72f,-.7f,.38f).normalizeLocal();
     private final OrdnancePresentation ordnance;
@@ -176,8 +176,12 @@ public final class CombatVisuals implements AutoCloseable {
         atlas=CombatVfxAtlas.load(assets);
         root.setShadowMode(RenderQueue.ShadowMode.Off); // Emissive particles and screen-facing quads are not shadow casters/receivers.
         particleBatch=new Batch(root,"particles-and-tracers",assets,PARTICLE_LIMIT*6+SHOT_LIMIT*12,true,true);
+        sparkBatch=new Batch(root,"sparks-and-tracers",assets,PARTICLE_LIMIT*6+SHOT_LIMIT*12,true,true);
+        sparkBatch.geometry.getMaterial().getAdditionalRenderState().setBlendMode(RenderState.BlendMode.AlphaAdditive);
         particleBatch.geometry.getMaterial().setFloat("FlashIntensity",flashIntensity);
+        sparkBatch.geometry.getMaterial().setFloat("FlashIntensity",flashIntensity);
         atlas.bind(particleBatch.geometry.getMaterial());
+        atlas.bind(sparkBatch.geometry.getMaterial());
         setLighting(lightDirection,new ColorRGBA(.99f,.82f,.62f,1),new ColorRGBA(.28f,.33f,.43f,1));
         ordnance=new OrdnancePresentation(assets,root);
         fragmentBatch=new Batch(root,"impact-fragments",assets,SHARD_LIMIT*36+FLARE_LIMIT*16*3,true,false);
@@ -289,25 +293,32 @@ public final class CombatVisuals implements AutoCloseable {
         if(shot.distance>.00001f)shot.direction.divideLocal(shot.distance);
     }
     public void setLighting(Vector3f direction,ColorRGBA key,ColorRGBA fill) {
-        lightDirection.set(direction);Material material=particleBatch.geometry.getMaterial();
-        material.setVector3("LightDirection",direction);material.setColor("KeyLight",key);material.setColor("FillLight",fill);
+        lightDirection.set(direction);
+        for(Batch batch:new Batch[]{particleBatch,sparkBatch}) {
+            Material material=batch.geometry.getMaterial();
+            material.setVector3("LightDirection",direction);material.setColor("KeyLight",key);material.setColor("FillLight",fill);
+        }
     }
     void bindSoftDepth(Texture depth) {
-        Material material=particleBatch.geometry.getMaterial();
+        for(Batch batch:new Batch[]{particleBatch,sparkBatch}) {
+        Material material=batch.geometry.getMaterial();
         material.setBoolean("SoftParticles",depth!=null);
         material.getAdditionalRenderState().setDepthTest(depth==null);
-        particleBatch.geometry.setQueueBucket(depth==null?RenderQueue.Bucket.Transparent:RenderQueue.Bucket.Translucent);
+        batch.geometry.setQueueBucket(depth==null?RenderQueue.Bucket.Transparent:RenderQueue.Bucket.Translucent);
         if(depth==null){material.clearParam("SceneDepth");material.clearParam("NumSamplesDepth");}
         else {
             material.setTexture("SceneDepth",depth);
             if(depth.getImage().getMultiSamples()>1)material.setInt("NumSamplesDepth",depth.getImage().getMultiSamples());
             else material.clearParam("NumSamplesDepth");
         }
+        }
     }
     void prepareSoftCamera(Camera camera) {
-        Material material=particleBatch.geometry.getMaterial();
+        for(Batch batch:new Batch[]{particleBatch,sparkBatch}) {
+        Material material=batch.geometry.getMaterial();
         material.setVector2("CameraPlanes",new Vector2f(camera.getFrustumNear(),camera.getFrustumFar()));
         material.setVector3("LightDirection",camera.getViewMatrix().multNormal(lightDirection,new Vector3f()).normalizeLocal());
+        }
     }
     private float depth(Particle particle) {
         return (particle.position.x-sortEye.x)*sortForward.x+(particle.position.y-sortEye.y)*sortForward.y+(particle.position.z-sortEye.z)*sortForward.z;
@@ -341,6 +352,7 @@ public final class CombatVisuals implements AutoCloseable {
     public void setFlashIntensity(float intensity) {
         if(!Float.isFinite(intensity)||intensity<0||intensity>1)throw new IllegalArgumentException("Flash intensity 0..1 required");
         flashIntensity=intensity;particleBatch.geometry.getMaterial().setFloat("FlashIntensity",intensity);
+        sparkBatch.geometry.getMaterial().setFloat("FlashIntensity",intensity);
         if(intensity==0)for(BlastLight light:lights)light.light.setEnabled(false);
     }
 
@@ -655,6 +667,7 @@ public final class CombatVisuals implements AutoCloseable {
         int count=particles.size();for(int i=0;i<count;i++)sortedParticles[i]=particles.get(i);
         if(camera!=null && count>1) {sortEye.set(camera.getLocation());sortForward.set(camera.getDirection());Arrays.sort(sortedParticles,0,count,particleOrder);}
         particleBatch.begin();
+        sparkBatch.begin();
         for(int i=0;i<count;i++) {
             Particle p=sortedParticles[i];
             float size=Math.clamp(p.size+p.age*p.growth,.015f,p.smoke?(p.blast?1.6f:SMOKE_RADIUS_LIMIT):FLASH_RADIUS_LIMIT);
@@ -664,18 +677,20 @@ public final class CombatVisuals implements AutoCloseable {
                     (1-life)*(p.smoke?Math.min(1,life*12):1);
             float alpha=p.color.a*fade;
             float shape=p.dust?7:p.flame?8:p.criticalSmoke||p.blast&&p.smoke?3:p.smoke?1:p.blast?4:2;
-            particleBatch.sprite(p.position,size,p.color,alpha,shape,p.rotation,p.variation,CombatVfxAtlas.frame(p.age,p.lifetime),p.smoke?.35f:p.blast?.22f:.045f);
+            Batch batch=p.smoke||p.blast||p.flame?particleBatch:sparkBatch;
+            batch.sprite(p.position,size,p.color,alpha,shape,p.rotation,p.variation,CombatVfxAtlas.frame(p.age,p.lifetime),p.smoke?.35f:p.blast?.22f:.045f);
         }
         for(TracerSegment tracer:tracerSegments()) {
             Vector3f direction=tracer.to.subtract(tracer.from).normalizeLocal();
             Vector3f side=direction.cross(Vector3f.UNIT_Y);
             if(side.lengthSquared()<.001f)side=direction.cross(Vector3f.UNIT_Z);
             side.normalizeLocal().multLocal(.014f);
-            particleBatch.quad(tracer.from.subtract(side),tracer.from.add(side),tracer.to.add(side),tracer.to.subtract(side),AMBER,.9f);
+            sparkBatch.quad(tracer.from.subtract(side),tracer.from.add(side),tracer.to.add(side),tracer.to.subtract(side),AMBER,.9f);
             side=direction.cross(side).normalizeLocal().multLocal(.014f);
-            particleBatch.quad(tracer.from.subtract(side),tracer.from.add(side),tracer.to.add(side),tracer.to.subtract(side),AMBER,.9f);
+            sparkBatch.quad(tracer.from.subtract(side),tracer.from.add(side),tracer.to.add(side),tracer.to.subtract(side),AMBER,.9f);
         }
         particleBatch.end();
+        sparkBatch.end();
     }
     List<TracerSegment> tracerSegments() {
         List<TracerSegment> result=new ArrayList<>();

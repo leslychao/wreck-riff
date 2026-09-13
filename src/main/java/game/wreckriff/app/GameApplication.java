@@ -205,6 +205,7 @@ public final class GameApplication extends SimpleApplication {
                 if(options.uiReview())diagnostic.put("mode","ui-review");
                 diagnostic.put("arenaId",requestedArena);diagnostic.put("glow",store.settings().glow);
                 diagnostic.put("detailedProfiling",options.profile());
+                diagnostic.put("requestedRenderFps",options.renderFps());
                 diagnostic.put("gpu",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_RENDERER));
                 diagnostic.put("graphicsVersionDriver",org.lwjgl.opengl.GL11.glGetString(org.lwjgl.opengl.GL11.GL_VERSION));
                 diagnostic.put("width",cam.getWidth());diagnostic.put("height",cam.getHeight());
@@ -377,6 +378,7 @@ public final class GameApplication extends SimpleApplication {
     private void attachVehicleModel(VehicleState state) {
         if(vehicleModels.containsKey(state.id))return;
         Node model=VehicleVisual.create(assetManager,world.profile(state.id),state.liveryId);
+        VehicleVisual.configureMaximumHp(model,state.maximumHp);
         model.setName("vehicle-"+state.id);vehicleModels.put(state.id,model);matchNode.attachChild(model);
         Spatial[] wheelNodes=new Spatial[4];
         for(int i=0;i<4;i++) {
