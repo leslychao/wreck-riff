@@ -570,7 +570,7 @@ class AudioDirectorTest {
             GameEvent hit=new GameEvent(GameEvent.Type.IMPACT,901,1,0,new Vector3f(18,0,0),"machine-gun",6,Vector3f.ZERO,Vector3f.UNIT_Y).inSession(SESSION_ID);
             assertEquals(.1f,hit.cosmeticImpactDelaySeconds(),1e-6);
             var timeline=new game.wreckriff.presentation.ContactPresentationTimeline(SESSION_ID);
-            director.accept(timeline.accept(List.of(hit),0));assertNull(find(scene,"sound-metal-hit"));
+            timeline.accept(List.of(hit),0);director.accept(timeline.advanceTo(0));assertNull(find(scene,"sound-metal-hit"));
             director.pause();director.update(session,world(Vector3f.ZERO),.1f);
             assertEquals(1,timeline.pendingCount());assertNull(find(scene,"sound-metal-hit"));
             director.resume();director.accept(timeline.advanceTo(.05));

@@ -42,7 +42,7 @@ public final class VerifyAssets {
             String licensePath, String acquired, String sourceSha256, String sha256, String transformation) {}
     private record TextureIndex(int schemaVersion, List<TextureSource> assets) {}
     private static final Set<String> MATERIALS = Set.of("asphalt_02", "cracked_concrete", "metal_plate_02", "blue_metal_plate", "rusty_metal_03",
-            "leafy_grass", "brown_mud", "gravelly_sand", "red_brick_03", "wood_planks_grey");
+            "leafy_grass", "brown_mud", "gravelly_sand", "red_brick_03", "wood_planks_grey", "concrete_wall_009");
     private static final Map<String,String> ASSET_LICENSE_HASHES = Map.of(
             "CC-BY-4.0.txt", "9ba9550ad48438d0836ddab3da480b3b69ffa0aac7b7878b5a0039e7ab429411",
             "CC0-1.0.txt", "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
@@ -209,7 +209,7 @@ public final class VerifyAssets {
             } else if (asset.category.equals("licensed-texture")) {
                 author = asset.source.contains("cracked_concrete") ? "Dimitrios Savva / Poly Haven"
                         : asset.source.contains("rusty_metal_03") ? "Amal Kumar / Poly Haven"
-                        : asset.source.contains("leafy_grass") ? "Charlotte Baglioni / Poly Haven"
+                        : asset.source.contains("leafy_grass") || asset.source.contains("concrete_wall_009") ? "Charlotte Baglioni / Poly Haven"
                         : asset.source.contains("gravelly_sand") ? "Poly Haven" : "Rob Tuytel / Poly Haven";
                 permission = "CC0-1.0; source and per-file transformations retained in licenses/asset-provenance.json";
                 license = "licenses/assets/CC0-1.0.txt";
@@ -368,7 +368,7 @@ public final class VerifyAssets {
             assets.add(asset(path,"arena-art",resource(path),scene.source()+"; "+scene.license(),"SCENE_VALIDATED"));
         }
         for(String source:List.of("src/tools/author_campaign_arenas.py","src/tools/author_arena_art.py",
-                "src/tools/dress_construction.py","src/tools/dress_neon.py","src/tools/dress_carnival.py")) {
+                "src/tools/dress_construction.py","src/tools/dress_neon.py","src/tools/dress_carnival.py","src/tools/dress_parking.py")) {
             byte[] bytes=Files.readAllBytes(Path.of(source));
             assets.add(asset(source,"procedural-source",bytes,"Offline original location and workplace authoring","SOURCE_HASH_VERIFIED"));
         }

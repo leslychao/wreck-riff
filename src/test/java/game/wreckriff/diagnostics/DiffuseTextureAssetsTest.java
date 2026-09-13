@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DiffuseTextureAssetsTest {
     private static final List<String> MATERIALS = List.of("asphalt_02", "cracked_concrete",
             "metal_plate_02", "blue_metal_plate", "rusty_metal_03", "leafy_grass", "brown_mud",
-            "gravelly_sand", "red_brick_03", "wood_planks_grey");
+            "gravelly_sand", "red_brick_03", "wood_planks_grey", "concrete_wall_009");
     private static final List<String> ORIGINAL_SIXTEEN_BIT=List.of("cracked_concrete","metal_plate_02","blue_metal_plate","rusty_metal_03");
 
     @Test void runtimeDiffuseUsesEightBitPngWithoutChangingResolutionOrAlpha() throws Exception {

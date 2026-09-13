@@ -384,6 +384,42 @@
       "sourceSha256": "0e76025babe056bfdcd750a8f186df92d359fa804273fceb0f23d4884b9f5520",
       "sha256": "f4fd4caabe5e263b3c8e6bd2637d687500b467c9ca3368bc49dede6c1c970e45",
       "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/concrete_wall_009/diffuse.png",
+      "sourcePath": "src/tools/assets/materials/concrete_wall_009/diff.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_diff_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "052b265b9f7ab1f340e6ade1835725dbe76a8a666492ff3aac86a69854b87923",
+      "sha256": "5d77aa90edcbafd660f7c9a3417c4b9cd557ff459878cf6b2c554ed74fc34a6e",
+      "transformation": "2K RGB(A)16 -> RGB(A)8 PNG via Microsoft JDK 21 BufferedImage.getRGB, matching jME 3.8.1 AWTLoader decoded channels exactly; alpha and texel layout preserved; sRGB color; no resize, tint, dithering or additional gamma conversion; src/tools/import_assets.py + src/tools/java/game/wreckriff/tools/PrepareDiffuseTextures.java; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/concrete_wall_009/normal.png",
+      "sourcePath": "src/tools/assets/materials/concrete_wall_009/nor_gl.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_nor_gl_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "27c739b344a9fbf3ba9669a57a04e4902b5f8e4eb7f6ee1a05450383c19557f7",
+      "sha256": "43b2504f1afac26e44392a2c078a99c28ef5d4c0cde27de392ca58e200a26a7a",
+      "transformation": "2K OpenGL tangent normals normalized; RGB8 linear PNG without color metadata; src/tools/import_environment_materials.py"
+    },
+    {
+      "path": "textures/materials/concrete_wall_009/specular.png",
+      "sourcePath": "src/tools/assets/materials/concrete_wall_009/rough.png",
+      "sourceUrl": "https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/concrete_wall_009/concrete_wall_009_rough_2k.png",
+      "author": "Charlotte Baglioni / Poly Haven",
+      "license": "CC0-1.0",
+      "licensePath": "licenses/assets/CC0-1.0.txt",
+      "acquired": "2026-09-13",
+      "sourceSha256": "f540b0f23b968763d2a1d150b1938f7a89c587db26c3a35be20a092bca8a97cc",
+      "sha256": "3a8150fbbd889dc472be19a1ab688c1ccc7d13e4e6d1df0699fef08db85661b6",
+      "transformation": "Roughness linear -> restrained RGB Phong strength: 0.02 + 0.12*(1-r)^2; PNG 2K; src/tools/import_environment_materials.py"
     }
   ]
 }

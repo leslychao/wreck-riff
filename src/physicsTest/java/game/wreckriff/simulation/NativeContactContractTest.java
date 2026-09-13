@@ -9,6 +9,16 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeContactContractTest {
+    @Test void neonRustProxyReportsItsConcreteSurfaceFinishInNativeRayAndSweep() {
+        var arena=game.wreckriff.config.Configs.load("arena-neon-zero",ArenaDefinition.class);
+        var box=arena.boxes().stream().filter(part->part.material().equals("rust")).findFirst().orElseThrow();
+        try(var world=new PhysicsWorld(VehicleRules.load())) {
+            world.configureArena(arena);world.addStatic(box.id(),new BoxCollisionShape(new Vector3f(2,.5f,2)),new Vector3f(0,-.5f,0),new Quaternion());
+            var ray=world.ray(new Vector3f(0,2,0),new Vector3f(0,-2,0),-1);
+            var sweep=world.staticSweep(new Vector3f(0,2,0),new Vector3f(0,-2,0),.1f);
+            assertNotNull(ray);assertNotNull(sweep);assertEquals(ContactSurface.CONCRETE,ray.surface());assertEquals(ContactSurface.CONCRETE,sweep.surface());
+        }
+    }
     @Test void surfaceRevisionTracksOnlyNativeSurfacePoseAndIncarnationWithoutQueriesChangingIt() {
         var world=new PhysicsWorld(VehicleRules.load());
         try(world) {

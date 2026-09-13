@@ -52,7 +52,7 @@ public final class CombatVisuals implements AutoCloseable {
     }
     private static final class GunShot {
         final long id;final Vector3f origin,end,direction;float distance;final float flight;final boolean tracer;
-        final double born;float age;int target=-1;VehicleContact contact;boolean occluded;
+        final double born;float age;int target=-1;GameEvent contactEvent;boolean occluded;
         GunShot(GameEvent event,boolean tracer,double clock) {
             id=event.eventId();origin=event.origin().clone();end=event.position().clone();
             direction=end.subtract(origin);distance=direction.length();if(distance>0)direction.divideLocal(distance);
@@ -305,7 +305,7 @@ public final class CombatVisuals implements AutoCloseable {
     public void registerContacts(List<GameEvent> events) {
         for(GameEvent event:events)if(event.type()==GameEvent.Type.IMPACT&&"machine-gun".equals(event.kind())) {
             GunShot shot=shots.get(event.eventId());
-            if(shot!=null&&event.vehicleContact()!=null){shot.target=event.subjectId();shot.contact=event.vehicleContact();}
+            if(shot!=null&&event.vehicleContact()!=null){shot.target=event.subjectId();shot.contactEvent=event;}
         }
     }
     private static void retarget(GunShot shot,Vector3f end) {
@@ -445,10 +445,14 @@ public final class CombatVisuals implements AutoCloseable {
         int tracerQueries=0;
         for(Iterator<GunShot> it=shots.values().iterator();it.hasNext();) {
             GunShot shot=it.next();shot.age=(float)Math.max(0,presentationTime-shot.born);
-            if(shot.contact!=null&&!destroyedTargets.contains(shot.target)) {
+            if(shot.contactEvent!=null&&!destroyedTargets.contains(shot.target)) {
                 Node target=vehicleModels.get(shot.target);
-                Vector3f end=target==null?world.position(shot.target).add(world.rotation(shot.target).mult(shot.contact.localPoint())):
-                        target.getLocalRotation().mult(shot.contact.localPoint()).addLocal(target.getLocalTranslation());
+                // Keep the original canonical event. The vehicle owner resolves its
+                // barycentric anchor against the two currently displayed morph targets.
+                GameEvent presented=target==null?shot.contactEvent:VehicleVisual.presentContact(target,shot.contactEvent);
+                Vector3f local=presented.vehicleContact().localPoint();
+                Vector3f end=target==null?world.position(shot.target).add(world.rotation(shot.target).mult(local)):
+                        target.getLocalRotation().mult(local).addLocal(target.getLocalTranslation());
                 retarget(shot,end);
                 if(shot.tracer) {
                     shot.occluded=true;
@@ -904,7 +908,8 @@ public final class CombatVisuals implements AutoCloseable {
     public int projectileCount(){return ordnance.projectileCount();}
     @Override public void close(){if(closed)return;closed=true;ordnance.close();root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
         particles.clear();freeParticles.clear();Arrays.fill(sortedParticles,null);shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();presentedEvents.clear();trailHeads.clear();
-        fireSurfaces.clear();cachedFirePoints=0;
+        fireSurfaces.clear();cachedFirePoints=0;emitters.clear();gunShotCount.clear();surfaceRevisions.clear();emissionEnvelope=null;
+        for(Batch batch:new Batch[]{particleBatch,sparkBatch,fragmentBatch,fieldBatch})batch.close();root.detachAllChildren();
         projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();fireExposures=List.of();vehicleModels=Map.of();}
 
     private static final class Batch {
@@ -944,6 +949,18 @@ public final class CombatVisuals implements AutoCloseable {
             geometry.setMaterial(material);geometry.setCullHint(Spatial.CullHint.Always);root.attachChild(geometry);
         }
         void begin(){positions.clear();colors.clear();if(normals!=null)normals.clear();if(softSprites){textureCoordinates.clear();spriteData.clear();spriteVariation.clear();spriteAnimation.clear();}}
+        void close() {
+            geometry.removeFromParent();geometry.setCullHint(Spatial.CullHint.Always);
+            // These buffers belong to this session. Prepared ordnance/panel meshes
+            // and atlas images are shared assets and must survive Retry.
+            for(VertexBuffer buffer:List.copyOf(mesh.getBufferList())) {
+                if(buffer.getId()<0)BufferUtils.destroyDirectBuffer(buffer.getData());
+                else buffer.dispose(); // jME queues GPU and direct-buffer release on its render thread.
+                mesh.clearBuffer(buffer.getBufferType());
+            }
+            mesh.updateCounts();
+            if(softSprites){geometry.getMaterial().clearParam("SceneDepth");geometry.getMaterial().clearParam("NumSamplesDepth");}
+        }
         void reserveVertices(int count){positions.limit(positions.capacity()-Math.min(count,positions.capacity()/3)*3);}
         void releaseReservedVertices(){positions.limit(positions.capacity());}
         void vertex(float x,float y,float z,ColorRGBA color,float alpha) {

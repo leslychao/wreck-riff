@@ -64,6 +64,10 @@ public final class VehicleAssetsVerifier {
                 if(total!=record.getAsJsonArray("lodTriangles").get(lod).getAsInt()||total>limit||total<300)throw new IOException("Vehicle LOD budget mismatch "+id+"/"+lod);
             }
         }
+        Path sharedSource=Path.of(manifest.get("sharedSource").getAsString());check(assets,sharedSource,manifest.get("sharedSourceSha256").getAsString());var shared=JsonParser.parseString(new String(read(sharedSource),StandardCharsets.UTF_8)).getAsJsonObject();
+        if(!shared.get("generatorSha256").getAsString().equals(manifest.get("generatorSha256").getAsString()))throw new IOException("Shared metal/damage recipe is stale");
+        for(var entry:shared.getAsJsonObject("exports").entrySet())check(assets,sharedSource.getParent().resolve(entry.getKey()),entry.getValue().getAsString());
+        for(var entry:manifest.getAsJsonObject("sharedTextures").entrySet()){Path path=resources.resolve(entry.getKey());check(assets,path,entry.getValue().getAsString());var image=ImageIO.read(path.toFile());if(image.getWidth()!=1024||image.getHeight()!=1024)throw new IOException("Shared metal maps must be1K");for(int size=1024;size>=1;size/=2)resident+=(long)size*size*4;}
         check(assets,resources.resolve(manifest.get("damageAtlas").getAsString()),manifest.get("damageAtlasSha256").getAsString());resident+=1024*1024;
         if(!required.isEmpty())throw new IOException("Missing vehicle profiles "+required);
         try(var paths=Files.list(resources.resolve("textures/vfx"))){for(Path texture:paths.filter(p->p.toString().endsWith(".png")).toList()){var image=ImageIO.read(new ByteArrayInputStream(read(texture)));for(int size=Math.max(image.getWidth(),image.getHeight());size>=1;size/=2)resident+=(long)size*size*4;}}

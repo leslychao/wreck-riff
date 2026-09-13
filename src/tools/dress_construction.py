@@ -78,7 +78,7 @@ class ConstructionDressing:
         identity='dress-construction-'+self.name+'-'+label
         assert not any(b['id']==identity for b in self.scene.data['boxes']),identity
         self.scene.data['boxes'].append(dict(id=identity,center=vec(self.position(p)),size=vec(size),
-                material=material,collision=True,yawDegrees=self.yaw))
+                material='cast-concrete' if material=='concrete' else material,collision=True,yawDegrees=self.yaw))
         self.scene.anchor=identity
         return identity
 
@@ -307,6 +307,65 @@ class ConstructionDressing:
             self.beam('insulator',(x,4.8,0),(x,5.7,0),.32,'ivory')
         self.solid('cable-tray',(0,.45,5),(6,.7,1.5),'black')
 
+    def feed_supports(self):
+        # These are the actual three feed pipes already authored by Scene.construction.
+        # Four-leg braced towers meet their underside. The selected footings leave
+        # all haul roads and the warehouse exits open, including supply pockets.
+        pipes=[((1020,45,370),(1110,27,540),(.2,.8)),
+               ((1130,45,375),(1110,27,540),(.45,.7)),
+               ((1350,45,440),(1110,27,540),(.2,.5,.8))]
+        for pipe,(a,b,stations) in enumerate(pipes):
+            for index,t in enumerate(stations):
+                x,y,z=(a[i]+(b[i]-a[i])*t for i in range(3))
+                self.name=f'cement-feed-{pipe}-support-{index}'
+                if not self.clear(x,z,2.8):
+                    raise ValueError(self.name+' footing conflicts with a driving route or solid')
+                self.origin=(x,0,z);self.yaw=0;self.scene.anchor='';self.scene.group=''
+                self.solid('footing',(0,.4,0),(4,.8,4))
+                top=y-1.05
+                for xx in (-1.35,1.35):
+                    for zz in (-1.35,1.35):
+                        self.solid(f'leg-{xx}-{zz}',(xx,(top+.8)/2,zz),(.38,top-.8,.38),'steel')
+                self.solid('pipe-saddle',(0,top,0),(3.4,.3,3.4),'steel')
+                for level in range(1,int(top)-4,5):
+                    for sign in (-1,1):
+                        self.beam('bracing-x',(-1.35,level,sign*1.35),(1.35,level+5,sign*1.35),.2,'steel')
+                        self.beam('bracing-z',(sign*1.35,level,-1.35),(sign*1.35,level+5,1.35),.2,'steel')
+                for xx in (-1.5,1.5):self.detail('pipe-retainer',(xx,y,0),(.2,1.6,1),'black')
+                self.installed.append(dict(id=self.name,x=x,z=z,radius=2.8))
+
+    def deck_guardrails(self):
+        # Short, side-mounted erection guards leave the entire 34 m driving deck
+        # open. Their brackets enter only the slab side below its driving top.
+        # At branch mouths the separate upper corridors remain unobstructed.
+        for section,(first,last) in enumerate((('deck_s','deck_c'),('deck_c','deck_n'))):
+            a,b=self.location.points[first],self.location.points[last]
+            dx,dz=b[0]-a[0],b[2]-a[2];length=math.hypot(dx,dz);ux,uz=dx/length,dz/length
+            yaw=math.degrees(math.atan2(dx,dz))
+            for index,along in enumerate(range(26,int(length)-25,12)):
+                for side in (-1,1):
+                    x,z=a[0]+ux*along+uz*side*18,a[2]+uz*along-ux*side*18
+                    safe=True
+                    for path in self.location.paths:
+                        if path['id']=='interchange-span':continue
+                        for start,end in zip(path['names'],path['names'][1:]):
+                            p,q=self.location.points[start],self.location.points[end]
+                            if max(p[1],q[1])<12:continue
+                            vx,vz=q[0]-p[0],q[2]-p[2]
+                            t=max(0,min(1,((x-p[0])*vx+(z-p[2])*vz)/(vx*vx+vz*vz)))
+                            if math.hypot(x-p[0]-vx*t,z-p[2]-vz*t)<path['width']/2+4.3+.15:safe=False
+                    if not safe:continue
+                    if any(math.hypot(x-p['position']['x'],z-p['position']['z'])<12 for p in self.scene.data['spawns']+self.scene.data['pickups']):continue
+                    self.origin=(x,18,z);self.yaw=yaw;self.name=f'guardrail-{section}-{index}-{side}'
+                    for end in (-3.7,3.7):
+                        self.solid('post-'+str(end),(0,.55,end),(.3,2.3,.3),'steel')
+                        self.solid('bracket-'+str(end),(-side*.55,-.8,end),(1.3,.3,.5),'steel')
+                        self.detail('bolt-'+str(end),(-side*.05,-.8,end),(.42,.42,.12),'black')
+                    self.solid('upper-rail',(0,1.6,0),(.28,.32,8),'yellow')
+                    self.solid('middle-rail',(0,.65,0),(.24,.24,8),'steel')
+                    self.solid('toe-board',(0,.12,0),(.22,.24,8),'yellow')
+                    self.installed.append(dict(id=self.name,x=x,z=z,radius=4.3))
+
 
 def dress(scene):
     d=ConstructionDressing(scene)
@@ -389,6 +448,14 @@ def dress(scene):
     ]
     for name,candidates,footprint,builder,yaw in foreground:
         d.place(name,candidates,footprint,builder,yaw)
+    d.feed_supports()
+    d.deck_guardrails()
+    # Lettering sits above the existing south wall surfaces, facing arrivals
+    # from the warehouse/dispatch approach. No new billboard obscures a route.
+    scene.anchor='plant-south-wing'
+    scene.sign('concrete-plant-title','БЕТОННЫЙ ЗАВОД',(1152,15,508.6),180,74,4.5)
+    scene.anchor='warehouse-south-wall'
+    scene.sign('warehouse-title','СКЛАД КОМПЛЕКТАЦИИ',(1235,10,178.6),180,68,4)
     scene.anchor='';scene.group=''
     print('Construction dressing:',len(d.installed),'workplaces;',len(d.skipped),'rejected by route/solid clearance')
     return d.installed

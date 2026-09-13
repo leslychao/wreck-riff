@@ -141,7 +141,7 @@ MaterialDef Phong Lighting {
     Technique {
         LightMode SinglePass
 
-        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   Common/MatDefs/Light/SPLighting.vert
+        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   materials/VehicleSPLighting.vert
         FragmentShader GLSL310 GLSL300 GLSL150 GLSL100: materials/VehicleSPLighting.frag
 
         WorldParameters {
@@ -191,7 +191,7 @@ MaterialDef Phong Lighting {
 
         LightMode MultiPass
 
-        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100 :   Common/MatDefs/Light/Lighting.vert
+        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100 :   materials/VehicleLighting.vert
         FragmentShader GLSL310 GLSL300 GLSL150 GLSL100: materials/VehicleLighting.frag
 
         WorldParameters {
@@ -239,7 +239,7 @@ MaterialDef Phong Lighting {
 
     Technique PreShadow {
 
-        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   Common/MatDefs/Shadow/PreShadow.vert
+        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   materials/VehiclePreShadow.vert
         FragmentShader GLSL310 GLSL300 GLSL150 GLSL100: Common/MatDefs/Shadow/PreShadow.frag
 
         WorldParameters {
@@ -270,7 +270,7 @@ MaterialDef Phong Lighting {
 
 
     Technique PostShadow {
-        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   Common/MatDefs/Shadow/PostShadow.vert
+        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   materials/VehiclePostShadow.vert
         FragmentShader GLSL310 GLSL300 GLSL150 GLSL100: Common/MatDefs/Shadow/PostShadow.frag
 
         WorldParameters {
@@ -308,7 +308,7 @@ MaterialDef Phong Lighting {
 
   Technique PreNormalPass {
 
-        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   Common/MatDefs/SSAO/normal.vert
+        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   materials/VehicleNormal.vert
         FragmentShader GLSL310 GLSL300 GLSL150 GLSL100: Common/MatDefs/SSAO/normal.frag
 
         WorldParameters {
@@ -332,7 +332,7 @@ MaterialDef Phong Lighting {
 
     Technique Glow {
 
-        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   Common/MatDefs/Misc/Unshaded.vert
+        VertexShader   GLSL310 GLSL300 GLSL150 GLSL100:   materials/VehicleUnshaded.vert
         FragmentShader GLSL310 GLSL300 GLSL150 GLSL100: Common/MatDefs/Light/Glow.frag
 
         WorldParameters {

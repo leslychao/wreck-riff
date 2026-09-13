@@ -18,7 +18,7 @@ class CarnivalForegroundTest(unittest.TestCase):
         for key in ('meshes','nodes','edges','surfaces','roads','spawns','pickups','launchPads','drops','destructibles','barriers','bosses'):
             self.assertEqual(self.before[key],self.scene.data[key],key)
 
-    def test_every_new_solid_is_outside_the_full_driving_corridor_plus_four_metres(self):
+    def test_every_new_solid_leaves_the_full_driving_corridor_plus_four_metres_and_eight_metres_high(self):
         corridors=[]
         for path in self.scene.location.paths:
             for first,last in zip(path['names'],path['names'][1:]):
@@ -29,6 +29,9 @@ class CarnivalForegroundTest(unittest.TestCase):
         for box in self.scene.data['boxes']:
             if not box['id'].startswith('dress-carnival-'):continue
             c,s=box['center'],box['size'];r=math.radians(box['yawDegrees'])
+            # Structural lintels may span a portal above the vehicle/camera
+            # volume. Floor-standing columns remain subject to the full test.
+            if c['y']-s['y']/2>=8:continue
             poly=ccw([(c['x']+math.cos(r)*x+math.sin(r)*z,c['z']-math.sin(r)*x+math.cos(r)*z)
                 for x,z in [(-s['x']/2,-s['z']/2),(s['x']/2,-s['z']/2),(s['x']/2,s['z']/2),(-s['x']/2,s['z']/2)]])
             for name,corridor in corridors:

@@ -67,9 +67,11 @@ final class VehicleDamageVisual extends AbstractControl {
                 for(int i=0;i<from.length;i++){from[i]+=pos.get(i)*weight;fromNormal[i]+=norm.get(i)*weight;fromTangent[i]+=tangent.get(i/3*4+i%3)*weight;}}
             displace(from,fromNormal,fromTangent,fromRegions);upload(previousBuffers,from,fromNormal,fromTangent);dirtyGpu();elapsed=active.elapsed;duration=active.duration;
         }
-        void close(){for(VertexBuffer vb:geometry.getMesh().getBufferList()){var type=vb.getBufferType();if(type.ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&type.ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal()||type==VertexBuffer.Type.Color)vb.dispose();}
-            for(FloatBuffer buffer:previousBuffers)if(buffer!=null)BufferUtils.destroyDirectBuffer(buffer);for(FloatBuffer buffer:nextBuffers)if(buffer!=null)BufferUtils.destroyDirectBuffer(buffer);
-            var color=geometry.getMesh().getBuffer(VertexBuffer.Type.Color);if(color!=null)BufferUtils.destroyDirectBuffer(color.getData());
+        void close(){Set<java.nio.Buffer> bound=Collections.newSetFromMap(new IdentityHashMap<>());
+            for(VertexBuffer vb:geometry.getMesh().getBufferList()){var type=vb.getBufferType();boolean morph=type.ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&type.ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal();boolean lamp=type==VertexBuffer.Type.Color&&(source.name().equals("headlights")||source.name().equals("taillights"));if((morph||lamp)&&vb.getId()>=0){bound.add(vb.getData());vb.dispose();}}
+            // Registered VertexBuffers release their own native data via the renderer; only never-bound targets need direct release here.
+            for(FloatBuffer buffer:previousBuffers)if(buffer!=null&&bound.add(buffer))BufferUtils.destroyDirectBuffer(buffer);for(FloatBuffer buffer:nextBuffers)if(buffer!=null&&bound.add(buffer))BufferUtils.destroyDirectBuffer(buffer);
+            var color=geometry.getMesh().getBuffer(VertexBuffer.Type.Color);if(color!=null&&(source.name().equals("headlights")||source.name().equals("taillights"))&&bound.add(color.getData()))BufferUtils.destroyDirectBuffer(color.getData());
         }
         private void upload(FloatBuffer[] buffers,float[] point,float[] normal,float[] tangent) {
             var baseN=source.stages()[0].getFloatBuffer(VertexBuffer.Type.Normal);var baseT=source.stages()[0].getFloatBuffer(VertexBuffer.Type.Tangent);
@@ -81,7 +83,7 @@ final class VehicleDamageVisual extends AbstractControl {
     private final Node frost=new Node("frost-overlay"),shield=new Node("shield-shell");private final float[] regions=new float[8];
     private final Set<String> detached=new HashSet<>();private final List<VehicleVisual.DetachedPanel> pending=new ArrayList<>();private final LinkedHashSet<String> seen=new LinkedHashSet<>();
     private int stage,lod;private float elapsed=1,duration=DAMAGE_SECONDS,pendingDuration=-1,maximumHp=Float.NaN;private long repairRevision;
-    private final float[] lampDamage=new float[2];private final Vector3f[] regionNormals=new Vector3f[8];
+    private final float[] lampDamage=new float[4];private final Vector3f[] regionNormals=new Vector3f[8];
     private final Vector3f[] silhouetteCorners=new Vector3f[8];private final Vector3f worldCorner=new Vector3f(),screenCorner=new Vector3f();
     private final List<Geometry> wheelGeometry=new ArrayList<>();private final List<Mesh[]> wheelLods=new ArrayList<>();
     private final CollisionResults collisionResults=new CollisionResults();
@@ -102,7 +104,7 @@ final class VehicleDamageVisual extends AbstractControl {
                 if(name.equals("paint")||name.equals("glass")||name.startsWith("panel-")) {
                     Material ice=new Material(assets,"materials/VehicleFrost.j3md");ice.setTexture("DamageMap",marks.texture);ice.setFloat("MaxOpacity",.62f);
                     status(part,frostLevels[level],"frost-",ice);
-                    Material barrier=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");barrier.setColor("Color",new ColorRGBA(.055f,.48f,1,.14f));
+                    Material barrier=new Material(assets,"materials/VehicleUnshaded.j3md");barrier.setColor("Color",new ColorRGBA(.055f,.48f,1,.14f));
                     status(part,shieldLevels[level],"shield-",barrier);
                 }
             }
@@ -131,7 +133,7 @@ final class VehicleDamageVisual extends AbstractControl {
         if(event.type()==GameEvent.Type.REPAIRED) {
             var hp=event.healthChange();if(hp==null||!Float.isFinite(maximumHp))throw new IllegalStateException("Repair requires bound participant maximum HP and health change");
             float ratio=Math.clamp((hp.hpAfter()-hp.hpBefore())/Math.max(.001f,maximumHp-hp.hpBefore()),0,1);
-            for(int i=0;i<8;i++)regions[i]*=1-ratio;for(int i=0;i<2;i++)lampDamage[i]*=1-ratio;marks.repair(ratio);
+            for(int i=0;i<8;i++)regions[i]*=1-ratio;for(int i=0;i<lampDamage.length;i++)lampDamage[i]*=1-ratio;marks.repair(ratio);
             if(hp.hpAfter()>=maximumHp-.001f){detached.clear();pending.clear();}repairRevision++;root.setUserData("repairRevision",repairRevision);transition(REPAIR_SECONDS);updateDetached();return;
         }
         if(event.type()==GameEvent.Type.DESTROYED){damage(0);return;}
@@ -140,7 +142,7 @@ final class VehicleDamageVisual extends AbstractControl {
         Anchor anchor=contactAnchor(event);if(anchor!=null)marks.hit(anchor.point,anchor.normal,anchor.uv,force,event.kind().contains("napalm")||event.kind().contains("fire"),anchor.part.source.name().equals("glass"),event.eventId(),anchor.part.source.islandId(),event.kind().equals("machine-gun")?0:event.kind().contains("ram")?4:2);
         if(thermal)return;
         regions[region]=Math.min(1,regions[region]+force);regionNormals[region]=n.clone();
-        if(p.z>profile.length()*.3f)lampDamage[p.x<0?0:1]=Math.min(1,lampDamage[p.x<0?0:1]+force);
+        if(anchor!=null&&(anchor.part.source.name().equals("headlights")||anchor.part.source.name().equals("taillights"))){int lamp=(anchor.part.source.name().equals("taillights")?2:0)+(anchor.point.x<0?0:1);lampDamage[lamp]=Math.min(1,lampDamage[lamp]+force);}
         transition(DAMAGE_SECONDS);
         tryDetach();
     }
@@ -153,10 +155,17 @@ final class VehicleDamageVisual extends AbstractControl {
     }
     private void compose(float seconds) {
         float blend=Math.clamp(elapsed/duration,0,1);elapsed=0;duration=seconds;
+        for(Geometry wheel:wheelGeometry)wheel.getMaterial().setFloat("Damage",stage/4f);
         for(Part part:parts){if(part.lod!=lod)continue;
             if(part.needsCompose(stage,regions)){part.compose(stage,regions,Math.clamp(part.elapsed/part.duration,0,1));part.elapsed=0;part.duration=seconds;weights(part,0);}
-            var m=part.geometry.getMaterial();if(m.getMaterialDef().getMaterialParam("Damage")!=null)m.setFloat("Damage",stage/4f);
-            if(part.source.name().equals("headlights")||part.source.name().equals("taillights")){float[] colors=new float[part.base.length/3*4];for(int v=0;v<colors.length/4;v++){float energy=lampDamage[part.base[v*3]<0?0:1],light=stage==4?.015f:Math.max(.015f,1-energy*1.4f);Arrays.fill(colors,v*4,v*4+3,light);colors[v*4+3]=1;}part.geometry.getMesh().setBuffer(VertexBuffer.Type.Color,4,colors);}
+            refreshAppearance(part);
+        }
+    }
+    private void refreshAppearance(Part part){
+        var material=part.geometry.getMaterial();if(material.getMaterialDef().getMaterialParam("Damage")!=null)material.setFloat("Damage",stage/4f);
+        if(part.source.name().equals("headlights")||part.source.name().equals("taillights")){
+            VertexBuffer buffer=part.geometry.getMesh().getBuffer(VertexBuffer.Type.Color);FloatBuffer colors=(FloatBuffer)buffer.getData();int end=part.source.name().equals("taillights")?2:0;
+            for(int vertex=0;vertex<part.base.length/3;vertex++){float energy=lampDamage[end+(part.base[vertex*3]<0?0:1)],light=stage==4?.015f:Math.max(.015f,1-energy*1.4f);int index=vertex*4;colors.put(index,light);colors.put(index+1,light);colors.put(index+2,light);colors.put(index+3,1);}buffer.setUpdateNeeded();
         }
     }
     void advance(float dt,Camera camera) {
@@ -172,7 +181,7 @@ final class VehicleDamageVisual extends AbstractControl {
     }
     private static void weights(Part part,float blend){if(!part.deforms)return;float[] w=part.geometry.getMorphState();w[0]=1-blend;w[1]=blend;part.geometry.setMorphState(w);for(Geometry g:part.overlays){float[] ow=g.getMorphState();ow[0]=w[0];ow[1]=w[1];g.setMorphState(ow);}}
     private void selectLod(int value){int previousLod=lod;boolean changed=lod!=value;lod=value;for(int i=0;i<3;i++){var c=i==lod?Spatial.CullHint.Inherit:Spatial.CullHint.Always;levels[i].setCullHint(c);frostLevels[i].setCullHint(c);shieldLevels[i].setCullHint(c);}for(int i=0;i<wheelGeometry.size();i++)wheelGeometry.get(i).setMesh(wheelLods.get(i)[lod]);root.setUserData("vehicleLod",lod);
-        if(changed)for(Part part:parts)if(part.lod==lod){Part old=findPart(previousLod,part.source.name());part.inheritTransition(old);if(part.deforms)weights(part,Math.clamp(part.elapsed/part.duration,0,1));var material=part.geometry.getMaterial();if(material.getMaterialDef().getMaterialParam("Damage")!=null)material.setFloat("Damage",stage/4f);}
+        if(changed)for(Part part:parts)if(part.lod==lod){Part old=findPart(previousLod,part.source.name());part.inheritTransition(old);if(part.deforms)weights(part,Math.clamp(part.elapsed/part.duration,0,1));refreshAppearance(part);}
     }
     private Part findPart(int level,String name){for(Part part:parts)if(part.lod==level&&part.source.name().equals(name))return part;throw new IllegalStateException("Missing prepared LOD part "+name);}
     private void updateDetached(){for(Part p:parts)if(PANELS.contains(p.source.name())){var c=detached.contains(p.source.name())?Spatial.CullHint.Always:Spatial.CullHint.Inherit;p.geometry.setCullHint(c);for(Geometry g:p.overlays)g.setCullHint(c);}}
@@ -184,6 +193,25 @@ final class VehicleDamageVisual extends AbstractControl {
         if(event.vehicleContact()==null)return event;Anchor a=contactAnchor(event);if(a==null)return event;
         ContactSurface surface=a.part.source.name().equals("glass")?ContactSurface.GLASS:a.part.source.name().contains("rubber")?ContactSurface.RUBBER:ContactSurface.METAL;
         return event.withContact(surface,new VehicleContact(a.point,a.normal));
+    }
+    GameEvent presentContact(GameEvent event){
+        if(event.vehicleContact()==null)return event;Anchor a=contactAnchor(event);if(a==null)return event;
+        if(detached.contains(a.part.source.name())){a=anchor(a.point,a.normal);if(a==null)return event;}
+        Part active=findPart(lod,a.part.source.name());float blend=Math.clamp(active.elapsed/active.duration,0,1);int vertex=a.triangle*3;
+        Vector3f first=new Vector3f(),second=new Vector3f(),third=new Vector3f();posedVertex(a.part,active,vertex,blend,first);posedVertex(a.part,active,vertex+1,blend,second);posedVertex(a.part,active,vertex+2,blend,third);
+        Vector3f point=first.mult(a.a).addLocal(second.mult(a.b)).addLocal(third.mult(a.c));Vector3f normal=second.subtract(first).crossLocal(third.subtract(first));if(normal.lengthSquared()<1e-9f)normal.set(a.normal);else normal.normalizeLocal();
+        ContactSurface surface=a.part.source.name().equals("glass")?ContactSurface.GLASS:a.part.source.name().contains("rubber")?ContactSurface.RUBBER:ContactSurface.METAL;
+        return event.withContact(surface,new VehicleContact(point,normal));
+    }
+    private static void posedVertex(Part canonical,Part active,int vertex,float blend,Vector3f result){
+        int i=vertex*3;if(!active.deforms){result.set(canonical.base[i],canonical.base[i+1],canonical.base[i+2]);return;}
+        if(canonical==active){result.set(active.from[i]+(active.to[i]-active.from[i])*blend,active.from[i+1]+(active.to[i+1]-active.from[i+1])*blend,active.from[i+2]+(active.to[i+2]-active.from[i+2])*blend);return;}
+        float fx=0,fy=0,fz=0;for(int stage=0;stage<5;stage++)if(active.fromStages[stage]>0){var position=canonical.source.stages()[stage].getFloatBuffer(VertexBuffer.Type.Position);float weight=active.fromStages[stage];fx+=position.get(i)*weight;fy+=position.get(i+1)*weight;fz+=position.get(i+2)*weight;}
+        var target=canonical.source.stages()[Math.max(0,active.composedStage)].getFloatBuffer(VertexBuffer.Type.Position);float tx=target.get(i),ty=target.get(i+1),tz=target.get(i+2);
+        for(int region=0;region<8;region++){var delta=canonical.source.regions()[region];int at=Arrays.binarySearch(delta.indices(),vertex);if(at>=0){float x=delta.xyz()[at*3],y=delta.xyz()[at*3+1],z=delta.xyz()[at*3+2];fx+=x*active.fromRegions[region];fy+=y*active.fromRegions[region];fz+=z*active.fromRegions[region];tx+=x*active.composedRegions[region];ty+=y*active.composedRegions[region];tz+=z*active.composedRegions[region];}}
+        float bx=canonical.base[i],by=canonical.base[i+1],bz=canonical.base[i+2],length=(float)Math.sqrt((fx-bx)*(fx-bx)+(fy-by)*(fy-by)+(fz-bz)*(fz-bz));if(length>MAX_DENT){float scale=MAX_DENT/length;fx=bx+(fx-bx)*scale;fy=by+(fy-by)*scale;fz=bz+(fz-bz)*scale;}
+        length=(float)Math.sqrt((tx-bx)*(tx-bx)+(ty-by)*(ty-by)+(tz-bz)*(tz-bz));if(length>MAX_DENT){float scale=MAX_DENT/length;tx=bx+(tx-bx)*scale;ty=by+(ty-by)*scale;tz=bz+(tz-bz)*scale;}
+        result.set(fx+(tx-fx)*blend,fy+(ty-fy)*blend,fz+(tz-fz)*blend);
     }
     private Anchor contactAnchor(GameEvent event){String key=event.eventId()+":"+event.subjectId();Anchor result=contactAnchors.get(key);if(result!=null)return result;result=anchor(event.vehicleContact().localPoint(),event.vehicleContact().localNormal());if(result!=null){contactAnchors.put(key,result);if(contactAnchors.size()>128)contactAnchors.remove(contactAnchors.keySet().iterator().next());}return result;}
     private Anchor anchor(Vector3f point,Vector3f normal) {

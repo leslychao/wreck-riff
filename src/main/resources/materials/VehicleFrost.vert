@@ -1,5 +1,5 @@
 #import "Common/ShaderLib/GLSLCompat.glsllib"
-#import "Common/ShaderLib/MorphAnim.glsllib"
+#import "materials/VehicleMorph.glsllib"
 
 uniform mat4 g_WorldViewProjectionMatrix;
 attribute vec3 inPosition;

@@ -10,6 +10,31 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CombatVisualsTest {
+    @Test void trackedTracerFollowsTheCurrentDeformedContactAndInterpolatedVehiclePose() {
+        Node scene=new Node(),vehicle=VehicleVisual.create(PresentationTestAssets.shared(),game.wreckriff.config.VehicleProfile.rivet(),0);
+        vehicle.setLocalTranslation(5,1,0);scene.attachChild(vehicle);scene.updateGeometricState();
+        Vector3f local=new Vector3f(1,.2f,0),origin=new Vector3f(20,1,0),point=vehicle.getLocalTranslation().add(local);
+        GameEvent contact=VehicleVisual.refineContact(vehicle,new GameEvent(GameEvent.Type.IMPACT,3,1,0,point,"machine-gun",20,origin,Vector3f.UNIT_X)
+                .withContact(ContactSurface.METAL,new VehicleContact(local,Vector3f.UNIT_X)));
+        try(var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world())) {
+            visuals.bindVehicleModels(Map.of(1,vehicle));visuals.setPresentationTime(0);
+            for(int i=1;i<=3;i++)visuals.accept(List.of(shot(i,0,origin,point)));
+            visuals.registerContacts(List.of(contact));visuals.setPresentationTime(contact.cosmeticImpactDelaySeconds()+.01);
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,.008f);
+            Vector3f intact=visuals.tracerSegments().getFirst().to();
+            VehicleVisual.updateDamage(vehicle,.5f);
+            VehicleVisual.acceptPresented(vehicle,new GameEvent(GameEvent.Type.DAMAGE,77,1,0,point,"machine-gun",20).withContact(ContactSurface.METAL,contact.vehicleContact()));
+            VehicleVisual.updatePresentation(vehicle,.12f,null);
+            GameEvent current=VehicleVisual.presentContact(vehicle,contact);
+            assertTrue(current.vehicleContact().localPoint().distance(contact.vehicleContact().localPoint())>.005f,"Fixture contact must actually deform");
+            vehicle.setLocalTranslation(5.4f,1,0);vehicle.setLocalRotation(new Quaternion().fromAngleAxis(.4f,Vector3f.UNIT_Y));
+            // The renderer has not updated world transforms yet: use the application's current local pose.
+            visuals.update(List.of(),List.of(),List.of(),List.of(),null,.008f);
+            Vector3f expected=vehicle.getLocalRotation().mult(current.vehicleContact().localPoint()).addLocal(vehicle.getLocalTranslation());
+            assertTrue(expected.distance(visuals.tracerSegments().getFirst().to())<.0001f,"Tracer endpoint must follow the displayed damaged panel");
+            assertTrue(intact.distance(expected)>.1f);
+        } finally {VehicleVisual.close(vehicle);}
+    }
     @Test void closeQueuesEveryOwnedBatchBufferForNativeDeletionAndPreservesSharedAtlases() {
         Node scene=new Node();var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());
         var nativeObjects=new com.jme3.util.NativeObjectManager();var buffers=new ArrayList<VertexBuffer>();var meshes=new ArrayList<Mesh>();

@@ -1,0 +1,70 @@
+{
+  "engineVersion": "3.8.1-stable",
+  "license": "licenses/jme-BSD3.txt",
+  "licenseSha256": "fe47d99c352ce1cc69005f7d47cfd5f3c23700599946c196c03af04dce97dddb",
+  "generator": "src/tools/java/game/wreckriff/tools/PrepareVehicleMorph.java",
+  "generatorSha256": "ccdaeaf4fb3bc34179eeb2a9b7e0c845ad6d3a4ad503bcca5bb370fc5d8d3f87",
+  "changes": [
+    "One normal-weight declaration across all tangent target branches",
+    "Normal-only overload forwards the real normal with three source buffers",
+    "Vehicle vertex and unshaded techniques import a unique project-owned path"
+  ],
+  "files": [
+    {
+      "path": "materials/VehicleMorph.glsllib",
+      "sha256": "970815f6b0a3ed8205fcab276f557cfa7ce8c8711e43c771a9da929903842dd6",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleMorph.glsllib",
+      "sourceSha256": "b589ce0b46de035c5b93c8f1c991a651e3b445b8f61e5dcd3e567dbe302e78f9",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/ShaderLib/MorphAnim.glsllib"
+    },
+    {
+      "path": "materials/VehicleLighting.vert",
+      "sha256": "503fe6b6a63a2375860b9cfb4892772c1463313e021ccfd5ebd8859f851f9036",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleLighting.vert",
+      "sourceSha256": "0e84648ed1ec5b248db9f6f4d3f8b97d65fb82d737689affabc9af6a372c580a",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Light/Lighting.vert"
+    },
+    {
+      "path": "materials/VehicleSPLighting.vert",
+      "sha256": "fb05535d8cba6235a1b65ebb1d98f32fb869a2eda0d87119b74e0752ae73901b",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleSPLighting.vert",
+      "sourceSha256": "dda3b20df8d7648f7a1fa11ade580cdf529708bac927ebfbcbc98c6d905acae3",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Light/SPLighting.vert"
+    },
+    {
+      "path": "materials/VehiclePreShadow.vert",
+      "sha256": "50ed7d9e9637fc6fbabca5debd1193f439cd5db2db5426621b90e15693b63332",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehiclePreShadow.vert",
+      "sourceSha256": "16b5d20ed22976016399a5e1464be54d5d8840e8da1cd7a01bd9f883e95cc544",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Shadow/PreShadow.vert"
+    },
+    {
+      "path": "materials/VehiclePostShadow.vert",
+      "sha256": "ec93e7b63c685f307fa7784984cda739b2d775801592f2ae87706b98fb6e3796",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehiclePostShadow.vert",
+      "sourceSha256": "e410788b5bf8a668d6326bcea7540170f8605cf47034e87cfc316588f5a63599",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Shadow/PostShadow.vert"
+    },
+    {
+      "path": "materials/VehicleNormal.vert",
+      "sha256": "037488857be81f77aea7cf9ae710802a5cbfd09b49f1aed6f3449be727eaaf9d",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleNormal.vert",
+      "sourceSha256": "4e61a0e3a1644212e0aaebd9450315fd7d9b9819f1612c74ccbdb95ed14bdf19",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-effects/src/main/resources/Common/MatDefs/SSAO/normal.vert"
+    },
+    {
+      "path": "materials/VehicleUnshaded.vert",
+      "sha256": "7bfffbd147226998ed585e6992b1af78cf804c36598c1ea821366a99990c069c",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleUnshaded.vert",
+      "sourceSha256": "fb9001a6c9c55be914003fd249075e2ead85c755f82eb4de67426bd4e81465f0",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Misc/Unshaded.vert"
+    },
+    {
+      "path": "materials/VehicleUnshaded.j3md",
+      "sha256": "4ba4dacb07c2f1495552608faa202a04f8b9c2f56f67d505daebd12b34ae139f",
+      "sourcePath": "src/tools/assets/vehicle-morph/upstream/VehicleUnshaded.j3md",
+      "sourceSha256": "a480f6284b8a49796d7fecbf45c33dcb783146f23f68afd9967655ce3ed499bf",
+      "upstream": "https://raw.githubusercontent.com/jMonkeyEngine/jmonkeyengine/v3.8.1-stable/jme3-core/src/main/resources/Common/MatDefs/Misc/Unshaded.j3md"
+    }
+  ]
+}

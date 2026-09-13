@@ -238,7 +238,7 @@ def displacement(p,profile,region):
 def make_textures(profile,out):
     # Authored six-face paint atlas, worn coating, seam rivets and stamped industrial graphics.
     size=2048;y,x=np.mgrid[:size,:size];rng=np.random.default_rng(173+list(PROFILES).index(profile))
-    grain=rng.normal(0,.015,(size,size));base=np.array(COLORS[profile]);noise=grain+np.sin(x*.043)*np.cos(y*.028)*.025
+    grain=rng.normal(0,.015,(size,size));base=np.array(COLORS[profile]);noise=grain+np.sin(x*.008)*np.cos(y*.006)*.075
     rgb=np.clip(base[None,None,:]*(.85+noise[:,:,None]),0,1)
     seam=(np.mod(x,171)<3)|(np.mod(y,229)<3);stripe=(y%1024>900)&(y%1024<918)&((x+y)//24%2==0)
     rgb[seam]*=.62

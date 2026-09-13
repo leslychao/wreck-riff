@@ -48,6 +48,11 @@ holds 55,296 vertices plus 1,152 shield-flare vertices; this accommodates shaped
 panels without adding a draw call per part. Runtime counters report actual and
 peak occupancy separately from these ceilings.
 
+Closing a match explicitly releases the 21 private vertex buffers of the four
+batches through jME's native object queue; buffers never uploaded are released
+directly. Shared atlas images and prepared ordnance/panel meshes remain cached
+for Retry. Closing the soft pass also disposes its private colour target.
+
 The soft pass is appended to the existing FilterPostProcessor and copies scene
 colour into a separate depthless target before drawing the translucent batch.
 It samples the original scene depth and averages individual MSAA sample coverage;

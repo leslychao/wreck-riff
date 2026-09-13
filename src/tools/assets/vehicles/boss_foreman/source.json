@@ -1,12 +1,12 @@
 {
   "id": "boss_foreman",
   "authoringMode": "original-recipe",
-  "generatorSha256": "d2da9822a1e102017a3ddb91fdbdcad1fe694fee8328a6a1205ffd5157df3e94",
+  "generatorSha256": "73f0c67cb15823b0a5afcf43e29d720652c0c5bd2553594d2cdaf743bd85c93f",
   "exports": {
-    "source.blend": "a3e0ffebf5f947ba59fe0899609e155a3bb15eda4b94069333c302d46d9dbe65",
+    "source.blend": "4a209894fbb6aa145f86ae91b80f1bfe0ae9c425b4290b582be6b9f7bb832377",
     "source.glb": "722c90b38adf6cf9952829281b654480a716a32d6583235d09e66a68949fa472",
     "mesh.json.gz": "efe3d7a1024b1010d1f4b85003dfe4df36322f93366f129fbe9ad57dc00d15a8",
-    "diffuse.png": "e56a117308152bccfa47a2c64bc312c37158e5910540bfe716d4dac47eb2b7fb",
+    "diffuse.png": "0ee4cbd8bf4b3eefe54097e5661c5f3815d2fa626fa26a9fd1cc52b51662de8d",
     "normal.png": "16f0cba0ae7ba341fb43721f9509120b785b1f7a86562575c3a321883865f275",
     "specular.png": "952eef5eb80be133b684e4164ae3c102bf264b8d6de9ba1113656cca9870790d",
     "damage-ownership.png": "106bfe85723d7deb839966c7c2af7cfbc9172ddcd9f654023f55e291c398c4e9"
@@ -16,7 +16,7 @@
     7228,
     1668
   ],
-  "sourceBlendSha256": "a3e0ffebf5f947ba59fe0899609e155a3bb15eda4b94069333c302d46d9dbe65",
+  "sourceBlendSha256": "4a209894fbb6aa145f86ae91b80f1bfe0ae9c425b4290b582be6b9f7bb832377",
   "sourceGlbSha256": "722c90b38adf6cf9952829281b654480a716a32d6583235d09e66a68949fa472",
   "meshSha256": "efe3d7a1024b1010d1f4b85003dfe4df36322f93366f129fbe9ad57dc00d15a8"
 }

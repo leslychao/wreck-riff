@@ -254,12 +254,47 @@ class ParkDressing:
             c,s=b['center'],b['size'];self.scene.data['boxes'].remove(b);self.origin=(c['x']+7 if b['id']=='circus-seating-west' else c['x'],0,c['z']);self.yaw=0;self.name=b['id'];self.seating()
             self.installed.append(dict(id=self.name,x=c['x'],z=c['z'],radius=10,y=0,existingEnvelope=b['id']))
 
+    def roof_structure(self):
+        self.origin=(0,0,0);self.yaw=0;self.name='roof-structure';self.scene.anchor=''
+        # The barrel shell bears on columns placed in the existing side-wall
+        # envelopes; the openings retain their complete verified driving width.
+        for i,(x,z) in enumerate([(1175,485),(1175,545),(1245,550),(1250,410),(1305,410)]):
+            assert self.road_clear(x,z,1),('orbit support',x,z)
+            local_x=x-1272.5;height=20+12*math.sin(math.pi*(local_x+102.5)/205)-.8
+            self.solid('orbit-column-'+str(i),(x,height/2,z),(1.4,height,1.4),'steel')
+            self.solid('orbit-column-foot-'+str(i),(x,.35,z),(2,.7,2),'cast-concrete')
+        # The broad tent uses two real king poles, a perimeter tension ring and
+        # an asymmetric set of edge poles: the missing sectors are vehicle doors.
+        for i,(x,z) in enumerate([(347.5,1005),(397.5,1115)]):
+            assert self.road_clear(x,z,1.2),('circus king pole',x,z)
+            self.solid('circus-king-pole-'+str(i),(x,21,z),(1.5,42,1.5),'ivory')
+            self.solid('circus-king-foot-'+str(i),(x,.45,z),(2.4,.9,2.4),'cast-concrete')
+            self.beam('circus-ridge-stay',(x,40,z),(347.5,38,1065),.4,'steel')
+        ring=[]
+        for i in range(16):
+            a=i*math.tau/16;x,z=347.5+102.5*math.cos(a),1065+90*math.sin(a);ring.append((x,17.45,z))
+            if self.road_clear(x,z,.8):
+                self.solid('circus-edge-pole-'+str(i),(x,8.7,z),(.9,17.4,.9),'ivory')
+                self.beam('circus-tension-cable',(x,17.5,z),(347.5,37.5,1065),.18,'steel')
+        for a,b in zip(ring,ring[1:]+ring[:1]):self.beam('circus-tension-ring',a,b,.45,'steel')
+        # Depot columns coincide with the established solid side wall footprints.
+        # The floor-to-eave columns also carry the longitudinal gantry runway.
+        for i,(x,z) in enumerate([(1145,990),(1220,990),(1290,990),(1150,1120),(1200,1120)]):
+            assert self.road_clear(x,z,1),('depot support',x,z)
+            height=15+5*(1-abs((x-1230)/90))-.8
+            self.solid('depot-column-'+str(i),(x,height/2,z),(1.4,height,1.4),'steel')
+        for z in (990,1120):
+            # Closed gable fascia reaches the unchanged side-wall top. The
+            # roadway portals remain below the 14m clear eave, never sealed.
+            self.solid('depot-eave-beam-'+str(z),(1230,14.15,z),(180,1.7,1.2),'steel')
+
 
 def dress(scene):
     d=ParkDressing(scene)
     for b in list(scene.data['boxes']):
         if b['id'].startswith(('fair-stall-','fair-shop-','ticket-office-')):d.frontage(b)
     d.fitted_equipment()
+    d.roof_structure()
     # Named public/service functions have explicit alternative positions within
     # their own district. The choices are only collision-safe siting alternatives.
     sites=[

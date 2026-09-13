@@ -60,6 +60,7 @@ public final class ResourceRetention {
         return Map.of("status",failed()?"FAIL":passed()?"PASS":"PENDING","errors",List.copyOf(errors),"loadBaselineKeys",loadBaselines.size(),
                 "unloadComparisons",unloadComparisons,"minimumUnloadComparisons",MINIMUM_UNLOAD_COMPARISONS,
                 "fixedAllowances",Map.of("directBufferBytes",BUFFER_ALLOWANCE_BYTES,"nativeTrackers",TRACKER_ALLOWANCE,"textures",TEXTURE_ALLOWANCE),
-                "collectionPolicy","Explicit GC requested only after match unload; one second of rendered menu settling precedes retained-resource samples");
+                "collectionPolicy","Explicit GC requested only after match unload; one second of rendered menu settling precedes retained-resource samples",
+                "directBufferCoverage","JVM-managed buffer pools only; LWJGL allocations require external process working-set evidence");
     }
 }

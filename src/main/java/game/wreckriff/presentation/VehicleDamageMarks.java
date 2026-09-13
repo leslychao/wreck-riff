@@ -56,6 +56,6 @@ final class VehicleDamageMarks {
     private static byte[] readPixels(AssetManager assets,String path){Image image=new SurfaceMaterials.TextureUse("DamageMap",path,false).load(assets).getImage();ImageRaster raster=ImageRaster.create(image);byte[] result=new byte[image.getWidth()*image.getHeight()*2];ColorRGBA pixel=new ColorRGBA();for(int y=0;y<image.getHeight();y++)for(int x=0;x<image.getWidth();x++){raster.getPixel(x,y,pixel);int index=(y*image.getWidth()+x)*2;result[index]=(byte)Math.round(pixel.r*255);result[index+1]=(byte)Math.round(pixel.g*255);}return result;}
     int count(){return marks.size();}
     void flush(){if(dirty){rebuild();dirty=false;}}
-    void close(){marks.clear();image.dispose();}
+    void close(){marks.clear();if(image.getId()<0)BufferUtils.destroyDirectBuffer(pixels);else image.dispose();}
     byte[] snapshot(){flush();byte[] result=new byte[pixels.capacity()];pixels.duplicate().clear().get(result);return result;}
 }

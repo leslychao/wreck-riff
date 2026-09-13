@@ -54,7 +54,7 @@ public final class VehicleDamageReview extends SimpleApplication {
         Path directory=Path.of(args[0]).toAbsolutePath();Files.createDirectories(directory);
         Files.deleteIfExists(directory.resolve("complete.json"));Files.deleteIfExists(directory.resolve("failure.txt"));
         var app=new VehicleDamageReview(directory);var settings=new AppSettings(true);
-        settings.setTitle("Wreck Riff - Prepared vehicle damage review");settings.setResolution(1920,1080);
+        settings.setTitle("Wreck Riff - Prepared vehicle damage review");settings.setResolution(1600,900);
         settings.setSamples(4);settings.setVSync(false);settings.setFrameRate(60);settings.setGammaCorrection(true);
         app.setSettings(settings);app.setShowSettings(false);app.setPauseOnLostFocus(false);app.start(JmeContext.Type.Display);
         if(!app.done.await(60,TimeUnit.SECONDS)){app.stop(false);Files.writeString(directory.resolve("failure.txt"),"Vehicle review exceeded 60 seconds");System.exit(1);}
@@ -70,7 +70,7 @@ public final class VehicleDamageReview extends SimpleApplication {
         floor.setMaterial(SurfaceMaterials.lit(assetManager,new ColorRGBA(.16f,.18f,.20f,1),12,.15f));
         floor.setShadowMode(RenderQueue.ShadowMode.Receive);display.attachChild(floor);
         lighting=SceneLighting.install(assetManager,rootNode,viewPort);lighting.setSamples(4);lighting.initialize(renderManager);
-        var font=assetManager.loadFont("Interface/Fonts/Default.fnt");title=new BitmapText(font);title.setSize(24);title.setLocalTranslation(30,1050,0);guiNode.attachChild(title);
+        var font=assetManager.loadFont("Interface/Fonts/Default.fnt");title=new BitmapText(font);title.setSize(21);title.setLocalTranslation(25,875,0);guiNode.attachChild(title);
         VehicleRules rules=VehicleRules.load();
         for(int i=0;i<IDS.length;i++) {
             profiles[i]=i<3?VehicleProfile.player(IDS[i],rules):VehicleProfile.boss(IDS[i],rules);
@@ -152,25 +152,25 @@ public final class VehicleDamageReview extends SimpleApplication {
     private void contact(int index,Vector3f normal,float damage,String kind) {
         VehicleProfile p=profiles[index];Vector3f local=new Vector3f(normal.x*p.width()*.5f,p.height()*.22f,normal.z*p.length()*.46f);
         Node car=cars[index];Vector3f world=car.getLocalRotation().mult(local).addLocal(car.getLocalTranslation());
-        var event=new GameEvent(GameEvent.Type.DAMAGE,++eventId,0,index,world,kind,damage,Vector3f.ZERO,normal)
+        var event=new GameEvent(GameEvent.Type.DAMAGE,++eventId,index,0,world,kind,damage,Vector3f.ZERO,normal)
                 .withContact(ContactSurface.METAL,new VehicleContact(local,normal)).withHealthChange(new HealthChange(MAX_HP*.5f,MAX_HP*.5f-damage));
         VehicleVisual.acceptPresented(car,VehicleVisual.refineContact(car,event));
     }
     private void fullRepair(int index,float beforeFraction) {
-        VehicleVisual.acceptPresented(cars[index],new GameEvent(GameEvent.Type.REPAIRED,++eventId,0,index,Vector3f.ZERO,"repair",MAX_HP*(1-beforeFraction)).withHealthChange(new HealthChange(MAX_HP*beforeFraction,MAX_HP)));
+        VehicleVisual.acceptPresented(cars[index],new GameEvent(GameEvent.Type.REPAIRED,++eventId,index,0,Vector3f.ZERO,"repair",MAX_HP*(1-beforeFraction)).withHealthChange(new HealthChange(MAX_HP*beforeFraction,MAX_HP)));
         VehicleVisual.updateDamage(cars[index],1);
     }
-    private void next(){shot++;frame=0;tookScreenshot=false;shots.get(shot).setup.run();title.setText(shots.get(shot).name+"  |  1920x1080 MSAA4, bloom off  |  native model review, not a match");}
+    private void next(){shot++;frame=0;tookScreenshot=false;shots.get(shot).setup.run();title.setText(shots.get(shot).name+"  |  1600x900 MSAA4, bloom off  |  native model review, not a match");}
     @Override public void simpleUpdate(float ignored) {
         if(shot<0)return;frame++;
         if(garage!=null&&shots.get(shot).name.startsWith("actual-garage-"))garage.update(DT,cam,.32f,.12f);
         else for(Node car:cars)VehicleVisual.updatePresentation(car,DT,cam);
-        if(frame>=24&&!tookScreenshot){checkAndRecord();screenshots.setFileName(shots.get(shot).name+"-");screenshots.takeScreenshot();tookScreenshot=true;captured.add(shots.get(shot).name);}
-        if(frame>=36){if(shot+1<shots.size())next();else finish();}
+        if(frame>=20&&!tookScreenshot){checkAndRecord();screenshots.setFileName(shots.get(shot).name+"-");screenshots.takeScreenshot();tookScreenshot=true;captured.add(shots.get(shot).name);}
+        if(frame>=28){if(shot+1<shots.size())next();else finish();}
     }
     private void checkAndRecord() {
         String name=shots.get(shot).name;
-        require(cam.getWidth()==1920&&cam.getHeight()==1080,"Unexpected native resolution");
+        require(cam.getWidth()==1600&&cam.getHeight()==900,"Unexpected native resolution");
         if(name.startsWith("off-axis-")||name.startsWith("actual-garage-"))require(Math.abs(cam.getFrustumLeft()+cam.getFrustumRight())>.0001f,"Off-axis frustum was lost");
         if(name.equals("full-repair"))for(int i=0;i<cars.length;i++)require(maskHash(cars[i]).equals(cleanMasks.get(IDS[i])),"Repair did not clear "+IDS[i]);
         if(name.equals("repair-then-new-hit-same-frame"))for(int i=0;i<cars.length;i++)require(!maskHash(cars[i]).equals(cleanMasks.get(IDS[i])),"Repair erased newer contact on "+IDS[i]);

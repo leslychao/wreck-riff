@@ -35,6 +35,8 @@ public final class DiagnosticEvidence {
         data.put("sourceSha256",build.sourceSha256());
         data.put("transitions",transitions);data.put("retryCycles",cycles);data.put("errors",errors);
         data.put("hardwareController","PENDING_MANUAL");data.put("feelApproval","PENDING_MANUAL");
+        data.put("directBufferMeasurement","JVM BufferPoolMXBean only; excludes LWJGL MemoryUtil allocations. External process working set is required for total resident memory.");
+        data.put("vramMeasurement","UNAVAILABLE: decoded asset budgets are estimates, not measured device residency");
     }
     public synchronized void put(String key,Object value) { data.put(key,value); }
     public void configureSoak(SoakSchedule schedule,ResourceRetention retention) {

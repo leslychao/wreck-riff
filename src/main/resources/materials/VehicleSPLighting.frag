@@ -156,6 +156,15 @@ void main(){
     diffuseColor.rgb *= 1.0-wear.a*.92;
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.38,0.36,0.32), wear.r * (1.0-m_Glass));
     diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.48,0.68,0.75), wear.b * m_Glass);
+    // Terminal wrecks lose their paint and plating rather than merely darkening their hue.
+    float charAmount = smoothstep(0.76, 1.0, m_Damage);
+    float charVariation = clamp(0.5 + 0.24*sin(newTexCoord.x*19.0)*cos(newTexCoord.y*23.0)
+                              + 0.16*cos(newTexCoord.x*37.0 + newTexCoord.y*11.0), 0.0, 1.0);
+    vec3 charAlbedo = vec3(1.0, 0.97, 0.93) * mix(0.014, 0.025, charVariation);
+    diffuseColor.rgb = mix(diffuseColor.rgb, charAlbedo, charAmount);
+    // Material/livery tints also disappear; light intensity and direction are retained.
+    vec3 damageAmbient = mix(AmbientSum.rgb, vec3(dot(AmbientSum.rgb, vec3(0.2126,0.7152,0.0722))), charAmount);
+    vec3 damageDiffuse = mix(DiffuseSum.rgb, vec3(dot(DiffuseSum.rgb, vec3(0.2126,0.7152,0.0722))), charAmount);
 float alpha = DiffuseSum.a * diffuseColor.a;
 
     #ifdef ALPHAMAP
@@ -189,6 +198,8 @@ float alpha = DiffuseSum.a * diffuseColor.a;
       vec4 specularColor = vec4(1.0);
     #endif
 
+    specularColor.rgb *= mix(1.0, 0.10, charAmount);
+
     #ifdef LIGHTMAP
        vec3 lightMapColor;
        #ifdef SEPARATE_TEXCOORD
@@ -201,13 +212,13 @@ float alpha = DiffuseSum.a * diffuseColor.a;
     #endif
 
     #ifdef VERTEX_LIGHTING
-        gl_FragColor.rgb = AmbientSum.rgb  * diffuseColor.rgb 
-                         + DiffuseSum.rgb  * diffuseColor.rgb
+        gl_FragColor.rgb = damageAmbient  * diffuseColor.rgb 
+                         + damageDiffuse  * diffuseColor.rgb
                          + SpecularSum.rgb * specularColor.rgb;                         
     #else       
         
         int i = 0;
-        gl_FragColor.rgb = AmbientSum * diffuseColor.rgb;
+        gl_FragColor.rgb = damageAmbient * diffuseColor.rgb;
 
         #ifdef USE_REFLECTION
              vec4 refColor = Optics_GetEnvColor(m_EnvMap, refVec.xyz);
@@ -251,7 +262,7 @@ float alpha = DiffuseSum.a * diffuseColor.a;
                  light.y = 1.0;
             #endif
 
-            vec3 DiffuseSum2 = DiffuseSum.rgb;
+            vec3 DiffuseSum2 = damageDiffuse;
             #ifdef COLORRAMP
                DiffuseSum2.rgb  *= texture2D(m_ColorRamp, vec2(light.x, 0.0)).rgb;
                SpecularSum2.rgb *= texture2D(m_ColorRamp, vec2(light.y, 0.0)).rgb;
@@ -279,5 +290,6 @@ float alpha = DiffuseSum.a * diffuseColor.a;
     #endif // end fog
 
     gl_FragColor.a = alpha;
-    gl_FragColor.rgb += vec3(0.45,0.045,0.006) * pow(clamp(m_Heat,0.0,1.0),3.0);
+    gl_FragColor.rgb += vec3(0.38,0.54,0.62) * wear.b * m_Glass * (1.0-charAmount);
+    gl_FragColor.rgb += vec3(0.45,0.045,0.006) * pow(clamp(m_Heat,0.0,1.0),3.0) * (1.0-charAmount);
 }

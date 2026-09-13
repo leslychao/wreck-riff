@@ -33,6 +33,7 @@ public final class SurfaceMaterials {
     /** Physical capture scale for the local material, shared by architecture and road meshes. */
     public static float metresPerTile(String name) {
         return switch(name) {
+            case "cast-concrete", "park-paving" -> 1.8f;
             case "brick" -> 1;
             case "earth", "district-earth" -> 1.3f;
             case "wood" -> 1.5f;
@@ -53,6 +54,8 @@ public final class SurfaceMaterials {
         return switch(key) {
             case "asphalt" -> texturedRecipe("asphalt_02",new ColorRGBA(.8f,.81f,.83f,1),5,.11f);
             case "concrete" -> texturedRecipe("cracked_concrete",new ColorRGBA(.84f,.83f,.78f,1),7,.12f);
+            case "cast-concrete" -> texturedRecipe("concrete_wall_009",new ColorRGBA(.86f,.85f,.82f,1),6,.055f);
+            case "park-paving" -> texturedRecipe("concrete_wall_009",new ColorRGBA(.87f,.84f,.78f,1),6,.05f);
             case "rust" -> texturedRecipe("rusty_metal_03",new ColorRGBA(.76f,.65f,.53f,1),18,.32f);
             case "steel" -> texturedRecipe("metal_plate_02",new ColorRGBA(.68f,.73f,.78f,1),38,.5f);
             case "blue" -> texturedRecipe("blue_metal_plate",new ColorRGBA(.54f,.65f,.76f,1),24,.35f);

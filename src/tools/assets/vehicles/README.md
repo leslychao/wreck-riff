@@ -48,7 +48,9 @@ LOD changes. Detached doors/hood/trunk use the prepared LOD2 silhouette, at most
 96 triangles per panel.
 
 Paint diffuse/normal are 2048 pixels; paint specular and the three metal maps
-are 1024 pixels. Diffuse maps are sRGB; normal/specular and the runtime 512 pixel
+are 1024 pixels. The metal maps and damage stamp atlas are shared by all six
+profiles. Each profile retains its own canonical ownership image. Diffuse maps
+are sRGB; normal/specular and the runtime 512 pixel
 damage mask are linear. Verification checks checksums, pointer files, five-pose
 topology, all LOD triangle limits and the combined vehicle/VFX decoded texture
 budget. These contracts do not establish creative approval.

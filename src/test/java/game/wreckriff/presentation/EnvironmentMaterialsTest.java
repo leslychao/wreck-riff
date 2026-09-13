@@ -10,9 +10,11 @@ class EnvironmentMaterialsTest {
     @Test void capturedBrickAndTimberRetainMetreScaleInsteadOfBuildingScaleUvs() {
         assertEquals(1,SurfaceMaterials.metresPerTile("brick"));assertEquals(1.5f,SurfaceMaterials.metresPerTile("wood"));
         assertEquals(1.3f,SurfaceMaterials.metresPerTile("earth"));assertEquals(2,SurfaceMaterials.metresPerTile("grass"));
+        assertEquals(1.8f,SurfaceMaterials.metresPerTile("cast-concrete"));assertEquals(1.8f,SurfaceMaterials.metresPerTile("park-paving"));
     }
     @Test void naturalAndArchitecturalSurfacesUseTheirOwnLocalPhotographicMaterial() {
-        var recipes=Map.of("grass","leafy_grass","earth","brown_mud","gravel","gravelly_sand","brick","red_brick_03","wood","wood_planks_grey");
+        var recipes=Map.of("grass","leafy_grass","earth","brown_mud","gravel","gravelly_sand","brick","red_brick_03","wood","wood_planks_grey",
+                "cast-concrete","concrete_wall_009","park-paving","concrete_wall_009");
         var materials=new SurfaceMaterials(PresentationTestAssets.shared());
         for(var recipe:recipes.entrySet()) {
             var material=materials.material(recipe.getKey());

@@ -155,5 +155,50 @@ class VehicleDamageVisualTest {
         VehicleVisual.updatePresentation(car,0,camera);assertEquals(2,(Integer)car.getUserData("vehicleLod"));
         assertEquals(.5f,((Geometry)((Node)car.getChild("lod2")).getChild("paint")).getMorphState()[1],.001f);VehicleVisual.close(car);
     }
+    @Test void presentedContactFollowsCurrentMorphWhileTheAuthoritativeTraceIsPreserved() {
+        Node car=car();GameEvent original=hit(3200,20),canonical=VehicleVisual.refineContact(car,original);
+        VehicleVisual.acceptPresented(car,canonical);VehicleVisual.updateDamage(car,.5f);VehicleVisual.updatePresentation(car,.06f,null);
+        GameEvent half=VehicleVisual.presentContact(car,canonical);Vector3f before=canonical.vehicleContact().localPoint(),middle=half.vehicleContact().localPoint();
+        assertTrue(before.distance(middle)>.01f);assertEquals(original.position(),half.position());assertEquals(original.normal(),half.normal());assertEquals(original.origin(),half.origin());
+        VehicleVisual.updatePresentation(car,.06f,null);GameEvent complete=VehicleVisual.presentContact(car,canonical);
+        assertTrue(before.distance(complete.vehicleContact().localPoint())>before.distance(middle));assertEquals(1,complete.vehicleContact().localNormal().length(),.001f);VehicleVisual.close(car);
+    }
+    @Test void terminalDamageReachesBodyGlassMetalAndWheelsWithoutLeakingIntoAnotherCar() {
+        Node wreck=car(),intact=car();
+        try {
+            VehicleVisual.updateDamage(wreck,0);VehicleVisual.updatePresentation(wreck,.12f,null);
+            for(String part:List.of("paint","glass","steel","wheel-0-hub","wheel-0-tyre")) {
+                assertEquals(1f,(Float)((Geometry)wreck.getChild(part)).getMaterial().getParam("Damage").getValue(),part);
+                assertEquals(0f,(Float)((Geometry)intact.getChild(part)).getMaterial().getParam("Damage").getValue(),part+" must remain instance-local");
+            }
+            VehicleVisual.acceptPresented(wreck,new GameEvent(GameEvent.Type.REPAIRED,3300,0,0,Vector3f.ZERO,"repair",800).withHealthChange(new HealthChange(0,800)));
+            VehicleVisual.updateDamage(wreck,1);VehicleVisual.updatePresentation(wreck,.3f,null);
+            assertEquals(0f,(Float)((Geometry)wreck.getChild("wheel-0-hub")).getMaterial().getParam("Damage").getValue());
+        } finally {VehicleVisual.close(wreck);VehicleVisual.close(intact);}
+    }
+    @Test void oneLampHitStaysLocalThroughLodChangesAndReusesItsColorBuffer() {
+        Node car=car();Geometry front=(Geometry)car.getChild("headlights");Mesh mesh=front.getMesh();
+        var color=mesh.getBuffer(VertexBuffer.Type.Color).getData();Vector3f contact=null;
+        for(int triangle=0;triangle<mesh.getTriangleCount();triangle++) {
+            Vector3f a=new Vector3f(),b=new Vector3f(),c=new Vector3f();mesh.getTriangle(triangle,a,b,c);
+            Vector3f center=a.add(b).addLocal(c).divideLocal(3),normal=b.subtract(a).cross(c.subtract(a)).normalizeLocal();
+            if(center.x<0&&normal.z>.9f){contact=center;break;}
+        }
+        assertNotNull(contact);
+        try {
+            GameEvent hit=new GameEvent(GameEvent.Type.DAMAGE,3400,0,1,contact,"machine-gun",40).withContact(ContactSurface.METAL,new VehicleContact(contact,Vector3f.UNIT_Z));
+            VehicleVisual.acceptPresented(car,hit);VehicleVisual.updatePresentation(car,.12f,null);
+            assertTrue(lampEnergy(front,true)<.5f);assertEquals(1,lampEnergy(front,false),.001f);
+            assertEquals(1,lampEnergy((Geometry)car.getChild("taillights"),true),.001f,"A headlight impact cannot break the rear lamp");
+            assertSame(color,mesh.getBuffer(VertexBuffer.Type.Color).getData(),"Local lamp updates must reuse the instance buffer");
+            Camera camera=new Camera(1920,1080);camera.setFrustumPerspective(60,1920f/1080,.1f,1000);camera.setLocation(new Vector3f(0,0,-100));camera.lookAt(Vector3f.ZERO,Vector3f.UNIT_Y);car.updateGeometricState();
+            VehicleVisual.updatePresentation(car,0,camera);
+            assertTrue(lampEnergy((Geometry)((Node)car.getChild("lod2")).getChild("headlights"),true)<.5f);
+            VehicleVisual.acceptPresented(car,new GameEvent(GameEvent.Type.REPAIRED,3401,0,0,Vector3f.ZERO,"repair",40).withHealthChange(new HealthChange(760,800)));
+            VehicleVisual.updatePresentation(car,.3f,camera);
+            assertEquals(1,lampEnergy((Geometry)((Node)car.getChild("lod2")).getChild("headlights"),true),.001f);
+        } finally {VehicleVisual.close(car);}
+    }
+    private static float lampEnergy(Geometry geometry,boolean left){var position=geometry.getMesh().getFloatBuffer(VertexBuffer.Type.Position);var color=geometry.getMesh().getFloatBuffer(VertexBuffer.Type.Color);float sum=0;int count=0;for(int vertex=0;vertex<geometry.getVertexCount();vertex++)if((position.get(vertex*3)<0)==left){sum+=color.get(vertex*4);count++;}return sum/count;}
     private static float[] points(Mesh mesh){var b=mesh.getFloatBuffer(VertexBuffer.Type.Position);float[] result=new float[b.limit()];for(int i=0;i<result.length;i++)result[i]=b.get(i);return result;}
 }

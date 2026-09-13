@@ -12,7 +12,7 @@ class Scene:
     def __init__(self,location):
         # Dressing changes both surfaces and solids. Always rebuild from the
         # authoring source; stripping IDs cannot restore ground cut on an earlier run.
-        self.location=location;self.data=copy.deepcopy(location.compile());self.parts=[];self.groups=[];self.models=[];self.lights=[];self.anchor='';self.group=''
+        self.location=location;self.data=copy.deepcopy(location.compile());self.parts=[];self.groups=[];self.models=[];self.lights=[];self.signs=[];self.anchor='';self.group=''
     def part(self,name,pos,size,material,shape='BOX',rotation=(0,0,0)):
         self.parts.append(dict(id=f'{name}-{len(self.parts):05}',group=self.group,anchor=self.anchor,shape=shape,material=material,position=vec(pos),size=vec(size),rotation=vec(rotation)))
     def cylinder(self,name,p,r,h,mat):self.part(name,p,(r*2,r*2,h),mat,'CYLINDER',(90,0,0))
@@ -22,6 +22,8 @@ class Scene:
     def model(self,name,asset,pos,scale=(1,1,1),rotation=(0,0,0),proxies=(),lod=280):
         self.models.append(dict(id=name,group='',anchor=self.anchor,asset=f'models/arenas/{asset}.j3o',distantAsset=f'models/arenas/{asset}-lod.j3o',position=vec(pos),size=vec(scale),rotation=vec(rotation),lodDistance=lod,collisionGeometryIds=list(proxies)))
     def light(self,name,p,color=(1,.78,.5),radius=30):self.lights.append(dict(id=name,position=vec(p),color=vec(color),radius=radius))
+    def sign(self,name,text,p,yaw,width,height):
+        self.signs.append(dict(id=name,anchor=self.anchor,text=text,position=vec(p),yawDegrees=yaw,width=width,height=height))
     def hero(self,proxy,asset,y=None):
         b=next(b for b in self.data['boxes'] if b['id']==proxy+'-roof');c=b['center'];bottom=c['y']-b['size']['y']/2
         self.anchor=b['id'];self.model(proxy,asset,(c['x'],bottom if y is None else y,c['z']),proxies=[b['id']]);b['collision']=False
@@ -140,7 +142,7 @@ class Scene:
         # proxy is metadata only, excluded from ordinary solids by collision:false.
         write_text_atomic(OUT/(self.location.resource+'.json'),json.dumps(self.data,ensure_ascii=False,indent=2)+'\n')
         self.location.write_design()
-        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; src/tools/dress_construction.py; src/tools/dress_neon.py; src/tools/dress_carnival.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights)
+        data=dict(schemaVersion=2,arenaId=self.data['id'],source='src/tools/author_arena_art.py; src/tools/author_arena_models.py; src/tools/dress_construction.py; src/tools/dress_neon.py; src/tools/dress_carnival.py; original revision 3 architecture',license='Original project geometry; locally vendored materials retain their individual provenance.',groups=self.groups,parts=self.parts,models=self.models,lights=self.lights,signs=self.signs)
         write_text_atomic(OUT/('arena-art-'+self.data['id'].replace('_','-')+'.json'),json.dumps(data,ensure_ascii=False,separators=(',',':'))+'\n');print(self.data['id'],len(self.parts),'parts',len(self.models),'models',len(self.lights),'lights')
 if __name__=='__main__':
     for factory,method in [(construction,'construction'),(neon,'neon'),(carnival,'carnival')]:

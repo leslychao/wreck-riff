@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RESOURCES = ROOT / 'src/main/resources'
 SOURCES = ROOT / 'src/tools/assets/materials'
 MATERIALS = {
+    'concrete_wall_009': 'Charlotte Baglioni / Poly Haven',
     'leafy_grass': 'Charlotte Baglioni / Poly Haven',
     'brown_mud': 'Rob Tuytel / Poly Haven',
     'gravelly_sand': 'Poly Haven',
@@ -22,9 +23,11 @@ MATERIALS = {
 }
 
 
-def prepare(download=False):
+def prepare(download=False, selected=None):
     entries = []
     for asset, author in MATERIALS.items():
+        if selected and asset not in selected:
+            continue
         if download:
             page = fetch('https://polyhaven.com/a/' + asset)
             if b'CC0' not in page:
@@ -69,4 +72,6 @@ def prepare(download=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--download', action='store_true', help='Explicitly acquire selected CC0 originals')
-    prepare(parser.parse_args().download)
+    parser.add_argument('--only', nargs='+', choices=MATERIALS, help='Prepare only these local material sets')
+    args=parser.parse_args()
+    prepare(args.download,args.only)

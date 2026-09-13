@@ -34,6 +34,18 @@ class Model:
         rings=[[tuple(p[k]+sx*x[k]+sy*y[k] for k in range(3)) for sx,sy in [(-1,-1),(1,-1),(1,1),(-1,1)]] for p in (a,b)]
         self.face(list(reversed(rings[0])),material);self.face(rings[1],material)
         for i in range(4):self.face([rings[0][i],rings[0][(i+1)%4],rings[1][(i+1)%4],rings[1][i]],material)
+    def crown(self,c,r,material,segments=12,rings=6):
+        # Lobed foliage volumes have proper closed faces and normals; the
+        # original model's six-metre radial envelope is retained at both LODs.
+        def p(row,col):
+            lat=math.pi*row/rings;angle=math.tau*col/segments
+            return (c[0]+r[0]*math.sin(lat)*math.cos(angle),c[1]+r[1]*math.cos(lat),c[2]+r[2]*math.sin(lat)*math.sin(angle))
+        for row in range(rings):
+            for col in range(segments):self.face([p(row,col),p(row,col+1),p(row+1,col+1),p(row+1,col)],material)
+    def gable(self,w,d,height,material):
+        for z in (-d/2,d/2):
+            vertices=[(-w/2,-.8,z),(w/2,-.8,z),(0,height-.8,z)]
+            self.face(vertices if z>0 else list(reversed(vertices)),material)
     def roof(self,w,d,height,material,segments=16,curve=True):
         profile=[(-w/2+w*i/segments,height*(math.sin(math.pi*i/segments) if curve else 1-abs(2*i/segments-1))) for i in range(segments+1)]
         for (x,y),(xx,yy) in zip(profile,profile[1:]):
@@ -61,9 +73,9 @@ class Model:
 def architectural(name,low=False):
     m=Model();detail=not low
     if name=='unfinished-frame':
-        for c,s in [((0,.4,-53),(235,.8,24)),((0,.4,53),(235,.8,24)),((-105,.4,0),(25,.8,82)),((70,.4,0),(95,.8,82))]:m.box(c,s,'concrete')
+        for c,s in [((0,.4,-53),(235,.8,24)),((0,.4,53),(235,.8,24)),((-105,.4,0),(25,.8,82)),((70,.4,0),(95,.8,82))]:m.box(c,s,'cast-concrete')
         for x in range(-100,110,35 if detail else 105):
-            m.box((x,-1.2,0),(2.5,2.4,130),'concrete')
+            m.box((x,-1.2,0),(2.5,2.4,130),'cast-concrete')
             if detail:
                 for z in (-52,52):m.cylinder((x,2,z),.1,4,'rust',6)
     elif name=='plant-sawtooth':
@@ -86,6 +98,10 @@ def architectural(name,low=False):
         for x in (-105,105):m.beam((x,-2,-100),(x,-2,100),.9,'steel')
     elif name=='warehouse-trusses':
         m.roof(230,135,6,'blue',12 if detail else 2,False)
+        m.gable(230,135,6,'blue')
+        for x in (-114,114):
+            m.beam((x,-1,-67.5),(x,-1,67.5),1.2,'steel')
+            for z in (-57.5,57.5):m.box((x,-8,z),(1.4,14,1.4),'steel')
         for z in range(-60,70,22 if detail else 120):
             m.beam((-114,-1,z),(114,-1,z),.6,'steel')
             if detail:
@@ -101,8 +117,8 @@ def architectural(name,low=False):
             for z in range(-60,70,12):m.box((-20,5.7,z),(26,.25,.8),'black')
             for x in (-37,37):m.beam((x,1,-70),(x,1,70),1,'rust')
     elif name=='parking-ceiling':
-        m.box((0,0,0),(260,1,110),'concrete')
-        for x in range(-120,130,30 if detail else 240):m.box((x,-.7,0),(2,1.4,110),'concrete')
+        m.box((0,0,0),(260,1,110),'cast-concrete')
+        for x in range(-120,130,30 if detail else 240):m.box((x,-.7,0),(2,1.4,110),'cast-concrete')
         if detail:
             for x in range(-105,115,30):m.box((x,-1.5,0),(8,.15,1),'light-white')
     elif name=='circus-canopy':
@@ -116,9 +132,10 @@ def architectural(name,low=False):
         m.roof(205,150,12,'purple',28 if detail else 6)
         if detail:
             for z in range(-75,76,15):
-                for i in range(16):m.beam((-102.5+205*i/16,12*math.sin(math.pi*i/16)+.1,z),(-102.5+205*(i+1)/16,12*math.sin(math.pi*(i+1)/16)+.1,z),.35,'ivory')
+                for i in range(16):m.beam((-102.5+205*i/16,12*math.sin(math.pi*i/16)-.95,z),(-102.5+205*(i+1)/16,12*math.sin(math.pi*(i+1)/16)-.95,z),.35,'ivory')
     elif name=='depot-gantry':
         m.roof(180,130,5,'steel',12 if detail else 2,False)
+        m.gable(180,130,5,'blue')
         m.beam((-85,-2,-45),(85,-2,-45),1,'yellow');m.beam((-85,-2,45),(85,-2,45),1,'yellow')
         m.box((20,-4,0),(12,4,8),'yellow');m.beam((20,-6,0),(20,-8,0),.22,'steel')
         if detail:
@@ -131,8 +148,10 @@ def architectural(name,low=False):
             m.beam((18,5,0),(18,42,0),.5,'rust')
     elif name=='park-tree':
         m.cylinder((0,6,0),1,12,'wood',12 if detail else 6,.65)
-        # Layered low-poly crown; distant form retains full outer envelope.
-        for y,r,h in [(12,6,8),(17,5,8),(21,3,7)]:m.cylinder((0,y,0),r,h,'grass',20 if detail else 6,.2)
+        for endpoint in [(-3.5,13,-1.5),(3.4,15,2),(1,20,-1),(-1.5,18,2.3)]:
+            m.beam((0,7 if endpoint[1]<16 else 10,0),endpoint,.45,'wood')
+        for centre,radii in [((0,12.5,0),(5.8,4.5,5.8)),((-2,17,-1),(3.8,4,4)),((2,19,1),(3.4,4,4)),((0,22,0),(3,2.5,3))]:
+            m.crown(centre,radii,'park-leaf',12 if detail else 8,6 if detail else 4)
     elif name=='island-bandstand':
         count=16 if detail else 8
         for i in range(count):

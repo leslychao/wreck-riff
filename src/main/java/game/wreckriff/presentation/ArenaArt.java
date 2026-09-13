@@ -1,6 +1,9 @@
 package game.wreckriff.presentation;
 
 import com.jme3.asset.AssetManager;
+import com.jme3.bounding.BoundingBox;
+import com.jme3.font.BitmapFont;
+import com.jme3.font.BitmapText;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState;
 import com.jme3.math.*;
@@ -52,28 +55,61 @@ public final class ArenaArt {
                     ||!Float.isFinite(radius)||radius<1||radius>80)throw new IllegalArgumentException("Invalid authored local light");
         }
     }
-    public record Scene(int schemaVersion,String arenaId,String source,String license,List<Group> groups,List<Part> parts,List<ModelInstance> models,List<LocalLight> lights) {
+    /** World-space text centre; local +Z is the front, +Y is up. Dimensions bound the visible glyphs in metres. */
+    public record Sign(String id,String anchor,String text,ArenaDefinition.Vec3 position,float yawDegrees,float width,float height) {
+        public Sign {
+            Objects.requireNonNull(position);
+            if(id==null||id.isBlank()||anchor==null||text==null||text.isBlank()
+                    ||!Float.isFinite(yawDegrees)||!Float.isFinite(width)||width<=0||!Float.isFinite(height)||height<=0)
+                throw new IllegalArgumentException("Invalid authored sign");
+        }
+    }
+    public record Scene(int schemaVersion,String arenaId,String source,String license,List<Group> groups,List<Part> parts,List<ModelInstance> models,List<LocalLight> lights,List<Sign> signs) {
         public Scene(int version,String arenaId,String source,String license,List<Group> groups,List<Part> parts) {
-            this(version,arenaId,source,license,groups,parts,List.of(),List.of());
+            this(version,arenaId,source,license,groups,parts,List.of(),List.of(),List.of());
+        }
+        public Scene(int version,String arenaId,String source,String license,List<Group> groups,List<Part> parts,List<ModelInstance> models,List<LocalLight> lights) {
+            this(version,arenaId,source,license,groups,parts,models,lights,List.of());
         }
         public Scene {
             if((schemaVersion!=1&&schemaVersion!=2)||source==null||license==null||arenaId==null)throw new IllegalArgumentException("Invalid art scene");
             groups=List.copyOf(groups);parts=List.copyOf(parts);models=models==null?List.of():List.copyOf(models);
             lights=lights==null?List.of():List.copyOf(lights);
+            signs=signs==null?List.of():List.copyOf(signs);
             Set<String> groupIds=new HashSet<>(),partIds=new HashSet<>();
             for(var group:groups)if(!groupIds.add(group.id()))throw new IllegalArgumentException("Duplicate art group");
             for(var part:parts)if(!partIds.add(part.id())||!part.group().isEmpty()&&!groupIds.contains(part.group()))
                 throw new IllegalArgumentException("Invalid art part identity: "+part.id());
             for(var model:models)if(!partIds.add(model.id())||!model.group().isEmpty()&&!groupIds.contains(model.group()))
                 throw new IllegalArgumentException("Invalid model identity: "+model.id());
+            for(var sign:signs)if(!partIds.add(sign.id()))throw new IllegalArgumentException("Duplicate authored sign identity: "+sign.id());
             Set<String> lightIds=new HashSet<>();for(var light:lights)if(!lightIds.add(light.id()))throw new IllegalArgumentException("Duplicate authored light");
         }
     }
     private ArenaArt() {}
     public static Scene load(ArenaDefinition definition) {
-        Scene scene=Configs.load("arena-art-"+definition.id().replace('_','-'),Scene.class);
+        String name="arena-art-"+definition.id().replace('_','-');
+        try(Reader reader=Configs.open(name)) {
+            Scene scene=read(reader);validateAnchors(scene,definition);return scene;
+        } catch(IOException|RuntimeException exception) {
+            throw new IllegalArgumentException("Invalid config "+name+": "+exception.getMessage(),exception);
+        }
+    }
+    static Scene read(Reader reader) {
+        var tree=com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
+        // Signs are an additive scene field. Existing local scenes keep strict validation for every other field.
+        if(!tree.has("signs"))tree.add("signs",new com.google.gson.JsonArray());
+        Configs.validate(tree,Scene.class,"arena-art");return Configs.gson().fromJson(tree,Scene.class);
+    }
+    private static void validateAnchors(Scene scene,ArenaDefinition definition) {
         if(!scene.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
-        return scene;
+        if(scene.signs().isEmpty())return;
+        Set<String> geometryIds=new HashSet<>();
+        definition.boxes().forEach(box->geometryIds.add(box.id()));
+        definition.ramps().forEach(ramp->geometryIds.add(ramp.id()));
+        definition.meshes().forEach(mesh->geometryIds.add(mesh.id()));
+        for(var sign:scene.signs())if(!sign.anchor().isEmpty()&&!sign.anchor().equals("exterior")&&!geometryIds.contains(sign.anchor()))
+            throw new IllegalArgumentException("Unknown authored sign anchor: "+sign.id()+" -> "+sign.anchor());
     }
     public static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials) {
         attach(assets,root,definition,materials,load(definition));
@@ -113,10 +149,11 @@ public final class ArenaArt {
     }
     private static boolean usesSurfaceMaterial(Part part) {return !part.material().equals("steam");}
     public static void attach(AssetManager assets,Node root,ArenaDefinition definition,SurfaceMaterials materials,Scene scene) {
-        if(!scene.arenaId().equals(definition.id()))throw new IllegalArgumentException("Art/arena identity mismatch");
+        validateAnchors(scene,definition);
         Node art=new Node("authored-arena-art");
         art.setUserData("source",scene.source());art.setUserData("arenaId",scene.arenaId());
         art.setUserData("authoredPartCount",scene.parts().size());
+        art.setUserData("authoredSignCount",scene.signs().size());
         Map<String,Node> groups=new HashMap<>(),cells=new LinkedHashMap<>(),anchors=new LinkedHashMap<>(),anchorStatics=new LinkedHashMap<>();
         Map<String,Group> definitions=new HashMap<>();for(var group:scene.groups())definitions.put(group.id(),group);
         Set<String> dynamic=new HashSet<>();
@@ -214,8 +251,35 @@ public final class ArenaArt {
             }
             parent.attachChild(instance);
         }
+        BitmapFont font=scene.signs().isEmpty()?null:assets.loadFont("fonts/wreck-bold.fnt");
+        for(var sign:scene.signs()) {
+            Node parent=art;
+            if(dynamic.contains(sign.anchor()))parent=anchors.computeIfAbsent(sign.anchor(),id->{
+                Node node=new Node("art-anchor-"+id);node.setUserData("artAnchor",id);art.attachChild(node);return node;
+            });
+            parent.attachChild(sign(sign,font));
+        }
         root.attachChild(art);
         if(!scene.lights().isEmpty())root.addControl(new ArenaLocalLights(root,scene.lights()));
+    }
+    private static Node sign(Sign definition,BitmapFont font) {
+        Node sign=new Node(definition.id());sign.setLocalTranslation(definition.position().vector());
+        sign.setLocalRotation(new Quaternion().fromAngleAxis(definition.yawDegrees()*FastMath.DEG_TO_RAD,Vector3f.UNIT_Y));
+        BitmapText text=new BitmapText(font);text.setName(definition.id()+"-text");text.setText(definition.text());text.setSize(1);
+        text.setColor(new ColorRGBA(.96f,.92f,.82f,1));
+        text.setQueueBucket(RenderQueue.Bucket.Transparent);text.setShadowMode(RenderQueue.ShadowMode.Off);
+        // Assemble once during loading. Centre actual glyph geometry, including accents and multiple lines.
+        text.updateLogicalState(0);text.updateGeometricState();
+        if(!(text.getWorldBound() instanceof BoundingBox bounds)||bounds.getXExtent()<=0||bounds.getYExtent()<=0)
+            throw new IllegalArgumentException("Sign has no visible glyphs: "+definition.id());
+        float scale=Math.min(definition.width()/(2*bounds.getXExtent()),definition.height()/(2*bounds.getYExtent()));
+        text.setLocalScale(scale);text.setLocalTranslation(bounds.getCenter().mult(-scale));
+        text.depthFirstTraversal(spatial->{if(spatial instanceof Geometry geometry) {
+            Material material=geometry.getMaterial().clone();
+            material.getAdditionalRenderState().setDepthTest(true);material.getAdditionalRenderState().setDepthWrite(false);
+            material.getAdditionalRenderState().setFaceCullMode(RenderState.FaceCullMode.Back);geometry.setMaterial(material);
+        }});
+        sign.attachChild(text);return sign;
     }
     /** Each authored building swaps to its silhouette mesh independently; no district-wide detail blackout. */
     private static final class ModelDistance extends AbstractControl {

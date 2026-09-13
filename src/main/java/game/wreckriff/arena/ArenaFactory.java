@@ -34,7 +34,7 @@ public final class ArenaFactory {
         definition.boxes().forEach(part->names.add(surfaceMaterial(part,definition.metadata().theme())));
         definition.ramps().forEach(ramp->names.add(ramp.material()));
         definition.meshes().forEach(mesh->{names.add(mesh.material());names.addAll(mesh.triangleMaterials());});
-        if(definition.meshes().stream().anyMatch(mesh->mesh.thickness()>0))names.add("concrete");
+        definition.meshes().stream().filter(mesh->mesh.thickness()>0).forEach(mesh->names.add(structureMaterial(mesh)));
         names.addAll(ArenaArt.surfaceMaterials(art));
         return SurfaceMaterials.texturesFor(names);
     }
@@ -80,8 +80,9 @@ public final class ArenaFactory {
             for(Geometry visual:surfaceVisuals(surface,mesh))root.attachChild(visual);
             var shell=roadStructures.get(surface.id());
             if(shell!=null&&!shell.isEmpty()) {
-                Geometry structure=new Geometry(surface.id()+"-structure",SurfaceMesh.triangles(shell,tileSize("concrete")));
-                structure.setMaterial(material("concrete"));root.attachChild(structure);
+                String finish=structureMaterial(surface);
+                Geometry structure=new Geometry(surface.id()+"-structure",SurfaceMesh.triangles(shell,tileSize(finish)));
+                structure.setMaterial(material(finish));root.attachChild(structure);
                 vertices.addAll(shell);mesh=SurfaceMesh.triangles(vertices,tileSize(surface.material()));
             }
             if(surface.collision())bodies.add(new ArenaContent.StaticBody(surface.id(),new MeshCollisionShape(mesh),new Vector3f(),new Quaternion()));
@@ -108,6 +109,12 @@ public final class ArenaFactory {
                 geometry.getMaterial().getParam("NormalMap")!=null && geometry.getMesh().getBuffer(VertexBuffer.Type.Tangent)==null)
             com.jme3.util.mikktspace.MikktspaceTangentGenerator.generate(geometry.getMesh());});
         return new ArenaContent(root,bodies,definition.spawns(),definition.pickups(),new NavGraph(definition));
+    }
+    private static String structureMaterial(ArenaDefinition.TriangleSurface surface) {
+        return switch(surface.material()) {
+            case "cast-concrete", "park-paving" -> "cast-concrete";
+            default -> "concrete";
+        };
     }
     /** Triangle finishes partition the original road; no coplanar paint layer or extra physics owner. */
     List<Geometry> surfaceVisuals(ArenaDefinition.TriangleSurface surface,Mesh uniformMesh) {

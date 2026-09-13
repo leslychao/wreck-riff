@@ -629,10 +629,9 @@ public final class GameApplication extends SimpleApplication {
             return model==null?event:VehicleVisual.refineContact(model,event);
         }).toList();
         combatVisuals.setPresentationTime(session.seconds());
-        List<GameEvent> presented=contactTimeline.accept(contactEvents,session.seconds());
-        combatVisuals.accept(presented);
+        contactTimeline.accept(contactEvents,session.seconds());
+        combatVisuals.accept(contactEvents);
         combatVisuals.registerContacts(contactEvents);
-        presentContactsAndVehicles(presented);
         specialPresentation.accept(events);
         pickupPresentation.accept(events);
         pickupFeedback.accept(events,session.tick);
@@ -644,10 +643,8 @@ public final class GameApplication extends SimpleApplication {
                     playerState.damageDealt,playerState.eliminations,session.activeTicks,
                     session.bossParticipantId>=0&&!session.vehicle(session.bossParticipantId).alive()));
             writeReport(); audio.stopMatch();
-            audio.accept(presented);
-            contactTimeline.close();
             flow.results();
-        } else audio.accept(presented);
+        }
     }
     private void presentContactsAndVehicles(List<GameEvent> events) {
         combatVisuals.acceptPresented(events.stream().filter(event->event.type()==GameEvent.Type.IMPACT
@@ -681,20 +678,27 @@ public final class GameApplication extends SimpleApplication {
                 model.removeFromParent();for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
             }
         }
+        // Advance the previously visible surface first. New damage starts from this exact shape.
+        // A second zero-time update below composes changed state without consuming its transition.
+        for(Node model:vehicleModels.values())VehicleVisual.updatePresentation(model,advancing||results?dt:0,cam);
         double presentationSeconds=Math.max(0,(session.tick-1+alpha)/(double)MatchSession.TICKS_PER_SECOND);
         // Results keep the existing physical wreck tail, while the authoritative match tick stops.
         // Free tracers and flashes must finish on that tail; a pause keeps their clock unchanged.
         if(results)renderPresentationTime=Math.max(renderPresentationTime,presentationSeconds)+Math.clamp(dt,0,.1f);
         else if(advancing)renderPresentationTime=presentationSeconds;
         combatVisuals.setPresentationTime(renderPresentationTime);
-        if(advancing) {
-            List<GameEvent> delivered=contactTimeline.advanceTo(presentationSeconds).stream().map(event->{
-                Node model=vehicleModels.get(event.subjectId());var contact=event.vehicleContact();
-                return model==null||contact==null?event:event.forPresentation(
+        if(advancing||results) {
+            double deliveryTime=results?Math.max(presentationSeconds,session.seconds()):presentationSeconds;
+            List<GameEvent> delivered=contactTimeline.advanceTo(deliveryTime).stream().map(event->{
+                Node model=vehicleModels.get(event.subjectId());
+                GameEvent visible=model==null?event:VehicleVisual.presentContact(model,event);
+                var contact=visible.vehicleContact();
+                return model==null||contact==null?visible:visible.forPresentation(
                         model.getLocalTranslation().add(model.getLocalRotation().mult(contact.localPoint())),
                         model.getLocalRotation().mult(contact.localNormal()));
             }).toList();
             presentContactsAndVehicles(delivered);audio.accept(delivered);
+            if(results)contactTimeline.close();
         }
         for(var state:session.vehicles) {
             Node model=vehicleModels.get(state.id);
@@ -702,7 +706,7 @@ public final class GameApplication extends SimpleApplication {
             VehicleVisual.updateDamage(model,showcase!=null&&session.seconds()<12?showcase.displayHpFraction(state):visibleHp/state.maximumHp);
             if(state.id==session.bossParticipantId)VehicleVisual.updateBossPhase(model,session.bossMode-1,state.alive()&&arenaSystems.bossVulnerable());
             VehicleVisual.updateEffects(model,!results&&state.alive()&&state.frozenTicks>0,!results&&state.alive()&&state.shieldTicks>0);
-            VehicleVisual.updatePresentation(model,advancing||results?dt:0,cam);
+            VehicleVisual.updatePresentation(model,0,cam);
             for(var panel:VehicleVisual.drainDetached(model)) {
                 Quaternion rotation=model.getLocalRotation();
                 Vector3f position=model.getLocalTranslation().add(rotation.mult(panel.localPosition()));

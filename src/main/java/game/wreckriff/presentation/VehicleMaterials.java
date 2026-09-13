@@ -9,7 +9,7 @@ public final class VehicleMaterials {
     private VehicleMaterials() {}
     public static Material create(AssetManager assets,String profile,String part) {
         if(part.equals("headlights")||part.equals("taillights")||part.equals("service-core")) {
-            var m=new Material(assets,"Common/MatDefs/Misc/Unshaded.j3md");ColorRGBA c=part.equals("taillights")?new ColorRGBA(1,.07f,.025f,1):part.equals("service-core")?new ColorRGBA(.08f,.9f,.8f,1):new ColorRGBA(1,.78f,.4f,1);
+            var m=new Material(assets,"materials/VehicleUnshaded.j3md");ColorRGBA c=part.equals("taillights")?new ColorRGBA(1,.07f,.025f,1):part.equals("service-core")?new ColorRGBA(.08f,.9f,.8f,1):new ColorRGBA(1,.78f,.4f,1);
             m.setColor("Color",c);m.setColor("GlowColor",c.mult(.32f));m.setBoolean("VertexColor",true);return m;
         }
         Material material=new Material(assets,"materials/VehicleLighting.j3md");

@@ -90,10 +90,19 @@ public final class GenerateArenaPreviews extends SimpleApplication {
         lighting.apply(definition.metadata().theme(),true);
         var bounds=definition.bounds();var centre=new Vector3f((bounds.minX()+bounds.maxX())/2,2,(bounds.minZ()+bounds.maxZ())/2);
         float span=Math.max(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ());
-        cam.setFrustumPerspective(52,cam.getWidth()/(float)cam.getHeight(),definition.districts().isEmpty()?.1f:5f,Math.max(650,span*3));
-        cam.setLocation(centre.add(definition.districts().isEmpty()?new Vector3f(-65,47,-77):new Vector3f(-span*.08f,span*.88f,-span*.3f)));
-        cam.lookAt(centre,Vector3f.UNIT_Y);
+        cam.setFrustumPerspective(52,cam.getWidth()/(float)cam.getHeight(),definition.districts().isEmpty()?.1f:.3f,Math.max(650,span*3));
+        // Menu cards show a real landmark and its road at a legible scale. The
+        // separate route review still inspects every district and interior.
+        switch(definition.id()) {
+            case "construction_17" -> frame(new Vector3f(1210,18,325),new Vector3f(1110,22,545));
+            case "neon_zero" -> frame(new Vector3f(700,15,1000),new Vector3f(465,55,1120));
+            case "euphoria_park" -> frame(new Vector3f(1175,10,575),new Vector3f(1300,52,700));
+            default -> frame(centre.add(-65,47,-77),centre);
+        }
         screenshots.setFileName(definition.id());requested=false;frames=0;warmup=0;
+    }
+    private void frame(Vector3f position,Vector3f target) {
+        cam.setLocation(position);cam.lookAt(target,Vector3f.UNIT_Y);
     }
 
     private void record(Path path) throws Exception {
