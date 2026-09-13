@@ -42,7 +42,7 @@ public final class OrdnanceReview extends SimpleApplication {
         OrdnanceReview app=new OrdnanceReview(directory);AppSettings settings=new AppSettings(true);
         settings.setTitle("Wreck Riff - Ordnance material inspection");settings.setResolution(1600,1000);settings.setSamples(4);
         settings.setVSync(false);settings.setFrameRate(60);settings.setGammaCorrection(true);
-        app.setSettings(settings);app.setShowSettings(false);app.start(JmeContext.Type.Display);
+        app.setSettings(settings);app.setShowSettings(false);app.setPauseOnLostFocus(false);app.start(JmeContext.Type.Display);
     }
     @Override public void simpleInitApp() {
         if(context.getType()!=JmeContext.Type.Display)throw new IllegalStateException("Ordnance inspection requires a real window");

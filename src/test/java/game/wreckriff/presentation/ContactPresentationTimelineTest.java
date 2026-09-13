@@ -56,6 +56,13 @@ class ContactPresentationTimelineTest {
         var hit=new GameEvent(GameEvent.Type.DAMAGE,3,1,0,Vector3f.ZERO,"napalm",2).inSession(session);
         assertEquals(List.of(hit),timeline.accept(List.of(hit),0));
     }
+    @Test void completedFixedTickTimestampOwnsTheDeadlineRatherThanTheTimeOfBatchDrain() {
+        var timeline=new ContactPresentationTimeline(session);
+        var hit=event(GameEvent.Type.IMPACT,1,0).atTick(120,0);
+        timeline.accept(List.of(hit),1.0+1.0/120);
+        assertTrue(timeline.advanceTo(1.099).isEmpty());
+        assertEquals(List.of(hit),timeline.advanceTo(1.101));
+    }
     @Test void capacityIsBoundedWithoutShowingOverflowHealthLossBeforeContact() {
         var timeline=new ContactPresentationTimeline(session);
         for(int i=0;i<3000;i++)timeline.accept(List.of(event(GameEvent.Type.DAMAGE,i,1)),0);

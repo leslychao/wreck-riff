@@ -38,7 +38,8 @@ public final class ContactPresentationTimeline implements AutoCloseable {
             }
             double delay=contactDelay(event);
             if(delay<=0) {delivered.add(event);continue;}
-            Pending next=new Pending(event,simulationSeconds+delay,sequence++);
+            double born=event.simulationTick()>=0?event.simulationTick()/120.0:simulationSeconds;
+            Pending next=new Pending(event,born+delay,sequence++);
             if(pending.size()==MAX_PENDING) {
                 // Keep nearby/player contacts. Suppressed detail retains its health debt until its due time.
                 Pending least=pending.stream().max(Comparator.<Pending>comparingInt(p->p.event.subjectId()==0?0:1)

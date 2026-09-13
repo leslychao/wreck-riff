@@ -62,8 +62,10 @@ class NativeCampaignBotNavigationTest {
         Vector3f upper=points.stream().max(Comparator.comparingDouble(p->p.y)).orElseThrow();
         assertTrue(upper.y-lower.y>=3,"This must exercise a real height transition");
         Vector3f direction=upper.subtract(lower).setY(0).normalizeLocal();
-        // Begin and end on the flat roads beyond the ramp seams: all four wheels must cross the slope.
-        Vector3f start=lower.subtract(direction.mult(20)),goal=upper.add(direction.mult(20));
+        // Follow the authored adjoining roads: a curved bridge or tunnel exit need not
+        // have another twenty metres of pavement in the ramp's straight direction.
+        Vector3f start=adjoiningRoadPoint(arena,graph,lower,direction.negate(),rampId);
+        Vector3f goal=adjoiningRoadPoint(arena,graph,upper,direction,rampId);
         if(arena.launchPads().stream().anyMatch(p->p.source().vector().distance(lower)<90)) {
             // This scenario isolates the bridge. Its nearby catapult is a valid faster route from the shore.
             start=lower.add(direction.mult(20));start.y=arena.surfaceHeight(rampId,start.x,start.z);
@@ -82,14 +84,24 @@ class NativeCampaignBotNavigationTest {
                         .append(" forward=").append(rig.world.forward(rig.id)).append(" command=").append(rig.command)
                         .append(" navigation=").append(rig.bots.navigation(rig.id));
                 onSlope|=road.surfaceId().equals(rampId);
-                arrived=road.surfaceId().equals(targetSurface.id())&&road.motion()==RoadContext.Motion.ROAD
-                        &&rig.world.position(rig.id).subtract(goal).setY(0).length()<8&&rig.world.supportedWheelContacts(rig.id)==4;
+                arrived=road.level()==targetSurface.level()&&road.motion()==RoadContext.Motion.ROAD
+                        &&rig.world.position(rig.id).subtract(goal).setY(0).length()<6&&rig.world.supportedWheelContacts(rig.id)==4;
             }
             assertTrue(arrived,"AI did not finish authored climb: "+arenaId+" / "+rampId+" / "+rig.world.position(rig.id)+" / "+rig.bots.navigation(rig.id)+trace);
             assertTrue(onSlope,"The bot must physically drive on the intended triangle surface");
             assertEquals(targetSurface.level(),rig.world.roadContext(rig.id).level());
             assertEquals(0,rig.world.teleportGeneration(rig.id));
         }
+    }
+
+    private static Vector3f adjoiningRoadPoint(ArenaDefinition arena,NavGraph graph,Vector3f seam,Vector3f outward,String rampId) {
+        int origin=graph.nearest(seam);
+        return arena.edges().stream().filter(edge->edge.type()==ArenaDefinition.Transition.ROAD
+                &&(edge.from()==origin||(edge.bidirectional()&&edge.to()==origin)))
+                .map(edge->graph.position(edge.from()==origin?edge.to():edge.from()))
+                .filter(point->Math.abs(point.y-seam.y)<.1f&&point.distance(seam)>=8)
+                .max(Comparator.comparingDouble(point->point.subtract(seam).setY(0).normalizeLocal().dot(outward)))
+                .orElseThrow(()->new AssertionError("Ramp must have an actual adjoining road: "+arena.id()+" / "+rampId+" / "+seam));
     }
 
     @ParameterizedTest(name="{0} {1} participant={2}") @MethodSource("interiors")

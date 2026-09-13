@@ -672,9 +672,10 @@ public final class GameApplication extends SimpleApplication {
                 model.removeFromParent();for(Spatial wheel:wheels.get(state.id))if(wheel!=null)wheel.removeFromParent();
             }
         }
-        combatVisuals.setPresentationTime(session.seconds());
+        double presentationSeconds=Math.max(0,(session.tick-1+alpha)/(double)MatchSession.TICKS_PER_SECOND);
+        combatVisuals.setPresentationTime(presentationSeconds);
         if(advancing) {
-            List<GameEvent> delivered=contactTimeline.advanceTo(session.seconds()).stream().map(event->{
+            List<GameEvent> delivered=contactTimeline.advanceTo(presentationSeconds).stream().map(event->{
                 Node model=vehicleModels.get(event.subjectId());var contact=event.vehicleContact();
                 return model==null||contact==null?event:event.forPresentation(
                         model.getLocalTranslation().add(model.getLocalRotation().mult(contact.localPoint())),

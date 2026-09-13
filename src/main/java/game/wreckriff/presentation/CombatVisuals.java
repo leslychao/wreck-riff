@@ -186,7 +186,7 @@ public final class CombatVisuals implements AutoCloseable {
         ordnance=new OrdnancePresentation(assets,root);
         fragmentBatch=new Batch(root,"impact-fragments",assets,SHARD_LIMIT*36+FLARE_LIMIT*16*3,true,false);
         Material fragmentMaterial=SurfaceMaterials.lit(assets,ColorRGBA.White,24,.32f);
-        fragmentMaterial.setBoolean("VertexColor",true);
+        fragmentMaterial.setBoolean("UseVertexColor",true);
         fragmentMaterial.getAdditionalRenderState().setBlendMode(RenderState.BlendMode.Alpha);
         fragmentMaterial.getAdditionalRenderState().setDepthWrite(false);
         fragmentBatch.geometry.setMaterial(fragmentMaterial);
