@@ -14,6 +14,32 @@
       "kind": "gateway"
     },
     {
+      "id": "fair-street",
+      "title": "Ярмарочная улица",
+      "function": "Кафе, игры, призы и мастерские за торговым фасадом",
+      "route": "Извилистая публичная улица и отдельный западный проезд разгрузки",
+      "bounds": [
+        150,
+        470,
+        380,
+        830
+      ],
+      "kind": "market-frontage"
+    },
+    {
+      "id": "island-bandstand",
+      "title": "Музыкальный павильон",
+      "function": "Оркестровая эстрада и место отдыха у воды",
+      "route": "Три мостовых подхода сходятся на площади; проезд обходит павильон",
+      "bounds": [
+        725,
+        785,
+        685,
+        745
+      ],
+      "kind": "landmark"
+    },
+    {
       "id": "circus",
       "title": "Цирк Эйфория",
       "function": "Манеж, зрительские сектора и закулисье",
@@ -51,6 +77,136 @@
         1120
       ],
       "kind": "through-interior"
+    },
+    {
+      "id": "entry-garden",
+      "title": "entry-garden",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        45,
+        130,
+        75,
+        305
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "front-lawn",
+      "title": "front-lawn",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        440,
+        630,
+        65,
+        195
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "west-fair-garden",
+      "title": "west-fair-garden",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        45,
+        130,
+        340,
+        865
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "south-promenade-grove",
+      "title": "south-promenade-grove",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        540,
+        675,
+        235,
+        330
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "circus-garden",
+      "title": "circus-garden",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        65,
+        200,
+        940,
+        1220
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "north-bank-grove",
+      "title": "north-bank-grove",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        530,
+        670,
+        935,
+        1020
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "wheel-garden",
+      "title": "wheel-garden",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        1340,
+        1450,
+        610,
+        880
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "backstage-green-buffer",
+      "title": "backstage-green-buffer",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        870,
+        1030,
+        1135,
+        1240
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "fair-east-garden",
+      "title": "fair-east-garden",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        365,
+        440,
+        445,
+        585
+      ],
+      "kind": "landscape"
+    },
+    {
+      "id": "ride-arrival-garden",
+      "title": "ride-arrival-garden",
+      "function": "Озеленённый участок с группами деревьев",
+      "route": "Посадки отступают от автомобильных проездов и служебных площадок",
+      "bounds": [
+        1060,
+        1200,
+        80,
+        250
+      ],
+      "kind": "landscape"
     }
   ],
   "districts": [
@@ -165,15 +321,15 @@
         131,
         132,
         133,
-        288,
         289,
         290,
         291,
         292,
-        295,
+        293,
         296,
-        301,
-        302
+        297,
+        302,
+        303
       ],
       "boundary": [
         {
@@ -236,16 +392,17 @@
         285,
         286,
         287,
-        303,
+        288,
         304,
         305,
         306,
         307,
         308,
         309,
-        311,
+        310,
         312,
-        313
+        313,
+        314
       ],
       "boundary": [
         {
@@ -350,8 +507,8 @@
         259,
         260,
         261,
-        297,
-        310
+        298,
+        311
       ],
       "boundary": [
         {
@@ -514,11 +671,11 @@
         242,
         243,
         244,
-        299,
         300,
-        314,
+        301,
         315,
-        316
+        316,
+        317
       ],
       "boundary": [
         {
@@ -1105,13 +1262,15 @@
       "title": "island north path",
       "width": 24,
       "geometryIds": [
-        "road-island-north-path-0"
+        "road-island-north-path-0",
+        "road-island-north-path-1"
       ],
       "navNodeIds": [
         282,
         285,
         286,
         287,
+        288,
         275
       ]
     },
@@ -1125,11 +1284,11 @@
       ],
       "navNodeIds": [
         67,
-        288,
         289,
         290,
         291,
         292,
+        293,
         121
       ]
     },
@@ -1143,8 +1302,8 @@
       ],
       "navNodeIds": [
         17,
-        293,
         294,
+        295,
         117
       ]
     },
@@ -1173,8 +1332,8 @@
         "road-service-gate-b-0"
       ],
       "navNodeIds": [
-        295,
         296,
+        297,
         60
       ]
     },
@@ -1186,10 +1345,10 @@
         "road-boss-depot-entry-0"
       ],
       "navNodeIds": [
-        297,
         298,
         299,
         300,
+        301,
         109
       ]
     },
@@ -1201,9 +1360,9 @@
         "road-west-bridge-rise-0"
       ],
       "navNodeIds": [
-        292,
-        301,
-        302
+        293,
+        302,
+        303
       ]
     },
     {
@@ -1214,10 +1373,10 @@
         "road-west-lake-bridge-0"
       ],
       "navNodeIds": [
-        302,
         303,
         304,
         305,
+        306,
         262
       ]
     },
@@ -1230,10 +1389,10 @@
       ],
       "navNodeIds": [
         270,
-        306,
         307,
         308,
-        309
+        309,
+        310
       ]
     },
     {
@@ -1244,8 +1403,8 @@
         "road-east-bridge-fall-0"
       ],
       "navNodeIds": [
-        309,
         310,
+        311,
         202
       ]
     },
@@ -1258,10 +1417,10 @@
       ],
       "navNodeIds": [
         275,
-        311,
         312,
         313,
-        314
+        314,
+        315
       ]
     },
     {
@@ -1272,9 +1431,9 @@
         "road-north-bridge-fall-0"
       ],
       "navNodeIds": [
-        314,
         315,
         316,
+        317,
         239
       ]
     },
@@ -1287,7 +1446,7 @@
       ],
       "navNodeIds": [
         72,
-        295
+        296
       ]
     }
   ],
@@ -1302,5 +1461,1357 @@
     },
     "totalAmmunition": 120,
     "spawns": 13
-  }
+  },
+  "trees": [
+    {
+      "id": "entry-garden-tree-0-0",
+      "position": [
+        57.0,
+        0,
+        92.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "entry-garden-tree-0-1",
+      "position": [
+        94.22108843618845,
+        0,
+        85.38355216568249
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "entry-garden-tree-1-0",
+      "position": [
+        60.7285260608836,
+        0,
+        123.70151152934069
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "entry-garden-tree-1-1",
+      "position": [
+        91.70560004029933,
+        0,
+        116.14520917425205
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "entry-garden-tree-2-0",
+      "position": [
+        52.03154498183268,
+        0,
+        152.9192658172643
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "entry-garden-tree-2-1",
+      "position": [
+        86.8386627888805,
+        0,
+        151.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "entry-garden-tree-3-0",
+      "position": [
+        59.892198821940994,
+        0,
+        184.05003751699778
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "entry-garden-tree-3-1",
+      "position": [
+        95.83959836015742,
+        0,
+        189.93256184711288
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "entry-garden-tree-4-0",
+      "position": [
+        58.114449570501236,
+        0,
+        219.73178189568193
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "entry-garden-tree-4-1",
+      "position": [
+        88.7123205311234,
+        0,
+        227.63739215372019
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "entry-garden-tree-5-0",
+      "position": [
+        52.62273912655786,
+        0,
+        258.41831092731616
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "entry-garden-tree-5-1",
+      "position": [
+        89.20885358881586,
+        0,
+        261.0786255006268
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "entry-garden-tree-6-0",
+      "position": [
+        61.71847834722052,
+        0,
+        295.8008514332518
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "entry-garden-tree-6-1",
+      "position": [
+        95.67447527762342,
+        0,
+        290.7699893718023
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "front-lawn-tree-0-0",
+      "position": [
+        452.0,
+        0,
+        82.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "front-lawn-tree-0-1",
+      "position": [
+        489.22108843618844,
+        0,
+        75.38355216568249
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "front-lawn-tree-0-2",
+      "position": [
+        524.9272486499423,
+        0,
+        73.04516144042792
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "front-lawn-tree-0-3",
+      "position": [
+        558.3160468332444,
+        0,
+        81.1735639241958
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "front-lawn-tree-0-4",
+      "position": [
+        589.6749407507796,
+        0,
+        78.25629921291127
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "front-lawn-tree-1-0",
+      "position": [
+        455.7285260608836,
+        0,
+        113.70151152934069
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "front-lawn-tree-1-1",
+      "position": [
+        486.7056000402993,
+        0,
+        106.14520917425205
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "front-lawn-tree-1-2",
+      "position": [
+        517.3508192954575,
+        0,
+        111.43749491719723
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "front-lawn-tree-1-3",
+      "position": [
+        549.2419896305524,
+        0,
+        115.5719157411766
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "front-lawn-tree-1-4",
+      "position": [
+        583.3709265883614,
+        0,
+        107.60639976339993
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "front-lawn-tree-2-0",
+      "position": [
+        447.03154498183267,
+        0,
+        142.9192658172643
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "front-lawn-tree-2-1",
+      "position": [
+        481.83866278888047,
+        0,
+        141.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "front-lawn-tree-2-2",
+      "position": [
+        518.6029225090053,
+        0,
+        149.4275975847066
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "front-lawn-tree-2-3",
+      "position": [
+        556.024249603083,
+        0,
+        145.76686931018932
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "front-lawn-tree-2-4",
+      "position": [
+        592.4935404790581,
+        0,
+        140.07656072102935
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "front-lawn-tree-3-0",
+      "position": [
+        454.892198821941,
+        0,
+        174.05003751699778
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "front-lawn-tree-3-1",
+      "position": [
+        490.8395983601574,
+        0,
+        179.93256184711288
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "front-lawn-tree-3-2",
+      "position": [
+        524.5108591687815,
+        0,
+        183.34698745174913
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "front-lawn-tree-3-3",
+      "position": [
+        556.0605924262088,
+        0,
+        175.256766772013
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "front-lawn-tree-3-4",
+      "position": [
+        586.6411968679453,
+        0,
+        177.07330904614085
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-0-0",
+      "position": [
+        57.0,
+        0,
+        357.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "west-fair-garden-tree-0-1",
+      "position": [
+        94.22108843618845,
+        0,
+        350.3835521656825
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-1-0",
+      "position": [
+        60.7285260608836,
+        0,
+        388.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-1-1",
+      "position": [
+        91.70560004029933,
+        0,
+        381.14520917425205
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-2-0",
+      "position": [
+        52.03154498183268,
+        0,
+        417.91926581726426
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-2-1",
+      "position": [
+        86.8386627888805,
+        0,
+        416.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-3-0",
+      "position": [
+        59.892198821940994,
+        0,
+        449.05003751699775
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-3-1",
+      "position": [
+        95.83959836015742,
+        0,
+        454.9325618471129
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "west-fair-garden-tree-4-0",
+      "position": [
+        58.114449570501236,
+        0,
+        484.73178189568193
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "west-fair-garden-tree-4-1",
+      "position": [
+        88.7123205311234,
+        0,
+        492.63739215372016
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-5-0",
+      "position": [
+        52.62273912655786,
+        0,
+        523.4183109273162
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-5-1",
+      "position": [
+        89.20885358881586,
+        0,
+        526.0786255006268
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-6-0",
+      "position": [
+        61.71847834722052,
+        0,
+        560.8008514332519
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-6-1",
+      "position": [
+        95.67447527762342,
+        0,
+        555.7699893718024
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-7-0",
+      "position": [
+        55.089642914079974,
+        0,
+        593.7695112717165
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-7-1",
+      "position": [
+        86.56216483209249,
+        0,
+        585.6728239537945
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "west-fair-garden-tree-8-0",
+      "position": [
+        54.82717188964052,
+        0,
+        623.2724998309569
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "west-fair-garden-tree-8-1",
+      "position": [
+        92.23917103991478,
+        0,
+        619.5540442368732
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-9-0",
+      "position": [
+        61.80576362251058,
+        0,
+        653.4443486905766
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-9-1",
+      "position": [
+        93.7865752675883,
+        0,
+        657.5228557449952
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-10-0",
+      "position": [
+        52.76889797912415,
+        0,
+        687.8046423546177
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-10-1",
+      "position": [
+        86.04757239551422,
+        0,
+        695.9303514807052
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-11-0",
+      "position": [
+        57.83240001768578,
+        0,
+        726.0221284899402
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "west-fair-garden-tree-13-0",
+      "position": [
+        52.00752484668093,
+        0,
+        798.537233907251
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "west-fair-garden-tree-13-1",
+      "position": [
+        87.35819616084203,
+        0,
+        790.5451390964043
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-14-0",
+      "position": [
+        60.53084728590164,
+        0,
+        828.6836860910391
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "west-fair-garden-tree-14-1",
+      "position": [
+        95.98120964377432,
+        0,
+        823.0919122819681
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "south-promenade-grove-tree-0-0",
+      "position": [
+        552.0,
+        0,
+        252.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "south-promenade-grove-tree-0-1",
+      "position": [
+        589.2210884361884,
+        0,
+        245.3835521656825
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "south-promenade-grove-tree-0-2",
+      "position": [
+        624.9272486499423,
+        0,
+        243.0451614404279
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "south-promenade-grove-tree-0-3",
+      "position": [
+        658.3160468332444,
+        0,
+        251.1735639241958
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "south-promenade-grove-tree-1-0",
+      "position": [
+        555.7285260608836,
+        0,
+        283.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "south-promenade-grove-tree-1-1",
+      "position": [
+        586.7056000402994,
+        0,
+        276.14520917425205
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "south-promenade-grove-tree-2-0",
+      "position": [
+        547.0315449818327,
+        0,
+        312.91926581726426
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-0-0",
+      "position": [
+        77.0,
+        0,
+        957.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-0-1",
+      "position": [
+        114.22108843618845,
+        0,
+        950.3835521656824
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-0-2",
+      "position": [
+        149.9272486499423,
+        0,
+        948.0451614404279
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-1-0",
+      "position": [
+        80.7285260608836,
+        0,
+        988.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-1-1",
+      "position": [
+        111.70560004029933,
+        0,
+        981.145209174252
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-1-2",
+      "position": [
+        142.35081929545754,
+        0,
+        986.4374949171972
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-1-3",
+      "position": [
+        174.2419896305524,
+        0,
+        990.5719157411766
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-2-0",
+      "position": [
+        72.03154498183268,
+        0,
+        1017.9192658172643
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-2-1",
+      "position": [
+        106.8386627888805,
+        0,
+        1016.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-2-2",
+      "position": [
+        143.60292250900537,
+        0,
+        1024.4275975847065
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-2-3",
+      "position": [
+        181.02424960308298,
+        0,
+        1020.7668693101893
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-3-0",
+      "position": [
+        79.892198821941,
+        0,
+        1049.0500375169977
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-3-1",
+      "position": [
+        115.83959836015742,
+        0,
+        1054.9325618471128
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-3-2",
+      "position": [
+        149.51085916878148,
+        0,
+        1058.346987451749
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-3-3",
+      "position": [
+        181.06059242620879,
+        0,
+        1050.256766772013
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-4-0",
+      "position": [
+        78.11444957050124,
+        0,
+        1084.731781895682
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-4-1",
+      "position": [
+        108.7123205311234,
+        0,
+        1092.6373921537202
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-4-2",
+      "position": [
+        140.38612289193597,
+        0,
+        1088.2697771028134
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-4-3",
+      "position": [
+        174.22990375048954,
+        0,
+        1083.1881756008434
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-5-0",
+      "position": [
+        72.62273912655786,
+        0,
+        1123.418310927316
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-5-1",
+      "position": [
+        109.20885358881586,
+        0,
+        1126.0786255006267
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-5-2",
+      "position": [
+        146.63737219568847,
+        0,
+        1117.9445349296918
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-5-3",
+      "position": [
+        183.2958090742825,
+        0,
+        1120.5435535913932
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-6-0",
+      "position": [
+        81.71847834722053,
+        0,
+        1160.8008514332519
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "circus-garden-tree-6-1",
+      "position": [
+        115.67447527762342,
+        0,
+        1155.7699893718022
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-6-2",
+      "position": [
+        147.431993444269,
+        0,
+        1151.3478686394762
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-6-3",
+      "position": [
+        178.04570709312907,
+        0,
+        1159.2379816932694
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-7-0",
+      "position": [
+        75.08964291407997,
+        0,
+        1193.7695112717165
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "circus-garden-tree-7-1",
+      "position": [
+        106.56216483209249,
+        0,
+        1185.6728239537945
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "circus-garden-tree-7-2",
+      "position": [
+        140.1218699726592,
+        0,
+        1189.0283504677234
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "circus-garden-tree-7-3",
+      "position": [
+        175.97583588796857,
+        0,
+        1194.9554243590712
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "north-bank-grove-tree-0-0",
+      "position": [
+        542.0,
+        0,
+        952.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "north-bank-grove-tree-1-0",
+      "position": [
+        545.7285260608836,
+        0,
+        983.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "north-bank-grove-tree-1-1",
+      "position": [
+        576.7056000402994,
+        0,
+        976.145209174252
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "north-bank-grove-tree-1-2",
+      "position": [
+        607.3508192954575,
+        0,
+        981.4374949171972
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "north-bank-grove-tree-1-3",
+      "position": [
+        639.2419896305524,
+        0,
+        985.5719157411766
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "wheel-garden-tree-0-0",
+      "position": [
+        1352.0,
+        0,
+        627.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "wheel-garden-tree-1-0",
+      "position": [
+        1355.7285260608835,
+        0,
+        658.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "wheel-garden-tree-2-0",
+      "position": [
+        1347.0315449818327,
+        0,
+        687.9192658172643
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "wheel-garden-tree-2-1",
+      "position": [
+        1381.8386627888806,
+        0,
+        686.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "wheel-garden-tree-3-0",
+      "position": [
+        1354.892198821941,
+        0,
+        719.0500375169978
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "wheel-garden-tree-3-2",
+      "position": [
+        1424.5108591687815,
+        0,
+        728.3469874517491
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "wheel-garden-tree-4-0",
+      "position": [
+        1353.1144495705012,
+        0,
+        754.7317818956819
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "wheel-garden-tree-5-0",
+      "position": [
+        1347.622739126558,
+        0,
+        793.4183109273162
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "wheel-garden-tree-5-2",
+      "position": [
+        1421.6373721956884,
+        0,
+        787.9445349296917
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "wheel-garden-tree-6-0",
+      "position": [
+        1356.7184783472205,
+        0,
+        830.8008514332519
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "wheel-garden-tree-6-2",
+      "position": [
+        1422.431993444269,
+        0,
+        821.3478686394762
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "wheel-garden-tree-7-0",
+      "position": [
+        1350.08964291408,
+        0,
+        863.7695112717165
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-0",
+      "position": [
+        882.0,
+        0,
+        1152.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-1",
+      "position": [
+        919.2210884361884,
+        0,
+        1145.3835521656824
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-2",
+      "position": [
+        954.9272486499423,
+        0,
+        1143.0451614404278
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-3",
+      "position": [
+        988.3160468332444,
+        0,
+        1151.1735639241958
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-0",
+      "position": [
+        885.7285260608836,
+        0,
+        1183.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-1",
+      "position": [
+        916.7056000402994,
+        0,
+        1176.1452091742522
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-2",
+      "position": [
+        947.3508192954575,
+        0,
+        1181.4374949171972
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-3",
+      "position": [
+        979.2419896305524,
+        0,
+        1185.5719157411766
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-4",
+      "position": [
+        1013.3709265883614,
+        0,
+        1177.6063997633998
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-0",
+      "position": [
+        877.0315449818327,
+        0,
+        1212.9192658172642
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-1",
+      "position": [
+        911.8386627888805,
+        0,
+        1211.3703384789992
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-2",
+      "position": [
+        948.6029225090053,
+        0,
+        1219.4275975847065
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-3",
+      "position": [
+        986.024249603083,
+        0,
+        1215.7668693101893
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "fair-east-garden-tree-0-1",
+      "position": [
+        414.22108843618844,
+        0,
+        455.3835521656825
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "fair-east-garden-tree-1-1",
+      "position": [
+        411.7056000402993,
+        0,
+        486.14520917425205
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "fair-east-garden-tree-2-1",
+      "position": [
+        406.83866278888047,
+        0,
+        521.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "fair-east-garden-tree-3-0",
+      "position": [
+        379.892198821941,
+        0,
+        554.0500375169978
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "fair-east-garden-tree-3-1",
+      "position": [
+        415.8395983601574,
+        0,
+        559.9325618471129
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-0",
+      "position": [
+        1072.0,
+        0,
+        97.0
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-1",
+      "position": [
+        1109.2210884361884,
+        0,
+        90.38355216568249
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-2",
+      "position": [
+        1144.9272486499424,
+        0,
+        88.04516144042792
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-3",
+      "position": [
+        1178.3160468332444,
+        0,
+        96.1735639241958
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-0",
+      "position": [
+        1075.7285260608835,
+        0,
+        128.7015115293407
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-1",
+      "position": [
+        1106.7056000402993,
+        0,
+        121.14520917425205
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-2",
+      "position": [
+        1137.3508192954575,
+        0,
+        126.43749491719723
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-3",
+      "position": [
+        1169.2419896305523,
+        0,
+        130.5719157411766
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-0",
+      "position": [
+        1067.0315449818327,
+        0,
+        157.9192658172643
+      ],
+      "scale": 0.94
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-1",
+      "position": [
+        1101.8386627888806,
+        0,
+        156.3703384789993
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-2",
+      "position": [
+        1138.6029225090053,
+        0,
+        164.4275975847066
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-3",
+      "position": [
+        1176.024249603083,
+        0,
+        160.76686931018932
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-0",
+      "position": [
+        1074.892198821941,
+        0,
+        189.05003751699778
+      ],
+      "scale": 1.06
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-1",
+      "position": [
+        1110.8395983601574,
+        0,
+        194.93256184711288
+      ],
+      "scale": 0.7
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-2",
+      "position": [
+        1144.5108591687815,
+        0,
+        198.34698745174913
+      ],
+      "scale": 0.82
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-3",
+      "position": [
+        1176.0605924262088,
+        0,
+        190.256766772013
+      ],
+      "scale": 0.94
+    }
+  ]
 }

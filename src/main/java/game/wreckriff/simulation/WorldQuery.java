@@ -16,8 +16,11 @@ public interface WorldQuery {
         }
         public Hit(int vehicleId,Vector3f point,Vector3f normal,float fraction) {this(vehicleId,point,normal,fraction,null);}
     }
-    record Support(int surfaceId,Vector3f point,Vector3f normal) {
-        public Support { point=point.clone(); normal=normal.clone(); }
+    record Support(int surfaceId,Vector3f point,Vector3f normal,ContactSurface surface) {
+        public Support { point=point.clone(); normal=normal.clone();java.util.Objects.requireNonNull(surface); }
+        public Support(int surfaceId,Vector3f point,Vector3f normal){this(surfaceId,point,normal,ContactSurface.UNKNOWN);}
+        @Override public Vector3f point(){return point.clone();}
+        @Override public Vector3f normal(){return normal.clone();}
     }
     Vector3f position(int vehicleId);
     Vector3f velocity(int vehicleId);
@@ -44,7 +47,7 @@ public interface WorldQuery {
     /** Static-only downward support query; vehicles cannot become mine or fire support. */
     default Support support(Vector3f from,float depth) {
         Hit hit=ray(from,from.add(0,-depth,0),-1);
-        return hit!=null && hit.vehicleId()<0?new Support(0,hit.point(),hit.normal()):null;
+        return hit!=null && hit.vehicleId()<0?new Support(0,hit.point(),hit.normal(),hit.surface()):null;
     }
     /** Native implementations own the temporary constraint and its entire lifecycle. */
     default void immobilize(int vehicleId,boolean frozen) {}

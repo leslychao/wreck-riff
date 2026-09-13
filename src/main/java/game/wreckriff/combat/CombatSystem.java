@@ -396,7 +396,7 @@ public final class CombatSystem {
             var bomb=iterator.next();if(session.tick+1<bomb.explodeAt)continue;
             Vector3f center=bomb.support.point().add(bomb.support.normal().mult(.08f));
             emit(new GameEvent(GameEvent.Type.EXPLOSION,bomb.id,-1,bomb.ownerId,center,"special-bomb",SpecialRules.BOMB_RADIUS,
-                    center,bomb.support.normal()));
+                    center,bomb.support.normal()).withContact(bomb.support.surface(),null));
             for(var target:orderedVehicles) {
                 if(!target.alive())continue;
                 float falloff=Math.max(0,1-world.distanceToHull(target.id,center)/SpecialRules.BOMB_RADIUS);
@@ -617,7 +617,7 @@ public final class CombatSystem {
         if(intent.kind.equals("ballistic"))launchCarrier(projectile,world);
         emit(new GameEvent(GameEvent.Type.SHOT,intent.id,intent.ownerId,intent.ownerId,
                 blocked==null?muzzle:blocked.point(),intent.kind,0,muzzle,Vector3f.ZERO)
-                .withEmission(new ShotEmission("weapon-muzzle",projectile.direction(),world.velocity(intent.ownerId))));
+                .withEmission(new ShotEmission("weapon-muzzle",projectile.velocity.lengthSquared()>0?projectile.velocity:projectile.direction(),world.velocity(intent.ownerId))));
         if (blocked == null) projectiles.add(projectile);
         else {
             projectile.position.set(blocked.point());
@@ -682,14 +682,14 @@ public final class CombatSystem {
         }
         reservedFireZones--;
         Vector3f center=hit.point().add(hit.normal().mult(.05f));
-        radialDamage(projectile.id(),projectile.ownerId(),"napalm",center,rules.napalm().radius(),rules.napalm().impactDamage(),rules.napalm().blast(),hit.normal(),world);
+        radialDamage(projectile.id(),projectile.ownerId(),"napalm",center,rules.napalm().radius(),rules.napalm().impactDamage(),rules.napalm().blast(),hit.normal(),hit.surface(),world);
         WorldQuery.Support support=world.support(center,rules.napalm().supportDepth());
         if(support==null||support.normal().y<.6f)return;
         List<Vector3f> points=fireSurface(support,world);
         if(points.isEmpty())return;
         FireZone zone=new FireZone(projectile.id(),projectile.ownerId(),support,session.tick+ticks(rules.napalm().durationSeconds()),points);
         fireZones.add(zone);
-        emit(event(GameEvent.Type.FIRE_STARTED,zone.id,zone.ownerId,zone.ownerId,support.point(),"napalm-fire",rules.napalm().radius()));
+        emit(new GameEvent(GameEvent.Type.FIRE_STARTED,zone.id,zone.ownerId,zone.ownerId,support.point(),"napalm-fire",rules.napalm().radius(),support.point(),support.normal()).withContact(support.surface(),null));
     }
     private void acceptMine(VehicleState vehicle,WorldQuery world) {
         if(mines.size()>=rules.mine().maximumActive()||mines.stream().filter(m->m.ownerId==vehicle.id).count()>=2) {
@@ -719,11 +719,11 @@ public final class CombatSystem {
             Vector3f center=mine.support.point().add(mine.support.normal().mult(.2f));
             boolean triggered=orderedVehicles.stream().anyMatch(v->v.alive()&&v.id!=mine.ownerId
                     &&world.distanceToHull(v.id,center)<=rules.mine().triggerRadius()&&exposed(center,v.id,world));
-            if(triggered) {radialDamage(mine.id,mine.ownerId,"mine",center,rules.mine().explosionRadius(),rules.mine().damage(),rules.mine().blast(),mine.support.normal(),world);iterator.remove();}
+            if(triggered) {radialDamage(mine.id,mine.ownerId,"mine",center,rules.mine().explosionRadius(),rules.mine().damage(),rules.mine().blast(),mine.support.normal(),mine.support.surface(),world);iterator.remove();}
         }
     }
-    private void radialDamage(long id,int owner,String kind,Vector3f center,float radius,float maximum,CombatRules.Blast blast,Vector3f normal,WorldQuery world) {
-        emit(new GameEvent(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius,Vector3f.ZERO,normal));
+    private void radialDamage(long id,int owner,String kind,Vector3f center,float radius,float maximum,CombatRules.Blast blast,Vector3f normal,ContactSurface surface,WorldQuery world) {
+        emit(new GameEvent(GameEvent.Type.EXPLOSION,id,-1,owner,center,kind,radius,Vector3f.ZERO,normal).withContact(surface,null));
         radialArenaDamage(id,owner,kind,center,radius,maximum,null,world);
         for(VehicleState target:orderedVehicles) {
             if(!target.alive())continue;
@@ -950,7 +950,8 @@ public final class CombatSystem {
         int direct=hit==null?-1:hit.vehicleId();String kind=ricochet?"cannon-ricochet":"cannon";
         if(hit!=null)impact(id,projectile.ownerId(),kind,hit,projectile.previousPosition);
         float radius=ricochet?cannon.ricochetRadius():cannon.splashRadius();
-        emit(new GameEvent(GameEvent.Type.EXPLOSION,id,direct,projectile.ownerId(),center,kind,radius,projectile.previousPosition,normal));
+        emit(new GameEvent(GameEvent.Type.EXPLOSION,id,direct,projectile.ownerId(),center,kind,radius,projectile.previousPosition,normal)
+                .withContact(hit==null?ContactSurface.UNKNOWN:hit.surface(),hit==null?null:hit.vehicleContact()));
         directArenaDamage(hit,projectile.ownerId(),cannon.directDamage(),kind,id);
         radialArenaDamage(id,projectile.ownerId(),kind,center,radius,ricochet?cannon.ricochetDamage():cannon.splashDamage(),
                 hit==null?null:hit.objectId(),world);
@@ -1136,7 +1137,7 @@ public final class CombatSystem {
         warnings.remove(projectile.id());
         impact(projectile.id(),projectile.ownerId(),projectile.kind(),hit,projectile.previousPosition);
         radialDamage(projectile.id(),projectile.ownerId(),"ballistic",hit.point().add(hit.normal().mult(rules.explosionSurfaceOffset())),
-                rules.ballistic().radius(),rules.ballistic().damage(),rules.ballistic().blast(),hit.normal(),world);
+                rules.ballistic().radius(),rules.ballistic().damage(),rules.ballistic().blast(),hit.normal(),hit.surface(),world);
     }
     public List<BallisticWarningView> ballisticWarnings() {
         return warnings.values().stream().filter(warning->warning.impactTick>session.tick)

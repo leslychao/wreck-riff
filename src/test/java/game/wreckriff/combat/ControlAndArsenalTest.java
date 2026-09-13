@@ -9,6 +9,22 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ControlAndArsenalTest {
+    @Test void fireExposureIsContinuousImmutableAndClearsBeforeTheNextDamagePulse() {
+        session.vehicle(0).selectedWeapon=WeaponType.NAPALM;
+        world.nextSweep=new WorldQuery.Hit(-1,new Vector3f(0,0,8),Vector3f.UNIT_Y,.5f);
+        tick(fire());world.positions[1].set(0,.8f,8);combat.drainEvents();
+        tick(VehicleCommand.NONE);
+        var snapshot=combat.fireExposures();assertEquals(1,snapshot.size());
+        assertEquals(1,snapshot.getFirst().vehicleId());
+        assertTrue(combat.drainEvents().stream().noneMatch(e->e.kind().equals("napalm-fire")&&e.type()==GameEvent.Type.DAMAGE));
+        assertThrows(UnsupportedOperationException.class,()->snapshot.clear());
+        Vector3f local=snapshot.getFirst().contact().localPoint();snapshot.getFirst().contact().localPoint().set(99,99,99);
+        assertEquals(local,snapshot.getFirst().contact().localPoint());
+        world.positions[1].x=30;tick(VehicleCommand.NONE);assertTrue(combat.fireExposures().isEmpty());
+        assertEquals(1,snapshot.size());
+        world.positions[1].x=0;tick(VehicleCommand.NONE);assertEquals(1,combat.fireExposures().size());
+        combat.clear();assertTrue(combat.fireExposures().isEmpty());
+    }
     @org.junit.jupiter.api.BeforeEach void supplyCombatFixture() { CombatTestSupplies.halfLoad(session); }
     private final MatchSession session=new MatchSession(19,360);
     private CombatRules rules=Configs.load("combat",CombatRules.class);

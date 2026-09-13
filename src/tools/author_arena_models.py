@@ -68,12 +68,20 @@ def architectural(name,low=False):
         for i in range(5):
             x=-105+i*42
             m.face([(x,0,-100),(x,0,100),(x+42,6,100),(x+42,6,-100)],'steel');m.face([(x+42,6,-100),(x+42,6,100),(x+42,0,100),(x+42,0,-100)],'glass')
+            m.face([(x+41.8,0,-100),(x+41.8,0,100),(x+41.8,6,100),(x+41.8,6,-100)],'glass')
             m.face([(x,-.8,100),(x,-.8,-100),(x+42,5.2,-100),(x+42,5.2,100)],'steel')
-            for z in (-100,100):m.face([(x,0,z),(x+42,0,z),(x+42,6,z)],'rust')
+            for z in (-100,100):
+                m.face([(x,0,z),(x+42,0,z),(x+42,6,z)],'rust');m.face([(x+42,6,z-.2),(x+42,0,z-.2),(x,0,z-.2)],'rust')
         if detail:
             for z in range(-95,100,24):
                 m.beam((-105,-2,z),(105,-2,z),.6,'steel')
-                for x in range(-100,100,25):m.beam((x,-2,z),(x+25,3,z),.25,'steel')
+                for bay in range(5):
+                    x=-105+bay*42
+                    m.beam((x,0,z),(x+42,6,z),.45,'steel')
+                    for web in range(4):
+                        xx=x+web*10.5;yy=web*1.5
+                        m.beam((xx,-2,z),(xx,yy,z),.3,'steel');m.beam((xx,-2,z),(xx+10.5,yy+1.5,z),.3,'steel')
+        for x in (-105,105):m.beam((x,-2,-100),(x,-2,100),.9,'steel')
     elif name=='warehouse-trusses':
         m.roof(230,135,6,'blue',12 if detail else 2,False)
         for z in range(-60,70,22 if detail else 120):
@@ -123,10 +131,21 @@ def architectural(name,low=False):
         m.cylinder((0,6,0),1,12,'wood',12 if detail else 6,.65)
         # Layered low-poly crown; distant form retains full outer envelope.
         for y,r,h in [(12,6,8),(17,5,8),(21,3,7)]:m.cylinder((0,y,0),r,h,'grass',20 if detail else 6,.2)
+    elif name=='island-bandstand':
+        count=16 if detail else 8
+        for i in range(count):
+            a=i*math.tau/count;b=(i+1)*math.tau/count;p=(30*math.cos(a),10,30*math.sin(a));q=(30*math.cos(b),10,30*math.sin(b))
+            m.face([(0,18,0),q,p],'ivory' if i%2 else 'faded-red');m.face([(0,17.4,0),(p[0],9.4,p[2]),(q[0],9.4,q[2])],'wood')
+        for i in range(8):
+            a=i*math.tau/8;x,z=26*math.cos(a),26*math.sin(a);m.cylinder((x,5,z),.7,10,'ivory',12 if detail else 6)
+            b=(i+1)*math.tau/8;m.beam((x,9.5,z),(26*math.cos(b),9.5,26*math.sin(b)),.8,'wood')
+        if detail:
+            for i in range(8):
+                angle=i*math.tau/8;m.beam((0,17.3,0),(29*math.cos(angle),9.5,29*math.sin(angle)),.3,'steel')
     else:raise ValueError(name)
     return m
 
-NAMES=('unfinished-frame','plant-sawtooth','warehouse-trusses','passage-glass','technical-rooftop','parking-ceiling','circus-canopy','orbit-shell','depot-gantry','cement-silo','park-tree')
+NAMES=('unfinished-frame','plant-sawtooth','warehouse-trusses','passage-glass','technical-rooftop','parking-ceiling','circus-canopy','orbit-shell','depot-gantry','cement-silo','park-tree','island-bandstand')
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
     if '--blend' in sys.argv:

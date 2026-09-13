@@ -63,11 +63,19 @@ public final class CombatShowcase {
         }
         if(tick==2760)result.put(0,command(false,WeaponType.BALLISTIC,AbilityId.NONE));
         if(tick==3480) {sidePair();session.vehicle(1).hp=session.vehicle(1).maximumHp;result.put(0,command(false,WeaponType.CANNON,AbilityId.NONE));}
+        if(tick==3720) {sidePair();result.put(0,command(false,WeaponType.HOMING,AbilityId.NONE));}
         if(tick==3960) {
-            world.teleport(0,new Vector3f(-65,.85f,-48),new Quaternion().fromAngleAxis(-FastMath.HALF_PI,Vector3f.UNIT_Y));
+            // Oblique wall strike leaves the reflected path clear of the firing car.
+            world.teleport(0,new Vector3f(-65,.85f,-48),new Quaternion().fromAngleAxis(-2.0f,Vector3f.UNIT_Y));
             result.put(0,command(false,WeaponType.CANNON,AbilityId.NONE));
         }
         if(tick==4320) {sidePair();session.vehicle(1).hp=40;result.put(0,command(false,WeaponType.CANNON,AbilityId.NONE));}
+        if(tick==4500)result.put(0,command(false,WeaponType.MINE,AbilityId.NONE));
+        if(tick==4620&&!combat.mines().isEmpty()) {
+            // A live diagnostic target enters an already armed, authoritative mine trigger.
+            session.vehicle(2).hp=session.vehicle(2).maximumHp;
+            world.teleport(2,combat.mines().getFirst().point().add(0,.85f,0),new Quaternion());
+        }
         return result;
     }
     private static VehicleCommand command(boolean mg,WeaponType weapon,AbilityId ability) {
@@ -103,9 +111,11 @@ public final class CombatShowcase {
         if(seconds<20)return "SHIELD / CLEANSE, ABSORPTION AND EXPIRY";
         if(seconds<23)return "NAPALM / ASSISTED ARC AT 32 METRES";
         if(seconds<29)return "BALLISTIC / FOUR WARNED STRIKES FROM ABOVE";
-        if(seconds<33)return "CANNON / SIDE HIT, NATIVE BODY ROTATION";
+        if(seconds<31)return "CANNON / SIDE HIT, NATIVE BODY ROTATION";
+        if(seconds<33)return "HOMING / ENGINE AND CONTACT";
         if(seconds<36)return "CANNON / ENVIRONMENT RICOCHETS";
-        return "CANNON / LETHAL HIT, THREE-SECOND PHYSICAL WRECK";
+        if(seconds<37.5)return "CANNON / LETHAL HIT, THREE-SECOND PHYSICAL WRECK";
+        return "MINE / ARMED TRIGGER AND SURFACE BLAST [STAGED TARGET ENTRY]";
     }
     public String frame(Camera camera) {
         Vector3f target=world.position(1);
@@ -131,8 +141,8 @@ public final class CombatShowcase {
                     "normal",warning.normal().toString(),"radius",warning.radius(),"remainingTicks",warning.remainingTicks());
             return "ballistic-warning";
         }
-        String[] names={"hp-100","hp-75","hp-50","hp-25","hp-0","hp-repaired","machine-gun","power-hit","freeze","shield","napalm","ballistic-hit","cannon-hit","cannon-ricochet","cannon-lethal","wreck-removed"};
-        double[] times={1,3,5,7,9,11,13,14.25,16.5,18.5,21.3,firstBallisticImpact<0?Double.POSITIVE_INFINITY:firstBallisticImpact+.12,29.3,33.25,36.4,39.5};
+        String[] names={"hp-100","hp-75","hp-50","hp-25","hp-0","hp-repaired","machine-gun","power-hit","freeze","shield","napalm","ballistic-hit","cannon-hit","homing-hit","cannon-ricochet","cannon-lethal","mine-hit","wreck-removed"};
+        double[] times={1,3,5,7,9,11,13,14.25,16.5,18.5,21.3,firstBallisticImpact<0?Double.POSITIVE_INFINITY:firstBallisticImpact+.12,29.3,31.3,33.25,36.4,38.65,39.5};
         for(int i=0;i<times.length;i++)if(session.seconds()>=times[i]&&captures.add(names[i]))return names[i];
         return null;
     }
@@ -143,6 +153,7 @@ public final class CombatShowcase {
         return !warningCapture.isEmpty()&&events.getOrDefault("FREEZE:freeze",0)>0&&events.getOrDefault("SHIELD:shield",0)>0
                 &&events.keySet().stream().anyMatch(key->key.startsWith("SHIELD_HIT:"))&&events.getOrDefault("EXPLOSION:power",0)>0
                 &&events.getOrDefault("EXPLOSION:ballistic",0)==4&&events.getOrDefault("EXPLOSION:cannon-ricochet",0)>=2
+                &&events.getOrDefault("EXPLOSION:homing",0)>0&&events.getOrDefault("EXPLOSION:mine",0)>0
                 &&events.getOrDefault("DESTROYED:destroyed",0)>0&&!world.containsVehicle(1);
     }
 }

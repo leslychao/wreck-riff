@@ -510,7 +510,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             }
             if(nearest==null)continue;
             Integer surface=staticIdentities.get(nearest.getCollisionObject());
-            if(surface!=null&&nearest.getHitNormalLocal().y>=.65f)supports[i]=new Support(surface,point,normal);
+            if(surface!=null&&nearest.getHitNormalLocal().y>=.65f)supports[i]=new Support(surface,point,normal,contactSurface(nearest.getCollisionObject()));
         }
         wheelContactCounts.put(id,count);
         wheelSupports.put(id,supports);
@@ -579,7 +579,7 @@ public final class PhysicsWorld implements WorldQuery, AutoCloseable {
             if(nearest==null||hit.getHitFraction()<nearest.getHitFraction())nearest=hit;
         }
         if(nearest==null)return null;
-        return new Support(staticIdentities.get(nearest.getCollisionObject()),from.add(0,-depth*nearest.getHitFraction(),0),nearest.getHitNormalLocal());
+        return new Support(staticIdentities.get(nearest.getCollisionObject()),from.add(0,-depth*nearest.getHitFraction(),0),nearest.getHitNormalLocal(),contactSurface(nearest.getCollisionObject()));
     }
     @Override public void immobilize(int id,boolean frozen) {
         if(frozen)releaseSpecialPhysics(id);

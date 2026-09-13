@@ -383,29 +383,10 @@ public final class CombatVisuals implements AutoCloseable {
             if(shot.age>=shot.flight+.035f)it.remove();
         }
         emissionPriority=0;
-        debrisQueries=0;
-        int shardIndex=0,start=shards.isEmpty()?0:debrisQueryCursor%shards.size();
         for(Iterator<Shard> it=shards.iterator();it.hasNext();) {
             Shard shard=it.next();shard.age+=dt;if(shard.age>=shard.life){it.remove();continue;}
-            shard.velocity.y-=9.81f*dt;
-            Vector3f next=shard.position.add(shard.velocity.mult(dt));
-            int rank=(shardIndex++-start+shards.size())%Math.max(1,shards.size());
-            boolean nearby=shard.position.distanceSquared(observer)<45*45;
-            if(nearby&&rank<DEBRIS_QUERY_LIMIT&&shard.bounces<2) {
-                debrisQueries++;
-                WorldQuery.Hit hit=world.staticSweep(shard.position,next,Math.min(.18f,shard.size));
-                if(hit!=null) {
-                    Vector3f normal=hit.normal().normalize();
-                    next=hit.point().add(normal.mult(Math.min(.18f,shard.size)+.015f));
-                    float into=shard.velocity.dot(normal);
-                    if(into<0)shard.velocity.subtractLocal(normal.mult(1.22f*into)).multLocal(.48f);
-                    shard.bounces++;
-                    if(shard.velocity.lengthSquared()<.3f||shard.bounces>=2)shard.age=shard.life-.2f;
-                }
-            }
-            shard.position.set(next);shard.rotation.multLocal(new Quaternion().fromAngles(dt*2.1f,dt*3.7f,dt*.9f));
+            shard.velocity.y-=4*dt;shard.position.addLocal(shard.velocity.mult(dt));
         }
-        debrisQueryCursor+=DEBRIS_QUERY_LIMIT;
         for(Iterator<HitFlare> it=hitFlares.iterator();it.hasNext();) {HitFlare flare=it.next();flare.age+=dt;if(flare.age>=.2f)it.remove();}
         Set<Long> live=new HashSet<>();
         for(ProjectileState rocket:states) {
@@ -463,20 +444,13 @@ public final class CombatVisuals implements AutoCloseable {
     }
 
     private void impact(GameEvent event) {
-        Vector3f normal=contactNormal(event);
-        ContactSurface surface=event.surface();
-        if(surface==ContactSurface.UNKNOWN)surface=event.subjectId()>=0?ContactSurface.METAL:ContactSurface.CONCRETE;
-        boolean metal=surface==ContactSurface.METAL,glass=surface==ContactSurface.GLASS,rubber=surface==ContactSurface.RUBBER;
-        int count=metal?12:glass?10:rubber?4:8;
-        for(int i=0;i<count;i++) {
-            Vector3f velocity=normal.mult(metal?4.8f:glass?2.3f:1.2f).addLocal(randomDirection(metal?3.2f:1.1f));
-            float inward=velocity.dot(normal);if(inward<0)velocity.subtractLocal(normal.mult(inward));
-            if(metal)emit(event.position().add(normal.mult(.025f)),velocity,AMBER,.28f,.052f,-.035f,8);
-            else if(glass)addShard(event.position(),velocity,.52f,.022f,new ColorRGBA(.62f,.83f,.89f,.75f));
-            else emit(event.position().add(normal.mult(.025f)),velocity,rubber?SMOKE:DUST,.45f,rubber?.06f:.12f,.30f,0);
+        Vector3f normal=contactNormal(event);boolean metal=event.subjectId()>=0;
+        for(int i=0;i<(metal?12:8);i++) {
+            Vector3f velocity=normal.mult(metal?4.8f:1.2f).addLocal(randomDirection(metal?3.2f:.7f));
+            emit(event.position().add(normal.mult(.025f)),velocity,metal?AMBER:DUST,metal?.28f:.40f,
+                    metal?.052f:.12f,metal?-.035f:.30f,metal?8:0);
         }
         if(metal)for(int i=0;i<3;i++)addShard(event.position(),normal.mult(2).addLocal(randomDirection(2.2f)),.38f,.025f,METAL);
-        if(surface==ContactSurface.WOOD)for(int i=0;i<4;i++)addShard(event.position(),normal.mult(1.5f).addLocal(randomDirection(2)),.7f,.045f,new ColorRGBA(.39f,.22f,.10f,1));
     }
     private void ram(GameEvent event) {
         Vector3f normal=contactNormal(event);float force=Math.clamp(event.value()/12,.3f,1.8f);
@@ -509,26 +483,20 @@ public final class CombatVisuals implements AutoCloseable {
         }
         for(int i=0;i<8;i++)emit(centre.add(randomDirection(.45f)),randomDirection(.7f),ION,.25f,.05f,.12f,0);
     }
-    private void explosion(Vector3f centre,Vector3f normal,String kind,boolean surfaceContact) {
+    private void explosion(Vector3f centre,Vector3f normal,String kind) {
         boolean mine=kind.equals("mine"),cannon=kind.startsWith("cannon"),ballistic=kind.equals("ballistic");
-        String recipeKind=cannon?"cannon":kind.equals("ballistic-fall")?"ballistic":kind;
-        if(kind.equals("freeze")){ice(centre,true);return;}
-        var recipe=atlas.explosion(recipeKind);float scale=recipe.scale();
-        int flameCount=recipe.flames(),fragmentCount=recipe.fragments();
-        emit(centre.add(normal.mult(.12f)),Vector3f.ZERO,new ColorRGBA(1,.9f,.61f,1),recipe.flashSeconds(),.7f*scale,4,0);
+        float scale=switch(kind){case "destroyed"->1.5f;case "power"->1.3f;case "mine","ballistic"->1.15f;case "cannon-ricochet"->.7f;default->1;};
+        int flameCount=cannon?16:ballistic?32:26,fragmentCount=cannon?24:mine?18:14;
+        emit(centre.add(normal.mult(.12f)),Vector3f.ZERO,new ColorRGBA(1,.9f,.61f,1),.12f,.9f*scale,4,0);
         for(int i=0;i<flameCount;i++) {
             Vector3f velocity=randomDirection((ballistic?5.2f:3.8f)*scale);
             if(mine){velocity=surfaceRotation(normal).mult(new Vector3f(velocity.x*1.4f,.35f+Math.abs(velocity.y)*.18f,velocity.z*1.4f));}
             else velocity.addLocal(normal.mult(cannon?2:1.2f));
-            if(surfaceContact){float inward=velocity.dot(normal);if(inward<0)velocity.subtractLocal(normal.mult(inward));}
-            if(ballistic)velocity.y+=2.4f;
-            Vector3f offset=randomDirection(.2f);
-            if(kind.equals("destroyed"))offset.z+=(i%2==0?-.65f:.65f);
-            emit(centre.add(offset),velocity,BLAST_FLAME,recipe.flameSeconds(),.28f*scale,1.45f,2);
+            emit(centre.add(randomDirection(.15f)),velocity,BLAST_FLAME,.6f,.24f*scale,1.45f,2);
         }
         for(int i=0;i<14;i++) {
             Vector3f drift=randomDirection(1.7f*scale);drift.y=Math.abs(drift.y)+1.5f;
-            emit(centre.add(normal.mult(.25f)),drift,BLAST_SMOKE,recipe.smokeSeconds(),.32f,.55f,0);
+            emit(centre.add(normal.mult(.25f)),drift,BLAST_SMOKE,1.5f,.32f,.68f,0);
         }
         for(int i=0;i<fragmentCount;i++) {
             Vector3f velocity=randomDirection((cannon?8:6)*scale).addLocal(normal.mult(2));
@@ -537,8 +505,8 @@ public final class CombatVisuals implements AutoCloseable {
             emit(centre,velocity.mult(1.3f),AMBER,.38f,.065f,0,7);
         }
         Quaternion surface=surfaceRotation(normal);
-        for(int i=0;surfaceContact&&i<recipe.dust();i++) {
-            float angle=i*FastMath.TWO_PI/recipe.dust();
+        for(int i=0;i<12;i++) {
+            float angle=i*FastMath.TWO_PI/12;
             Vector3f out=surface.mult(new Vector3f(FastMath.cos(angle),.1f,FastMath.sin(angle)));
             emit(centre.add(normal.mult(.06f)),out.mult(3.7f*scale),DUST,.55f,.2f,.8f,0);
         }
@@ -549,11 +517,10 @@ public final class CombatVisuals implements AutoCloseable {
             int victim=-1;float incoming=importance(position,emissionPriority,0),lowest=incoming;
             for(int i=0;i<particles.size();i++) {Particle p=particles.get(i);float score=importance(p.position,p.priority,p.age/p.lifetime);
                 if(score<=lowest){lowest=score;victim=i;}}
-            if(victim<0)return;freeParticles.addLast(particles.remove(victim));
+            if(victim<0)return;particles.remove(victim);
         }
-        Particle particle=freeParticles.pollFirst();if(particle==null)particle=new Particle();
-        particle.reset(position,velocity,color,lifetime,size,growth,gravity,emissionPriority,
-                visualRandom.nextFloat()*FastMath.TWO_PI,visualRandom.nextFloat());particles.add(particle);
+        particles.add(new Particle(position,velocity,color,lifetime,size,growth,gravity,emissionPriority,
+                visualRandom.nextFloat()*FastMath.TWO_PI,visualRandom.nextFloat()));
     }
     private void addShard(Vector3f position,Vector3f velocity,float life,float size,ColorRGBA color) {
         if(shards.size()>=SHARD_LIMIT) {
@@ -563,18 +530,6 @@ public final class CombatVisuals implements AutoCloseable {
         }
         shards.add(new Shard(position,velocity,new Quaternion().fromAngles(visualRandom.nextFloat()*3,visualRandom.nextFloat()*3,visualRandom.nextFloat()*3),life,size,color,emissionPriority));
     }
-    /** Decorative detached panels stay in the presentation budget and never become Bullet bodies. */
-    public void detachPanel(Vector3f position,Quaternion rotation,Vector3f inheritedVelocity,Vector3f halfExtents,ContactSurface material,int sourceId) {
-        if(closed||!Vector3f.isValidVector(position)||!Vector3f.isValidVector(inheritedVelocity)||!Vector3f.isValidVector(halfExtents))return;
-        emissionPriority=sourceId==0?3:2;
-        if(shards.size()>=SHARD_LIMIT)shards.remove(0);
-        Vector3f velocity=inheritedVelocity.clone();if(velocity.lengthSquared()>80*80)velocity.normalizeLocal().multLocal(80);
-        Shard panel=new Shard(position,velocity,rotation.clone(),2.8f,Math.min(.18f,halfExtents.length()),
-                material==ContactSurface.GLASS?new ColorRGBA(.5f,.7f,.75f,.72f):METAL,emissionPriority);
-        panel.halfExtents=new Vector3f(Math.clamp(halfExtents.x,.005f,.8f),Math.clamp(halfExtents.y,.005f,.7f),Math.clamp(halfExtents.z,.005f,1));
-        shards.add(panel);emissionPriority=0;
-    }
-    public int debrisQueriesLastFrame() {return debrisQueries;}
     private float importance(Vector3f position,int priority,float consumedLife) {
         return priority*80-Math.min(250,position.distance(observer))*.5f-consumedLife*30;
     }
@@ -610,19 +565,22 @@ public final class CombatVisuals implements AutoCloseable {
         ordnance.update(projectiles,mines,observer);renderFields();renderFragments();
     }
     private void renderParticles(Camera camera) {
-        int count=particles.size();for(int i=0;i<count;i++)sortedParticles[i]=particles.get(i);
-        if(camera!=null && count>1) {sortEye.set(camera.getLocation());sortForward.set(camera.getDirection());Arrays.sort(sortedParticles,0,count,particleOrder);}
+        List<Particle> ordered=particles;
+        if(camera!=null && particles.size()>1) {
+            Vector3f eye=camera.getLocation(),forward=camera.getDirection();
+            ordered=new ArrayList<>(particles);
+            ordered.sort(Comparator.comparingDouble((Particle p)->
+                    (p.position.x-eye.x)*forward.x+(p.position.y-eye.y)*forward.y+(p.position.z-eye.z)*forward.z).reversed());
+        }
         particleBatch.begin();
-        for(int i=0;i<count;i++) {
-            Particle p=sortedParticles[i];
+        for(Particle p:ordered) {
             float size=Math.clamp(p.size+p.age*p.growth,.015f,p.smoke?(p.blast?1.6f:SMOKE_RADIUS_LIMIT):FLASH_RADIUS_LIMIT);
             float life=p.age/p.lifetime;
             float fade=p.criticalSmoke?Math.min(1,p.age/.12f)*Math.clamp((p.lifetime-p.age)/.65f,0,1):
                     p.blast&&p.smoke?Math.min(1,p.age/.18f)*Math.clamp((p.lifetime-p.age)/.6f,0,1):
                     (1-life)*(p.smoke?Math.min(1,life*12):1);
             float alpha=p.color.a*fade;
-            float shape=p.dust?7:p.flame?8:p.criticalSmoke||p.blast&&p.smoke?3:p.smoke?1:p.blast?4:2;
-            particleBatch.sprite(p.position,size,p.color,alpha,shape,p.rotation,p.variation,CombatVfxAtlas.frame(p.age,p.lifetime),p.smoke?.35f:p.blast?.22f:.045f);
+            particleBatch.sprite(p.position,size,p.color,alpha,p.criticalSmoke||p.blast&&p.smoke?3:p.smoke?1:p.blast?4:2,p.rotation,p.variation);
         }
         for(TracerSegment tracer:tracerSegments()) {
             Vector3f direction=tracer.to.subtract(tracer.from).normalizeLocal();
@@ -646,8 +604,11 @@ public final class CombatVisuals implements AutoCloseable {
     private void renderFragments() {
         fragmentBatch.begin();
         for(Shard shard:shards) {
-            float alpha=shard.color.a*Math.min(1,(shard.life-shard.age)/.2f);
-            fragmentBatch.box(shard.position,shard.rotation,shard.halfExtents,shard.color,alpha);
+            float size=shard.size,alpha=.75f*(1-shard.age/shard.life);
+            Vector3f a=local(shard.position,shard.rotation,0,size*2.2f,0),b=local(shard.position,shard.rotation,-size,-size,0),
+                    c=local(shard.position,shard.rotation,size,-size,0),d=local(shard.position,shard.rotation,0,0,size);
+            fragmentBatch.triangle(a,b,c,shard.color,alpha);fragmentBatch.triangle(a,c,d,shard.color,alpha);
+            fragmentBatch.triangle(a,d,b,shard.color,alpha);fragmentBatch.triangle(b,d,c,shard.color,alpha);
         }
         for(HitFlare flare:hitFlares) {
             Quaternion rotation=surfaceRotation(flare.normal);Vector3f centre=flare.position.add(flare.normal.mult(.08f));
@@ -743,34 +704,26 @@ public final class CombatVisuals implements AutoCloseable {
     int cachedFirePointCount(){return cachedFirePoints;}
     public int projectileCount(){return ordnance.projectileCount();}
     @Override public void close(){if(closed)return;closed=true;ordnance.close();root.removeFromParent();for(BlastLight light:lights){light.light.setEnabled(false);scene.removeLight(light.light);}
-        particles.clear();freeParticles.clear();Arrays.fill(sortedParticles,null);shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();presentedEvents.clear();trailHeads.clear();
+        particles.clear();shots.clear();destroyedTargets.clear();shards.clear();hitFlares.clear();cosmeticFires.clear();recentEvents.clear();trailHeads.clear();
         fireSurfaces.clear();cachedFirePoints=0;
-        projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();fireExposures=List.of();}
+        projectiles=List.of();mines=List.of();fires=List.of();warnings=List.of();}
 
     private static final class Batch {
         final Geometry geometry;
         final Mesh mesh=new Mesh();
-        final FloatBuffer positions,colors,textureCoordinates,spriteData,spriteVariation,spriteAnimation,normals;
-        private final Vector3f faceNormal=new Vector3f(0,1,0),faceEdge=new Vector3f();
-        private final Vector3f[] boxPoints=new Vector3f[8];
-        private static final int[] BOX_TRIANGLES={0,2,1,1,2,3,4,5,6,5,7,6,0,1,4,1,5,4,2,6,3,3,6,7,0,4,2,2,4,6,1,3,5,3,7,5};
+        final FloatBuffer positions,colors,textureCoordinates,spriteData,spriteVariation;
         final boolean softSprites;
         Batch(Node root,String name,AssetManager assets,int vertices,boolean transparent,boolean softSprites) {
             this.softSprites=softSprites;
             positions=BufferUtils.createFloatBuffer(vertices*3);colors=BufferUtils.createFloatBuffer(vertices*4);
             mesh.setBuffer(VertexBuffer.Type.Position,3,positions);mesh.setBuffer(VertexBuffer.Type.Color,4,colors);mesh.setDynamic();
-            normals=softSprites?null:BufferUtils.createFloatBuffer(vertices*3);
-            if(normals!=null)mesh.setBuffer(VertexBuffer.Type.Normal,3,normals);
-            for(int i=0;i<8;i++)boxPoints[i]=new Vector3f();
             textureCoordinates=softSprites?BufferUtils.createFloatBuffer(vertices*2):null;
             spriteData=softSprites?BufferUtils.createFloatBuffer(vertices*2):null;
             spriteVariation=softSprites?BufferUtils.createFloatBuffer(vertices*2):null;
-            spriteAnimation=softSprites?BufferUtils.createFloatBuffer(vertices*2):null;
             if(softSprites) {
                 mesh.setBuffer(VertexBuffer.Type.TexCoord,2,textureCoordinates);
                 mesh.setBuffer(VertexBuffer.Type.TexCoord2,2,spriteData);
                 mesh.setBuffer(VertexBuffer.Type.TexCoord3,2,spriteVariation);
-                mesh.setBuffer(VertexBuffer.Type.TexCoord4,2,spriteAnimation);
             }
             geometry=new Geometry(name,mesh);
             Material material=new Material(assets,softSprites?"materials/CombatParticles.j3md":"Common/MatDefs/Misc/Unshaded.j3md");
@@ -782,7 +735,7 @@ public final class CombatVisuals implements AutoCloseable {
             }
             geometry.setMaterial(material);geometry.setCullHint(Spatial.CullHint.Always);root.attachChild(geometry);
         }
-        void begin(){positions.clear();colors.clear();if(normals!=null)normals.clear();if(softSprites){textureCoordinates.clear();spriteData.clear();spriteVariation.clear();spriteAnimation.clear();}}
+        void begin(){positions.clear();colors.clear();if(softSprites){textureCoordinates.clear();spriteData.clear();spriteVariation.clear();}}
         void reserveVertices(int count){positions.limit(positions.capacity()-Math.min(count,positions.capacity()/3)*3);}
         void releaseReservedVertices(){positions.limit(positions.capacity());}
         void vertex(float x,float y,float z,ColorRGBA color,float alpha) {
@@ -791,29 +744,17 @@ public final class CombatVisuals implements AutoCloseable {
         void vertex(float x,float y,float z,ColorRGBA color,float alpha,float u,float v,float radius,float shape) {
             if(positions.remaining()<3)return;
             positions.put(x).put(y).put(z);colors.put(color.r).put(color.g).put(color.b).put(alpha);
-            if(normals!=null)normals.put(faceNormal.x).put(faceNormal.y).put(faceNormal.z);
-            if(softSprites){textureCoordinates.put(u).put(v);spriteData.put(radius).put(shape);spriteVariation.put(0).put(0);spriteAnimation.put(0).put(.03f);}
+            if(softSprites){textureCoordinates.put(u).put(v);spriteData.put(radius).put(shape);spriteVariation.put(0).put(0);}
         }
-        void sprite(Vector3f centre,float radius,ColorRGBA color,float alpha,float shape,float rotation,float variation,float frame,float softness) {
-            if(positions.remaining()<18)return;
+        void sprite(Vector3f centre,float radius,ColorRGBA color,float alpha,float shape,float rotation,float variation) {
             for(int i=0;i<SPRITE_UV.length;i+=2) {
                 vertex(centre.x,centre.y,centre.z,color,alpha,SPRITE_UV[i],SPRITE_UV[i+1],radius,shape);
                 spriteVariation.put(spriteVariation.position()-2,rotation);spriteVariation.put(spriteVariation.position()-1,variation);
-                spriteAnimation.put(spriteAnimation.position()-2,frame);spriteAnimation.put(spriteAnimation.position()-1,softness);
             }
         }
         void triangle(Vector3f a,Vector3f b,Vector3f c,ColorRGBA color,float alpha) {
             if(positions.remaining()<9)return;
-            if(normals!=null)faceNormal.set(b).subtractLocal(a).crossLocal(faceEdge.set(c).subtractLocal(a)).normalizeLocal();
-            vertex(a.x,a.y,a.z,color,alpha);vertex(b.x,b.y,b.z,color,alpha);vertex(c.x,c.y,c.z,color,alpha);
-        }
-        void box(Vector3f centre,Quaternion rotation,Vector3f half,ColorRGBA color,float alpha) {
-            if(positions.remaining()<36*3)return;
-            for(int i=0;i<8;i++) {
-                Vector3f p=boxPoints[i].set((i&1)==0?-half.x:half.x,(i&2)==0?-half.y:half.y,(i&4)==0?-half.z:half.z);
-                rotation.mult(p,p);p.addLocal(centre);
-            }
-            for(int i=0;i<BOX_TRIANGLES.length;i+=3)triangle(boxPoints[BOX_TRIANGLES[i]],boxPoints[BOX_TRIANGLES[i+1]],boxPoints[BOX_TRIANGLES[i+2]],color,alpha);
+            for(Vector3f p:List.of(a,b,c))vertex(p.x,p.y,p.z,color,alpha);
         }
         void maskedQuad(Vector3f a,Vector3f b,Vector3f c,Vector3f d,ColorRGBA color,float alpha,float shape,float mask) {
             if(positions.remaining()<18)return;
@@ -831,7 +772,7 @@ public final class CombatVisuals implements AutoCloseable {
                 positions.put(surface.vertices,patch*18,18);textureCoordinates.put(SPRITE_UV);
                 for(int vertex=0;vertex<6;vertex++) {
                     colors.put(SCORCH.r).put(SCORCH.g).put(SCORCH.b).put(.48f);
-                    spriteData.put(0).put(5);spriteVariation.put(surface.edges[patch]&255).put(0);spriteAnimation.put(0).put(.03f);
+                    spriteData.put(0).put(5);spriteVariation.put(surface.edges[patch]&255).put(0);
                 }
             }
         }
@@ -842,13 +783,11 @@ public final class CombatVisuals implements AutoCloseable {
         void end() {
             positions.flip();colors.flip();
             mesh.getBuffer(VertexBuffer.Type.Position).updateData(positions);mesh.getBuffer(VertexBuffer.Type.Color).updateData(colors);
-            if(normals!=null){normals.flip();mesh.getBuffer(VertexBuffer.Type.Normal).updateData(normals);}
             if(softSprites) {
-                textureCoordinates.flip();spriteData.flip();spriteVariation.flip();spriteAnimation.flip();
+                textureCoordinates.flip();spriteData.flip();spriteVariation.flip();
                 mesh.getBuffer(VertexBuffer.Type.TexCoord).updateData(textureCoordinates);
                 mesh.getBuffer(VertexBuffer.Type.TexCoord2).updateData(spriteData);
                 mesh.getBuffer(VertexBuffer.Type.TexCoord3).updateData(spriteVariation);
-                mesh.getBuffer(VertexBuffer.Type.TexCoord4).updateData(spriteAnimation);
             }
             mesh.updateCounts();
             if(positions.limit()==0)geometry.setCullHint(Spatial.CullHint.Always);

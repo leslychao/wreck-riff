@@ -196,6 +196,198 @@
       "yawDegrees": 0
     },
     {
+      "id": "fair-shop-sweet-shop",
+      "center": {
+        "x": 265.0,
+        "y": 3.5,
+        "z": 570.0
+      },
+      "size": {
+        "x": 26.0,
+        "y": 7.0,
+        "z": 20.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "fair-shop-shooting-gallery",
+      "center": {
+        "x": 270.0,
+        "y": 4.0,
+        "z": 665.0
+      },
+      "size": {
+        "x": 32.0,
+        "y": 8.0,
+        "z": 22.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": -3
+    },
+    {
+      "id": "fair-shop-fortune-cabinet",
+      "center": {
+        "x": 270.0,
+        "y": 5.0,
+        "z": 720.0
+      },
+      "size": {
+        "x": 26.0,
+        "y": 10.0,
+        "z": 20.0
+      },
+      "material": "purple",
+      "collision": true,
+      "yawDegrees": 4
+    },
+    {
+      "id": "fair-shop-arcade",
+      "center": {
+        "x": 365.0,
+        "y": 4.5,
+        "z": 520.0
+      },
+      "size": {
+        "x": 30.0,
+        "y": 9.0,
+        "z": 26.0
+      },
+      "material": "blue",
+      "collision": true,
+      "yawDegrees": -12
+    },
+    {
+      "id": "fair-shop-tea-house",
+      "center": {
+        "x": 220.0,
+        "y": 4.0,
+        "z": 475.0
+      },
+      "size": {
+        "x": 26.0,
+        "y": 8.0,
+        "z": 28.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 10
+    },
+    {
+      "id": "fair-shop-bakery",
+      "center": {
+        "x": 225.0,
+        "y": 3.5,
+        "z": 535.0
+      },
+      "size": {
+        "x": 30.0,
+        "y": 7.0,
+        "z": 22.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 5
+    },
+    {
+      "id": "fair-shop-prize-store",
+      "center": {
+        "x": 230.0,
+        "y": 3.5,
+        "z": 585.0
+      },
+      "size": {
+        "x": 30.0,
+        "y": 7.0,
+        "z": 20.0
+      },
+      "material": "faded-red",
+      "collision": true,
+      "yawDegrees": -8
+    },
+    {
+      "id": "fair-shop-photo-kiosk",
+      "center": {
+        "x": 445.0,
+        "y": 4.0,
+        "z": 520.0
+      },
+      "size": {
+        "x": 26.0,
+        "y": 8.0,
+        "z": 20.0
+      },
+      "material": "ivory",
+      "collision": true,
+      "yawDegrees": 8
+    },
+    {
+      "id": "fair-shop-souvenir-row",
+      "center": {
+        "x": 405.0,
+        "y": 4.5,
+        "z": 795.0
+      },
+      "size": {
+        "x": 34.0,
+        "y": 9.0,
+        "z": 22.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 18
+    },
+    {
+      "id": "fair-shop-puppet-stage",
+      "center": {
+        "x": 220.0,
+        "y": 4.5,
+        "z": 775.0
+      },
+      "size": {
+        "x": 36.0,
+        "y": 9.0,
+        "z": 26.0
+      },
+      "material": "purple",
+      "collision": true,
+      "yawDegrees": -5
+    },
+    {
+      "id": "island-bandstand-proxy",
+      "center": {
+        "x": 755.0,
+        "y": 11.0,
+        "z": 715.0
+      },
+      "size": {
+        "x": 62.0,
+        "y": 16.0,
+        "z": 62.0
+      },
+      "material": "ivory",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "island-bandstand-base",
+      "center": {
+        "x": 755.0,
+        "y": 3.6,
+        "z": 715.0
+      },
+      "size": {
+        "x": 52.0,
+        "y": 1.2,
+        "z": 52.0
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
       "id": "circus-roof",
       "center": {
         "x": 347.5,
@@ -660,6 +852,2406 @@
       "yawDegrees": 0
     },
     {
+      "id": "entry-garden-tree-0-0",
+      "center": {
+        "x": 57.0,
+        "y": 4.2,
+        "z": 92.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-0-1",
+      "center": {
+        "x": 94.22109,
+        "y": 4.92,
+        "z": 85.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-1-0",
+      "center": {
+        "x": 60.72853,
+        "y": 4.92,
+        "z": 123.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-1-1",
+      "center": {
+        "x": 91.7056,
+        "y": 5.64,
+        "z": 116.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-2-0",
+      "center": {
+        "x": 52.03154,
+        "y": 5.64,
+        "z": 152.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-2-1",
+      "center": {
+        "x": 86.83866,
+        "y": 6.36,
+        "z": 151.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-3-0",
+      "center": {
+        "x": 59.8922,
+        "y": 6.36,
+        "z": 184.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-3-1",
+      "center": {
+        "x": 95.8396,
+        "y": 4.2,
+        "z": 189.93256
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-4-0",
+      "center": {
+        "x": 58.11445,
+        "y": 4.2,
+        "z": 219.73178
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-4-1",
+      "center": {
+        "x": 88.71232,
+        "y": 4.92,
+        "z": 227.63739
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-5-0",
+      "center": {
+        "x": 52.62274,
+        "y": 4.92,
+        "z": 258.41831
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-5-1",
+      "center": {
+        "x": 89.20885,
+        "y": 5.64,
+        "z": 261.07863
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-6-0",
+      "center": {
+        "x": 61.71848,
+        "y": 5.64,
+        "z": 295.80085
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "entry-garden-tree-6-1",
+      "center": {
+        "x": 95.67448,
+        "y": 6.36,
+        "z": 290.76999
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-0-0",
+      "center": {
+        "x": 452.0,
+        "y": 4.2,
+        "z": 82.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-0-1",
+      "center": {
+        "x": 489.22109,
+        "y": 4.92,
+        "z": 75.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-0-2",
+      "center": {
+        "x": 524.92725,
+        "y": 5.64,
+        "z": 73.04516
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-0-3",
+      "center": {
+        "x": 558.31605,
+        "y": 6.36,
+        "z": 81.17356
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-0-4",
+      "center": {
+        "x": 589.67494,
+        "y": 4.2,
+        "z": 78.2563
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-1-0",
+      "center": {
+        "x": 455.72853,
+        "y": 4.92,
+        "z": 113.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-1-1",
+      "center": {
+        "x": 486.7056,
+        "y": 5.64,
+        "z": 106.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-1-2",
+      "center": {
+        "x": 517.35082,
+        "y": 6.36,
+        "z": 111.43749
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-1-3",
+      "center": {
+        "x": 549.24199,
+        "y": 4.2,
+        "z": 115.57192
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-1-4",
+      "center": {
+        "x": 583.37093,
+        "y": 4.92,
+        "z": 107.6064
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-2-0",
+      "center": {
+        "x": 447.03154,
+        "y": 5.64,
+        "z": 142.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-2-1",
+      "center": {
+        "x": 481.83866,
+        "y": 6.36,
+        "z": 141.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-2-2",
+      "center": {
+        "x": 518.60292,
+        "y": 4.2,
+        "z": 149.4276
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-2-3",
+      "center": {
+        "x": 556.02425,
+        "y": 4.92,
+        "z": 145.76687
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-2-4",
+      "center": {
+        "x": 592.49354,
+        "y": 5.64,
+        "z": 140.07656
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-3-0",
+      "center": {
+        "x": 454.8922,
+        "y": 6.36,
+        "z": 174.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-3-1",
+      "center": {
+        "x": 490.8396,
+        "y": 4.2,
+        "z": 179.93256
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-3-2",
+      "center": {
+        "x": 524.51086,
+        "y": 4.92,
+        "z": 183.34699
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-3-3",
+      "center": {
+        "x": 556.06059,
+        "y": 5.64,
+        "z": 175.25677
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "front-lawn-tree-3-4",
+      "center": {
+        "x": 586.6412,
+        "y": 6.36,
+        "z": 177.07331
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-0-0",
+      "center": {
+        "x": 57.0,
+        "y": 4.2,
+        "z": 357.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-0-1",
+      "center": {
+        "x": 94.22109,
+        "y": 4.92,
+        "z": 350.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-1-0",
+      "center": {
+        "x": 60.72853,
+        "y": 4.92,
+        "z": 388.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-1-1",
+      "center": {
+        "x": 91.7056,
+        "y": 5.64,
+        "z": 381.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-2-0",
+      "center": {
+        "x": 52.03154,
+        "y": 5.64,
+        "z": 417.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-2-1",
+      "center": {
+        "x": 86.83866,
+        "y": 6.36,
+        "z": 416.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-3-0",
+      "center": {
+        "x": 59.8922,
+        "y": 6.36,
+        "z": 449.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-3-1",
+      "center": {
+        "x": 95.8396,
+        "y": 4.2,
+        "z": 454.93256
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-4-0",
+      "center": {
+        "x": 58.11445,
+        "y": 4.2,
+        "z": 484.73178
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-4-1",
+      "center": {
+        "x": 88.71232,
+        "y": 4.92,
+        "z": 492.63739
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-5-0",
+      "center": {
+        "x": 52.62274,
+        "y": 4.92,
+        "z": 523.41831
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-5-1",
+      "center": {
+        "x": 89.20885,
+        "y": 5.64,
+        "z": 526.07863
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-6-0",
+      "center": {
+        "x": 61.71848,
+        "y": 5.64,
+        "z": 560.80085
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-6-1",
+      "center": {
+        "x": 95.67448,
+        "y": 6.36,
+        "z": 555.76999
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-7-0",
+      "center": {
+        "x": 55.08964,
+        "y": 6.36,
+        "z": 593.76951
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-7-1",
+      "center": {
+        "x": 86.56216,
+        "y": 4.2,
+        "z": 585.67282
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-8-0",
+      "center": {
+        "x": 54.82717,
+        "y": 4.2,
+        "z": 623.2725
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-8-1",
+      "center": {
+        "x": 92.23917,
+        "y": 4.92,
+        "z": 619.55404
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-9-0",
+      "center": {
+        "x": 61.80576,
+        "y": 4.92,
+        "z": 653.44435
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-9-1",
+      "center": {
+        "x": 93.78658,
+        "y": 5.64,
+        "z": 657.52286
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-10-0",
+      "center": {
+        "x": 52.7689,
+        "y": 5.64,
+        "z": 687.80464
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-10-1",
+      "center": {
+        "x": 86.04757,
+        "y": 6.36,
+        "z": 695.93035
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-11-0",
+      "center": {
+        "x": 57.8324,
+        "y": 6.36,
+        "z": 726.02213
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-13-0",
+      "center": {
+        "x": 52.00752,
+        "y": 4.92,
+        "z": 798.53723
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-13-1",
+      "center": {
+        "x": 87.3582,
+        "y": 5.64,
+        "z": 790.54514
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-14-0",
+      "center": {
+        "x": 60.53085,
+        "y": 5.64,
+        "z": 828.68369
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "west-fair-garden-tree-14-1",
+      "center": {
+        "x": 95.98121,
+        "y": 6.36,
+        "z": 823.09191
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-0-0",
+      "center": {
+        "x": 552.0,
+        "y": 4.2,
+        "z": 252.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-0-1",
+      "center": {
+        "x": 589.22109,
+        "y": 4.92,
+        "z": 245.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-0-2",
+      "center": {
+        "x": 624.92725,
+        "y": 5.64,
+        "z": 243.04516
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-0-3",
+      "center": {
+        "x": 658.31605,
+        "y": 6.36,
+        "z": 251.17356
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-1-0",
+      "center": {
+        "x": 555.72853,
+        "y": 4.92,
+        "z": 283.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-1-1",
+      "center": {
+        "x": 586.7056,
+        "y": 5.64,
+        "z": 276.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "south-promenade-grove-tree-2-0",
+      "center": {
+        "x": 547.03154,
+        "y": 5.64,
+        "z": 312.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-0-0",
+      "center": {
+        "x": 77.0,
+        "y": 4.2,
+        "z": 957.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-0-1",
+      "center": {
+        "x": 114.22109,
+        "y": 4.92,
+        "z": 950.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-0-2",
+      "center": {
+        "x": 149.92725,
+        "y": 5.64,
+        "z": 948.04516
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-1-0",
+      "center": {
+        "x": 80.72853,
+        "y": 4.92,
+        "z": 988.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-1-1",
+      "center": {
+        "x": 111.7056,
+        "y": 5.64,
+        "z": 981.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-1-2",
+      "center": {
+        "x": 142.35082,
+        "y": 6.36,
+        "z": 986.43749
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-1-3",
+      "center": {
+        "x": 174.24199,
+        "y": 4.2,
+        "z": 990.57192
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-2-0",
+      "center": {
+        "x": 72.03154,
+        "y": 5.64,
+        "z": 1017.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-2-1",
+      "center": {
+        "x": 106.83866,
+        "y": 6.36,
+        "z": 1016.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-2-2",
+      "center": {
+        "x": 143.60292,
+        "y": 4.2,
+        "z": 1024.4276
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-2-3",
+      "center": {
+        "x": 181.02425,
+        "y": 4.92,
+        "z": 1020.76687
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-3-0",
+      "center": {
+        "x": 79.8922,
+        "y": 6.36,
+        "z": 1049.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-3-1",
+      "center": {
+        "x": 115.8396,
+        "y": 4.2,
+        "z": 1054.93256
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-3-2",
+      "center": {
+        "x": 149.51086,
+        "y": 4.92,
+        "z": 1058.34699
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-3-3",
+      "center": {
+        "x": 181.06059,
+        "y": 5.64,
+        "z": 1050.25677
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-4-0",
+      "center": {
+        "x": 78.11445,
+        "y": 4.2,
+        "z": 1084.73178
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-4-1",
+      "center": {
+        "x": 108.71232,
+        "y": 4.92,
+        "z": 1092.63739
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-4-2",
+      "center": {
+        "x": 140.38612,
+        "y": 5.64,
+        "z": 1088.26978
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-4-3",
+      "center": {
+        "x": 174.2299,
+        "y": 6.36,
+        "z": 1083.18818
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-5-0",
+      "center": {
+        "x": 72.62274,
+        "y": 4.92,
+        "z": 1123.41831
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-5-1",
+      "center": {
+        "x": 109.20885,
+        "y": 5.64,
+        "z": 1126.07863
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-5-2",
+      "center": {
+        "x": 146.63737,
+        "y": 6.36,
+        "z": 1117.94453
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-5-3",
+      "center": {
+        "x": 183.29581,
+        "y": 4.2,
+        "z": 1120.54355
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-6-0",
+      "center": {
+        "x": 81.71848,
+        "y": 5.64,
+        "z": 1160.80085
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-6-1",
+      "center": {
+        "x": 115.67448,
+        "y": 6.36,
+        "z": 1155.76999
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-6-2",
+      "center": {
+        "x": 147.43199,
+        "y": 4.2,
+        "z": 1151.34787
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-6-3",
+      "center": {
+        "x": 178.04571,
+        "y": 4.92,
+        "z": 1159.23798
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-7-0",
+      "center": {
+        "x": 75.08964,
+        "y": 6.36,
+        "z": 1193.76951
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-7-1",
+      "center": {
+        "x": 106.56216,
+        "y": 4.2,
+        "z": 1185.67282
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-7-2",
+      "center": {
+        "x": 140.12187,
+        "y": 4.92,
+        "z": 1189.02835
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "circus-garden-tree-7-3",
+      "center": {
+        "x": 175.97584,
+        "y": 5.64,
+        "z": 1194.95542
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bank-grove-tree-0-0",
+      "center": {
+        "x": 542.0,
+        "y": 4.2,
+        "z": 952.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bank-grove-tree-1-0",
+      "center": {
+        "x": 545.72853,
+        "y": 4.92,
+        "z": 983.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bank-grove-tree-1-1",
+      "center": {
+        "x": 576.7056,
+        "y": 5.64,
+        "z": 976.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bank-grove-tree-1-2",
+      "center": {
+        "x": 607.35082,
+        "y": 6.36,
+        "z": 981.43749
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "north-bank-grove-tree-1-3",
+      "center": {
+        "x": 639.24199,
+        "y": 4.2,
+        "z": 985.57192
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-0-0",
+      "center": {
+        "x": 1352.0,
+        "y": 4.2,
+        "z": 627.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-1-0",
+      "center": {
+        "x": 1355.72853,
+        "y": 4.92,
+        "z": 658.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-2-0",
+      "center": {
+        "x": 1347.03154,
+        "y": 5.64,
+        "z": 687.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-2-1",
+      "center": {
+        "x": 1381.83866,
+        "y": 6.36,
+        "z": 686.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-3-0",
+      "center": {
+        "x": 1354.8922,
+        "y": 6.36,
+        "z": 719.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-3-2",
+      "center": {
+        "x": 1424.51086,
+        "y": 4.92,
+        "z": 728.34699
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-4-0",
+      "center": {
+        "x": 1353.11445,
+        "y": 4.2,
+        "z": 754.73178
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-5-0",
+      "center": {
+        "x": 1347.62274,
+        "y": 4.92,
+        "z": 793.41831
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-5-2",
+      "center": {
+        "x": 1421.63737,
+        "y": 6.36,
+        "z": 787.94453
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-6-0",
+      "center": {
+        "x": 1356.71848,
+        "y": 5.64,
+        "z": 830.80085
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-6-2",
+      "center": {
+        "x": 1422.43199,
+        "y": 4.2,
+        "z": 821.34787
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "wheel-garden-tree-7-0",
+      "center": {
+        "x": 1350.08964,
+        "y": 6.36,
+        "z": 863.76951
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-0",
+      "center": {
+        "x": 882.0,
+        "y": 4.2,
+        "z": 1152.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-1",
+      "center": {
+        "x": 919.22109,
+        "y": 4.92,
+        "z": 1145.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-2",
+      "center": {
+        "x": 954.92725,
+        "y": 5.64,
+        "z": 1143.04516
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-0-3",
+      "center": {
+        "x": 988.31605,
+        "y": 6.36,
+        "z": 1151.17356
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-0",
+      "center": {
+        "x": 885.72853,
+        "y": 4.92,
+        "z": 1183.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-1",
+      "center": {
+        "x": 916.7056,
+        "y": 5.64,
+        "z": 1176.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-2",
+      "center": {
+        "x": 947.35082,
+        "y": 6.36,
+        "z": 1181.43749
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-3",
+      "center": {
+        "x": 979.24199,
+        "y": 4.2,
+        "z": 1185.57192
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-1-4",
+      "center": {
+        "x": 1013.37093,
+        "y": 4.92,
+        "z": 1177.6064
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-0",
+      "center": {
+        "x": 877.03154,
+        "y": 5.64,
+        "z": 1212.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-1",
+      "center": {
+        "x": 911.83866,
+        "y": 6.36,
+        "z": 1211.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-2",
+      "center": {
+        "x": 948.60292,
+        "y": 4.2,
+        "z": 1219.4276
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "backstage-green-buffer-tree-2-3",
+      "center": {
+        "x": 986.02425,
+        "y": 4.92,
+        "z": 1215.76687
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "fair-east-garden-tree-0-1",
+      "center": {
+        "x": 414.22109,
+        "y": 4.92,
+        "z": 455.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "fair-east-garden-tree-1-1",
+      "center": {
+        "x": 411.7056,
+        "y": 5.64,
+        "z": 486.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "fair-east-garden-tree-2-1",
+      "center": {
+        "x": 406.83866,
+        "y": 6.36,
+        "z": 521.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "fair-east-garden-tree-3-0",
+      "center": {
+        "x": 379.8922,
+        "y": 6.36,
+        "z": 554.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "fair-east-garden-tree-3-1",
+      "center": {
+        "x": 415.8396,
+        "y": 4.2,
+        "z": 559.93256
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-0",
+      "center": {
+        "x": 1072.0,
+        "y": 4.2,
+        "z": 97.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-1",
+      "center": {
+        "x": 1109.22109,
+        "y": 4.92,
+        "z": 90.38355
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-2",
+      "center": {
+        "x": 1144.92725,
+        "y": 5.64,
+        "z": 88.04516
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-0-3",
+      "center": {
+        "x": 1178.31605,
+        "y": 6.36,
+        "z": 96.17356
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-0",
+      "center": {
+        "x": 1075.72853,
+        "y": 4.92,
+        "z": 128.70151
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-1",
+      "center": {
+        "x": 1106.7056,
+        "y": 5.64,
+        "z": 121.14521
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-2",
+      "center": {
+        "x": 1137.35082,
+        "y": 6.36,
+        "z": 126.43749
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-1-3",
+      "center": {
+        "x": 1169.24199,
+        "y": 4.2,
+        "z": 130.57192
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-0",
+      "center": {
+        "x": 1067.03154,
+        "y": 5.64,
+        "z": 157.91927
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-1",
+      "center": {
+        "x": 1101.83866,
+        "y": 6.36,
+        "z": 156.37034
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-2",
+      "center": {
+        "x": 1138.60292,
+        "y": 4.2,
+        "z": 164.4276
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-2-3",
+      "center": {
+        "x": 1176.02425,
+        "y": 4.92,
+        "z": 160.76687
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-0",
+      "center": {
+        "x": 1074.8922,
+        "y": 6.36,
+        "z": 189.05004
+      },
+      "size": {
+        "x": 2.12,
+        "y": 12.72,
+        "z": 2.12
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-1",
+      "center": {
+        "x": 1110.8396,
+        "y": 4.2,
+        "z": 194.93256
+      },
+      "size": {
+        "x": 1.4,
+        "y": 8.4,
+        "z": 1.4
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-2",
+      "center": {
+        "x": 1144.51086,
+        "y": 4.92,
+        "z": 198.34699
+      },
+      "size": {
+        "x": 1.64,
+        "y": 9.84,
+        "z": 1.64
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
+      "id": "ride-arrival-garden-tree-3-3",
+      "center": {
+        "x": 1176.06059,
+        "y": 5.64,
+        "z": 190.25677
+      },
+      "size": {
+        "x": 1.88,
+        "y": 11.28,
+        "z": 1.88
+      },
+      "material": "wood",
+      "collision": false,
+      "yawDegrees": 0
+    },
+    {
       "id": "woodland-core-0",
       "center": {
         "x": 0.0,
@@ -722,6 +3314,742 @@
       "material": "earth",
       "collision": true,
       "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-entry",
+      "center": {
+        "x": 193.21819,
+        "y": 4.0,
+        "z": 202.83751
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-entry_e",
+      "center": {
+        "x": 403.34767,
+        "y": 4.0,
+        "z": 240.17204
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-shore_sw",
+      "center": {
+        "x": 532.94559,
+        "y": 4.0,
+        "z": 326.85637
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-south",
+      "center": {
+        "x": 775.95508,
+        "y": 4.0,
+        "z": 268.22723
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-se",
+      "center": {
+        "x": 1324.0,
+        "y": 4.0,
+        "z": 257.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-entry_n",
+      "center": {
+        "x": 227.82804,
+        "y": 4.0,
+        "z": 357.19559
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-fair_s",
+      "center": {
+        "x": 350.95423,
+        "y": 4.0,
+        "z": 415.89099
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-fair_c",
+      "center": {
+        "x": 294.6068,
+        "y": 4.0,
+        "z": 595.73583
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-fair_n",
+      "center": {
+        "x": 305.36582,
+        "y": 4.0,
+        "z": 816.0533
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-fair_w",
+      "center": {
+        "x": 153.13027,
+        "y": 4.0,
+        "z": 654.58919
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-gate_a",
+      "center": {
+        "x": 157.22245,
+        "y": 4.0,
+        "z": 857.68965
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-circus_w",
+      "center": {
+        "x": 233.43503,
+        "y": 4.0,
+        "z": 1096.06245
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-circus_n",
+      "center": {
+        "x": 368.48309,
+        "y": 4.0,
+        "z": 1170.22798
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-circus_out",
+      "center": {
+        "x": 565.0,
+        "y": 4.0,
+        "z": 1096.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-north",
+      "center": {
+        "x": 782.03257,
+        "y": 4.0,
+        "z": 1101.32872
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-depot_out",
+      "center": {
+        "x": 1286.98664,
+        "y": 4.0,
+        "z": 1149.37041
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-shore_w",
+      "center": {
+        "x": 408.98527,
+        "y": 4.0,
+        "z": 687.31857
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-shore_nw",
+      "center": {
+        "x": 421.54828,
+        "y": 4.0,
+        "z": 884.04476
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-shore_n",
+      "center": {
+        "x": 739.75826,
+        "y": 4.0,
+        "z": 1008.23059
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-circus_s",
+      "center": {
+        "x": 313.0,
+        "y": 4.0,
+        "z": 965.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-circus_e",
+      "center": {
+        "x": 470.0,
+        "y": 4.0,
+        "z": 1063.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-ride_out",
+      "center": {
+        "x": 1383.81696,
+        "y": 4.0,
+        "z": 548.78278
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-rides_c",
+      "center": {
+        "x": 1215.58761,
+        "y": 4.0,
+        "z": 638.50686
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-rides_n",
+      "center": {
+        "x": 1114.38991,
+        "y": 4.0,
+        "z": 849.29374
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-depot_w",
+      "center": {
+        "x": 1115.0,
+        "y": 4.0,
+        "z": 1057.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-depot_turn",
+      "center": {
+        "x": 1335.0,
+        "y": 4.0,
+        "z": 1057.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-rides_s",
+      "center": {
+        "x": 1152.72792,
+        "y": 4.0,
+        "z": 406.76955
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-jump_back",
+      "center": {
+        "x": 1081.34363,
+        "y": 4.0,
+        "z": 945.56319
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-jump_land",
+      "center": {
+        "x": 1122.58366,
+        "y": 4.0,
+        "z": 1169.00099
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-north_ramp",
+      "center": {
+        "x": 871.26712,
+        "y": 4.0,
+        "z": 1005.90403
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-jump_run",
+      "center": {
+        "x": 767.0,
+        "y": 4.0,
+        "z": 325.0
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-gate_b",
+      "center": {
+        "x": 301.29419,
+        "y": 4.0,
+        "z": 921.78915
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-fixture-backstage",
+      "center": {
+        "x": 1358.12061,
+        "y": 4.0,
+        "z": 937.0524
+      },
+      "size": {
+        "x": 0.45,
+        "y": 8.0,
+        "z": 0.45
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-0",
+      "center": {
+        "x": 145.0,
+        "y": 0.6,
+        "z": 330.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-2",
+      "center": {
+        "x": 280.0,
+        "y": 0.6,
+        "z": 610.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-3",
+      "center": {
+        "x": 350.0,
+        "y": 0.6,
+        "z": 750.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-6",
+      "center": {
+        "x": 905.0,
+        "y": 0.6,
+        "z": 885.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-7",
+      "center": {
+        "x": 1015.0,
+        "y": 0.6,
+        "z": 760.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-8",
+      "center": {
+        "x": 1045.0,
+        "y": 0.6,
+        "z": 550.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-9",
+      "center": {
+        "x": 970.0,
+        "y": 0.6,
+        "z": 395.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-10",
+      "center": {
+        "x": 550.0,
+        "y": 0.6,
+        "z": 425.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-11",
+      "center": {
+        "x": 225.0,
+        "y": 0.6,
+        "z": 960.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-12",
+      "center": {
+        "x": 460.0,
+        "y": 0.6,
+        "z": 1165.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-seat-14",
+      "center": {
+        "x": 1340.0,
+        "y": 0.6,
+        "z": 935.0
+      },
+      "size": {
+        "x": 6.0,
+        "y": 1.2,
+        "z": 1.2
+      },
+      "material": "wood",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-park-parts-cradle-0",
+      "center": {
+        "x": 1085.0,
+        "y": 1.5,
+        "z": 870.0
+      },
+      "size": {
+        "x": 14.0,
+        "y": 3.0,
+        "z": 7.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12
+    },
+    {
+      "id": "dress-park-parts-cradle-2",
+      "center": {
+        "x": 1110.0,
+        "y": 1.5,
+        "z": 1090.0
+      },
+      "size": {
+        "x": 14.0,
+        "y": 3.0,
+        "z": 7.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 12
     }
   ],
   "ramps": [],
@@ -1229,9 +4557,9 @@
       "id": "lake-cache-039",
       "type": "BALLISTIC_AMMO",
       "position": {
-        "x": 750.6875,
+        "x": 772.0,
         "y": 3.0,
-        "z": 670.625
+        "z": 650.0
       },
       "respawnTicks": 3000
     },
@@ -1239,7 +4567,7 @@
       "id": "lake-cache-040",
       "type": "CANNON_AMMO",
       "position": {
-        "x": 772.0,
+        "x": 721.4,
         "y": 3.0,
         "z": 650.0
       },
@@ -1249,9 +4577,9 @@
       "id": "lake-cache-041",
       "type": "MINE_AMMO",
       "position": {
-        "x": 721.4,
+        "x": 776.65,
         "y": 3.0,
-        "z": 650.0
+        "z": 670.5
       },
       "respawnTicks": 3000
     },
@@ -1259,9 +4587,9 @@
       "id": "lake-cache-042",
       "type": "REPAIR",
       "position": {
-        "x": 751.525,
+        "x": 798.8,
         "y": 3.0,
-        "z": 695.75
+        "z": 650.0
       },
       "respawnTicks": 4800
     },
@@ -1269,7 +4597,7 @@
       "id": "lake-cache-043",
       "type": "TURBO_CELL",
       "position": {
-        "x": 798.8,
+        "x": 696.83333,
         "y": 3.0,
         "z": 650.0
       },
@@ -1471,7 +4799,7 @@
       "position": {
         "x": 755.0,
         "y": 3.0,
-        "z": 928.6875
+        "z": 916.725
       },
       "respawnTicks": 3000
     },
@@ -1489,7 +4817,7 @@
       "id": "route-cache-065",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 535.875,
+        "x": 521.85,
         "y": 3.0,
         "z": 650.0
       },
@@ -1569,9 +4897,9 @@
       "id": "route-cache-073",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 580.85714,
+        "x": 742.08,
         "y": 0.0,
-        "z": 924.24286
+        "z": 1080.0
       },
       "respawnTicks": 3000
     },
@@ -1579,9 +4907,9 @@
       "id": "route-cache-074",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 742.08,
+        "x": 580.85714,
         "y": 0.0,
-        "z": 1080.0
+        "z": 924.24286
       },
       "respawnTicks": 3000
     },
@@ -1619,9 +4947,9 @@
       "id": "route-cache-078",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 1081.54286,
-        "y": 0.0,
-        "z": 662.28571
+        "x": 749.94,
+        "y": 3.0,
+        "z": 793.4
       },
       "respawnTicks": 3000
     },
@@ -1629,9 +4957,9 @@
       "id": "route-cache-079",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 855.24,
+        "x": 1081.54286,
         "y": 0.0,
-        "z": 353.05
+        "z": 662.28571
       },
       "respawnTicks": 3000
     },
@@ -1639,9 +4967,9 @@
       "id": "route-cache-080",
       "type": "HOMING_AMMO",
       "position": {
-        "x": 428.13334,
+        "x": 855.24,
         "y": 0.0,
-        "z": 698.8
+        "z": 353.05
       },
       "respawnTicks": 3000
     },
@@ -1659,9 +4987,9 @@
       "id": "route-cache-082",
       "type": "POWER_AMMO",
       "position": {
-        "x": 1112.4,
+        "x": 432.13333,
         "y": 0.0,
-        "z": 508.0
+        "z": 722.8
       },
       "respawnTicks": 3000
     },
@@ -1669,9 +4997,9 @@
       "id": "route-cache-083",
       "type": "POWER_AMMO",
       "position": {
-        "x": 755.0,
-        "y": 3.0,
-        "z": 807.975
+        "x": 1112.4,
+        "y": 0.0,
+        "z": 508.0
       },
       "respawnTicks": 3000
     },
@@ -1779,16 +5107,6 @@
       "id": "route-cache-094",
       "type": "POWER_AMMO",
       "position": {
-        "x": 632.35,
-        "y": 3.0,
-        "z": 650.0
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-095",
-      "type": "POWER_AMMO",
-      "position": {
         "x": 1104.5,
         "y": 0.0,
         "z": 950.16667
@@ -1796,7 +5114,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-096",
+      "id": "route-cache-095",
       "type": "POWER_AMMO",
       "position": {
         "x": 243.92,
@@ -1806,7 +5124,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-097",
+      "id": "route-cache-096",
       "type": "POWER_AMMO",
       "position": {
         "x": 992.5,
@@ -1816,7 +5134,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-098",
+      "id": "route-cache-097",
       "type": "POWER_AMMO",
       "position": {
         "x": 402.8,
@@ -1826,7 +5144,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-099",
+      "id": "route-cache-098",
       "type": "POWER_AMMO",
       "position": {
         "x": 1407.41667,
@@ -1836,7 +5154,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-100",
+      "id": "route-cache-099",
       "type": "POWER_AMMO",
       "position": {
         "x": 932.94444,
@@ -1846,7 +5164,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-101",
+      "id": "route-cache-100",
       "type": "POWER_AMMO",
       "position": {
         "x": 1400.3,
@@ -1856,12 +5174,22 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-102",
-      "type": "NAPALM_AMMO",
+      "id": "route-cache-101",
+      "type": "POWER_AMMO",
       "position": {
         "x": 818.0,
         "y": 0.0,
         "z": 246.1
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-102",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 606.85,
+        "y": 3.0,
+        "z": 650.0
       },
       "respawnTicks": 3000
     },
@@ -1909,6 +5237,16 @@
       "id": "route-cache-107",
       "type": "NAPALM_AMMO",
       "position": {
+        "x": 420.0,
+        "y": 0.0,
+        "z": 636.5
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-108",
+      "type": "NAPALM_AMMO",
+      "position": {
         "x": 756.6,
         "y": 3.0,
         "z": 569.675
@@ -1916,7 +5254,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-108",
+      "id": "route-cache-109",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 362.7,
@@ -1926,7 +5264,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-109",
+      "id": "route-cache-110",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 998.8,
@@ -1936,7 +5274,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-110",
+      "id": "route-cache-111",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 238.2,
@@ -1946,7 +5284,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-111",
+      "id": "route-cache-112",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 1107.24,
@@ -1956,7 +5294,17 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-112",
+      "id": "route-cache-113",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 757.26667,
+        "y": 0.0,
+        "z": 1003.7
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "route-cache-114",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 478.1,
@@ -1966,7 +5314,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-113",
+      "id": "route-cache-115",
       "type": "NAPALM_AMMO",
       "position": {
         "x": 325.05,
@@ -1976,8 +5324,8 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-114",
-      "type": "NAPALM_AMMO",
+      "id": "route-cache-116",
+      "type": "BALLISTIC_AMMO",
       "position": {
         "x": 1177.1,
         "y": 0.0,
@@ -1986,8 +5334,8 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-115",
-      "type": "NAPALM_AMMO",
+      "id": "route-cache-117",
+      "type": "BALLISTIC_AMMO",
       "position": {
         "x": 822.98,
         "y": 0.0,
@@ -1996,17 +5344,17 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-116",
+      "id": "route-cache-118",
       "type": "BALLISTIC_AMMO",
       "position": {
-        "x": 757.26667,
-        "y": 0.0,
-        "z": 1003.7
+        "x": 703.94,
+        "y": 3.0,
+        "z": 733.4
       },
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-117",
+      "id": "route-cache-119",
       "type": "BALLISTIC_AMMO",
       "position": {
         "x": 1297.2,
@@ -2016,7 +5364,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-118",
+      "id": "route-cache-120",
       "type": "BALLISTIC_AMMO",
       "position": {
         "x": 314.44,
@@ -2026,17 +5374,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-119",
-      "type": "BALLISTIC_AMMO",
-      "position": {
-        "x": 420.0,
-        "y": 0.0,
-        "z": 626.6
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-120",
+      "id": "route-cache-121",
       "type": "BALLISTIC_AMMO",
       "position": {
         "x": 512.28571,
@@ -2046,8 +5384,8 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-121",
-      "type": "BALLISTIC_AMMO",
+      "id": "route-cache-122",
+      "type": "CANNON_AMMO",
       "position": {
         "x": 654.08,
         "y": 0.0,
@@ -2056,7 +5394,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-122",
+      "id": "route-cache-123",
       "type": "CANNON_AMMO",
       "position": {
         "x": 1095.25715,
@@ -2066,7 +5404,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-123",
+      "id": "route-cache-124",
       "type": "CANNON_AMMO",
       "position": {
         "x": 330.0,
@@ -2076,7 +5414,7 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-124",
+      "id": "route-cache-125",
       "type": "CANNON_AMMO",
       "position": {
         "x": 382.0,
@@ -2086,22 +5424,12 @@
       "respawnTicks": 3000
     },
     {
-      "id": "route-cache-125",
-      "type": "CANNON_AMMO",
-      "position": {
-        "x": 795.94,
-        "y": 3.0,
-        "z": 746.6
-      },
-      "respawnTicks": 3000
-    },
-    {
       "id": "route-cache-126",
       "type": "CANNON_AMMO",
       "position": {
-        "x": 680.94,
-        "y": 3.0,
-        "z": 703.4
+        "x": 183.62857,
+        "y": 0.0,
+        "z": 488.25715
       },
       "respawnTicks": 3000
     },
@@ -2109,9 +5437,9 @@
       "id": "route-cache-127",
       "type": "CANNON_AMMO",
       "position": {
-        "x": 183.62857,
-        "y": 0.0,
-        "z": 488.25715
+        "x": 790.6,
+        "y": 3.0,
+        "z": 740.66666
       },
       "respawnTicks": 3000
     },
@@ -2129,16 +5457,6 @@
       "id": "route-cache-129",
       "type": "MINE_AMMO",
       "position": {
-        "x": 438.8,
-        "y": 0.0,
-        "z": 762.8
-      },
-      "respawnTicks": 3000
-    },
-    {
-      "id": "route-cache-130",
-      "type": "MINE_AMMO",
-      "position": {
         "x": 1312.16,
         "y": 0.0,
         "z": 1106.72
@@ -2146,12 +5464,22 @@
       "respawnTicks": 3000
     },
     {
+      "id": "route-cache-130",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": 785.1,
+        "y": 0.0,
+        "z": 348.875
+      },
+      "respawnTicks": 3000
+    },
+    {
       "id": "route-cache-131",
       "type": "MINE_AMMO",
       "position": {
-        "x": 719.35,
-        "y": 3.0,
-        "z": 753.5
+        "x": 1124.4,
+        "y": 0.0,
+        "z": 448.0
       },
       "respawnTicks": 3000
     },
@@ -2159,9 +5487,9 @@
       "id": "route-cache-132",
       "type": "MINE_AMMO",
       "position": {
-        "x": 785.1,
+        "x": 1137.85,
         "y": 0.0,
-        "z": 348.875
+        "z": 638.85
       },
       "respawnTicks": 3000
     }
@@ -4769,32 +8097,41 @@
     {
       "id": 285,
       "position": {
-        "x": 751.25,
+        "x": 782.5,
         "y": 3.0,
-        "z": 687.5
+        "z": 675.0
       },
       "surfaceId": "road-island-north-path-0"
     },
     {
       "id": 286,
       "position": {
-        "x": 752.5,
+        "x": 815.0,
         "y": 3.0,
-        "z": 725.0
+        "z": 700.0
       },
       "surfaceId": "road-island-north-path-0"
     },
     {
       "id": 287,
       "position": {
-        "x": 753.75,
+        "x": 795.0,
         "y": 3.0,
-        "z": 762.5
+        "z": 733.33333
       },
-      "surfaceId": "road-island-north-path-0"
+      "surfaceId": "road-island-path-2"
     },
     {
       "id": 288,
+      "position": {
+        "x": 775.0,
+        "y": 3.0,
+        "z": 766.66667
+      },
+      "surfaceId": "road-island-path-2"
+    },
+    {
+      "id": 289,
       "position": {
         "x": 214.0,
         "y": 0.0,
@@ -4803,7 +8140,7 @@
       "surfaceId": "road-bridge-west-approach-0"
     },
     {
-      "id": 289,
+      "id": 290,
       "position": {
         "x": 258.0,
         "y": 0.0,
@@ -4812,7 +8149,7 @@
       "surfaceId": "road-bridge-west-approach-0"
     },
     {
-      "id": 290,
+      "id": 291,
       "position": {
         "x": 302.0,
         "y": 0.0,
@@ -4821,7 +8158,7 @@
       "surfaceId": "road-entrance-alley-3"
     },
     {
-      "id": 291,
+      "id": 292,
       "position": {
         "x": 346.0,
         "y": 0.0,
@@ -4830,7 +8167,7 @@
       "surfaceId": "road-bridge-west-approach-0"
     },
     {
-      "id": 292,
+      "id": 293,
       "position": {
         "x": 390.0,
         "y": 0.0,
@@ -4839,7 +8176,7 @@
       "surfaceId": "road-bridge-west-approach-0"
     },
     {
-      "id": 293,
+      "id": 294,
       "position": {
         "x": 750.0,
         "y": 0.0,
@@ -4848,7 +8185,7 @@
       "surfaceId": "road-jump-runup-0"
     },
     {
-      "id": 294,
+      "id": 295,
       "position": {
         "x": 750.0,
         "y": 0.0,
@@ -4857,7 +8194,7 @@
       "surfaceId": "road-jump-runup-1"
     },
     {
-      "id": 295,
+      "id": 296,
       "position": {
         "x": 290.0,
         "y": 0.0,
@@ -4866,7 +8203,7 @@
       "surfaceId": "road-service-gate-b-0"
     },
     {
-      "id": 296,
+      "id": 297,
       "position": {
         "x": 310.0,
         "y": 0.0,
@@ -4875,7 +8212,7 @@
       "surfaceId": "road-service-gate-b-0"
     },
     {
-      "id": 297,
+      "id": 298,
       "position": {
         "x": 1370.0,
         "y": 0.0,
@@ -4884,7 +8221,7 @@
       "surfaceId": "road-boss-depot-entry-0"
     },
     {
-      "id": 298,
+      "id": 299,
       "position": {
         "x": 1375.0,
         "y": 0.0,
@@ -4893,7 +8230,7 @@
       "surfaceId": "road-boss-depot-entry-0"
     },
     {
-      "id": 299,
+      "id": 300,
       "position": {
         "x": 1380.0,
         "y": 0.0,
@@ -4902,7 +8239,7 @@
       "surfaceId": "road-boss-depot-entry-0"
     },
     {
-      "id": 300,
+      "id": 301,
       "position": {
         "x": 1385.0,
         "y": 0.0,
@@ -4911,7 +8248,7 @@
       "surfaceId": "road-ride-servicing-0"
     },
     {
-      "id": 301,
+      "id": 302,
       "position": {
         "x": 430.0,
         "y": 1.5,
@@ -4920,7 +8257,7 @@
       "surfaceId": "road-west-bridge-rise-0"
     },
     {
-      "id": 302,
+      "id": 303,
       "position": {
         "x": 470.0,
         "y": 3.0,
@@ -4929,7 +8266,7 @@
       "surfaceId": "road-west-bridge-rise-0"
     },
     {
-      "id": 303,
+      "id": 304,
       "position": {
         "x": 512.5,
         "y": 3.0,
@@ -4938,7 +8275,7 @@
       "surfaceId": "road-west-lake-bridge-0"
     },
     {
-      "id": 304,
+      "id": 305,
       "position": {
         "x": 555.0,
         "y": 3.0,
@@ -4947,7 +8284,7 @@
       "surfaceId": "road-west-lake-bridge-0"
     },
     {
-      "id": 305,
+      "id": 306,
       "position": {
         "x": 597.5,
         "y": 3.0,
@@ -4956,7 +8293,7 @@
       "surfaceId": "road-west-lake-bridge-0"
     },
     {
-      "id": 306,
+      "id": 307,
       "position": {
         "x": 910.0,
         "y": 3.0,
@@ -4965,7 +8302,7 @@
       "surfaceId": "road-east-lake-bridge-0"
     },
     {
-      "id": 307,
+      "id": 308,
       "position": {
         "x": 950.0,
         "y": 3.0,
@@ -4974,7 +8311,7 @@
       "surfaceId": "road-east-lake-bridge-0"
     },
     {
-      "id": 308,
+      "id": 309,
       "position": {
         "x": 990.0,
         "y": 3.0,
@@ -4983,7 +8320,7 @@
       "surfaceId": "road-east-lake-bridge-0"
     },
     {
-      "id": 309,
+      "id": 310,
       "position": {
         "x": 1030.0,
         "y": 3.0,
@@ -4992,7 +8329,7 @@
       "surfaceId": "road-east-lake-bridge-0"
     },
     {
-      "id": 310,
+      "id": 311,
       "position": {
         "x": 1065.0,
         "y": 1.5,
@@ -5001,7 +8338,7 @@
       "surfaceId": "road-east-bridge-fall-0"
     },
     {
-      "id": 311,
+      "id": 312,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -5010,7 +8347,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 312,
+      "id": 313,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -5019,7 +8356,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 313,
+      "id": 314,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -5028,7 +8365,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 314,
+      "id": 315,
       "position": {
         "x": 755.0,
         "y": 3.0,
@@ -5037,7 +8374,7 @@
       "surfaceId": "road-north-lake-bridge-0"
     },
     {
-      "id": 315,
+      "id": 316,
       "position": {
         "x": 781.66667,
         "y": 2.0,
@@ -5046,7 +8383,7 @@
       "surfaceId": "road-north-bridge-fall-0"
     },
     {
-      "id": 316,
+      "id": 317,
       "position": {
         "x": 808.33333,
         "y": 1.0,
@@ -8107,7 +11444,7 @@
       "bidirectional": true
     },
     {
-      "id": "island-north-path-0-3",
+      "id": "island-north-path-1-1",
       "from": 286,
       "to": 287,
       "width": 24,
@@ -8117,8 +11454,18 @@
       "bidirectional": true
     },
     {
-      "id": "island-north-path-0-4",
+      "id": "island-north-path-1-2",
       "from": 287,
+      "to": 288,
+      "width": 24,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "island-north-path-1-3",
+      "from": 288,
       "to": 275,
       "width": 24,
       "clearance": 100,
@@ -8129,16 +11476,6 @@
     {
       "id": "bridge-west-approach-0-1",
       "from": 67,
-      "to": 288,
-      "width": 26,
-      "clearance": 100,
-      "type": "ROAD",
-      "objectId": "",
-      "bidirectional": true
-    },
-    {
-      "id": "bridge-west-approach-0-2",
-      "from": 288,
       "to": 289,
       "width": 26,
       "clearance": 100,
@@ -8147,7 +11484,7 @@
       "bidirectional": true
     },
     {
-      "id": "bridge-west-approach-0-3",
+      "id": "bridge-west-approach-0-2",
       "from": 289,
       "to": 290,
       "width": 26,
@@ -8157,7 +11494,7 @@
       "bidirectional": true
     },
     {
-      "id": "bridge-west-approach-0-4",
+      "id": "bridge-west-approach-0-3",
       "from": 290,
       "to": 291,
       "width": 26,
@@ -8167,7 +11504,7 @@
       "bidirectional": true
     },
     {
-      "id": "bridge-west-approach-0-5",
+      "id": "bridge-west-approach-0-4",
       "from": 291,
       "to": 292,
       "width": 26,
@@ -8177,8 +11514,18 @@
       "bidirectional": true
     },
     {
-      "id": "bridge-west-approach-1-1",
+      "id": "bridge-west-approach-0-5",
       "from": 292,
+      "to": 293,
+      "width": 26,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "bridge-west-approach-1-1",
+      "from": 293,
       "to": 121,
       "width": 26,
       "clearance": 100,
@@ -8189,16 +11536,6 @@
     {
       "id": "jump-runup-0-1",
       "from": 17,
-      "to": 293,
-      "width": 24,
-      "clearance": 100,
-      "type": "ROAD",
-      "objectId": "",
-      "bidirectional": true
-    },
-    {
-      "id": "jump-runup-1-1",
-      "from": 293,
       "to": 294,
       "width": 24,
       "clearance": 100,
@@ -8207,8 +11544,18 @@
       "bidirectional": true
     },
     {
-      "id": "jump-runup-1-2",
+      "id": "jump-runup-1-1",
       "from": 294,
+      "to": 295,
+      "width": 24,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "jump-runup-1-2",
+      "from": 295,
       "to": 117,
       "width": 24,
       "clearance": 100,
@@ -8268,8 +11615,8 @@
     },
     {
       "id": "service-gate-b-0-1",
-      "from": 295,
-      "to": 296,
+      "from": 296,
+      "to": 297,
       "width": 22,
       "clearance": 100,
       "type": "ROAD",
@@ -8278,7 +11625,7 @@
     },
     {
       "id": "service-gate-b-0-2",
-      "from": 296,
+      "from": 297,
       "to": 60,
       "width": 22,
       "clearance": 100,
@@ -8288,16 +11635,6 @@
     },
     {
       "id": "boss-depot-entry-0-1",
-      "from": 297,
-      "to": 298,
-      "width": 24,
-      "clearance": 100,
-      "type": "ROAD",
-      "objectId": "",
-      "bidirectional": true
-    },
-    {
-      "id": "boss-depot-entry-0-2",
       "from": 298,
       "to": 299,
       "width": 24,
@@ -8307,7 +11644,7 @@
       "bidirectional": true
     },
     {
-      "id": "boss-depot-entry-0-3",
+      "id": "boss-depot-entry-0-2",
       "from": 299,
       "to": 300,
       "width": 24,
@@ -8317,8 +11654,18 @@
       "bidirectional": true
     },
     {
-      "id": "boss-depot-entry-0-4",
+      "id": "boss-depot-entry-0-3",
       "from": 300,
+      "to": 301,
+      "width": 24,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "boss-depot-entry-0-4",
+      "from": 301,
       "to": 109,
       "width": 24,
       "clearance": 100,
@@ -8328,17 +11675,7 @@
     },
     {
       "id": "west-bridge-rise-0-1",
-      "from": 292,
-      "to": 301,
-      "width": 30,
-      "clearance": 100,
-      "type": "RAMP",
-      "objectId": "road-west-bridge-rise-0",
-      "bidirectional": true
-    },
-    {
-      "id": "west-bridge-rise-0-2",
-      "from": 301,
+      "from": 293,
       "to": 302,
       "width": 30,
       "clearance": 100,
@@ -8347,17 +11684,17 @@
       "bidirectional": true
     },
     {
-      "id": "west-lake-bridge-0-1",
+      "id": "west-bridge-rise-0-2",
       "from": 302,
       "to": 303,
       "width": 30,
       "clearance": 100,
-      "type": "ROAD",
-      "objectId": "",
+      "type": "RAMP",
+      "objectId": "road-west-bridge-rise-0",
       "bidirectional": true
     },
     {
-      "id": "west-lake-bridge-0-2",
+      "id": "west-lake-bridge-0-1",
       "from": 303,
       "to": 304,
       "width": 30,
@@ -8367,7 +11704,7 @@
       "bidirectional": true
     },
     {
-      "id": "west-lake-bridge-0-3",
+      "id": "west-lake-bridge-0-2",
       "from": 304,
       "to": 305,
       "width": 30,
@@ -8377,8 +11714,18 @@
       "bidirectional": true
     },
     {
-      "id": "west-lake-bridge-0-4",
+      "id": "west-lake-bridge-0-3",
       "from": 305,
+      "to": 306,
+      "width": 30,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "west-lake-bridge-0-4",
+      "from": 306,
       "to": 262,
       "width": 30,
       "clearance": 100,
@@ -8389,16 +11736,6 @@
     {
       "id": "east-lake-bridge-0-1",
       "from": 270,
-      "to": 306,
-      "width": 26,
-      "clearance": 100,
-      "type": "ROAD",
-      "objectId": "",
-      "bidirectional": true
-    },
-    {
-      "id": "east-lake-bridge-0-2",
-      "from": 306,
       "to": 307,
       "width": 26,
       "clearance": 100,
@@ -8407,7 +11744,7 @@
       "bidirectional": true
     },
     {
-      "id": "east-lake-bridge-0-3",
+      "id": "east-lake-bridge-0-2",
       "from": 307,
       "to": 308,
       "width": 26,
@@ -8417,7 +11754,7 @@
       "bidirectional": true
     },
     {
-      "id": "east-lake-bridge-0-4",
+      "id": "east-lake-bridge-0-3",
       "from": 308,
       "to": 309,
       "width": 26,
@@ -8427,9 +11764,19 @@
       "bidirectional": true
     },
     {
-      "id": "east-bridge-fall-0-1",
+      "id": "east-lake-bridge-0-4",
       "from": 309,
       "to": 310,
+      "width": 26,
+      "clearance": 100,
+      "type": "ROAD",
+      "objectId": "",
+      "bidirectional": true
+    },
+    {
+      "id": "east-bridge-fall-0-1",
+      "from": 310,
+      "to": 311,
       "width": 26,
       "clearance": 100,
       "type": "RAMP",
@@ -8438,7 +11785,7 @@
     },
     {
       "id": "east-bridge-fall-0-2",
-      "from": 310,
+      "from": 311,
       "to": 202,
       "width": 26,
       "clearance": 100,
@@ -8449,16 +11796,6 @@
     {
       "id": "north-lake-bridge-0-1",
       "from": 275,
-      "to": 311,
-      "width": 24,
-      "clearance": 100,
-      "type": "ROAD",
-      "objectId": "",
-      "bidirectional": true
-    },
-    {
-      "id": "north-lake-bridge-0-2",
-      "from": 311,
       "to": 312,
       "width": 24,
       "clearance": 100,
@@ -8467,7 +11804,7 @@
       "bidirectional": true
     },
     {
-      "id": "north-lake-bridge-0-3",
+      "id": "north-lake-bridge-0-2",
       "from": 312,
       "to": 313,
       "width": 24,
@@ -8477,7 +11814,7 @@
       "bidirectional": true
     },
     {
-      "id": "north-lake-bridge-0-4",
+      "id": "north-lake-bridge-0-3",
       "from": 313,
       "to": 314,
       "width": 24,
@@ -8487,17 +11824,17 @@
       "bidirectional": true
     },
     {
-      "id": "north-bridge-fall-0-1",
+      "id": "north-lake-bridge-0-4",
       "from": 314,
       "to": 315,
       "width": 24,
       "clearance": 100,
-      "type": "RAMP",
-      "objectId": "road-north-bridge-fall-0",
+      "type": "ROAD",
+      "objectId": "",
       "bidirectional": true
     },
     {
-      "id": "north-bridge-fall-0-2",
+      "id": "north-bridge-fall-0-1",
       "from": 315,
       "to": 316,
       "width": 24,
@@ -8507,8 +11844,18 @@
       "bidirectional": true
     },
     {
-      "id": "north-bridge-fall-0-3",
+      "id": "north-bridge-fall-0-2",
       "from": 316,
+      "to": 317,
+      "width": 24,
+      "clearance": 100,
+      "type": "RAMP",
+      "objectId": "road-north-bridge-fall-0",
+      "bidirectional": true
+    },
+    {
+      "id": "north-bridge-fall-0-3",
+      "from": 317,
       "to": 239,
       "width": 24,
       "clearance": 100,
@@ -8519,7 +11866,7 @@
     {
       "id": "service-shortcut-0-1",
       "from": 72,
-      "to": 295,
+      "to": 296,
       "width": 22,
       "clearance": 100,
       "type": "OPENABLE",
@@ -9157,6 +12504,12 @@
     {
       "id": "road-island-north-path-0",
       "geometryId": "road-island-north-path-0",
+      "level": 1,
+      "grip": 1
+    },
+    {
+      "id": "road-island-north-path-1",
+      "geometryId": "road-island-north-path-1",
       "level": 1,
       "grip": 1
     },
@@ -16207,24 +19560,24 @@
       "id": "road-island-north-path-0",
       "vertices": [
         {
-          "x": 762.44,
+          "x": 786.58146,
           "y": 3.0,
           "z": 663.0
         },
         {
-          "x": 765.87635,
+          "x": 822.31653,
           "y": 3.0,
-          "z": 766.09061
+          "z": 690.48851
         },
         {
-          "x": 755.0,
+          "x": 807.68347,
           "y": 3.0,
-          "z": 780.27716
+          "z": 709.51149
         },
         {
           "x": 750.0,
           "y": 3.0,
-          "z": 773.75542
+          "z": 665.13959
         },
         {
           "x": 750.0,
@@ -16234,15 +19587,10 @@
         {
           "x": 750.0,
           "y": 3.0,
-          "z": 773.75542
+          "z": 665.13959
         },
         {
-          "x": 741.76027,
-          "y": 3.0,
-          "z": 763.00794
-        },
-        {
-          "x": 738.42667,
+          "x": 747.21854,
           "y": 3.0,
           "z": 663.0
         },
@@ -16264,10 +19612,69 @@
         3,
         5,
         7,
+        6
+      ],
+      "material": "district-warm",
+      "collision": true,
+      "triangleMaterials": []
+    },
+    {
+      "id": "road-island-north-path-1",
+      "vertices": [
+        {
+          "x": 815.0,
+          "y": 3.0,
+          "z": 700.0
+        },
+        {
+          "x": 816.05878,
+          "y": 3.0,
+          "z": 700.63527
+        },
+        {
+          "x": 755.0,
+          "y": 3.0,
+          "z": 780.27716
+        },
+        {
+          "x": 754.12563,
+          "y": 3.0,
+          "z": 779.13668
+        },
+        {
+          "x": 753.78797,
+          "y": 3.0,
+          "z": 778.69625
+        },
+        {
+          "x": 799.20976,
+          "y": 3.0,
+          "z": 702.99325
+        },
+        {
+          "x": 807.68347,
+          "y": 3.0,
+          "z": 709.51149
+        },
+        {
+          "x": 754.12563,
+          "y": 3.0,
+          "z": 779.13668
+        }
+      ],
+      "indices": [
+        0,
+        2,
+        1,
+        0,
+        3,
+        2,
+        4,
         6,
         5,
-        8,
-        7
+        4,
+        7,
+        6
       ],
       "material": "district-warm",
       "collision": true,
@@ -17036,9 +20443,29 @@
           "z": 835.37502
         },
         {
+          "x": 756.21203,
+          "y": 3.0,
+          "z": 821.30375
+        },
+        {
+          "x": 764.93866,
+          "y": 3.0,
+          "z": 806.75937
+        },
+        {
+          "x": 756.21203,
+          "y": 3.0,
+          "z": 821.30375
+        },
+        {
           "x": 755.0,
           "y": 3.0,
           "z": 819.72284
+        },
+        {
+          "x": 764.93866,
+          "y": 3.0,
+          "z": 806.75937
         },
         {
           "x": 755.0,
@@ -17089,15 +20516,21 @@
         5,
         7,
         6,
+        5,
         8,
-        10,
+        7,
         9,
         11,
-        13,
+        10,
         12,
-        11,
         14,
-        13
+        13,
+        15,
+        17,
+        16,
+        15,
+        18,
+        17
       ],
       "material": "concrete",
       "collision": true,
@@ -17449,6 +20882,26 @@
           "z": 720.14925
         },
         {
+          "x": 866.59078,
+          "y": 3.0,
+          "z": 724.54563
+        },
+        {
+          "x": 842.29656,
+          "y": 3.0,
+          "z": 705.85777
+        },
+        {
+          "x": 850.53802,
+          "y": 3.0,
+          "z": 695.10803
+        },
+        {
+          "x": 866.59078,
+          "y": 3.0,
+          "z": 724.54563
+        },
+        {
           "x": 810.0,
           "y": 3.0,
           "z": 800.0
@@ -17459,9 +20912,9 @@
           "z": 800.0
         },
         {
-          "x": 850.53802,
+          "x": 842.29656,
           "y": 3.0,
-          "z": 695.10803
+          "z": 705.85777
         },
         {
           "x": 739.87915,
@@ -17534,19 +20987,64 @@
           "z": 675.46284
         },
         {
-          "x": 765.87635,
+          "x": 823.27356,
           "y": 3.0,
-          "z": 766.09061
+          "z": 691.22469
         },
         {
-          "x": 762.44,
+          "x": 786.58146,
           "y": 3.0,
           "z": 663.0
         },
         {
-          "x": 741.76027,
+          "x": 823.27356,
           "y": 3.0,
-          "z": 763.00794
+          "z": 691.22469
+        },
+        {
+          "x": 816.05878,
+          "y": 3.0,
+          "z": 700.63527
+        },
+        {
+          "x": 815.0,
+          "y": 3.0,
+          "z": 700.0
+        },
+        {
+          "x": 822.31653,
+          "y": 3.0,
+          "z": 690.48851
+        },
+        {
+          "x": 753.78797,
+          "y": 3.0,
+          "z": 778.69625
+        },
+        {
+          "x": 750.0,
+          "y": 3.0,
+          "z": 773.75542
+        },
+        {
+          "x": 750.0,
+          "y": 3.0,
+          "z": 665.13959
+        },
+        {
+          "x": 799.20976,
+          "y": 3.0,
+          "z": 702.99325
+        },
+        {
+          "x": 750.0,
+          "y": 3.0,
+          "z": 665.13959
+        },
+        {
+          "x": 750.0,
+          "y": 3.0,
+          "z": 773.75542
         },
         {
           "x": 665.08751,
@@ -17554,7 +21052,7 @@
           "z": 663.0
         },
         {
-          "x": 738.42667,
+          "x": 747.21854,
           "y": 3.0,
           "z": 663.0
         }
@@ -17617,16 +21115,16 @@
         35,
         38,
         37,
-        35,
         39,
-        38,
+        41,
         40,
+        39,
         42,
         41,
+        39,
         43,
-        45,
+        42,
         44,
-        43,
         46,
         45,
         47,
@@ -17637,7 +21135,28 @@
         49,
         51,
         53,
-        52
+        52,
+        51,
+        54,
+        53,
+        55,
+        57,
+        56,
+        55,
+        58,
+        57,
+        59,
+        61,
+        60,
+        59,
+        62,
+        61,
+        63,
+        65,
+        64,
+        63,
+        66,
+        65
       ],
       "material": "district-warm",
       "collision": true,
@@ -29438,15 +32957,15 @@
         131,
         132,
         133,
-        288,
         289,
         290,
         291,
         292,
-        295,
+        293,
         296,
-        301,
-        302
+        297,
+        302,
+        303
       ],
       "boundary": [
         {
@@ -29509,16 +33028,17 @@
         285,
         286,
         287,
-        303,
+        288,
         304,
         305,
         306,
         307,
         308,
         309,
-        311,
+        310,
         312,
-        313
+        313,
+        314
       ],
       "boundary": [
         {
@@ -29623,8 +33143,8 @@
         259,
         260,
         261,
-        297,
-        310
+        298,
+        311
       ],
       "boundary": [
         {
@@ -29787,11 +33307,11 @@
         242,
         243,
         244,
-        299,
         300,
-        314,
+        301,
         315,
-        316
+        316,
+        317
       ],
       "boundary": [
         {
@@ -30378,13 +33898,15 @@
       "title": "island north path",
       "width": 24,
       "geometryIds": [
-        "road-island-north-path-0"
+        "road-island-north-path-0",
+        "road-island-north-path-1"
       ],
       "navNodeIds": [
         282,
         285,
         286,
         287,
+        288,
         275
       ]
     },
@@ -30398,11 +33920,11 @@
       ],
       "navNodeIds": [
         67,
-        288,
         289,
         290,
         291,
         292,
+        293,
         121
       ]
     },
@@ -30416,8 +33938,8 @@
       ],
       "navNodeIds": [
         17,
-        293,
         294,
+        295,
         117
       ]
     },
@@ -30446,8 +33968,8 @@
         "road-service-gate-b-0"
       ],
       "navNodeIds": [
-        295,
         296,
+        297,
         60
       ]
     },
@@ -30459,10 +33981,10 @@
         "road-boss-depot-entry-0"
       ],
       "navNodeIds": [
-        297,
         298,
         299,
         300,
+        301,
         109
       ]
     },
@@ -30474,9 +33996,9 @@
         "road-west-bridge-rise-0"
       ],
       "navNodeIds": [
-        292,
-        301,
-        302
+        293,
+        302,
+        303
       ]
     },
     {
@@ -30487,10 +34009,10 @@
         "road-west-lake-bridge-0"
       ],
       "navNodeIds": [
-        302,
         303,
         304,
         305,
+        306,
         262
       ]
     },
@@ -30503,10 +34025,10 @@
       ],
       "navNodeIds": [
         270,
-        306,
         307,
         308,
-        309
+        309,
+        310
       ]
     },
     {
@@ -30517,8 +34039,8 @@
         "road-east-bridge-fall-0"
       ],
       "navNodeIds": [
-        309,
         310,
+        311,
         202
       ]
     },
@@ -30531,10 +34053,10 @@
       ],
       "navNodeIds": [
         275,
-        311,
         312,
         313,
-        314
+        314,
+        315
       ]
     },
     {
@@ -30545,9 +34067,9 @@
         "road-north-bridge-fall-0"
       ],
       "navNodeIds": [
-        314,
         315,
         316,
+        317,
         239
       ]
     },
@@ -30560,7 +34082,7 @@
       ],
       "navNodeIds": [
         72,
-        295
+        296
       ]
     }
   ]

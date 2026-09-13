@@ -637,7 +637,7 @@ public final class GameApplication extends SimpleApplication {
             if(model!=null)VehicleVisual.acceptPresented(model,event);
             // Continuous fire/grinding owns continuous effects; only physical contacts kick the camera.
             if(event.type()==GameEvent.Type.DAMAGE&&event.subjectId()==0&&event.vehicleContact()!=null
-                    &&!Set.of("ram","grinder","napalm","fire").contains(event.kind()))
+                    &&!Set.of("ram","grinder","napalm","napalm-fire","fire").contains(event.kind()))
                 chase.impact(Math.min(.7f,event.value()/60));
             if(event.type()==GameEvent.Type.RAM&&(event.subjectId()==0||event.sourceId()==0))
                 chase.impact(Math.min(.7f,event.value()/40));

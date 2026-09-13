@@ -100,6 +100,9 @@ class Scene:
             self.part('city-continuation',(x,h/2,z),(w,h,d),'brick' if i%2 else 'dark-concrete');self.part('city-roof-setback',(x,h+7,z),(w*.65,14,d*.65),'blue')
     def carnival(self):
         for proxy,asset in [('circus','circus-canopy'),('ride-pavilion','orbit-shell'),('repair-depot','depot-gantry')]:self.hero(proxy,asset)
+        self.anchor='island-bandstand-proxy';self.model('island-bandstand','island-bandstand',(755,3,715),proxies=['island-bandstand-proxy'])
+        for tree in self.location.trees:
+            self.anchor=tree['id'];scale=tree['scale'];self.model(tree['id'],'park-tree',tree['position'],(scale,scale,scale),proxies=[tree['id']],lod=230)
         self.anchor='ferris-foundation'
         for sign in (-1,1):self.beam('ferris-support',(1300+sign*28,3,700),(1300,65,700),2,'ivory')
         self.groups.append(dict(id='euphoria-ferris-wheel',position=vec((1300,65,700)),motion='ROTATE_Z',period=60,phase=0));self.group='euphoria-ferris-wheel'
@@ -109,8 +112,31 @@ class Scene:
         self.group='';self.anchor='carousel-base';self.cylinder('carousel-roof',(925,11,155),25,2,'ivory')
         for i in range(12):self.cylinder('carousel-pole',(925+math.cos(i*math.tau/12)*20,6,155+math.sin(i*math.tau/12)*20),.25,10,'yellow')
         for b in self.data['boxes']:
-            if not b['id'].startswith('fair-stall-'):continue
+            if not b['id'].startswith(('fair-stall-','fair-shop-')):continue
             c,s=b['center'],b['size'];self.anchor=b['id'];self.part('stall-canopy',(c['x'],7,c['z']-s['z']/2-2),(s['x']+1,1,5),'ivory',rotation=(0,b['yawDegrees'],0));self.part('stall-counter',(c['x'],2,c['z']-s['z']/2-.5),(s['x']*.8,.7,1.3),'wood')
+            self.part('stall-sign',(c['x'],5.3,c['z']-s['z']/2-.7),(s['x']*.65,1.5,.45),'yellow' if 'shop-' in b['id'] else 'ivory')
+            self.part('service-door',(c['x']-s['x']*.2,2.1,c['z']+s['z']/2+.35),(2.4,4.2,.6),'steel')
+            self.part('shop-roof-vent',(c['x']+s['x']*.25,s['y']+1,c['z']),(2,2,2),'steel')
+        # Small furnished pockets outside all road corridors, grouped by use.
+        self.anchor=''
+        for i,(x,z) in enumerate([(145,330),(255,365),(280,610),(350,750),(450,825),(575,930),(905,885),(1015,760),(1045,550),(970,395),(550,425),(225,960),(460,1165),(1100,1140),(1340,935)]):
+            if not self.location.landscape_clear(x,z,5):continue
+            identity='dress-park-seat-'+str(i);self.data['boxes'].append(dict(id=identity,center=vec((x,.6,z)),size=vec((6,1.2,1.2)),material='wood',collision=True,yawDegrees=0));self.anchor=identity
+            self.part('bench-back',(x,1.3,z+.6),(6,.8,.25),'wood');self.part('litter-bin',(x+4,.8,z),(1.2,1.6,1.2),'steel')
+            self.part('planting-bed',(x,0.35,z+4),(9,.7,4),'earth')
+            for offset in (-3,0,3):self.part('flower-shrub',(x+offset,1,z+4),(2.4,1.6,2.4),'park-leaf','SPHERE')
+        # Lake-edge planting follows the actual shore, interrupted at bridge entries.
+        shore=[(490,470),(620,400),(860,420),(1000,540),(1020,700),(920,870),(700,920),(520,800),(450,620)]
+        for i,(aa,bb) in enumerate(zip(shore,shore[1:]+shore[:1])):
+            for n in range(1,8):
+                t=n/8;x=aa[0]+(bb[0]-aa[0])*t;z=aa[1]+(bb[1]-aa[1])*t;dx,dz=x-740,z-650;length=math.hypot(dx,dz);x+=dx/length*7;z+=dz/length*7
+                if not self.location.landscape_clear(x,z,3):continue
+                self.anchor='';self.part('shore-reeds',(x,.6,z),(3,1.2,2),'park-leaf','SPHERE')
+                if n%3==0:self.part('shore-rock',(x+2,.4,z+1),(2.5,.8,2),'gravel','SPHERE')
+        for i,(x,z) in enumerate([(1085,870),(1360,1170),(1110,1090)]):
+            if self.location.landscape_clear(x,z,10):
+                self.data['boxes'].append(dict(id='dress-park-parts-cradle-'+str(i),center=vec((x,1.5,z)),size=vec((14,3,7)),material='steel',collision=True,yawDegrees=12))
+                self.part('stored-ride-module',(x,4,z),(8,4,5),'faded-red');self.beam('stored-ride-arm',(x-7,4,z),(x+7,4,z),1,'yellow')
         for i,p in enumerate([(330,12,1030),(400,12,1090),(1210,13,450),(1300,13,515),(1200,10,1040),(1260,10,1100)]):self.light('park-worklight-'+str(i),p,(1,.72,.4),32)
         self.anchor='exterior'
         # Continuous wooded setting beyond the physical park edge; no floating oval hill islands.

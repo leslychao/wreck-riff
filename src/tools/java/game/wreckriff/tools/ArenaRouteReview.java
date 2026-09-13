@@ -46,7 +46,7 @@ public final class ArenaRouteReview extends SimpleApplication {
         Path output=Path.of(args[1]).toAbsolutePath();Files.createDirectories(output);NativeSetup.prepare(output);
         var app=new ArenaRouteReview(routes,output,args.length>3&&args[3].equals("video"));
         var settings=new AppSettings(true);settings.setTitle("Wreck Riff — moving map inspection");
-        settings.setResolution(1920,1080);settings.setFullscreen(false);settings.setSamples(4);settings.setVSync(false);
+        settings.setResolution(1920,1080);settings.setFullscreen(true);settings.setSamples(4);settings.setVSync(false);
         settings.setGammaCorrection(true);settings.setAudioRenderer(null);settings.setFrameRate(30);settings.setRenderer(AppSettings.LWJGL_OPENGL33);
         app.setSettings(settings);app.setShowSettings(false);app.setPauseOnLostFocus(false);app.start();
         if(!app.complete.await(120+routes.size()*30L,TimeUnit.SECONDS)) {
@@ -94,7 +94,7 @@ public final class ArenaRouteReview extends SimpleApplication {
             if(ahead.distanceSquared(point)<.001f)ahead=point.add(point.subtract(sample(route.points(),Math.max(0,progress-.035f))));
             cam.setLocation(point.add(0,3.5f,0));cam.lookAt(ahead.add(0,2.5f,0),Vector3f.UNIT_Y);
             if(!waiting&&shot<3&&seconds>=1.5f+shot*3.5f) {
-                screenshots.setFileName(route.arenaId()+"--"+route.id()+"--"+(++shot));waiting=true;screenshots.takeScreenshot();
+                screenshots.setFileName(route.arenaId()+"--"+route.kind()+"--"+route.id()+"--"+(++shot));waiting=true;screenshots.takeScreenshot();
             }
             if(seconds>=10&&!waiting) {
                 routeIndex++;

@@ -225,6 +225,7 @@ tasks.register('saturationReview', JavaExec) {
         def identity = new Properties()
         file("$buildDir/generated-resources/build-info.properties").withInputStream { identity.load(it) }
         args layout.buildDirectory.dir('reports/ordnance-saturation-review').get().asFile.absolutePath, identity.getProperty('sourceSha256')
+        if(project.hasProperty('saturationSeconds'))args project.property('saturationSeconds')
     }
 }
 

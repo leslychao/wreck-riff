@@ -94,15 +94,15 @@ class NativeCampaignBotNavigationTest {
 
     @ParameterizedTest(name="{0} {1} participant={2}") @MethodSource("interiors")
     void allChassisAndTheMapBossCrossTheEntireInteriorWithAClearCamera(String arenaId,String roofId,int participant) {
-        driveReviewRoute(arenaId,roofId,participant);
+        driveReviewRoute(arenaId,roofId,"interior",participant);
     }
     @ParameterizedTest(name="{0} {1} participant={2}") @MethodSource("districts")
     void allChassisAndTheMapBossDriveTheDistrictApproachCombatAreaAndExit(String arenaId,String districtId,int participant) {
-        driveReviewRoute(arenaId,districtId,participant);
+        driveReviewRoute(arenaId,districtId,"district",participant);
     }
-    private void driveReviewRoute(String arenaId,String roofId,int participant) {
+    private void driveReviewRoute(String arenaId,String roofId,String kind,int participant) {
         var arena=REGISTRY.definition(arenaId);
-        var route=REVIEW_ROUTES.stream().filter(r->r.arenaId().equals(arenaId)&&r.id().equals(roofId)).findFirst().orElseThrow();
+        var route=REVIEW_ROUTES.stream().filter(r->r.arenaId().equals(arenaId)&&r.id().equals(roofId)&&r.kind().equals(kind)).findFirst().orElseThrow();
         assertTrue(route.points().size()>=3,"Review must include an approach, combat area and exit");
         Vector3f start=route.points().getFirst().vector(),goal=route.points().getLast().vector();
         var targets=new ArrayList<ArenaDefinition.Pickup>();

@@ -12,7 +12,7 @@ import java.util.*;
 public final class AudioDirector implements AutoCloseable {
     private enum Group { ENGINE, WEAPON, THREAT, UI, MENU_UI }
     private static final int MENU_UI_SOURCES=2;
-    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder","napalm","fire");
+    private static final Set<String> OWN_CONTACT_CUE=Set.of("machine-gun","cannon","cannon-ricochet","ballistic","ram","pulse","grinder","napalm","napalm-fire","fire");
     private record EventKey(GameEvent.Type type,long id,int subject) {}
     private record BossWarning(long beganTick,Voice voice) {}
     private static final class Voice {

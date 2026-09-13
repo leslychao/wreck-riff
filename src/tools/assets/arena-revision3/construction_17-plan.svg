@@ -45,6 +45,10 @@
 <rect x="568.75" y="923.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 570.0 925.0)"/>
 <rect x="608.75" y="938.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 610.0 940.0)"/>
 <rect x="648.75" y="1023.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 650.0 1025.0)"/>
+<rect x="558.5" y="908.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 560.0 910.0)"/>
+<rect x="658.5" y="908.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 660.0 910.0)"/>
+<rect x="558.5" y="1033.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 560.0 1035.0)"/>
+<rect x="658.5" y="1033.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 660.0 1035.0)"/>
 <rect x="550.0" y="870.0" width="25.0" height="40.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 562.5 890.0)"/>
 <rect x="70.0" y="815.0" width="50.0" height="165.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 95.0 897.5)"/>
 <rect x="675.0" y="990.0" width="60.0" height="55.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 705.0 1017.5)"/>
@@ -62,6 +66,10 @@
 <rect x="1198.5" y="518.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1200.0 520.0)"/>
 <rect x="1008.5" y="688.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1010.0 690.0)"/>
 <rect x="1198.5" y="688.5" width="3.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1200.0 690.0)"/>
+<rect x="1048.75" y="518.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1050.0 520.0)"/>
+<rect x="1098.75" y="518.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1100.0 520.0)"/>
+<rect x="1148.75" y="518.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1150.0 520.0)"/>
+<rect x="1078.75" y="688.75" width="2.5" height="2.5" fill="#20272c" stroke="#a0a2a1" transform="rotate(0 1080.0 690.0)"/>
 <rect x="870.0" y="408.5" width="90.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0.0 915.0 410.0)"/>
 <rect x="870.0" y="458.5" width="90.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(0.0 915.0 460.0)"/>
 <rect x="845.0" y="433.5" width="50.0" height="3.0" fill="#20272c" stroke="#a0a2a1" transform="rotate(90.0 870.0 435.0)"/>
