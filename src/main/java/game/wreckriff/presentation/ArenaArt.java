@@ -87,9 +87,10 @@ public final class ArenaArt {
         Map<String,Mesh> meshes=new HashMap<>();
         for(var part:scene.parts()) {
             var size=part.size();
-            String key=part.shape()+":"+size;
+            float tileSize=SurfaceMaterials.metresPerTile(part.material());
+            String key=part.shape()+":"+size+":"+tileSize;
             Mesh mesh=meshes.computeIfAbsent(key,ignored->switch(part.shape()) {
-                case BOX -> SurfaceMesh.box(size.x()/2,size.y()/2,size.z()/2,4);
+                case BOX -> SurfaceMesh.box(size.x()/2,size.y()/2,size.z()/2,tileSize);
                 case CYLINDER -> new Cylinder(2,12,.5f,1,true);
                 case SPHERE -> new Sphere(6,10,.5f);
                 case PATCH -> patchMesh(size);
@@ -154,10 +155,10 @@ public final class ArenaArt {
         for(var model:scene.models()) {
             Node instance=new Node(model.id());instance.setLocalTranslation(model.position().vector());instance.setLocalScale(model.size().vector());
             instance.setLocalRotation(new Quaternion().fromAngles(model.rotation().vector().mult(FastMath.DEG_TO_RAD).toArray(null)));
-            Spatial detailed=prototypes.computeIfAbsent(model.asset(),assets::loadModel).clone(false);
+            Spatial detailed=prototypes.computeIfAbsent(model.asset(),assets::loadModel).clone(!model.group().isEmpty());
             instance.attachChild(detailed);
             if(!model.distantAsset().isEmpty()) {
-                Spatial distant=prototypes.computeIfAbsent(model.distantAsset(),assets::loadModel).clone(false);
+                Spatial distant=prototypes.computeIfAbsent(model.distantAsset(),assets::loadModel).clone(!model.group().isEmpty());
                 distant.setCullHint(Spatial.CullHint.Always);instance.attachChild(distant);
                 instance.addControl(new ModelDistance(detailed,distant,model.lodDistance()));
             }

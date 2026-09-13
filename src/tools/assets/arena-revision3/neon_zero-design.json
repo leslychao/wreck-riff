@@ -1,0 +1,1465 @@
+{
+  "sites": [
+    {
+      "id": "business-meridian",
+      "title": "Деловой центр Meridian",
+      "function": "Башни на общественных подиумах и грузовые дворы",
+      "route": "Проспект → площадь → служебная улица",
+      "bounds": [
+        285,
+        680,
+        850,
+        1185
+      ],
+      "kind": "landmark"
+    },
+    {
+      "id": "shopping-passage",
+      "title": "Пассаж ZERO",
+      "function": "Торговая галерея через квартал с атриумом и разгрузочной стороной",
+      "route": "Западный вход → атриум → северный выход",
+      "bounds": [
+        710,
+        935,
+        670,
+        860
+      ],
+      "kind": "through-interior"
+    },
+    {
+      "id": "technical-complex",
+      "title": "Станция обслуживания",
+      "function": "Энергетика и обслуживание тоннеля",
+      "route": "Западный проезд → технический зал → северный двор → тоннель",
+      "bounds": [
+        1045,
+        1140,
+        930,
+        1080
+      ],
+      "kind": "through-interior"
+    },
+    {
+      "id": "parking-ground-floor",
+      "title": "Паркинг P‑03",
+      "function": "Два крытых этажа, открытый верхний и встроенные рампы",
+      "route": "Западный и восточный въезды; северный двор; рампы вдоль фасадов",
+      "bounds": [
+        1400,
+        1660,
+        200,
+        500
+      ],
+      "kind": "through-interior"
+    }
+  ],
+  "districts": [
+    {
+      "id": "business",
+      "title": "Деловой центр",
+      "center": {
+        "x": 520.0,
+        "y": 0.0,
+        "z": 1020.0
+      },
+      "patrolNodeIds": [
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        205,
+        206,
+        207,
+        271,
+        369,
+        370,
+        371,
+        372
+      ],
+      "boundary": [
+        {
+          "x": 40.0,
+          "y": 0.0,
+          "z": 845.0
+        },
+        {
+          "x": 835.0,
+          "y": 0.0,
+          "z": 845.0
+        },
+        {
+          "x": 835.0,
+          "y": 0.0,
+          "z": 1340.0
+        },
+        {
+          "x": 40.0,
+          "y": 0.0,
+          "z": 1340.0
+        }
+      ]
+    },
+    {
+      "id": "market",
+      "title": "Торговые улицы",
+      "center": {
+        "x": 850.0,
+        "y": 0.0,
+        "z": 720.0
+      },
+      "patrolNodeIds": [
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        208,
+        209,
+        211,
+        212,
+        213,
+        214,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        252,
+        253,
+        254,
+        304,
+        368,
+        369,
+        370
+      ],
+      "boundary": [
+        {
+          "x": 545.0,
+          "y": 0.0,
+          "z": 510.0
+        },
+        {
+          "x": 1050.0,
+          "y": 0.0,
+          "z": 510.0
+        },
+        {
+          "x": 1050.0,
+          "y": 0.0,
+          "z": 935.0
+        },
+        {
+          "x": 545.0,
+          "y": 0.0,
+          "z": 935.0
+        }
+      ]
+    },
+    {
+      "id": "homes",
+      "title": "Жилые дворы",
+      "center": {
+        "x": 480.0,
+        "y": 0.0,
+        "z": 400.0
+      },
+      "patrolNodeIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        247,
+        248,
+        249,
+        250,
+        251
+      ],
+      "boundary": [
+        {
+          "x": 50.0,
+          "y": 0.0,
+          "z": 90.0
+        },
+        {
+          "x": 710.0,
+          "y": 0.0,
+          "z": 90.0
+        },
+        {
+          "x": 710.0,
+          "y": 0.0,
+          "z": 670.0
+        },
+        {
+          "x": 50.0,
+          "y": 0.0,
+          "z": 670.0
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "title": "Развязка и подземные проезды",
+      "center": {
+        "x": 1390.0,
+        "y": 0.0,
+        "z": 900.0
+      },
+      "patrolNodeIds": [
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        373,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421
+      ],
+      "boundary": [
+        {
+          "x": 1055.0,
+          "y": 0.0,
+          "z": 590.0
+        },
+        {
+          "x": 1745.0,
+          "y": 0.0,
+          "z": 590.0
+        },
+        {
+          "x": 1745.0,
+          "y": 0.0,
+          "z": 1340.0
+        },
+        {
+          "x": 1055.0,
+          "y": 0.0,
+          "z": 1340.0
+        }
+      ]
+    },
+    {
+      "id": "parking",
+      "title": "Многоэтажный паркинг",
+      "center": {
+        "x": 1480.0,
+        "y": 0.0,
+        "z": 350.0
+      },
+      "patrolNodeIds": [
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        297,
+        298,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        374,
+        375,
+        376,
+        377,
+        378,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
+        396,
+        397
+      ],
+      "boundary": [
+        {
+          "x": 1080.0,
+          "y": 0.0,
+          "z": 100.0
+        },
+        {
+          "x": 1750.0,
+          "y": 0.0,
+          "z": 100.0
+        },
+        {
+          "x": 1750.0,
+          "y": 0.0,
+          "z": 585.0
+        },
+        {
+          "x": 1080.0,
+          "y": 0.0,
+          "z": 585.0
+        }
+      ]
+    }
+  ],
+  "roads": [
+    {
+      "id": "south-avenue",
+      "title": "south avenue",
+      "width": 30,
+      "geometryIds": [
+        "road-south-avenue-0",
+        "road-south-avenue-1",
+        "road-south-avenue-2",
+        "road-south-avenue-3",
+        "road-south-avenue-4",
+        "road-south-avenue-5",
+        "road-south-avenue-6"
+      ],
+      "navNodeIds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ]
+    },
+    {
+      "id": "south-service",
+      "title": "south service",
+      "width": 24,
+      "geometryIds": [
+        "road-south-service-0",
+        "road-south-service-1",
+        "road-south-service-2",
+        "road-south-service-3"
+      ],
+      "navNodeIds": [
+        14,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        38,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81
+      ]
+    },
+    {
+      "id": "west-boulevard",
+      "title": "west boulevard",
+      "width": 32,
+      "geometryIds": [
+        "road-west-boulevard-0",
+        "road-west-boulevard-1",
+        "road-west-boulevard-2",
+        "road-west-boulevard-3",
+        "road-west-boulevard-4",
+        "road-west-boulevard-5"
+      ],
+      "navNodeIds": [
+        0,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        81
+      ]
+    },
+    {
+      "id": "market-avenue",
+      "title": "market avenue",
+      "width": 26,
+      "geometryIds": [
+        "road-market-avenue-0",
+        "road-market-avenue-1",
+        "road-market-avenue-2",
+        "road-market-avenue-3",
+        "road-market-avenue-4",
+        "road-market-avenue-5",
+        "road-market-avenue-6"
+      ],
+      "navNodeIds": [
+        90,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        72
+      ]
+    },
+    {
+      "id": "north-business",
+      "title": "north business",
+      "width": 26,
+      "geometryIds": [
+        "road-north-business-0",
+        "road-north-business-1",
+        "road-north-business-2"
+      ],
+      "navNodeIds": [
+        99,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        120
+      ]
+    },
+    {
+      "id": "business-market",
+      "title": "business market",
+      "width": 24,
+      "geometryIds": [
+        "road-business-market-0",
+        "road-business-market-1"
+      ],
+      "navNodeIds": [
+        179,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        159
+      ]
+    },
+    {
+      "id": "market-passage",
+      "title": "market passage",
+      "width": 20,
+      "geometryIds": [
+        "road-market-passage-0",
+        "road-market-passage-1"
+      ],
+      "navNodeIds": [
+        155,
+        202,
+        203,
+        204,
+        197,
+        205,
+        206,
+        207,
+        185
+      ]
+    },
+    {
+      "id": "market-loading",
+      "title": "market loading",
+      "width": 20,
+      "geometryIds": [
+        "road-market-loading-0",
+        "road-market-loading-1",
+        "road-market-loading-2",
+        "road-market-loading-3"
+      ],
+      "navNodeIds": [
+        149,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        155
+      ]
+    },
+    {
+      "id": "residential-courts",
+      "title": "residential courts",
+      "width": 20,
+      "geometryIds": [
+        "road-residential-courts-0",
+        "road-residential-courts-1",
+        "road-residential-courts-2",
+        "road-residential-courts-3"
+      ],
+      "navNodeIds": [
+        0,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        216,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        14
+      ]
+    },
+    {
+      "id": "courtyard-link",
+      "title": "courtyard link",
+      "width": 18,
+      "geometryIds": [
+        "road-courtyard-link-0"
+      ],
+      "navNodeIds": [
+        235,
+        247,
+        248,
+        249,
+        250,
+        251,
+        144
+      ]
+    },
+    {
+      "id": "technical-service",
+      "title": "technical service",
+      "width": 22,
+      "geometryIds": [
+        "road-technical-service-0",
+        "road-technical-service-1",
+        "road-technical-service-2",
+        "road-technical-service-3",
+        "road-technical-service-4"
+      ],
+      "navNodeIds": [
+        159,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        130,
+        264,
+        265,
+        266
+      ]
+    },
+    {
+      "id": "technical-exit",
+      "title": "technical exit",
+      "width": 22,
+      "geometryIds": [
+        "road-technical-exit-0"
+      ],
+      "navNodeIds": [
+        256,
+        267,
+        268,
+        269,
+        270,
+        271,
+        185
+      ]
+    },
+    {
+      "id": "transport-services",
+      "title": "transport services",
+      "width": 26,
+      "geometryIds": [
+        "road-transport-services-0",
+        "road-transport-services-1"
+      ],
+      "navNodeIds": [
+        130,
+        272,
+        273,
+        274,
+        275,
+        168,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        81
+      ]
+    },
+    {
+      "id": "parking-north-entry",
+      "title": "parking north entry",
+      "width": 24,
+      "geometryIds": [
+        "road-parking-north-entry-0",
+        "road-parking-north-entry-1",
+        "road-parking-north-entry-2"
+      ],
+      "navNodeIds": [
+        32,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        168
+      ]
+    },
+    {
+      "id": "parking-west-entry",
+      "title": "parking west entry",
+      "width": 24,
+      "geometryIds": [
+        "road-parking-west-entry-0"
+      ],
+      "navNodeIds": [
+        25,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        221
+      ]
+    },
+    {
+      "id": "tunnel-south-approach",
+      "title": "tunnel south approach",
+      "width": 22,
+      "geometryIds": [
+        "road-tunnel-south-approach-0",
+        "road-tunnel-south-approach-1"
+      ],
+      "navNodeIds": [
+        25,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        32
+      ]
+    },
+    {
+      "id": "parking-level1",
+      "title": "parking level1",
+      "width": 20,
+      "geometryIds": [
+        "road-parking-level1-0",
+        "road-parking-level1-1",
+        "road-parking-level1-2",
+        "road-parking-level1-3",
+        "road-parking-level1-4"
+      ],
+      "navNodeIds": [
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331
+      ]
+    },
+    {
+      "id": "parking-roof-circuit",
+      "title": "parking roof circuit",
+      "width": 20,
+      "geometryIds": [
+        "road-parking-roof-circuit-0",
+        "road-parking-roof-circuit-1",
+        "road-parking-roof-circuit-2",
+        "road-parking-roof-circuit-3",
+        "road-parking-roof-circuit-4"
+      ],
+      "navNodeIds": [
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349
+      ]
+    },
+    {
+      "id": "express-north-approach",
+      "title": "express north approach",
+      "width": 26,
+      "geometryIds": [
+        "road-express-north-approach-0",
+        "road-express-north-approach-1"
+      ],
+      "navNodeIds": [
+        81,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        120
+      ]
+    },
+    {
+      "id": "alley-west",
+      "title": "alley west",
+      "width": 18,
+      "geometryIds": [],
+      "navNodeIds": [
+        210,
+        209,
+        208,
+        149
+      ]
+    },
+    {
+      "id": "alley-north",
+      "title": "alley north",
+      "width": 18,
+      "geometryIds": [
+        "road-alley-north-0"
+      ],
+      "navNodeIds": [
+        368,
+        369,
+        370,
+        371,
+        372,
+        179
+      ]
+    },
+    {
+      "id": "industrial-shortcut-south",
+      "title": "industrial shortcut south",
+      "width": 22,
+      "geometryIds": [
+        "road-industrial-shortcut-south-0"
+      ],
+      "navNodeIds": [
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        25
+      ]
+    },
+    {
+      "id": "industrial-shortcut-north",
+      "title": "industrial shortcut north",
+      "width": 22,
+      "geometryIds": [],
+      "navNodeIds": [
+        291,
+        290,
+        289,
+        288
+      ]
+    },
+    {
+      "id": "tunnel-north-ramp",
+      "title": "tunnel north ramp",
+      "width": 54,
+      "geometryIds": [
+        "road-tunnel-north-ramp-0"
+      ],
+      "navNodeIds": [
+        266,
+        379,
+        380,
+        381,
+        382
+      ]
+    },
+    {
+      "id": "underpass",
+      "title": "underpass",
+      "width": 54,
+      "geometryIds": [
+        "road-underpass-0",
+        "road-underpass-1"
+      ],
+      "navNodeIds": [
+        382,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390
+      ]
+    },
+    {
+      "id": "tunnel-south-ramp",
+      "title": "tunnel south ramp",
+      "width": 54,
+      "geometryIds": [
+        "road-tunnel-south-ramp-0"
+      ],
+      "navNodeIds": [
+        390,
+        391,
+        392,
+        393,
+        25
+      ]
+    },
+    {
+      "id": "parking-ramp-one",
+      "title": "parking ramp one",
+      "width": 24,
+      "geometryIds": [
+        "road-parking-ramp-one-0"
+      ],
+      "navNodeIds": [
+        311,
+        394,
+        395,
+        314
+      ]
+    },
+    {
+      "id": "parking-ramp-two",
+      "title": "parking ramp two",
+      "width": 24,
+      "geometryIds": [
+        "road-parking-ramp-two-0"
+      ],
+      "navNodeIds": [
+        325,
+        396,
+        397,
+        332
+      ]
+    },
+    {
+      "id": "express-rise",
+      "title": "express rise",
+      "width": 34,
+      "geometryIds": [
+        "road-express-rise-0"
+      ],
+      "navNodeIds": [
+        18,
+        398,
+        399,
+        400,
+        401,
+        402,
+        403,
+        404
+      ]
+    },
+    {
+      "id": "express-diagonal",
+      "title": "express diagonal",
+      "width": 34,
+      "geometryIds": [
+        "road-express-diagonal-0"
+      ],
+      "navNodeIds": [
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415
+      ]
+    },
+    {
+      "id": "express-fall",
+      "title": "express fall",
+      "width": 34,
+      "geometryIds": [
+        "road-express-fall-0"
+      ],
+      "navNodeIds": [
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        354
+      ]
+    },
+    {
+      "id": "city-barrier-west",
+      "title": "city barrier west",
+      "width": 22,
+      "geometryIds": [
+        "road-city-barrier-west-0"
+      ],
+      "navNodeIds": [
+        210,
+        368
+      ]
+    },
+    {
+      "id": "city-barrier-east",
+      "title": "city barrier east",
+      "width": 22,
+      "geometryIds": [
+        "road-city-barrier-east-0"
+      ],
+      "navNodeIds": [
+        373,
+        291
+      ]
+    }
+  ],
+  "supply": {
+    "ammunitionCounts": {
+      "HOMING_AMMO": 24,
+      "POWER_AMMO": 24,
+      "NAPALM_AMMO": 16,
+      "BALLISTIC_AMMO": 10,
+      "CANNON_AMMO": 14,
+      "MINE_AMMO": 8
+    },
+    "totalAmmunition": 96,
+    "spawns": 11
+  }
+}

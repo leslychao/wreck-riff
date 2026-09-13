@@ -106,14 +106,16 @@ class NativeV04CombatTest {
     }
     @Test void ricochetRemainderOnlyUsesTheRemainingPartOfTheMovingTargetsNativeStep() {
         try(var world=new PhysicsWorld(VehicleRules.load())) {
+            float wallZ=.275f+.9f*Configs.load("combat",CombatRules.class).cannon().speed()*MatchSession.DT;
             world.addVehicle(0,new Vector3f(0,10,-2.5f),new Quaternion());
-            world.addVehicle(1,new Vector3f(-2,10,2.82f),new Quaternion());
+            world.addVehicle(1,new Vector3f(-2,10,wallZ+2.1325f),new Quaternion());
             for(int id=2;id<5;id++)world.addVehicle(id,new Vector3f(40+id*5,10,40),new Quaternion());
             for(int id=0;id<5;id++) {world.vehicle(id).setGravity(Vector3f.ZERO);world.vehicle(id).setDamping(0,0);world.vehicle(id).setMaxSuspensionForce(0);}
             // A thin ledge above the lower hull catches the ball without touching the
             // crossing car. Exaggerated lateral speed makes the time-domain mismatch
             // unambiguous: the car crosses before the bounce and is clear afterwards.
-            world.addStatic(new BoxCollisionShape(new Vector3f(.05f,.025f,.025f)),new Vector3f(0,10.57f,.6875f),new Quaternion());
+            // Keep the contact at 90% of the step when the configured Cannon speed changes.
+            world.addStatic(new BoxCollisionShape(new Vector3f(.05f,.025f,.025f)),new Vector3f(0,10.57f,wallZ),new Quaternion());
             world.vehicle(1).setLinearVelocity(new Vector3f(840,0,0));
             MatchSession session=new MatchSession(1,360);NativeCombatSupplies.halfLoad(session);CombatSystem combat=new CombatSystem(session,session.combatRules);
             combat.beginTick(Map.of(0,fire(WeaponType.CANNON)),world);world.step();combat.advanceProjectiles(world);combat.resolveDamage(world);

@@ -129,7 +129,7 @@ class PickupCollectionPresentationTest {
     @Test void moreThanSixteenPickupLocationsNeverReuseEventIdsAcrossTicksOrRespawns() {
         var base=ArenaDefinition.load();var first=pickup(base,ArenaDefinition.PickupType.HOMING_AMMO).position();
         var second=pickup(base,ArenaDefinition.PickupType.POWER_AMMO).position();
-        var together=new ArenaDefinition.Vec3(100,0,100);var locations=new ArrayList<ArenaDefinition.Pickup>();
+        var together=new ArenaDefinition.Vec3(0,0,-40);var locations=new ArrayList<ArenaDefinition.Pickup>();
         for(int i=0;i<33;i++)locations.add(new ArenaDefinition.Pickup("event-fixture-"+i,ArenaDefinition.PickupType.HOMING_AMMO,
                 i==0?first:i==16?second:together,3000));
         var arena=base.withPickups(locations);var session=new MatchSession(42,360);session.vehicle(0).initializeWeapon(WeaponType.HOMING,0,200);

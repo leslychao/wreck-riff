@@ -607,6 +607,146 @@
         "z": 55
       },
       "respawnTicks": 1800
+    },
+    {
+      "id": "additional-homing_ammo-14",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": -65.0,
+        "y": 0.0,
+        "z": -5.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-homing_ammo-15",
+      "type": "HOMING_AMMO",
+      "position": {
+        "x": -50.0,
+        "y": 0.0,
+        "z": -15.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-power_ammo-16",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": -30.0,
+        "y": 0.0,
+        "z": -55.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-power_ammo-17",
+      "type": "POWER_AMMO",
+      "position": {
+        "x": -15.0,
+        "y": 0.0,
+        "z": -50.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-napalm_ammo-18",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 10.0,
+        "y": 0.0,
+        "z": -52.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-napalm_ammo-19",
+      "type": "NAPALM_AMMO",
+      "position": {
+        "x": 30.0,
+        "y": 0.0,
+        "z": -45.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-ballistic_ammo-20",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 65.0,
+        "y": 0.0,
+        "z": -20.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-ballistic_ammo-21",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 65.0,
+        "y": 0.0,
+        "z": 10.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-ballistic_ammo-22",
+      "type": "BALLISTIC_AMMO",
+      "position": {
+        "x": 55.0,
+        "y": 0.0,
+        "z": 35.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-cannon_ammo-23",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": 15.0,
+        "y": 0.0,
+        "z": 52.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-cannon_ammo-24",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": -5.0,
+        "y": 0.0,
+        "z": 45.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-cannon_ammo-25",
+      "type": "CANNON_AMMO",
+      "position": {
+        "x": -35.0,
+        "y": 0.0,
+        "z": 52.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-mine_ammo-26",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": -66.0,
+        "y": 0.0,
+        "z": 25.0
+      },
+      "respawnTicks": 3000
+    },
+    {
+      "id": "additional-mine_ammo-27",
+      "type": "MINE_AMMO",
+      "position": {
+        "x": -35.0,
+        "y": 0.0,
+        "z": -18.0
+      },
+      "respawnTicks": 3000
     }
   ],
   "nodes": [
@@ -1633,5 +1773,6 @@
   "barriers": [],
   "layoutRevision": 1,
   "meshes": [],
-  "districts": []
+  "districts": [],
+  "roads": []
 }
