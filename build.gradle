@@ -89,6 +89,14 @@ tasks.register('authorCombatVfx', Exec) {
             '--background', '--python', file('src/tools/author_combat_vfx.py').absolutePath
 }
 
+tasks.register('vehicleDamageReview', JavaExec) {
+    description = 'Explicit real-window review of all authored chassis, damage, status materials and LODs'
+    dependsOn tasks.named('toolsClasses'), tasks.named('classes')
+    classpath = sourceSets.tools.runtimeClasspath + sourceSets.main.runtimeClasspath
+    mainClass = 'game.wreckriff.tools.VehicleDamageReview'
+    args layout.buildDirectory.dir('vehicle-damage-review').get().asFile.absolutePath
+}
+
 application {
     mainClass = 'game.wreckriff.Main'
     applicationDefaultJvmArgs = ['-Xms128m', '-Xmx768m']

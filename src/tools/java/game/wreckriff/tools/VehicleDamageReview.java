@@ -5,7 +5,6 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ScreenshotAppState;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.font.BitmapText;
-import com.jme3.material.Material;
 import com.jme3.math.*;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.*;
@@ -30,6 +29,7 @@ public final class VehicleDamageReview extends SimpleApplication {
     private static final float[] HEALTH={1,.75f,.5f,.25f,0};
     private record Shot(String name,Runnable setup) {}
     private final Path output;
+    private final long startedAt=System.currentTimeMillis();
     private final CountDownLatch done=new CountDownLatch(1);
     private final List<Shot> shots=new ArrayList<>();
     private final List<Map<String,Object>> evidence=new ArrayList<>();
@@ -56,9 +56,9 @@ public final class VehicleDamageReview extends SimpleApplication {
         var app=new VehicleDamageReview(directory);var settings=new AppSettings(true);
         settings.setTitle("Wreck Riff - Prepared vehicle damage review");settings.setResolution(1920,1080);
         settings.setSamples(4);settings.setVSync(false);settings.setFrameRate(60);settings.setGammaCorrection(true);
-        app.setSettings(settings);app.setShowSettings(false);app.start(JmeContext.Type.Display);
-        if(!app.done.await(60,TimeUnit.SECONDS)){app.stop();throw new IllegalStateException("Vehicle review exceeded 60 seconds");}
-        if(app.failure!=null)throw new IllegalStateException("Native vehicle review failed",app.failure);
+        app.setSettings(settings);app.setShowSettings(false);app.setPauseOnLostFocus(false);app.start(JmeContext.Type.Display);
+        if(!app.done.await(60,TimeUnit.SECONDS)){app.stop(false);Files.writeString(directory.resolve("failure.txt"),"Vehicle review exceeded 60 seconds");System.exit(1);}
+        if(app.failure!=null){app.stop(false);app.failure.printStackTrace();System.exit(1);}
         if(!app.complete)throw new IllegalStateException("Native vehicle review closed before completion");
     }
     @Override public void simpleInitApp() {
@@ -76,7 +76,7 @@ public final class VehicleDamageReview extends SimpleApplication {
             profiles[i]=i<3?VehicleProfile.player(IDS[i],rules):VehicleProfile.boss(IDS[i],rules);
             cars[i]=VehicleVisual.create(assetManager,profiles[i],0);VehicleVisual.configureMaximumHp(cars[i],MAX_HP);
             cars[i].setLocalTranslation((i%3-1)*14,profiles[i].roadOffset(),(i/3)*20-10);display.attachChild(cars[i]);
-            cars[i].updateGeometricState();cleanMasks.put(IDS[i],maskHash(cars[i]));
+            rootNode.updateGeometricState();cleanMasks.put(IDS[i],maskHash(cars[i]));
             inspectAsset(i);
         }
         rootNode.updateGeometricState();plan();next();
@@ -110,10 +110,10 @@ public final class VehicleDamageReview extends SimpleApplication {
             }
             shots.add(new Shot("all-profiles-hp-"+Math.round(HEALTH[stage]*100),()->{allHealth(HEALTH[selectedStage]);overview();}));
         }
-        shots.add(new Shot("local-left",()->{for(int i=0;i<cars.length;i++){fullRepair(i,0);VehicleVisual.updateDamage(cars[i],.5f);contact(i,new Vector3f(-1,0,0),35,"machine-gun");}overview();}));
+        shots.add(new Shot("local-left",()->{for(int i=0;i<cars.length;i++){fullRepair(i,0);VehicleVisual.updateDamage(cars[i],.5f);contact(i,new Vector3f(-1,0,0),35,"machine-gun");}overview();cam.setLocation(new Vector3f(-32,29,48));cam.lookAt(new Vector3f(0,1,0),Vector3f.UNIT_Y);}));
         shots.add(new Shot("local-right",()->{for(int i=0;i<cars.length;i++)contact(i,new Vector3f(1,0,0),35,"cannon");overview();}));
         shots.add(new Shot("local-front",()->{for(int i=0;i<cars.length;i++)contact(i,new Vector3f(0,0,1),35,"power");overview();}));
-        shots.add(new Shot("local-rear-thermal",()->{for(int i=0;i<cars.length;i++)contact(i,new Vector3f(0,0,-1),6,"napalm-fire");overview();}));
+        shots.add(new Shot("local-rear-thermal",()->{for(int i=0;i<cars.length;i++)contact(i,new Vector3f(0,0,-1),6,"napalm-fire");overview();cam.setLocation(new Vector3f(-24,33,-57));cam.lookAt(new Vector3f(0,1,0),Vector3f.UNIT_Y);}));
         shots.add(new Shot("damaged-frost",()->{for(Node car:cars)VehicleVisual.updateEffects(car,true,false);overview();lighting.apply(Theme.NEON,false);}));
         shots.add(new Shot("damaged-shield-cleanse",()->{for(Node car:cars)VehicleVisual.updateEffects(car,true,true);overview();lighting.apply(Theme.INDUSTRIAL_YARD,false);}));
         shots.add(new Shot("full-repair",()->{for(int i=0;i<cars.length;i++){VehicleVisual.updateEffects(cars[i],false,false);fullRepair(i,.5f);}overview();}));
@@ -132,7 +132,7 @@ public final class VehicleDamageReview extends SimpleApplication {
     }
     private void individual(int index,boolean offAxis) {
         normalLighting();for(int i=0;i<cars.length;i++)cars[i].setCullHint(i==index?Spatial.CullHint.Inherit:Spatial.CullHint.Always);
-        Node car=cars[index];car.updateGeometricState();BoundingBox box=(BoundingBox)car.getWorldBound();
+        Node car=cars[index];rootNode.updateGeometricState();BoundingBox box=(BoundingBox)car.getWorldBound();
         Vector3f centre=box.getCenter();float radius=Math.max(box.getXExtent(),Math.max(box.getYExtent(),box.getZExtent()));
         float near=.1f,tanY=FastMath.tan(35*FastMath.DEG_TO_RAD/2),tanX=tanY*16/9;
         if(offAxis){cam.setFrustum(near,400,-near*tanX*1.32f,near*tanX*.68f,near*tanY*.88f,-near*tanY*1.12f);lighting.applyMenu(false);}
@@ -175,16 +175,29 @@ public final class VehicleDamageReview extends SimpleApplication {
         if(name.equals("full-repair"))for(int i=0;i<cars.length;i++)require(maskHash(cars[i]).equals(cleanMasks.get(IDS[i])),"Repair did not clear "+IDS[i]);
         if(name.equals("repair-then-new-hit-same-frame"))for(int i=0;i<cars.length;i++)require(!maskHash(cars[i]).equals(cleanMasks.get(IDS[i])),"Repair erased newer contact on "+IDS[i]);
         if(name.equals("damaged-frost"))for(Node car:cars)require(car.getChild("frost-overlay").getLocalCullHint()!=Spatial.CullHint.Always,"Frost missing");
-        if(name.equals("damaged-shield-cleanse"))for(Node car:cars){require(car.getChild("shield-overlay").getLocalCullHint()!=Spatial.CullHint.Always,"Shield missing");require(car.getChild("frost-overlay").getLocalCullHint()==Spatial.CullHint.Always,"Shield retained frost");}
+        if(name.equals("damaged-shield-cleanse"))for(Node car:cars){require(car.getChild("shield-shell").getLocalCullHint()!=Spatial.CullHint.Always,"Shield missing");require(car.getChild("frost-overlay").getLocalCullHint()==Spatial.CullHint.Always,"Shield retained frost");}
+        if(!name.startsWith("all-")&&(name.contains("-hp-")||name.startsWith("off-axis-")))for(Node car:cars)if(car.getLocalCullHint()!=Spatial.CullHint.Always)checkFraming(car);
         var row=new LinkedHashMap<String,Object>();row.put("capture",name);row.put("camera",List.of(cam.getLocation().x,cam.getLocation().y,cam.getLocation().z));row.put("frustum",List.of(cam.getFrustumLeft(),cam.getFrustumRight(),cam.getFrustumTop(),cam.getFrustumBottom()));
         var states=new ArrayList<Map<String,Object>>();
-        for(int i=0;i<cars.length;i++)if(cars[i].getLocalCullHint()!=Spatial.CullHint.Always){var state=new LinkedHashMap<String,Object>();state.put("profile",IDS[i]);state.put("hpStage",cars[i].getUserData("damageStage"));state.put("lod",cars[i].getUserData("vehicleLod"));state.put("repairRevision",cars[i].getUserData("repairRevision"));var active=visibleGeometry(cars[i]);state.put("visibleGeometries",active.size());state.put("visibleTriangles",active.stream().mapToInt(g->g.getMesh().getTriangleCount()).sum());state.put("localMaskSha256",maskHash(cars[i]));states.add(state);}
+        if(name.startsWith("actual-garage-"))states.add(state((Node)garage.node().getChild("garage-vehicle")));
+        else for(Node car:cars)if(car.getLocalCullHint()!=Spatial.CullHint.Always)states.add(state(car));
         row.put("vehicles",states);evidence.add(row);
+    }
+    private static Map<String,Object> state(Node car) {
+        var state=new LinkedHashMap<String,Object>();state.put("profile",car.getUserData("profileId"));state.put("hpStage",car.getUserData("damageStage"));state.put("lod",car.getUserData("vehicleLod"));state.put("repairRevision",car.getUserData("repairRevision"));var active=visibleGeometry(car);state.put("visibleGeometries",active.size());state.put("visibleTriangles",active.stream().mapToInt(g->g.getMesh().getTriangleCount()).sum());state.put("localMaskSha256",maskHash(car));return state;
+    }
+    private void checkFraming(Node car) {
+        BoundingBox bounds=(BoundingBox)car.getWorldBound();Vector3f centre=bounds.getCenter();
+        for(int x:new int[]{-1,1})for(int y:new int[]{-1,1})for(int z:new int[]{-1,1}) {
+            Vector3f screen=cam.getScreenCoordinates(centre.add(x*bounds.getXExtent(),y*bounds.getYExtent(),z*bounds.getZExtent()));
+            require(screen.x>=0&&screen.x<=cam.getWidth()&&screen.y>=0&&screen.y<=cam.getHeight(),"Cropped conservative vehicle bounds: "+shots.get(shot).name);
+        }
     }
     private void finish() {
         try {
-            for(String name:captured)try(var files=Files.list(output)){require(files.anyMatch(p->p.getFileName().toString().startsWith(name+"-")&&p.toString().endsWith(".png")),"Missing captured PNG: "+name);}
-            var result=new LinkedHashMap<String,Object>();result.put("realWindow",true);result.put("releaseAcceptance",false);result.put("captures",evidence);result.put("assets",assetEvidence);result.put("captureCount",captured.size());result.put("primaryProfileStageCount",30);result.put("renderer",renderer.getClass().getName());result.put("java",System.getProperty("java.version"));
+            require(captured.size()==shots.size(),"Incomplete capture matrix");
+            for(String name:captured)try(var files=Files.list(output)){boolean found=false;for(Path file:files.toList())if(file.getFileName().toString().startsWith(name+"-")&&file.toString().endsWith(".png")&&Files.getLastModifiedTime(file).toMillis()>=startedAt){found=true;break;}require(found,"Missing fresh captured PNG: "+name);}
+            var result=new LinkedHashMap<String,Object>();result.put("realWindow",true);result.put("releaseAcceptance",false);result.put("captures",evidence);result.put("assets",assetEvidence);result.put("captureCount",captured.size());result.put("primaryProfileStageCount",30);result.put("renderer",renderManager.getRenderer().getClass().getName());result.put("java",System.getProperty("java.version"));
             Files.writeString(output.resolve("complete.json"),new GsonBuilder().setPrettyPrinting().create().toJson(result));complete=true;stop();
         } catch(Exception error){throw new IllegalStateException(error);}
     }
@@ -194,6 +207,6 @@ public final class VehicleDamageReview extends SimpleApplication {
     private static Texture damageMap(Node car){for(Geometry geometry:geometryMap(car).values()){var param=geometry.getMaterial().getTextureParam("DamageMap");if(param!=null)return param.getTextureValue();}throw new IllegalStateException("Damage map missing");}
     private static String maskHash(Node car){try{ByteBuffer data=damageMap(car).getImage().getData(0).duplicate();data.clear();MessageDigest hash=MessageDigest.getInstance("SHA-256");hash.update(data);return HexFormat.of().formatHex(hash.digest());}catch(Exception e){throw new IllegalStateException(e);}}
     private static void require(boolean value,String message){if(!value)throw new IllegalStateException(message);}
-    @Override public void handleError(String message,Throwable error){failure=error==null?new IllegalStateException(message):error;try{Files.writeString(output.resolve("failure.txt"),message+"\n"+failure);}catch(Exception ignored){}super.handleError(message,error);}
+    @Override public void handleError(String message,Throwable error){failure=error==null?new IllegalStateException(message):error;try{Files.writeString(output.resolve("failure.txt"),message+"\n"+failure);}catch(Exception ignored){}stop(false);done.countDown();}
     @Override public void destroy(){try{if(garage!=null)garage.close();for(Node car:cars)if(car!=null)VehicleVisual.close(car);super.destroy();}finally{done.countDown();}}
 }

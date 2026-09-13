@@ -1,17 +1,14 @@
 {
   "id": "boss_prefect",
-  "authoringMode": "saved-blender-edit",
-  "generatorSha256": "6db00bcd96f84f01d84b1e0ec763f27d2e5a6c0bd938f4a80e1c63994742e589",
+  "authoringMode": "original-recipe",
+  "generatorSha256": "d2da9822a1e102017a3ddb91fdbdcad1fe694fee8328a6a1205ffd5157df3e94",
   "exports": {
-    "source.blend": "d99f3c8fb6c5a7d1c1581d60551dd8d5b57ab4a9802828100aa726b42322dfeb",
+    "source.blend": "63dcdc92441bccb99ecc2f02f31ca38a17cbfbb5f45b2c296a5de86e92088ceb",
     "source.glb": "7a341231b91b262f7a0b3822f97b007693196c722723e7d5a37804e8ce7b2e2d",
     "mesh.json.gz": "747532280b8dae67c629aaae1c2d19c2986dc8e797140bb402957a43a9058897",
-    "diffuse.png": "ac517f832d5ea2ab927f59d30948ec5155fbb40dbbbaacefd17ea0e8acf62795",
+    "diffuse.png": "a1253c3f867fe3e8d751156791567c9ffbf4c6c676dafef4126f6b943914d67b",
     "normal.png": "5bff9c2a7c311c24e17cba639e2d547cd04fa6156a50b958b0abfc47067186e7",
-    "specular.png": "abf3c6a25fb223022fc07eb64ea10ade12e325d10d0a7a308c2f28112c8b5572",
-    "metal-diffuse.png": "0eee38b501cd0adfe53440824b1e7720b1296b14ae2171b866b84481b4d04311",
-    "metal-normal.png": "71fedf30309ee1424bd577b492a2c7e19f61bb9a977d097815c7b63b6a234d9d",
-    "metal-specular.png": "913155fe97ebc8dae1a46880400976e7765b14679096cf6e4b048fbaeefe9454",
+    "specular.png": "7becd1fd6b533db9b6629470904ad63e285d6e8d6cf4f03fef83137f4fb35105",
     "damage-ownership.png": "89a27c1242056ddb3815abc9ff3437be68d33588d5688981fc3a95e81edf1228"
   },
   "lodTriangles": [
@@ -19,7 +16,7 @@
     7252,
     1692
   ],
-  "sourceBlendSha256": "d99f3c8fb6c5a7d1c1581d60551dd8d5b57ab4a9802828100aa726b42322dfeb",
+  "sourceBlendSha256": "63dcdc92441bccb99ecc2f02f31ca38a17cbfbb5f45b2c296a5de86e92088ceb",
   "sourceGlbSha256": "7a341231b91b262f7a0b3822f97b007693196c722723e7d5a37804e8ce7b2e2d",
   "meshSha256": "747532280b8dae67c629aaae1c2d19c2986dc8e797140bb402957a43a9058897"
 }

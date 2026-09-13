@@ -27,7 +27,7 @@ final class VehicleDamageVisual extends AbstractControl {
         final boolean deforms;final MorphTarget previous=new MorphTarget("previous"),next=new MorphTarget("next");
         final FloatBuffer[] previousBuffers=new FloatBuffer[3],nextBuffers=new FloatBuffer[3];
         final List<Geometry> overlays=new ArrayList<>();final BitSet dirtyTriangles=new BitSet();
-        float elapsed=1,duration=DAMAGE_SECONDS;int composedStage=-1;final float[] composedRegions=new float[8];
+        float elapsed=1,duration=DAMAGE_SECONDS;int composedStage=-1;final float[] composedRegions=new float[8],fromRegions=new float[8],fromStages={1,0,0,0,0};
         Part(VehicleModelData.Part source,Geometry geometry,int lod) {
             this.source=source;this.geometry=geometry;this.lod=lod;base=positions(source.stages()[0]);from=base.clone();to=base.clone();
             fromNormal=read3(source.stages()[0],VertexBuffer.Type.Normal);toNormal=fromNormal.clone();fromTangent=read3(source.stages()[0],VertexBuffer.Type.Tangent);toTangent=fromTangent.clone();
@@ -45,14 +45,31 @@ final class VehicleDamageVisual extends AbstractControl {
         }
         boolean needsCompose(int stage,float[] regions){if(!deforms)return false;if(composedStage!=stage)return true;for(int i=0;i<8;i++)if(composedRegions[i]!=regions[i]&&source.regions()[i].indices().length>0)return true;return false;}
         void compose(int stage,float[] regions,float blend) {
+            for(int i=0;i<5;i++)fromStages[i]=fromStages[i]*(1-blend)+(Math.max(0,composedStage)==i?blend:0);for(int i=0;i<8;i++)fromRegions[i]+=(composedRegions[i]-fromRegions[i])*blend;
             float[] oldN=fromNormal,oldT=fromTangent;
             for(int i=0;i<from.length;i++){from[i]+=(to[i]-from[i])*blend;oldN[i]+=(toNormal[i]-oldN[i])*blend;oldT[i]+=(toTangent[i]-oldT[i])*blend;}
             Mesh pose=source.stages()[stage];copy3(pose,VertexBuffer.Type.Position,to);copy3(pose,VertexBuffer.Type.Normal,toNormal);copy3(pose,VertexBuffer.Type.Tangent,toTangent);dirtyTriangles.clear();
-            for(int region=0;region<8;region++)if(regions[region]>0){var d=source.regions()[region];for(int j=0;j<d.indices().length;j++){int vertex=d.indices()[j];dirtyTriangles.set(vertex/3);for(int k=0;k<3;k++)to[vertex*3+k]+=d.xyz()[j*3+k]*regions[region];}}
-            for(int i=0;i<to.length;i+=3){float x=to[i]-base[i],y=to[i+1]-base[i+1],z=to[i+2]-base[i+2],s=x*x+y*y+z*z;if(s>MAX_DENT*MAX_DENT){float r=MAX_DENT/(float)Math.sqrt(s);to[i]=base[i]+x*r;to[i+1]=base[i+1]+y*r;to[i+2]=base[i+2]+z*r;dirtyTriangles.set(i/9);}}
+            displace(to,toNormal,toTangent,regions);
+            upload(previousBuffers,from,fromNormal,fromTangent);upload(nextBuffers,to,toNormal,toTangent);dirtyGpu();composedStage=stage;System.arraycopy(regions,0,composedRegions,0,8);
+        }
+        private void displace(float[] point,float[] normal,float[] tangent,float[] regions){dirtyTriangles.clear();
+            for(int region=0;region<8;region++)if(regions[region]>0){var d=source.regions()[region];for(int j=0;j<d.indices().length;j++){int vertex=d.indices()[j];dirtyTriangles.set(vertex/3);for(int k=0;k<3;k++)point[vertex*3+k]+=d.xyz()[j*3+k]*regions[region];}}
+            for(int i=0;i<point.length;i+=3){float x=point[i]-base[i],y=point[i+1]-base[i+1],z=point[i+2]-base[i+2],s=x*x+y*y+z*z;if(s>MAX_DENT*MAX_DENT){float r=MAX_DENT/(float)Math.sqrt(s);point[i]=base[i]+x*r;point[i+1]=base[i+1]+y*r;point[i+2]=base[i+2]+z*r;dirtyTriangles.set(i/9);}}
             var uv=source.stages()[0].getFloatBuffer(VertexBuffer.Type.TexCoord);
-            for(int triangle=dirtyTriangles.nextSetBit(0);triangle>=0;triangle=dirtyTriangles.nextSetBit(triangle+1))basis(to,uv,triangle,toNormal,toTangent);
-            upload(previousBuffers,from,fromNormal,fromTangent);upload(nextBuffers,to,toNormal,toTangent);for(VertexBuffer vb:geometry.getMesh().getBufferList())if(vb.getBufferType().ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&vb.getBufferType().ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal())vb.setUpdateNeeded();geometry.setDirtyMorph(true);composedStage=stage;System.arraycopy(regions,0,composedRegions,0,8);
+            for(int triangle=dirtyTriangles.nextSetBit(0);triangle>=0;triangle=dirtyTriangles.nextSetBit(triangle+1))basis(point,uv,triangle,normal,tangent);
+        }
+        private void dirtyGpu(){for(VertexBuffer vb:geometry.getMesh().getBufferList())if(vb.getBufferType().ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&vb.getBufferType().ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal())vb.setUpdateNeeded();geometry.setDirtyMorph(true);}
+        void inheritTransition(Part active){
+            if(!deforms)return;compose(Math.max(0,active.composedStage),active.composedRegions,1);
+            System.arraycopy(active.fromStages,0,fromStages,0,5);System.arraycopy(active.fromRegions,0,fromRegions,0,8);
+            Arrays.fill(from,0);Arrays.fill(fromNormal,0);Arrays.fill(fromTangent,0);
+            for(int stage=0;stage<5;stage++)if(fromStages[stage]>0){float weight=fromStages[stage];Mesh pose=source.stages()[stage];var pos=pose.getFloatBuffer(VertexBuffer.Type.Position);var norm=pose.getFloatBuffer(VertexBuffer.Type.Normal);var tangent=pose.getFloatBuffer(VertexBuffer.Type.Tangent);
+                for(int i=0;i<from.length;i++){from[i]+=pos.get(i)*weight;fromNormal[i]+=norm.get(i)*weight;fromTangent[i]+=tangent.get(i/3*4+i%3)*weight;}}
+            displace(from,fromNormal,fromTangent,fromRegions);upload(previousBuffers,from,fromNormal,fromTangent);dirtyGpu();elapsed=active.elapsed;duration=active.duration;
+        }
+        void close(){for(VertexBuffer vb:geometry.getMesh().getBufferList()){var type=vb.getBufferType();if(type.ordinal()>=VertexBuffer.Type.MorphTarget0.ordinal()&&type.ordinal()<=VertexBuffer.Type.MorphTarget9.ordinal()||type==VertexBuffer.Type.Color)vb.dispose();}
+            for(FloatBuffer buffer:previousBuffers)if(buffer!=null)BufferUtils.destroyDirectBuffer(buffer);for(FloatBuffer buffer:nextBuffers)if(buffer!=null)BufferUtils.destroyDirectBuffer(buffer);
+            var color=geometry.getMesh().getBuffer(VertexBuffer.Type.Color);if(color!=null)BufferUtils.destroyDirectBuffer(color.getData());
         }
         private void upload(FloatBuffer[] buffers,float[] point,float[] normal,float[] tangent) {
             var baseN=source.stages()[0].getFloatBuffer(VertexBuffer.Type.Normal);var baseT=source.stages()[0].getFloatBuffer(VertexBuffer.Type.Tangent);
@@ -64,7 +81,7 @@ final class VehicleDamageVisual extends AbstractControl {
     private final Node frost=new Node("frost-overlay"),shield=new Node("shield-shell");private final float[] regions=new float[8];
     private final Set<String> detached=new HashSet<>();private final List<VehicleVisual.DetachedPanel> pending=new ArrayList<>();private final LinkedHashSet<String> seen=new LinkedHashSet<>();
     private int stage,lod;private float elapsed=1,duration=DAMAGE_SECONDS,pendingDuration=-1,maximumHp=Float.NaN;private long repairRevision;
-    private final float[] lampDamage=new float[2];
+    private final float[] lampDamage=new float[2];private final Vector3f[] regionNormals=new Vector3f[8];
     private final Vector3f[] silhouetteCorners=new Vector3f[8];private final Vector3f worldCorner=new Vector3f(),screenCorner=new Vector3f();
     private final List<Geometry> wheelGeometry=new ArrayList<>();private final List<Mesh[]> wheelLods=new ArrayList<>();
     private final CollisionResults collisionResults=new CollisionResults();
@@ -107,7 +124,7 @@ final class VehicleDamageVisual extends AbstractControl {
     }
     static int stage(float hp){if(!Float.isFinite(hp))throw new IllegalArgumentException("Finite HP fraction required");return hp<=0?4:hp<=.25f?3:hp<=.5f?2:hp<=.75f?1:0;}
     void configureMaximumHp(float value){if(!Float.isFinite(value)||value<=0)throw new IllegalArgumentException("Positive authoritative maximum HP required");maximumHp=value;}
-    void damage(float hp){int next=stage(hp);if(next==stage)return;stage=next;root.setUserData("damageStage",stage);transition(duration==REPAIR_SECONDS&&elapsed<duration?REPAIR_SECONDS:DAMAGE_SECONDS);if(stage==4)effects(false,false);}
+    void damage(float hp){int next=stage(hp);if(next==stage)return;stage=next;root.setUserData("damageStage",stage);transition(pendingDuration>=0?pendingDuration:duration==REPAIR_SECONDS&&elapsed<duration?REPAIR_SECONDS:DAMAGE_SECONDS);tryDetach();if(stage==4)effects(false,false);}
     void accept(GameEvent event) {
         String key=event.type()+":"+event.eventId()+":"+event.subjectId();if(!seen.add(key))return;if(seen.size()>256)seen.remove(seen.iterator().next());
         if(event.type()==GameEvent.Type.SHOT){mounts.accept(event);return;}
@@ -122,11 +139,13 @@ final class VehicleDamageVisual extends AbstractControl {
         Vector3f p=event.vehicleContact().localPoint(),n=event.vehicleContact().localNormal();int region=region(p);boolean thermal=event.kind().equals("napalm-fire");float force=thermal?Math.clamp(event.value()/40,.012f,.15f):Math.clamp(event.value()/80,.06f,.65f);
         Anchor anchor=contactAnchor(event);if(anchor!=null)marks.hit(anchor.point,anchor.normal,anchor.uv,force,event.kind().contains("napalm")||event.kind().contains("fire"),anchor.part.source.name().equals("glass"),event.eventId(),anchor.part.source.islandId(),event.kind().equals("machine-gun")?0:event.kind().contains("ram")?4:2);
         if(thermal)return;
-        regions[region]=Math.min(1,regions[region]+force);
+        regions[region]=Math.min(1,regions[region]+force);regionNormals[region]=n.clone();
         if(p.z>profile.length()*.3f)lampDamage[p.x<0?0:1]=Math.min(1,lampDamage[p.x<0?0:1]+force);
         transition(DAMAGE_SECONDS);
-        if(stage>=2&&regions[region]>=.65f){String panel=region==2?PANELS.get(0):region==3?PANELS.get(1):region<2||region==7?PANELS.get(2):region==4||region==5?PANELS.get(3):null;
-            if(panel!=null&&detached.add(panel))for(Part part:parts)if(part.lod==2&&part.source.name().equals(panel)){Mesh mesh=part.source.stages()[stage];BoundingBox box=(BoundingBox)mesh.getBound();pending.add(new VehicleVisual.DetachedPanel(panel,box.getCenter().clone(),new Quaternion(),new Vector3f(box.getXExtent(),box.getYExtent(),box.getZExtent()),n.mult(2.5f).addLocal(0,1.5f,0),VehicleModelData.centeredPanel(mesh)));break;}updateDetached();}
+        tryDetach();
+    }
+    private void tryDetach(){if(stage<2)return;for(int region=0;region<8;region++)if(regions[region]>=.65f&&regionNormals[region]!=null){String panel=region==2?PANELS.get(0):region==3?PANELS.get(1):region<2||region==7?PANELS.get(2):region==4||region==5?PANELS.get(3):null;
+            if(panel!=null&&detached.add(panel))for(Part part:parts)if(part.lod==2&&part.source.name().equals(panel)){Mesh mesh=part.source.stages()[stage];BoundingBox box=(BoundingBox)mesh.getBound();pending.add(new VehicleVisual.DetachedPanel(panel,box.getCenter().clone(),new Quaternion(),new Vector3f(box.getXExtent(),box.getYExtent(),box.getZExtent()),regionNormals[region].mult(2.5f).addLocal(0,1.5f,0),VehicleModelData.centeredPanel(mesh)));break;}updateDetached();}
     }
     private int region(Vector3f p){if(p.y>profile.height()*.68f)return 6;float z=p.z/profile.length();if(z>.24f)return p.x<0?0:1;if(z<-.24f)return p.x<0?4:5;return p.x<0?2:3;}
     private void transition(float seconds) {
@@ -152,12 +171,15 @@ final class VehicleDamageVisual extends AbstractControl {
         if(profile.id().equals("grinder"))for(String side:List.of("left","right")){Spatial near=root.getChild("grinder-roller-"+side);for(int level=1;level<3;level++)root.getChild("grinder-roller-"+side+"-lod"+level).setLocalRotation(near.getLocalRotation());}
     }
     private static void weights(Part part,float blend){if(!part.deforms)return;float[] w=part.geometry.getMorphState();w[0]=1-blend;w[1]=blend;part.geometry.setMorphState(w);for(Geometry g:part.overlays){float[] ow=g.getMorphState();ow[0]=w[0];ow[1]=w[1];g.setMorphState(ow);}}
-    private void selectLod(int value){boolean changed=lod!=value;lod=value;for(int i=0;i<3;i++){var c=i==lod?Spatial.CullHint.Inherit:Spatial.CullHint.Always;levels[i].setCullHint(c);frostLevels[i].setCullHint(c);shieldLevels[i].setCullHint(c);}for(int i=0;i<wheelGeometry.size();i++)wheelGeometry.get(i).setMesh(wheelLods.get(i)[lod]);root.setUserData("vehicleLod",lod);if(changed){compose(DAMAGE_SECONDS);elapsed=duration;for(Part p:parts)if(p.lod==lod){p.elapsed=p.duration;weights(p,1);}}}
+    private void selectLod(int value){int previousLod=lod;boolean changed=lod!=value;lod=value;for(int i=0;i<3;i++){var c=i==lod?Spatial.CullHint.Inherit:Spatial.CullHint.Always;levels[i].setCullHint(c);frostLevels[i].setCullHint(c);shieldLevels[i].setCullHint(c);}for(int i=0;i<wheelGeometry.size();i++)wheelGeometry.get(i).setMesh(wheelLods.get(i)[lod]);root.setUserData("vehicleLod",lod);
+        if(changed)for(Part part:parts)if(part.lod==lod){Part old=findPart(previousLod,part.source.name());part.inheritTransition(old);if(part.deforms)weights(part,Math.clamp(part.elapsed/part.duration,0,1));var material=part.geometry.getMaterial();if(material.getMaterialDef().getMaterialParam("Damage")!=null)material.setFloat("Damage",stage/4f);}
+    }
+    private Part findPart(int level,String name){for(Part part:parts)if(part.lod==level&&part.source.name().equals(name))return part;throw new IllegalStateException("Missing prepared LOD part "+name);}
     private void updateDetached(){for(Part p:parts)if(PANELS.contains(p.source.name())){var c=detached.contains(p.source.name())?Spatial.CullHint.Always:Spatial.CullHint.Inherit;p.geometry.setCullHint(c);for(Geometry g:p.overlays)g.setCullHint(c);}}
     void effects(boolean frozen,boolean shielded){frost.setCullHint(frozen&&!shielded&&stage<4?Spatial.CullHint.Inherit:Spatial.CullHint.Always);shield.setCullHint(shielded&&stage<4?Spatial.CullHint.Inherit:Spatial.CullHint.Always);}
     List<VehicleVisual.DetachedPanel> drainDetached(){var result=List.copyOf(pending);pending.clear();return result;}
     int markCount(){return marks.count();}float regionDamage(int region){return regions[region];}long repairRevision(){return repairRevision;}
-    void close(){marks.close();parts.clear();pending.clear();seen.clear();contactAnchors.clear();collisionResults.clear();detached.clear();mounts.reset();root.detachAllChildren();}
+    void close(){marks.close();for(Part part:parts)part.close();parts.clear();pending.clear();seen.clear();contactAnchors.clear();collisionResults.clear();detached.clear();mounts.reset();root.detachAllChildren();}
     GameEvent refineContact(GameEvent event) {
         if(event.vehicleContact()==null)return event;Anchor a=contactAnchor(event);if(a==null)return event;
         ContactSurface surface=a.part.source.name().equals("glass")?ContactSurface.GLASS:a.part.source.name().contains("rubber")?ContactSurface.RUBBER:ContactSurface.METAL;

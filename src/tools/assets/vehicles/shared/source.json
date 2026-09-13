@@ -1,0 +1,9 @@
+{
+  "generatorSha256": "d2da9822a1e102017a3ddb91fdbdcad1fe694fee8328a6a1205ffd5157df3e94",
+  "exports": {
+    "damage-atlas.png": "6b93d441f485c3a1e89bcda6f62d19b4ea737a8757563754fa4044c00133d104",
+    "metal-diffuse.png": "898b516a2cb98c4256fa2a2418a746463b598478dd01e094a616fc0ea907beaa",
+    "metal-normal.png": "e7c8894278d5200491f2e3aba100808a4b2a909ced1c1ff3c2e42a3f49b4897d",
+    "metal-specular.png": "11f5a90ae9996458bbc6ec4a607a77348f57c9deb7f57f681179682444098f06"
+  }
+}

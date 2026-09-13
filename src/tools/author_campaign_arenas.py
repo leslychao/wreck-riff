@@ -9,6 +9,7 @@ import heapq
 import math
 import os
 import tempfile
+import time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'src/main/resources/config'
@@ -19,11 +20,19 @@ AMMO_COUNTS={'construction_17':(18,18,12,8,10,6),'neon_zero':(24,24,16,10,14,8),
 def write_text_atomic(path,text):
     """Publish complete generated files, including when a build reads alongside us."""
     path.parent.mkdir(parents=True,exist_ok=True)
+    # Reproducible generation does not need to invalidate timestamps or replace
+    # files currently held open by a Java resource reader on Windows.
+    if path.exists() and path.read_bytes()==text.encode('utf-8'):return
     temporary=None
     try:
         with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',newline='\n',dir=path.parent,prefix=path.name+'.',suffix='.tmp',delete=False) as output:
             temporary=Path(output.name);output.write(text);output.flush();os.fsync(output.fileno())
-        os.replace(temporary,path)
+        for attempt in range(6):
+            try:
+                os.replace(temporary,path);break
+            except PermissionError:
+                if attempt==5:raise
+                time.sleep(.05*(2**attempt))
     finally:
         if temporary is not None and temporary.exists():temporary.unlink()
 def vec(p):return dict(zip(('x','y','z'),(round(float(v),5) for v in p)))

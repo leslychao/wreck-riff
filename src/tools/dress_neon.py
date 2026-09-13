@@ -253,11 +253,13 @@ def _foreground(city):
     ]:city.pocket(name,choices,kind)
     for floor in (8,16):
         city.pocket('parking-upper-charge-'+str(floor),[(1525,375),(1535,365),(1550,310)],'charging',floor)
+    city.pocket('parking-upper-east-payment',[(1650,323),(1650,355),(1650,315)],'directory',8)
     scene=city.scene
     for z in (580,650,735,800):
         for x,side in ((1164,1),(1216,-1)):
             # Mounted above the vehicle envelope; their complete casing is solid.
             identity=city.solid('tunnel-vent-case',(x,-3,z),(1.4,4,5),'steel')
+            city.installed.append(dict(id='tunnel-vent-case',kind='ventilation',position=[x,-3,z]))
             scene.anchor=identity
             for offset in (-1.5,-.5,.5,1.5):scene.part('tunnel-vent-grille',(x+side*.8,-3+offset,z),(.25,.16,4.2),'black')
     scene.anchor=''

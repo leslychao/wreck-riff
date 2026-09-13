@@ -3908,32 +3908,32 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-tunnel-vent-case-54",
+      "id": "dress-neon-parking-upper-east-payment-base-54",
       "center": {
-        "x": 1164.0,
-        "y": -3.0,
-        "z": 580.0
+        "x": 1650.0,
+        "y": 8.3,
+        "z": 323.0
       },
       "size": {
-        "x": 1.4,
-        "y": 4.0,
-        "z": 5.0
+        "x": 4.0,
+        "y": 0.6,
+        "z": 2.0
       },
-      "material": "steel",
+      "material": "dark-concrete",
       "collision": true,
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-tunnel-vent-case-55",
+      "id": "dress-neon-parking-upper-east-payment-frame-55",
       "center": {
-        "x": 1216.0,
-        "y": -3.0,
-        "z": 580.0
+        "x": 1650.0,
+        "y": 10.7,
+        "z": 323.0
       },
       "size": {
-        "x": 1.4,
-        "y": 4.0,
-        "z": 5.0
+        "x": 3.4,
+        "y": 4.8,
+        "z": 0.65
       },
       "material": "steel",
       "collision": true,
@@ -3944,7 +3944,7 @@
       "center": {
         "x": 1164.0,
         "y": -3.0,
-        "z": 650.0
+        "z": 580.0
       },
       "size": {
         "x": 1.4,
@@ -3960,7 +3960,7 @@
       "center": {
         "x": 1216.0,
         "y": -3.0,
-        "z": 650.0
+        "z": 580.0
       },
       "size": {
         "x": 1.4,
@@ -3976,7 +3976,7 @@
       "center": {
         "x": 1164.0,
         "y": -3.0,
-        "z": 735.0
+        "z": 650.0
       },
       "size": {
         "x": 1.4,
@@ -3992,7 +3992,7 @@
       "center": {
         "x": 1216.0,
         "y": -3.0,
-        "z": 735.0
+        "z": 650.0
       },
       "size": {
         "x": 1.4,
@@ -4008,7 +4008,7 @@
       "center": {
         "x": 1164.0,
         "y": -3.0,
-        "z": 800.0
+        "z": 735.0
       },
       "size": {
         "x": 1.4,
@@ -4024,6 +4024,22 @@
       "center": {
         "x": 1216.0,
         "y": -3.0,
+        "z": 735.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 4.0,
+        "z": 5.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-neon-tunnel-vent-case-62",
+      "center": {
+        "x": 1164.0,
+        "y": -3.0,
         "z": 800.0
       },
       "size": {
@@ -4036,7 +4052,23 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-meridian-square-planter-62",
+      "id": "dress-neon-tunnel-vent-case-63",
+      "center": {
+        "x": 1216.0,
+        "y": -3.0,
+        "z": 800.0
+      },
+      "size": {
+        "x": 1.4,
+        "y": 4.0,
+        "z": 5.0
+      },
+      "material": "steel",
+      "collision": true,
+      "yawDegrees": 0
+    },
+    {
+      "id": "dress-neon-meridian-square-planter-64",
       "center": {
         "x": 505.0,
         "y": 0.45,
@@ -4052,7 +4084,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-meridian-square-bench-63",
+      "id": "dress-neon-meridian-square-bench-65",
       "center": {
         "x": 505.0,
         "y": 0.7,
@@ -4068,7 +4100,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-exchange-square-planter-64",
+      "id": "dress-neon-exchange-square-planter-66",
       "center": {
         "x": 740.0,
         "y": 0.45,
@@ -4084,7 +4116,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-exchange-square-bench-65",
+      "id": "dress-neon-exchange-square-bench-67",
       "center": {
         "x": 740.0,
         "y": 0.7,
@@ -4100,7 +4132,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-archive-garden-planter-66",
+      "id": "dress-neon-archive-garden-planter-68",
       "center": {
         "x": 285.0,
         "y": 0.45,
@@ -4116,7 +4148,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-archive-garden-bench-67",
+      "id": "dress-neon-archive-garden-bench-69",
       "center": {
         "x": 285.0,
         "y": 0.7,
@@ -4132,7 +4164,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-clinic-forecourt-planter-68",
+      "id": "dress-neon-clinic-forecourt-planter-70",
       "center": {
         "x": 115.0,
         "y": 0.45,
@@ -4148,7 +4180,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-clinic-forecourt-bench-69",
+      "id": "dress-neon-clinic-forecourt-bench-71",
       "center": {
         "x": 115.0,
         "y": 0.7,
@@ -4164,7 +4196,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-court-a-planter-70",
+      "id": "dress-neon-court-a-planter-72",
       "center": {
         "x": 363.0,
         "y": 0.45,
@@ -4180,7 +4212,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-court-a-bench-71",
+      "id": "dress-neon-court-a-bench-73",
       "center": {
         "x": 363.0,
         "y": 0.7,
@@ -4196,7 +4228,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-court-b-planter-72",
+      "id": "dress-neon-court-b-planter-74",
       "center": {
         "x": 510.0,
         "y": 0.45,
@@ -4212,7 +4244,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-court-b-bench-73",
+      "id": "dress-neon-court-b-bench-75",
       "center": {
         "x": 510.0,
         "y": 0.7,
@@ -4228,7 +4260,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-court-c-planter-74",
+      "id": "dress-neon-court-c-planter-76",
       "center": {
         "x": 310.0,
         "y": 0.45,
@@ -4244,7 +4276,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-court-c-bench-75",
+      "id": "dress-neon-court-c-bench-77",
       "center": {
         "x": 310.0,
         "y": 0.7,
@@ -4260,7 +4292,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-east-court-planter-76",
+      "id": "dress-neon-east-court-planter-78",
       "center": {
         "x": 1525.0,
         "y": 0.45,
@@ -4276,7 +4308,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-east-court-bench-77",
+      "id": "dress-neon-east-court-bench-79",
       "center": {
         "x": 1525.0,
         "y": 0.7,
@@ -4292,7 +4324,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-south-frontage-planter-78",
+      "id": "dress-neon-south-frontage-planter-80",
       "center": {
         "x": 605.0,
         "y": 0.45,
@@ -4308,7 +4340,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-south-frontage-bench-79",
+      "id": "dress-neon-south-frontage-bench-81",
       "center": {
         "x": 605.0,
         "y": 0.7,
@@ -4324,7 +4356,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-business-pocket-planter-80",
+      "id": "dress-neon-business-pocket-planter-82",
       "center": {
         "x": 865.0,
         "y": 0.45,
@@ -4340,7 +4372,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-business-pocket-bench-81",
+      "id": "dress-neon-business-pocket-bench-83",
       "center": {
         "x": 865.0,
         "y": 0.7,
@@ -4356,7 +4388,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-parking-west-mast-82",
+      "id": "dress-neon-parking-west-mast-84",
       "center": {
         "x": 1360.0,
         "y": 4.0,
@@ -4372,7 +4404,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-parking-west-board-83",
+      "id": "dress-neon-parking-west-board-85",
       "center": {
         "x": 1360.0,
         "y": 9.0,
@@ -4388,7 +4420,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-distribution-yard-switchgear-84",
+      "id": "dress-neon-distribution-yard-switchgear-86",
       "center": {
         "x": 1242.0,
         "y": 1.6,
@@ -4404,7 +4436,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-distribution-yard-switchgear-85",
+      "id": "dress-neon-distribution-yard-switchgear-87",
       "center": {
         "x": 1250.0,
         "y": 1.6,
@@ -4420,7 +4452,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-distribution-yard-switchgear-86",
+      "id": "dress-neon-distribution-yard-switchgear-88",
       "center": {
         "x": 1258.0,
         "y": 1.6,
@@ -4436,7 +4468,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-distribution-yard-impact-barrier-87",
+      "id": "dress-neon-distribution-yard-impact-barrier-89",
       "center": {
         "x": 1236.0,
         "y": 0.55,
@@ -4452,7 +4484,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-distribution-yard-impact-barrier-88",
+      "id": "dress-neon-distribution-yard-impact-barrier-90",
       "center": {
         "x": 1264.0,
         "y": 0.55,
@@ -4468,7 +4500,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-north-hotel-wing-0-entrance-canopy-89",
+      "id": "dress-neon-north-hotel-wing-0-entrance-canopy-91",
       "center": {
         "x": 580.0,
         "y": 5.8,
@@ -4484,7 +4516,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-north-hotel-wing-1-entrance-canopy-90",
+      "id": "dress-neon-north-hotel-wing-1-entrance-canopy-92",
       "center": {
         "x": 710.0,
         "y": 5.8,
@@ -4500,7 +4532,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-west-clinic-wing-0-entrance-canopy-91",
+      "id": "dress-neon-west-clinic-wing-0-entrance-canopy-93",
       "center": {
         "x": 125.0,
         "y": 5.8,
@@ -4516,7 +4548,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-arts-workshops-wing-0-entrance-canopy-92",
+      "id": "dress-neon-arts-workshops-wing-0-entrance-canopy-94",
       "center": {
         "x": 405.0,
         "y": 5.8,
@@ -4532,7 +4564,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-southern-frontage-wing-0-entrance-canopy-93",
+      "id": "dress-neon-southern-frontage-wing-0-entrance-canopy-95",
       "center": {
         "x": 452.5,
         "y": 5.8,
@@ -4548,7 +4580,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-southern-frontage-wing-1-entrance-canopy-94",
+      "id": "dress-neon-southern-frontage-wing-1-entrance-canopy-96",
       "center": {
         "x": 670.0,
         "y": 5.8,
@@ -4564,7 +4596,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-delivery-centre-wing-0-entrance-canopy-95",
+      "id": "dress-neon-delivery-centre-wing-0-entrance-canopy-97",
       "center": {
         "x": 1280.0,
         "y": 5.8,
@@ -4580,7 +4612,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-delivery-centre-wing-1-entrance-canopy-96",
+      "id": "dress-neon-delivery-centre-wing-1-entrance-canopy-98",
       "center": {
         "x": 1520.0,
         "y": 5.8,
@@ -4596,7 +4628,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-market-corner-0-entrance-canopy-97",
+      "id": "dress-neon-market-corner-0-entrance-canopy-99",
       "center": {
         "x": 700.0,
         "y": 5.8,
@@ -4612,7 +4644,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-market-corner-1-entrance-canopy-98",
+      "id": "dress-neon-market-corner-1-entrance-canopy-100",
       "center": {
         "x": 965.0,
         "y": 5.8,
@@ -4628,7 +4660,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-market-corner-2-entrance-canopy-99",
+      "id": "dress-neon-market-corner-2-entrance-canopy-101",
       "center": {
         "x": 1030.0,
         "y": 5.8,
@@ -4644,7 +4676,7 @@
       "yawDegrees": 0
     },
     {
-      "id": "dress-neon-market-corner-3-entrance-canopy-100",
+      "id": "dress-neon-market-corner-3-entrance-canopy-102",
       "center": {
         "x": 680.0,
         "y": 5.8,

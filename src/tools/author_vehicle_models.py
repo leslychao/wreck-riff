@@ -241,11 +241,11 @@ def make_textures(profile,out):
     grain=rng.normal(0,.015,(size,size));base=np.array(COLORS[profile]);noise=grain+np.sin(x*.043)*np.cos(y*.028)*.025
     rgb=np.clip(base[None,None,:]*(.85+noise[:,:,None]),0,1)
     seam=(np.mod(x,171)<3)|(np.mod(y,229)<3);stripe=(y%1024>900)&(y%1024<918)&((x+y)//24%2==0)
-    rgb[seam]*=.42;rgb[stripe]=(.83,.67,.18)
+    rgb[seam]*=.62
     bolts=((x%171-13)**2+(y%229-13)**2<16);rgb[bolts]=(.40,.43,.45)
     scratches=(rng.random((size,size))>.9990)&(np.sin(x*.015+y*.07)>.3);rgb[scratches]=(.47,.46,.41)
     h=grain*.08+seam*.025+bolts*.10;dy,dx=np.gradient(h);normal=np.stack((-dx*8,-dy*8,np.ones_like(h)),axis=2);normal/=np.linalg.norm(normal,axis=2,keepdims=True)
-    spec=np.clip(.37+noise*.5-seam*.22-scratches*.10,0,1)
+    spec=np.clip(.38+.13*np.sin(x*.008)*np.cos(y*.006)+grain*.65-seam*.16-scratches*.10,.08,.72)
     def save(name,pixels):
         height,width=pixels.shape[:2]
         image=bpy.data.images.new(name,width=width,height=height,alpha=True,float_buffer=False)
@@ -253,11 +253,6 @@ def make_textures(profile,out):
         rgba=np.ones((height,width,4),np.float32);rgba[:,:,:3]=pixels
         image.pixels.foreach_set(rgba.ravel());image.file_format='PNG';image.filepath_raw=str(out/name);image.save();bpy.data.images.remove(image)
     save('diffuse.png',rgb);save('normal.png',normal*.5+.5);save('specular.png',np.repeat(spec[::2,::2,None],3,axis=2))
-    metal=(.19+grain*1.8+np.sin(y*1.17)*.022+np.sin(x*.032+y*.004)*.03)
-    metal_rgb=np.repeat(np.clip(metal,.065,.34)[:,:,None],3,axis=2)*np.array((.88,.96,1.03))
-    metal_rgb[seam]*=.7;metal_rgb[scratches]=(.39,.38,.35)
-    save('metal-diffuse.png',metal_rgb[::2,::2]);save('metal-normal.png',(normal*.5+.5)[::2,::2])
-    save('metal-specular.png',np.repeat(np.clip(.32+grain*2,.10,.55)[::2,::2,None],3,axis=2))
 
 def export_glb(out):
     bpy.ops.object.select_all(action='DESELECT')
@@ -267,7 +262,7 @@ def export_glb(out):
 
 def source_record(profile,out,lodcounts,mode):
     record={'id':profile,'authoringMode':mode,'generatorSha256':sha(Path(__file__)),
-            'exports':{name:sha(out/name) for name in ('source.blend','source.glb','mesh.json.gz','diffuse.png','normal.png','specular.png','metal-diffuse.png','metal-normal.png','metal-specular.png','damage-ownership.png')},
+            'exports':{name:sha(out/name) for name in ('source.blend','source.glb','mesh.json.gz','diffuse.png','normal.png','specular.png','damage-ownership.png')},
             'lodTriangles':lodcounts,'sourceBlendSha256':sha(out/'source.blend'),'sourceGlbSha256':sha(out/'source.glb'),'meshSha256':sha(out/'mesh.json.gz')}
     (out/'source.json').write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
 
@@ -430,10 +425,23 @@ def export(profile):
     make_textures(profile,out)
     source_record(profile,out,lodcounts,'original-recipe');print('VEHICLE',profile,lodcounts,flush=True)
 
+def make_metal_textures():
+    size=1024;y,x=np.mgrid[:size,:size];rng=np.random.default_rng(3917);grain=rng.normal(0,.0035,(size,size))
+    broad=np.sin(x*.009)*np.cos(y*.006);value=.49+broad*.022+grain
+    rgb=np.clip(value[:,:,None]*np.array((.96,1,1.035)),0,1)
+    nx=.025*np.cos(x*.008)+.010*np.sin(y*.011);ny=.020*np.sin(y*.007)+.006*np.sin(x*.017)
+    normal=np.stack((nx,ny,np.ones_like(nx)),axis=2);normal/=np.linalg.norm(normal,axis=2,keepdims=True)
+    spec=np.clip(.36+.14*broad+grain*2,.14,.61)
+    shared=OUT/'shared';shared.mkdir(parents=True,exist_ok=True)
+    for name,pixels in (('metal-diffuse.png',rgb),('metal-normal.png',normal*.5+.5),('metal-specular.png',np.repeat(spec[:,:,None],3,axis=2))):
+        rgba=np.ones((size,size,4),np.float32);rgba[:,:,:3]=pixels;save_rgba(shared/name,rgba,linear='diffuse' not in name)
+    record={'generatorSha256':sha(Path(__file__)),'exports':{name:sha(shared/name) for name in ('damage-atlas.png','metal-diffuse.png','metal-normal.png','metal-specular.png')}}
+    (shared/'source.json').write_bytes((json.dumps(record,indent=2)+'\n').encode('utf8'))
+
 if __name__=='__main__':
     args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
     parser=argparse.ArgumentParser();parser.add_argument('--profile',choices=PROFILES);parser.add_argument('--reexport',choices=PROFILES);opt=parser.parse_args(args)
-    make_damage_atlas()
+    make_damage_atlas();make_metal_textures()
     if opt.reexport:reexport(opt.reexport)
     else:
         for profile in ([opt.profile] if opt.profile else PROFILES):export(profile)

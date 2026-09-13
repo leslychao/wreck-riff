@@ -11,7 +11,7 @@ class VehicleRegionalDataTest {
         return "{\"schemaVersion\":1,\"lods\":[{\"hood\":["+region+(",{"+"\"indices\":[],\"delta\":[]}").repeat(7)+"]}]}";
     }
     @Test void loadsSparseRegionsWithoutJsonTreeAndPreservesAxisOrder() throws Exception {
-        var regions=VehicleModelData.readRegions(new StringReader(document("{\"delta\":[.1,-.2,.3],\"indices\":[2]}")),COUNTS);
+        var regions=VehicleModelData.readRegions(new StringReader(document("{\"delta\":[0.1,-0.2,0.3],\"indices\":[2]}")),COUNTS);
         assertArrayEquals(new int[]{2},regions.getFirst().get("hood")[0].indices());
         assertArrayEquals(new float[]{.1f,-.2f,.3f},regions.getFirst().get("hood")[0].xyz());
         assertEquals(0,regions.getFirst().get("hood")[7].indices().length);

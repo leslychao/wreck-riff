@@ -10,6 +10,22 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CombatVisualsTest {
+    @Test void closeQueuesEveryOwnedBatchBufferForNativeDeletionAndPreservesSharedAtlases() {
+        Node scene=new Node();var visuals=new CombatVisuals(PresentationTestAssets.shared(),scene,world());
+        var nativeObjects=new com.jme3.util.NativeObjectManager();var buffers=new ArrayList<VertexBuffer>();var meshes=new ArrayList<Mesh>();
+        var atlas=batch(scene,"particles-and-tracers").getMaterial().getTextureParam("SmokeAtlas").getTextureValue().getImage();
+        int[] deleted={0};
+        for(String name:List.of("particles-and-tracers","sparks-and-tracers","impact-fragments","ground-fire")) {
+            Mesh mesh=batch(scene,name).getMesh();meshes.add(mesh);
+            for(VertexBuffer buffer:mesh.getBufferList()){buffer.setId(buffers.size()+1);nativeObjects.registerObject(buffer);buffers.add(buffer);}
+        }
+        assertEquals(21,buffers.size());visuals.close();visuals.close();
+        nativeObjects.deleteUnused(new com.jme3.system.NullRenderer(){@Override public void deleteBuffer(VertexBuffer buffer){deleted[0]++;buffer.resetObject();}});
+        assertEquals(buffers.size(),deleted[0],"Closing a match must enqueue owned GPU buffers without waiting for GC");
+        for(Mesh mesh:meshes)assertEquals(0,mesh.getBufferList().size());
+        assertNotNull(atlas.getData(0),"Shared textures remain valid for the next match");
+        assertEquals(0,scene.getQuantity());assertEquals(0,visuals.effectCount());
+    }
     @Test void destroyedBurstCapturesItsFullTravelAndRetiresWhenSampledCeilingMoves() {
         Node scene=new Node();long[] revision={4};float[] farthest={0};int[] captures={0};
         WorldQuery delegate=world();

@@ -16,7 +16,7 @@ public final class ArenaSky {
     public static Geometry create(AssetManager assets,Theme theme) {
         Material material=new Material(assets,"materials/ArenaSky.j3md");
         material.setVector3("NormalScale",new Vector3f(1,1,1));
-        material.setVector3("SunDirection",new Vector3f(.65f,.16f,-.7f).normalizeLocal());
+        material.setVector3("SunDirection",new Vector3f(.72f,.70f,-.38f).normalizeLocal());
         switch(theme) {
             case CONSTRUCTION -> set(material,c(.43f,.47f,.49f),c(.17f,.23f,.29f),c(.55f,.57f,.56f),c(.65f,.62f,.55f),.80f);
             case NEON -> set(material,c(.12f,.13f,.23f),c(.012f,.023f,.065f),c(.09f,.12f,.20f),c(.30f,.15f,.10f),.36f);
