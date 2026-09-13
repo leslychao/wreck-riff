@@ -339,18 +339,19 @@ public record ArenaDefinition(int schemaVersion, String id, Metadata metadata, B
         Surface found=null;float nearest=tolerance;
         // Reject spatial/height misses before searching the short surface catalogue.
         // Large locations have many non-road buildings but usually only one local support.
-        // Shared seams keep their first authored support, matching navigation authoring.
+        // Shared seams keep their first authored support, including sub-millimetre
+        // interpolation noise at adjoining ramp/deck levels.
         for(var box:boxes)if(box.collision&&box.containsXZ(point.x,point.z,inset)) {
             float distance=Math.abs(point.y-box.center.y-box.size.y/2);
-            if(distance<nearest||(found==null&&distance<=nearest))for(var surface:surfaces)if(surface.geometryId.equals(box.id)){found=surface;nearest=distance;break;}
+            if(found==null?distance<=nearest:distance<nearest-.0001f)for(var surface:surfaces)if(surface.geometryId.equals(box.id)){found=surface;nearest=distance;break;}
         }
         for(var ramp:ramps)if(ramp.containsXZ(point.x,point.z,inset)) {
             float distance=Math.abs(point.y-ramp.heightAt(point.x,point.z));
-            if(distance<nearest||(found==null&&distance<=nearest))for(var surface:surfaces)if(surface.geometryId.equals(ramp.id)){found=surface;nearest=distance;break;}
+            if(found==null?distance<=nearest:distance<nearest-.0001f)for(var surface:surfaces)if(surface.geometryId.equals(ramp.id)){found=surface;nearest=distance;break;}
         }
         for(var mesh:meshes)if(mesh.collision&&mesh.containsXZ(point.x,point.z,inset)) {
             float distance=Math.abs(point.y-mesh.heightAt(point.x,point.z));
-            if(distance<nearest||(found==null&&distance<=nearest))for(var surface:surfaces)if(surface.geometryId.equals(mesh.id)){found=surface;nearest=distance;break;}
+            if(found==null?distance<=nearest:distance<nearest-.0001f)for(var surface:surfaces)if(surface.geometryId.equals(mesh.id)){found=surface;nearest=distance;break;}
         }
         return Optional.ofNullable(found);
     }

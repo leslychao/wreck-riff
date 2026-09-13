@@ -39,8 +39,10 @@ class EnvironmentMaterialsTest {
                 assertTrue(texture.getKey().getName().contains(recipe.getValue()));
                 assertEquals(2048,texture.getImage().getWidth());assertEquals(2048,texture.getImage().getHeight());
                 assertEquals(Texture.MinFilter.Trilinear,texture.getMinFilter());assertEquals(8,texture.getAnisotropicFilter());
-                assertEquals(ColorSpace.Linear,texture.getImage().getColorSpace());
-                if(parameter.equals("DiffuseMap"))assertEquals(com.jme3.texture.Image.Format.BC7_UNORM_SRGB,texture.getImage().getFormat());
+                boolean losslessDiffuse=parameter.equals("DiffuseMap")&&recipe.getValue().equals("leafy_grass");
+                assertEquals(losslessDiffuse?ColorSpace.sRGB:ColorSpace.Linear,texture.getImage().getColorSpace(),recipe.getKey()+" "+parameter);
+                if(parameter.equals("DiffuseMap")&&!losslessDiffuse)assertEquals(com.jme3.texture.Image.Format.BC7_UNORM_SRGB,texture.getImage().getFormat());
+                if(losslessDiffuse){assertEquals("textures/materials/leafy_grass/diffuse.png",texture.getKey().getName());assertNotEquals(com.jme3.texture.Image.Format.BC7_UNORM_SRGB,texture.getImage().getFormat());}
             }
         }
     }
@@ -51,6 +53,7 @@ class EnvironmentMaterialsTest {
         assertEquals(ColorSpace.Linear,environment.getTextureParam("DiffuseMap").getTextureValue().getImage().getColorSpace());
         assertEquals(ColorSpace.sRGB,paint.getTextureParam("DiffuseMap").getTextureValue().getImage().getColorSpace());
         assertEquals(ColorSpace.Linear,((com.jme3.material.MatParamTexture)environment.getMaterialDef().getMaterialParam("DiffuseMap")).getColorSpace());
-        assertEquals(ColorSpace.sRGB,((com.jme3.material.MatParamTexture)paint.getMaterialDef().getMaterialParam("DiffuseMap")).getColorSpace());
+        // Pinned Phong leaves the colour-map declaration unspecified and preserves the PNG image's sRGB.
+        assertNull(((com.jme3.material.MatParamTexture)paint.getMaterialDef().getMaterialParam("DiffuseMap")).getColorSpace());
     }
 }

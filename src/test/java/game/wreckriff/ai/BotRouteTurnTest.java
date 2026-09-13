@@ -31,6 +31,13 @@ class BotRouteTurnTest {
         var command=fixture.next();
         assertEquals(0,command.throttle());assertTrue(command.brakeReverse()>0);
     }
+    @Test void aCloseFinalPickupInsideTheGrinderTurningCircleKeepsTheShortReverseApproach() {
+        var fixture=new Fixture("grinder");fixture.world.delegate.positions[0].z=-48;
+        var command=fixture.next();
+        assertTrue(fixture.bots.route(0).isEmpty());
+        assertEquals(0,command.throttle());assertTrue(command.brakeReverse()>0);
+        assertFalse(command.recover());
+    }
 
     @Test void anUnsupportedSideOrRampCannotAuthorizeAnOpenFloorTurningCircle() {
         for(boolean ramp:new boolean[]{false,true}) {

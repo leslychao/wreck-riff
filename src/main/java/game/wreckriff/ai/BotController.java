@@ -10,6 +10,7 @@ import com.jme3.math.Vector3f;
 import game.wreckriff.arena.*;
 import game.wreckriff.input.VehicleCommand;
 import game.wreckriff.config.VehicleRules;
+import game.wreckriff.config.VehicleProfile;
 import game.wreckriff.simulation.*;
 import java.util.*;
 import java.util.function.Supplier;
@@ -994,9 +995,13 @@ public final class BotController {
             Vector3f forward,Vector3f velocity,Vector3f direction,float error) {
         boolean flatRoad=world.grounded(self.id)&&world.roadContext(self.id).motion()!=RoadContext.Motion.RAMP
                 &&rampAt(position,roadOffset(world,self.id))==null;
-        if(!flatRoad) {brain.routeTurnSide=0;brain.routeTurnHeading=null;}
+        // A nearby final socket inside the turning circle needs the existing short
+        // reverse approach, not a half-circle that carries the chassis around it.
+        boolean closeFinalPickup=brain.state==State.SEEK_PICKUP&&brain.pickup!=null&&brain.path.isEmpty()
+                &&direction.length()<=Math.min(6,routeTurnRadius(world.profile(self.id)));
+        if(!flatRoad||closeFinalPickup) {brain.routeTurnSide=0;brain.routeTurnHeading=null;}
         if(brain.routeTurnSide!=0) {brain.backingToRoute=false;return null;}
-        if(flatRoad&&Math.abs(error)>=1.3f&&velocity.length()<=6&&session.tick>=brain.nextRouteTurnCheck) {
+        if(flatRoad&&!closeFinalPickup&&Math.abs(error)>=1.3f&&velocity.length()<=6&&session.tick>=brain.nextRouteTurnCheck) {
             brain.nextRouteTurnCheck=session.tick+rules.decisionTicks();
             int side=error>=0?1:-1;
             boolean clear=clearRouteTurn(self.id,position,forward,side,world);
@@ -1049,13 +1054,7 @@ public final class BotController {
         var profile=world.profile(id);
         var ground=world.support(position.add(0,2,0),5);
         if(ground==null||ground.normal().y<.97f)return false;
-        // Match the native full-lock steering at the existing 6 m/s turning command.
-        // A small margin covers steering response and the chassis overhang.
-        float speedRatio=Math.clamp(6/VEHICLE_RULES.maxSpeed(),0,1);
-        float steering=(VEHICLE_RULES.lowSpeedSteering()
-                +(VEHICLE_RULES.highSpeedSteering()-VEHICLE_RULES.lowSpeedSteering())*speedRatio)
-                *(float)Math.PI/180*profile.turnMultiplier();
-        float radius=profile.wheelBase()/(float)Math.tan(steering)+profile.length()*.1f;
+        float radius=routeTurnRadius(profile);
         Vector3f heading=forward.clone().setY(0).normalizeLocal();
         Vector3f lateral=new Vector3f(-heading.z,0,heading.x).multLocal(side);
         Vector3f previous=position;
@@ -1080,6 +1079,15 @@ public final class BotController {
             previous=point;
         }
         return true;
+    }
+    private static float routeTurnRadius(VehicleProfile profile) {
+        // Match native full-lock steering at the existing 6 m/s turning command;
+        // the margin covers steering response and the chassis overhang.
+        float speedRatio=Math.clamp(6/VEHICLE_RULES.maxSpeed(),0,1);
+        float steering=(VEHICLE_RULES.lowSpeedSteering()
+                +(VEHICLE_RULES.highSpeedSteering()-VEHICLE_RULES.lowSpeedSteering())*speedRatio)
+                *(float)Math.PI/180*profile.turnMultiplier();
+        return profile.wheelBase()/(float)Math.tan(steering)+profile.length()*.1f;
     }
     private boolean beginLocalTrafficEscape(Brain brain,int id,Vector3f position,Vector3f forward,
             Vector3f contact,WorldQuery world) {

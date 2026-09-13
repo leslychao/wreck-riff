@@ -164,6 +164,12 @@ class NativeArenaTest {
     }
     private void drivePastOpponent(Vector3f first,Vector3f second) {
         MatchSession session=new MatchSession(1,360);
+        // This fixture isolates armed close traffic. Empty-start supply seeking is
+        // covered separately; no physical pickup collection runs in this harness.
+        for(int id=0;id<2;id++) {
+            assertEquals(0,session.vehicle(id).weapon(WeaponType.HOMING).ammo);
+            session.vehicle(id).weapon(WeaponType.HOMING).ammo=1;
+        }
         for (int id=2;id<5;id++) session.vehicle(id).hp=0;
         try (PhysicsWorld world=arenaWorld()) {
             world.addVehicle(0,first,new Quaternion().fromAngleAxis(FastMath.HALF_PI,Vector3f.UNIT_Y));

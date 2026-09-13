@@ -35,6 +35,8 @@ class CampaignNavigationTest {
     @Test void confirmedLowerSurfaceAtApexCannotBecomeAnUpperRouteStart() {
         var arena=arenas.definition("construction_17");var pad=arena.launchPads().getFirst();
         var session=new MatchSession(2,arena,MatchSession.Mode.ARENA,combat);var world=new RoadWorld(arena);
+        // Only this car has an authored pose in the flight fixture.
+        for(var vehicle:session.vehicles)if(vehicle.id!=0)vehicle.hp=0;
         var source=arena.nodes().stream().filter(n->n.surfaceId().equals(pad.sourceSurfaceId())).findFirst().orElseThrow();
         world.positions.put(0,source.position().vector().add(0,16,0));
         world.contexts.put(0,new RoadContext(pad.sourceSurfaceId(),0,1,RoadContext.Motion.LAUNCH,pad.id(),pad.landingSurfaceId(),1));

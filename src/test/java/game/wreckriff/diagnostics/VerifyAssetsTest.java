@@ -109,9 +109,9 @@ class VerifyAssetsTest {
     }
     @Test void materialValidationRejectsLowResolutionAndColorAsNormalData() throws Exception {
         VerifyAssets.verifyTextureBytes(bundled("textures/materials/asphalt_02/normal.png"),true);
-        VerifyAssets.verifyTextureBytes(bundled("textures/materials/metal_plate_02/diffuse.png"),false);
+        VerifyAssets.verifyTextureBytes(bundled("textures/materials/leafy_grass/diffuse.png"),false);
         assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("fonts/wreck.png"),false));
-        assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("textures/materials/asphalt_02/diffuse.png"),true));
+        assertThrows(IOException.class,()->VerifyAssets.verifyTextureBytes(bundled("textures/materials/leafy_grass/diffuse.png"),true));
     }
     @Test void scalarSpecularValidationPreservesTheExistingSixteenBitRoughnessClipping() throws Exception {
         var rough=new java.awt.image.BufferedImage(2048,2048,java.awt.image.BufferedImage.TYPE_USHORT_GRAY);
@@ -160,7 +160,7 @@ class VerifyAssetsTest {
     @Test void registrySeparatesLicensedRecordingFontAndTexturesFromOriginalProjectContent() {
         var music=new VerifyAssets.Asset("audio/music/menu.wav","licensed-music",100,"c".repeat(64),
                 "https://creatorchords.com/music/riffs/","LICENSED_DERIVED",2,10L,.5,.2);
-        var texture=new VerifyAssets.Asset("textures/materials/cracked_concrete/diffuse.png","licensed-texture",100,"c".repeat(64),
+        var texture=new VerifyAssets.Asset("textures/materials/cracked_concrete/diffuse.dds","licensed-texture",100,"c".repeat(64),
                 "https://polyhaven.com/a/cracked_concrete","LICENSED_BYTES_VERIFIED",null,null,null,null);
         var font=new VerifyAssets.Asset("fonts/wreck.fnt","bitmap-font",100,"c".repeat(64),"GenerateFont.java","LICENSED_DERIVED",null,null,null,null);
         var records=VerifyAssets.registerEntries(List.of(music,texture,font),"0.2.0");

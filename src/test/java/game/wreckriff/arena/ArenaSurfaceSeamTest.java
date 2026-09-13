@@ -31,6 +31,21 @@ class ArenaSurfaceSeamTest {
     @Test void aCloserSupportStillWinsOverTheEarlierAuthoredSurface() {
         assertEquals("seam-right",seam(20.0625f).surfaceAt(new Vector3f(0,20.0625f,0),0,.125f).orElseThrow().id());
     }
+    @Test void subMillimetreInterpolationNoiseKeepsTheFirstSurfaceWithoutExpandingTheHeightTolerance() {
+        var arena=seam(20.00005f);
+        assertEquals("seam-left",arena.surfaceAt(new Vector3f(0,20.00005f,0),0,.125f).orElseThrow().id());
+        assertEquals("seam-right",arena.surfaceAt(new Vector3f(0,20.00005f,0),0,0).orElseThrow().id(),
+                "The tie epsilon cannot admit an initial support outside the caller's tolerance");
+    }
+    @Test void groundTunnelJunctionDoesNotChangeFloorForOneMicrometreOfRayInterpolationNoise() {
+        var arena=ArenaRegistry.load().definition("neon_zero");
+        for(float height:new float[]{0,9.536743E-7f}) {
+            var surface=arena.surfaceAt(new Vector3f(1190,height,400),0,.15f).orElseThrow();
+            assertEquals("road-south-avenue-2",surface.id());assertEquals(0,surface.level());
+        }
+        var underground=arena.surfaceAt(new Vector3f(1190,-12,680),0,.15f).orElseThrow();
+        assertEquals(-1,underground.level(),"A real twelve-metre floor difference remains authoritative");
+    }
     @Test void campaignStartsResolveToTheirAuthoredNavigationSurfaceAtRoadJunctions() {
         var registry=ArenaRegistry.load();
         for(var id:registry.campaignIds()) {

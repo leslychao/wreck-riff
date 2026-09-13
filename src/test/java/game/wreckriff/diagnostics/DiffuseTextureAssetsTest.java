@@ -56,9 +56,19 @@ class DiffuseTextureAssetsTest {
         for (var element : manifest.getAsJsonArray("assets")) {
             var item = element.getAsJsonObject();
             String path = item.get("path").getAsString();
-            if (!path.startsWith("textures/materials/") || !path.endsWith("/diffuse.dds")) continue;
+            if (!path.startsWith("textures/materials/") || !(path.endsWith("/diffuse.dds")||path.endsWith("/diffuse.png"))) continue;
             found++;
             byte[] original = Files.readAllBytes(Path.of(item.get("sourcePath").getAsString()));
+            if(path.endsWith(".png")){
+                assertEquals("textures/materials/leafy_grass/diffuse.png",path);
+                assertEquals(hash(original),item.get("sourceSha256").getAsString());
+                assertEquals("CC0-1.0",item.get("license").getAsString());
+                byte[] retained=Files.readAllBytes(Path.of("src/main/resources").resolve(path));
+                assertEquals(8,retained[24]);assertEquals(hash(retained),item.get("sha256").getAsString());
+                assertArrayEquals(channels(load(Path.of(item.get("sourcePath").getAsString()),false)),
+                        channels(load(Path.of("src/main/resources").resolve(path),false)),"Retained PNG must preserve the original jME-decoded texels");
+                continue;
+            }
             var compressed=JsonParser.parseString(Files.readString(Path.of("src/main/resources/textures/materials/diffuse-provenance.json"))).getAsJsonObject();
             var intermediate=java.util.stream.StreamSupport.stream(compressed.getAsJsonArray("textures").spliterator(),false)
                     .map(elementValue->elementValue.getAsJsonObject()).filter(value->value.get("runtime").getAsString().equals(path)).findFirst().orElseThrow();
@@ -90,6 +100,7 @@ class DiffuseTextureAssetsTest {
     }
 
     private static Path runtime(String material) {
+        if(material.equals("leafy_grass"))return Path.of("src/main/resources/textures/materials/leafy_grass/diffuse.png");
         return Path.of("src/tools/assets/materials", material, "runtime-diffuse.png");
     }
 
