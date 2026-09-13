@@ -436,7 +436,7 @@ function Assert-ReleaseNumber($Value,[double]$Minimum,[double]$Maximum,[string]$
 }
 function Assert-ReleaseBenchmark($Report,$Diagnostic,$Memory,[string]$Arena) {
     if($Report.status -ne 'PASS' -or $Diagnostic.status -ne 'BENCHMARK_MEASURED' -or $Diagnostic.mode -ne 'benchmark' -or $Diagnostic.arenaId -ne $Arena){throw "Benchmark did not pass for $Arena"}
-    if($Diagnostic.releaseEligible -ne $true -or $Diagnostic.width -ne 1920 -or $Diagnostic.height -ne 1080 -or $Diagnostic.msaaSamples -ne 4 -or $Diagnostic.vsync -ne $false -or $Diagnostic.audioEnabled -ne $true -or $Diagnostic.windowVisible -ne $true -or $Diagnostic.autoIconify -ne $false -or $Diagnostic.detailedProfiling -ne $false -or $Diagnostic.invalidBenchmarkWindowObserved -ne $false){throw 'Invalid final benchmark environment.'}
+    if($Diagnostic.releaseEligible -ne $true -or $Diagnostic.width -ne 1920 -or $Diagnostic.height -ne 1080 -or $Diagnostic.msaaSamples -ne 4 -or $Diagnostic.vsync -ne $false -or $Diagnostic.audioEnabled -ne $true -or $Diagnostic.windowVisible -ne $true -or $Diagnostic.autoIconify -isnot [bool] -or $Diagnostic.autoIconify -ne $true -or $Diagnostic.detailedProfiling -ne $false -or $Diagnostic.invalidBenchmarkWindowObserved -ne $false){throw 'Invalid final benchmark environment.'}
     Assert-ReleaseNumber $Diagnostic.requestedSeconds 600 3600 'requested benchmark seconds'
     Assert-ReleaseNumber $Diagnostic.warmupActiveSeconds 30 3600 'active warmup'
     Assert-ReleaseNumber $Diagnostic.measuredActiveSeconds 600 7200 'measured active seconds'
@@ -479,7 +479,7 @@ function Assert-ReleaseDiagnostic($Diagnostic,$Identity,[string]$Image,[string]$
     if($Mode -eq 'normal') {
         Assert-ReleaseNormal $Diagnostic
     } else {
-        if($Diagnostic.autoIconify -ne $false){throw 'Automated verification must keep its window drawable.'}
+        if($Diagnostic.autoIconify -isnot [bool] -or $Diagnostic.autoIconify -ne $true){throw 'Automated verification must allow normal window iconification.'}
         Assert-ReleaseNumber $Diagnostic.undrawableSeconds 0 0 'undrawable seconds'
     }
 }

@@ -131,6 +131,19 @@ $invalid=Clone $normal;$invalid.dev=$true
 Reject {Assert-ReleaseDiagnostic $invalid $identity $image 'normal'} 'normal dev launch'
 $invalid=Clone $normal;$invalid.javaHome=Join-Path $work 'other/runtime'
 Reject {Assert-ReleaseDiagnostic $invalid $identity $image 'normal'} 'different bundled runtime'
+# Automatic verification must allow normal GLFW minimization, while rejecting
+# any actual interval in which its measured/captured window was not drawable.
+foreach($automaticMode in @('graphics-smoke','benchmark','soak','ui-review')) {
+    $automatic=Clone $normal;$automatic.mode=$automaticMode;$automatic.dev=$true;$automatic.undrawableSeconds=0
+    $automatic | Add-Member -NotePropertyName autoIconify -NotePropertyValue $true
+    Assert-ReleaseDiagnostic $automatic $identity $image $automaticMode;$script:checks++
+    $invalid=Clone $automatic;$invalid.autoIconify=$false
+    Reject {Assert-ReleaseDiagnostic $invalid $identity $image $automaticMode} "$automaticMode cannot disable automatic iconification"
+    $invalid=Clone $automatic;$invalid.autoIconify='true'
+    Reject {Assert-ReleaseDiagnostic $invalid $identity $image $automaticMode} "$automaticMode requires a boolean iconification observation"
+    $invalid=Clone $automatic;$invalid.undrawableSeconds=.001
+    Reject {Assert-ReleaseDiagnostic $invalid $identity $image $automaticMode} "$automaticMode cannot count minimized time as valid evidence"
+}
 $extracted=Expand-ReleasePackage $zipPath (Join-Path $work 'extracted')
 Assert-ReleaseImage $zipPath $extracted.image;$script:checks++
 Reject {Expand-ReleasePackage $zipPath (Join-Path $work 'extracted')} 'previous extraction preserved'
@@ -166,11 +179,23 @@ $samples=@(0..1801 | ForEach-Object {[pscustomobject]@{seconds=$_;observedAtUtc=
 $memory=[pscustomobject]@{pid=123;processExited=$true;processStartTimeUtc=$processAt;samples=$samples;peakWorkingSetBytes=1000000}
 $report=[pscustomobject]@{status='PASS';gamePid=123;processStartTimeUtc=$processAt}
 $diagnostic=[pscustomobject]@{status='BENCHMARK_MEASURED';mode='benchmark';arenaId='construction_17';pid=123;releaseEligible=$true;
-    width=1920;height=1080;msaaSamples=4;vsync=$false;audioEnabled=$true;windowVisible=$true;autoIconify=$false;detailedProfiling=$false;invalidBenchmarkWindowObserved=$false;
+    width=1920;height=1080;msaaSamples=4;vsync=$false;audioEnabled=$true;windowVisible=$true;autoIconify=$true;detailedProfiling=$false;invalidBenchmarkWindowObserved=$false;
     requestedSeconds=600;warmupActiveSeconds=30;measuredActiveSeconds=600;undrawableSeconds=0;
     activeCombatFrames=[pscustomobject]@{sampleSeconds=600;frames=36000;p95FrameMs=16;p99FrameMs=20;maxFrameMs=80;framesOver100ms=0};
     phaseMetrics=[pscustomobject]@{droppedSimulationSeconds=0};measuredCoverage=[pscustomobject]@{arenaCombatSeconds=300;bossCombatSeconds=300;maximumEffects=1;maximumLaunchingVehicles=1}}
 Assert-ReleaseBenchmark $report $diagnostic $memory 'construction_17';$script:checks++
+$invalid=Clone $diagnostic;$invalid.autoIconify=$false
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'final benchmark cannot disable automatic iconification'
+$invalid=Clone $diagnostic;$invalid.autoIconify='true'
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'final benchmark iconification observation must be boolean'
+$invalid=Clone $diagnostic;$invalid.undrawableSeconds=.001
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'minimized final benchmark remains invalid'
+$invalid=Clone $diagnostic;$invalid.invalidBenchmarkWindowObserved=$true
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'interrupted benchmark window remains invalid'
+$invalid=Clone $diagnostic;$invalid.width=1280
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'final benchmark keeps the exact framebuffer requirement'
+$invalid=Clone $diagnostic;$invalid.phaseMetrics.droppedSimulationSeconds=.001
+Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'interrupted benchmark cannot hide dropped simulation time'
 $invalid=Clone $diagnostic;$invalid.measuredActiveSeconds=599
 Reject {Assert-ReleaseBenchmark $report $invalid $memory 'construction_17'} 'short measured run'
 $invalid=Clone $diagnostic;$invalid.measuredCoverage.bossCombatSeconds=0
@@ -299,7 +324,7 @@ $uiManifest=[pscustomobject]@{schemaVersion=1;mode='ui-review';status='CAPTURES_
     requestedFramebuffer=[pscustomobject]@{width=640;height=480;uiScale=1};plannedCases=68;cases=$uiCases;remainingCaseIds=@()}
 $uiManifestPath=Join-Path $uiDirectory 'ui-review-manifest.json';Write-ReleaseJson $uiManifestPath $uiManifest
 $uiDiagnostic=[pscustomobject]@{schemaVersion=2;sourceSha256=$source;version='0.0.1';mode='ui-review';pid=123;javaHome=(Join-Path $image 'runtime');
-    windowVisible=$true;audioEnabled=$true;errors=@();autoIconify=$false;undrawableSeconds=0;
+    windowVisible=$true;audioEnabled=$true;errors=@();autoIconify=$true;undrawableSeconds=0;
     status='CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING';uiReviewCaptureStatus='CAPTURES_COMPLETE_HUMAN_REVIEW_PENDING';uiReviewManifest='ui-review-manifest.json';
     releaseEligible=$false;hardwareController='PENDING_MANUAL';feelApproval='PENDING_MANUAL';width=640;height=480}
 Assert-ReleaseDiagnostic $uiDiagnostic $identity $image 'ui-review';$script:checks++

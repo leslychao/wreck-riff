@@ -171,14 +171,6 @@ public final class GameApplication extends SimpleApplication {
         launchReport=options.dev()?null:new LaunchReport(store.directory(),progress.snapshot().campaign().checkpoint()!=null);
     }
     @Override public void simpleInitApp() {
-        if(options.automated()) {
-            long window=org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
-            if(window==0) throw new IllegalStateException("Benchmark requires a real GLFW window");
-            // Automated fullscreen measurement must remain drawable when the operator uses another app.
-            // Explicit minimize still pauses/fails the run; restore is performed only once at startup.
-            org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window,org.lwjgl.glfw.GLFW.GLFW_AUTO_ICONIFY,org.lwjgl.glfw.GLFW.GLFW_FALSE);
-            org.lwjgl.glfw.GLFW.glfwRestoreWindow(window);
-        }
         flyCam.setEnabled(false); setDisplayFps(false); setDisplayStatView(false);
         inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         viewPort.setBackgroundColor(new ColorRGBA(0.033f,0.045f,0.065f,1));
