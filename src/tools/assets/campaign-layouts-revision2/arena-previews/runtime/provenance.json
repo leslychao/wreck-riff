@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "origin": "original-game-render",
+  "generator": "src/tools/java/game/wreckriff/tools/GenerateArenaPreviews.java",
+  "materials": "Existing ArenaFactory/ArenaArt geometry and local SurfaceMaterials; licenses/asset-provenance.json",
+  "artisticStatus": "NEEDS_CREATIVE_REVIEW",
+  "previews": [
+    {
+      "arenaId": "dead-air-yard",
+      "path": "textures/ui/arenas/dead-air-yard.png",
+      "sourcePath": "src/tools/assets/arena-previews/dead-air-yard.png",
+      "capturePath": "C:/Users/vitalii/Documents/workspaces/wreck-riff/build/reports/arena-previews/dead-air-yard.png",
+      "sha256": "1c9b3c18fbdbc485c9ba7bfd805ff97802ee9e65f2eb3204a75fb1e54f3240fc",
+      "sourceSha256": "1c9b3c18fbdbc485c9ba7bfd805ff97802ee9e65f2eb3204a75fb1e54f3240fc",
+      "transformation": "Unmodified 1600x900 PNG framebuffer from a real visible jME window; no HUD, no retouching, no resizing"
+    },
+    {
+      "arenaId": "construction_17",
+      "path": "textures/ui/arenas/construction_17.png",
+      "sourcePath": "src/tools/assets/arena-previews/construction_17.png",
+      "capturePath": "C:/Users/vitalii/Documents/workspaces/wreck-riff/build/reports/arena-previews/construction_17.png",
+      "sha256": "63d2e9c034caef8861eced8750c12fb1cf0c61157742d493527b1f692919c4a7",
+      "sourceSha256": "63d2e9c034caef8861eced8750c12fb1cf0c61157742d493527b1f692919c4a7",
+      "transformation": "Unmodified 1600x900 PNG framebuffer from a real visible jME window; no HUD, no retouching, no resizing"
+    },
+    {
+      "arenaId": "neon_zero",
+      "path": "textures/ui/arenas/neon_zero.png",
+      "sourcePath": "src/tools/assets/arena-previews/neon_zero.png",
+      "capturePath": "C:/Users/vitalii/Documents/workspaces/wreck-riff/build/reports/arena-previews/neon_zero.png",
+      "sha256": "634010ec5e138379844e23b0c99decf254f892ecc18de4d0fba8da77557dad46",
+      "sourceSha256": "634010ec5e138379844e23b0c99decf254f892ecc18de4d0fba8da77557dad46",
+      "transformation": "Unmodified 1600x900 PNG framebuffer from a real visible jME window; no HUD, no retouching, no resizing"
+    },
+    {
+      "arenaId": "euphoria_park",
+      "path": "textures/ui/arenas/euphoria_park.png",
+      "sourcePath": "src/tools/assets/arena-previews/euphoria_park.png",
+      "capturePath": "C:/Users/vitalii/Documents/workspaces/wreck-riff/build/reports/arena-previews/euphoria_park.png",
+      "sha256": "135d144124840473f58790335b6ee34e57f74c9d92f3f665578daac31c828e19",
+      "sourceSha256": "135d144124840473f58790335b6ee34e57f74c9d92f3f665578daac31c828e19",
+      "transformation": "Unmodified 1600x900 PNG framebuffer from a real visible jME window; no HUD, no retouching, no resizing"
+    }
+  ]
+}

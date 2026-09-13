@@ -1,5 +1,7 @@
 package game.wreckriff.diagnostics;
 
+import game.wreckriff.presentation.ArenaArt;
+
 import com.google.gson.*;
 import game.wreckriff.ai.AiRules;
 import game.wreckriff.arena.ArenaDefinition;
@@ -898,7 +900,8 @@ public final class VerifyAssets {
                 ||!index.get("generator").getAsString().equals("src/tools/java/game/wreckriff/tools/GenerateArenaPreviews.java")
                 ||!index.get("artisticStatus").getAsString().equals("NEEDS_CREATIVE_REVIEW"))
             throw new IOException("Invalid arena preview provenance");
-        Set<String> expected=new TreeSet<>();ArenaRegistry.load().entries().forEach(entry->expected.add(entry.id()));
+        var registry=ArenaRegistry.load();
+        Set<String> expected=new TreeSet<>();registry.entries().forEach(entry->expected.add(entry.id()));
         Set<String> found=new TreeSet<>();
         for(var element:index.getAsJsonArray("previews")) {
             var record=element.getAsJsonObject();String id=record.get("arenaId").getAsString();
@@ -906,6 +909,12 @@ public final class VerifyAssets {
             if(!expected.contains(id)||!found.add(id)||!record.get("path").getAsString().equals(path)
                     ||!record.get("sourcePath").getAsString().equals(sourcePath)||record.get("transformation").getAsString().isBlank())
                 throw new IOException("Unknown/duplicate/malformed arena preview: "+id);
+            var arena=registry.definition(id);
+            if(!record.has("layoutRevision")||record.get("layoutRevision").getAsInt()!=arena.layoutRevision()
+                    ||!record.has("definitionSha256")||!record.has("artSha256")
+                    ||!hash(Configs.gson().toJson(arena).getBytes(StandardCharsets.UTF_8)).equals(record.get("definitionSha256").getAsString())
+                    ||!hash(Configs.gson().toJson(ArenaArt.load(arena)).getBytes(StandardCharsets.UTF_8)).equals(record.get("artSha256").getAsString()))
+                throw new IOException("Arena preview is from an obsolete layout or art revision: "+id);
             byte[] bytes=resource(path),source=Files.readAllBytes(Path.of(sourcePath));
             if(!hash(bytes).equals(record.get("sha256").getAsString())
                     ||!hash(source).equals(record.get("sourceSha256").getAsString())||!Arrays.equals(bytes,source))

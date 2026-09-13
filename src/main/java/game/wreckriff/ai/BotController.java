@@ -39,10 +39,11 @@ public final class BotController {
         final Map<String,Long> pickupUnavailableUntil=new HashMap<>();
         final DistrictPatrol.Cursor patrol=new DistrictPatrol.Cursor();
         int supplyStart=-1;
-        long supplyRevision=-1,supplyRefreshAt;
+        long supplyRevision=-1;
         Set<String> supplyHazards=Set.of();
         NavGraph.Mobility supplyMobility;
         Map<Integer,NavGraph.Route> supplyRoutes=Map.of();
+        Map<Integer,Float> supplyLengths=Map.of();
         BotObservation observation=new BotObservation(0,List.of(),List.of());
         State state=State.SEEK_TARGET;
         int target=-1,goalNode=-1,pathIndex,reverseAttempts,recoveriesSeen,lockTicks;
@@ -74,6 +75,8 @@ public final class BotController {
     private final Map<Integer,Brain> brains=new HashMap<>();
     private final Map<String,PickupReservation> reservations=new LinkedHashMap<>();
     private final Map<String,Integer> pickupNodes=new HashMap<>();
+    private final Map<String,Float> pickupConnectors=new HashMap<>();
+    private final Set<Integer> pickupGoals;
     private final ArrayDeque<BossCommand> bossCommands=new ArrayDeque<>();
     private Supplier<List<ArenaDefinition.Hazard>> activeHazards;
     private long lastCommandTick=Long.MIN_VALUE;
@@ -92,7 +95,11 @@ public final class BotController {
     public BotController(MatchSession session,ArenaDefinition arena,NavGraph graph,AiRules rules,
             Supplier<List<ArenaDefinition.Pickup>> activePickups) {
         this.session=session; this.arena=arena; this.graph=graph; this.rules=rules; this.activePickups=activePickups;
-        for(var pickup:arena.pickups())pickupNodes.put(pickup.id(),graph.nearest(pickup.position().vector()));
+        for(var pickup:arena.pickups()) {
+            var point=pickup.position().vector();int node=graph.nearest(point);
+            pickupNodes.put(pickup.id(),node);pickupConnectors.put(pickup.id(),graph.position(node).distance(point));
+        }
+        pickupGoals=Set.copyOf(pickupNodes.values());
         activeHazards=()->arena.hazards().stream().filter(h->ArenaSystems.phaseAt(session.tick,arena.hazards(),h.id())==ArenaSystems.HazardPhase.ACTIVE).toList();
         for(var vehicle:session.vehicles)registerParticipant(vehicle.id);
     }
@@ -229,7 +236,7 @@ public final class BotController {
         if(evadeBallistic(self,brain,position,hazardActive,world))return;
         if (hazardActive && insideActiveHazard(position)) {
             if(brain.boss!=null)brain.boss.cancel(session.tick);
-            brain.state=State.EVADE_HAZARD; brain.pickup=null;
+            brain.state=State.EVADE_HAZARD; releasePickup(brain,self.id);
             int escape=graph.nodes().stream().filter(n->!insideActiveHazard(n.position().vector()))
                     .min(Comparator.comparingDouble(n->n.position().vector().distanceSquared(position))).orElseThrow().id();
             route(brain,position,graph.position(escape),true,world,self.id); return;
@@ -240,13 +247,14 @@ public final class BotController {
         if (!wanted.isEmpty()) {
             ArenaDefinition.Pickup selected=choosePickup(brain,position,wanted,hazardActive,world,self.id);
             if (selected!=null) {
+                if(!selected.id().equals(brain.pickup))releasePickup(brain,self.id);
                 brain.state=State.SEEK_PICKUP; brain.pickup=selected.id();
                 reservations.put(selected.id(),new PickupReservation(selected.id(),self.id,session.tick+360));
                 route(brain,position,selected.position().vector(),hazardActive,world,self.id);
                 chooseTarget(self,brain,world); return;
             }
         }
-        brain.pickup=null;
+        releasePickup(brain,self.id);
         chooseTarget(self,brain,world);
         if(self.boss&&decideBoss(self,brain,world,hazardActive))return;
         var target=brain.observation.visible(brain.target);
@@ -296,18 +304,18 @@ public final class BotController {
     }
     private Set<ArenaDefinition.PickupType> wantedSupplies(VehicleState self,Brain brain) {
         if(brain.healing)return Set.of(ArenaDefinition.PickupType.REPAIR);
-        List<WeaponType> offensive=self.boss?List.of(bossDefinition(self).primary(),bossDefinition(self).secondary())
+        List<WeaponType> arsenal=self.boss?List.of(bossDefinition(self).primary(),bossDefinition(self).secondary())
                 :List.of(WeaponType.HOMING,WeaponType.POWER,WeaponType.NAPALM,WeaponType.BALLISTIC,WeaponType.CANNON);
-        boolean armed=offensive.stream().anyMatch(type->self.weapon(type).ammo>0);
+        boolean armed=arsenal.stream().anyMatch(type->type!=WeaponType.MINE&&self.weapon(type).ammo>0);
         if(!armed) {
             var wanted=EnumSet.noneOf(ArenaDefinition.PickupType.class);
-            for(var type:offensive)wanted.add(ArenaDefinition.PickupType.valueOf(type.name()+"_AMMO"));
+            for(var type:arsenal)if(type!=WeaponType.MINE)wanted.add(ArenaDefinition.PickupType.valueOf(type.name()+"_AMMO"));
             return wanted;
         }
         // A nearby opponent is worth engaging with the weapon already collected.
-        if(brain.observation.visible().isEmpty()&&offensive.stream().allMatch(type->self.weapon(type).ammo<=1)) {
+        if(brain.observation.visible().isEmpty()&&arsenal.stream().allMatch(type->self.weapon(type).ammo<=1)) {
             var wanted=EnumSet.noneOf(ArenaDefinition.PickupType.class);
-            for(var type:offensive)if(self.weapon(type).ammo<2)wanted.add(ArenaDefinition.PickupType.valueOf(type.name()+"_AMMO"));
+            for(var type:arsenal)if(self.weapon(type).ammo<2)wanted.add(ArenaDefinition.PickupType.valueOf(type.name()+"_AMMO"));
             if(!wanted.isEmpty())return wanted;
         }
         return self.turbo<rules.turboSeekThreshold()||continuingTurboRun(brain,self)?Set.of(ArenaDefinition.PickupType.TURBO_CELL):Set.of();
@@ -541,7 +549,7 @@ public final class BotController {
                 previous=next;
             }
             if(!safe)continue;
-            brain.state=State.EVADE_HAZARD;brain.pickup=null;brain.passingDestination=null;brain.ballisticEvading=true;
+            brain.state=State.EVADE_HAZARD;releasePickup(brain,self.id);brain.passingDestination=null;brain.ballisticEvading=true;
             brain.goalNode=-1;route(brain,position,candidate.position().vector(),hazardActive,world,self.id);return true;
         }
         // A blocked escape still permits ordinary obstacle recovery and the imminent-hit shield decision.
@@ -570,32 +578,41 @@ public final class BotController {
     private ArenaDefinition.Pickup choosePickup(Brain brain,Vector3f position,Set<ArenaDefinition.PickupType> types,boolean activeHazard,
             WorldQuery world,int vehicleId) {
         ArenaDefinition.Pickup result=null; float best=Float.POSITIVE_INFINITY;
-        int start=navigationStart(position,world,vehicleId);
-        Set<String> hazards=activeHazard?activeHazards.get().stream().filter(h->hazardVisible(vehicleId,h,world)).map(ArenaDefinition.Hazard::id)
-                .collect(java.util.stream.Collectors.toSet()):Set.of();
+        int start=routeStart(brain,position,world,vehicleId);
+        Set<String> hazards=knownHazards(vehicleId,world,activeHazard);
         var mobility=mobility(vehicleId,world);
         if(brain.supplyStart!=start||brain.supplyRevision!=graph.revision()||!brain.supplyHazards.equals(hazards)
-                ||!mobility.equals(brain.supplyMobility)||session.tick>=brain.supplyRefreshAt) {
-            brain.supplyRoutes=graph.routes(start,Set.copyOf(pickupNodes.values()),mobility,hazards,rules.turnPenalty(),rules.activeHazardPenalty());
+                ||!mobility.equals(brain.supplyMobility)) {
+            brain.supplyRoutes=graph.routes(start,pickupGoals,mobility,hazards,rules.turnPenalty(),rules.activeHazardPenalty());
+            var lengths=new HashMap<Integer,Float>();
+            brain.supplyRoutes.forEach((node,route)->lengths.put(node,graph.pathLength(route.nodes())));
+            brain.supplyLengths=Map.copyOf(lengths);
             brain.supplyStart=start;brain.supplyRevision=graph.revision();brain.supplyHazards=Set.copyOf(hazards);
-            brain.supplyMobility=mobility;brain.supplyRefreshAt=session.tick+120;
+            brain.supplyMobility=mobility;
         }
+        float startDistance=position.distance(graph.position(start));var bounds=arena.bounds();
+        float maximumPath=arena.districts().isEmpty()?rules.maximumPickupPath():(float)Math.hypot(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ());
         for (var pickup:arena.pickups()) {
             var reservation=reservations.get(pickup.id());
             if (!types.contains(pickup.type()) || session.tick<brain.pickupUnavailableUntil.getOrDefault(pickup.id(),0L)
                     || (reservation!=null&&reservation.vehicleId()!=vehicleId&&reservation.untilTick()>session.tick)
                     || (activeHazard && insideActiveHazard(pickup.position().vector()))) continue;
-            var route=brain.supplyRoutes.get(pickupNodes.get(pickup.id()));
+            int node=pickupNodes.get(pickup.id());var route=brain.supplyRoutes.get(node);
             if (route==null||!route.found()) continue;
-            float connector=graph.position(pickupNodes.get(pickup.id())).distance(pickup.position().vector());
-            float distance=graph.pathLength(route.nodes())+position.distance(graph.position(start))+connector;
-            var bounds=arena.bounds();
-            float maximumPath=arena.districts().isEmpty()?rules.maximumPickupPath():(float)Math.hypot(bounds.maxX()-bounds.minX(),bounds.maxZ()-bounds.minZ());
+            float connector=pickupConnectors.get(pickup.id());
+            float distance=brain.supplyLengths.get(node)+startDistance+connector;
             if (distance>maximumPath) continue;
-            float score=route.cost()+(connector+position.distance(graph.position(start))-(pickup.id().equals(brain.pickup)?15:0))/mobility.speed();
+            float score=route.cost()+(connector+startDistance-(pickup.id().equals(brain.pickup)?15:0))/mobility.speed();
             if (score<best) { best=score; result=pickup; }
         }
         return result;
+    }
+    private void releasePickup(Brain brain,int vehicleId) {
+        if(brain.pickup!=null) {
+            var reservation=reservations.get(brain.pickup);
+            if(reservation!=null&&reservation.vehicleId()==vehicleId)reservations.remove(brain.pickup);
+            brain.pickup=null;
+        }
     }
     private void route(Brain brain,Vector3f position,Vector3f destination,boolean hazardActive,WorldQuery world,int vehicleId) {
         if(brain.transition!=null&&brain.routeRevision==graph.revision()
@@ -621,7 +638,13 @@ public final class BotController {
         }
         brain.destination=destination.clone(); brain.goalNode=goal;
         int startNode=routeStart(brain,position,world,vehicleId);
-        var planned=plannedRoute(startNode,goal,vehicleId,world,hazardActive);
+        // Supply selection already solved this route. Reuse the exact corridor while every
+        // search input still matches, including a committed-road start and visible hazards.
+        var planned=brain.state==State.SEEK_PICKUP&&brain.pickup!=null&&Objects.equals(pickupNodes.get(brain.pickup),goal)
+                &&brain.supplyStart==startNode&&brain.supplyRevision==graph.revision()
+                &&Objects.equals(brain.supplyMobility,mobility(vehicleId,world))
+                &&brain.supplyHazards.equals(knownHazards(vehicleId,world,hazardActive))?brain.supplyRoutes.get(goal):null;
+        if(planned==null)planned=plannedRoute(startNode,goal,vehicleId,world,hazardActive);
         if(!planned.found()) {
             // An inaccessible secret/underside is intercepted at a reachable authored exit.
             // Never feed its unreachable coordinate to the ordinary direct driver.
@@ -1058,9 +1081,12 @@ public final class BotController {
         return approach;
     }
     private NavGraph.Route plannedRoute(int start,int goal,int id,WorldQuery world,boolean avoidHazards) {
-        Set<String> active=avoidHazards?activeHazards.get().stream().filter(h->hazardVisible(id,h,world)).map(ArenaDefinition.Hazard::id)
-                .collect(java.util.stream.Collectors.toSet()):Set.of();
+        Set<String> active=knownHazards(id,world,avoidHazards);
         return graph.route(start,goal,mobility(id,world),active,rules.turnPenalty(),rules.activeHazardPenalty());
+    }
+    private Set<String> knownHazards(int id,WorldQuery world,boolean avoidHazards) {
+        return avoidHazards?activeHazards.get().stream().filter(h->hazardVisible(id,h,world)).map(ArenaDefinition.Hazard::id)
+                .collect(java.util.stream.Collectors.toSet()):Set.of();
     }
     public NavGraph.Mobility mobility(int id,WorldQuery world) {
         var profile=world.profile(id);var bounds=profile.fullBounds();var self=session.vehicle(id);

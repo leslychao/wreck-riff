@@ -28,6 +28,7 @@ public final class NavGraph {
     private final Set<String> openObjects=new HashSet<>();
     private final Set<String> openableIds=new HashSet<>();
     private long revision;
+    private long searchCount;
 
     public NavGraph(ArenaDefinition definition) {
         hazards=definition.hazards();
@@ -54,6 +55,8 @@ public final class NavGraph {
         var result=links.get(id);if(result==null)throw new IllegalArgumentException("Unknown nav node "+id);return List.copyOf(result);
     }
     public long revision() { return revision; }
+    /** Diagnostic count of actual graph searches, excluding cached supply decisions. */
+    public long searchCount() { return searchCount; }
     public void setOpen(String objectId,boolean open) {
         if(!openableIds.contains(objectId))throw new IllegalArgumentException("Unknown navigation passage: "+objectId);
         if(open?openObjects.add(objectId):openObjects.remove(objectId))revision++;
@@ -81,6 +84,7 @@ public final class NavGraph {
     public Map<Integer,Route> routes(int start,Set<Integer> goals,Mobility mobility,Set<String> activeHazards,float turnPenalty,float hazardPenalty) {
         if(!nodes.containsKey(start)||!nodes.keySet().containsAll(goals))throw new IllegalArgumentException("Unknown route endpoint");
         if(goals.isEmpty())return Map.of();
+        searchCount++;
         int goal=goals.size()==1?goals.iterator().next():-1;
         Set<Integer> remaining=new HashSet<>(goals);Map<Integer,Route> result=new LinkedHashMap<>();
         Step first=new Step(-1,start);Map<Step,Float> costs=new HashMap<>();

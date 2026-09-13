@@ -328,6 +328,26 @@ def neon():
     for name,b,h,mat in [('meridian-tower',(350,445,1080,1175),145,'blue'),('meridian-podium',(305,485,1070,1185),18,'dark-concrete'),('exchange-tower',(560,650,1090,1165),98,'ivory'),('exchange-podium',(550,680,1070,1180),12,'dark-concrete'),('conference-west',(80,135,755,850),28,'ivory'),('conference-east',(465,535,850,940),44,'blue'),('office-ribbon',(90,125,855,1100),65,'dark-concrete')]:a.building(name,b,h,mat)
     a.site('business-meridian','Деловой центр Meridian','Башни на общественных подиумах и грузовые дворы','Проспект → площадь → служебная улица',[285,680,850,1185],'landmark')
     for name,b,h in [('courtyard-a-south',(305,410,280,315),26),('courtyard-a-west',(290,325,315,375),26),('courtyard-b-east',(555,595,285,370),32),('courtyard-b-south',(455,595,280,315),32),('courtyard-c-north',(250,365,525,555),22),('courtyard-c-west',(250,280,455,525),22),('school',(90,140,350,485),14),('residential-service',(495,530,535,565),8)]:a.building(name,b,h,'brick' if 'courtyard' in name else 'ivory')
+    # Named city compounds occupy actual blocks between the authored streets.
+    # Their setbacks and delivery courts differ; this is not a grid population pass.
+    compounds=[
+        ('civic-archive','Городской архив','Хранилище и читальный зал на северной улице',[(140,430,1280,1330,30),(140,185,1240,1280,30),(385,430,1240,1280,18)],'brick'),
+        ('north-hotel','Гостиница Meridian','Высотный корпус и низкая входная галерея',[(500,660,1260,1340,82),(660,760,1275,1320,16)],'ivory'),
+        ('exchange-annex','Расчётный центр','Офисный двор за деловым проспектом',[(940,1110,1250,1330,58),(940,985,1240,1250,26)],'blue'),
+        ('transit-depot','Автобусное депо','Ремонт и хранение вне боевых проездов',[(1210,1370,1290,1350,15),(1210,1260,1245,1290,12)],'steel'),
+        ('west-clinic','Поликлиника','Районное общественное здание и служебное крыло',[(60,190,660,710,18),(60,105,710,755,18)],'ivory'),
+        ('arts-workshops','Мастерские','Мастерские между западным проспектом и рынком',[(330,480,700,745,16),(335,375,745,820,12),(440,485,745,820,22)],'brick'),
+        ('market-cold-store','Холодильный склад','Снабжение торгового пассажа с технической улицы',[(885,970,930,960,9)],'blue'),
+        ('east-apartments','Восточный жилой дом','Двор с северным и восточным входами',[(1450,1575,680,715,36),(1450,1485,715,800,36),(1535,1575,755,775,24)],'brick'),
+        ('garden-court','Садовый двор','Жилые крылья вокруг тихого двора',[(320,420,465,495,24),(385,420,495,570,24)],'ivory'),
+        ('south-business','Гостевой комплекс','Две башни и общая входная площадь',[(825,870,315,430,52),(875,910,340,430,38)],'blue'),
+        ('western-substation','Подстанция','Ввод электричества в жилой район',[(45,125,80,160,11),(45,85,170,255,8)],'dark-concrete'),
+        ('southern-frontage','Южная торговая линия','Магазины первого этажа и жильё над ними',[(315,590,65,130,25),(625,715,65,125,34)],'brick'),
+        ('delivery-centre','Грузовой терминал','Снабжение паркинга и торговых улиц',[(1220,1340,65,140,18),(1440,1600,65,125,12)],'steel')]
+    for identity,title,function,wings,material in compounds:
+        bounds=[min(w[0] for w in wings),max(w[1] for w in wings),min(w[2] for w in wings),max(w[3] for w in wings)]
+        a.site(identity,title,function,'Фасад на существующую улицу; служебный двор между крыльями',bounds,'city-compound')
+        for index,(x1,x2,z1,z2,height) in enumerate(wings):a.building(identity+'-wing-'+str(index),(x1,x2,z1,z2),height,material)
     # Glass-roofed passage, stall islands split the atrium into two safe lanes.
     a.site('shopping-passage','Пассаж ZERO','Торговая галерея через квартал с атриумом и разгрузочной стороной','Западный вход → атриум → северный выход',[710,935,670,860],'through-interior')
     a.roof('shopping-passage',(710,935,670,860),18,'glass');a.wall('passage-south-front',(710,675),(815,675),18,2,'ivory');a.wall('passage-south-wing',(885,675),(935,675),18,2,'ivory');a.wall('passage-north-front',(710,855),(810,855),18,2,'ivory');a.wall('passage-east-front',(930,790),(930,815),18,2,'ivory')

@@ -29,6 +29,46 @@
       "sha256": "1884011402211bc7981c6c7f6677f47e0edc44b5b7593ed67be14915a6bef658"
     },
     {
+      "path": "arena-previews/GenerateArenaPreviews.java",
+      "sha256": "ab9447337b5cc72abd9731b516c6497c4b247b61569430d34f1de02213753251"
+    },
+    {
+      "path": "arena-previews/runtime/construction_17.png",
+      "sha256": "63d2e9c034caef8861eced8750c12fb1cf0c61157742d493527b1f692919c4a7"
+    },
+    {
+      "path": "arena-previews/runtime/dead-air-yard.png",
+      "sha256": "1c9b3c18fbdbc485c9ba7bfd805ff97802ee9e65f2eb3204a75fb1e54f3240fc"
+    },
+    {
+      "path": "arena-previews/runtime/euphoria_park.png",
+      "sha256": "135d144124840473f58790335b6ee34e57f74c9d92f3f665578daac31c828e19"
+    },
+    {
+      "path": "arena-previews/runtime/neon_zero.png",
+      "sha256": "634010ec5e138379844e23b0c99decf254f892ecc18de4d0fba8da77557dad46"
+    },
+    {
+      "path": "arena-previews/runtime/provenance.json",
+      "sha256": "eb8551ee881b9452568e1deb0f617fb804377743bae82a3c7ffd13a498ef35b3"
+    },
+    {
+      "path": "arena-previews/sources/construction_17.png",
+      "sha256": "63d2e9c034caef8861eced8750c12fb1cf0c61157742d493527b1f692919c4a7"
+    },
+    {
+      "path": "arena-previews/sources/dead-air-yard.png",
+      "sha256": "1c9b3c18fbdbc485c9ba7bfd805ff97802ee9e65f2eb3204a75fb1e54f3240fc"
+    },
+    {
+      "path": "arena-previews/sources/euphoria_park.png",
+      "sha256": "135d144124840473f58790335b6ee34e57f74c9d92f3f665578daac31c828e19"
+    },
+    {
+      "path": "arena-previews/sources/neon_zero.png",
+      "sha256": "634010ec5e138379844e23b0c99decf254f892ecc18de4d0fba8da77557dad46"
+    },
+    {
       "path": "ArenaArt.java.txt",
       "sha256": "8b140b51fadf393ee8692c15427695bfeee607fca0a8b46c19a6da7e71e6bc17"
     },
